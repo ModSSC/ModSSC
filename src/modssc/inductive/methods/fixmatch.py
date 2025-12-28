@@ -1,0 +1,262 @@
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass
+from time import perf_counter
+from typing import Any
+
+from modssc.inductive.base import InductiveMethod, MethodInfo
+from modssc.inductive.deep import TorchModelBundle
+from modssc.inductive.errors import InductiveValidationError
+from modssc.inductive.methods.deep_utils import (
+    cycle_batch_indices,
+    cycle_batches,
+    ensure_float_tensor,
+    ensure_model_bundle,
+    ensure_model_device,
+    extract_logits,
+    num_batches,
+)
+from modssc.inductive.methods.utils import (
+    detect_backend,
+    ensure_1d_labels_torch,
+    ensure_torch_data,
+)
+from modssc.inductive.optional import optional_import
+from modssc.inductive.types import DeviceSpec
+
+logger = logging.getLogger(__name__)
+
+
+def _sharpen(probs: Any, *, temperature: float) -> Any:
+    if temperature <= 0:
+        raise InductiveValidationError("temperature must be > 0.")
+    if temperature == 1.0:
+        return probs
+    power = 1.0 / float(temperature)
+    sharpened = probs.pow(power)
+    denom = sharpened.sum(dim=1, keepdim=True)
+    denom = denom.clamp_min(1e-12)
+    return sharpened / denom
+
+
+@dataclass(frozen=True)
+class FixMatchSpec:
+    """Specification for FixMatch (torch-only)."""
+
+    model_bundle: TorchModelBundle | None = None
+    lambda_u: float = 1.0
+    p_cutoff: float = 0.95
+    temperature: float = 0.5
+    hard_label: bool = True
+    use_cat: bool = False
+    batch_size: int = 64
+    max_epochs: int = 1
+    detach_target: bool = True
+
+
+class FixMatchMethod(InductiveMethod):
+    """FixMatch pseudo-labeling with weak/strong augmentation (torch-only)."""
+
+    info = MethodInfo(
+        method_id="fixmatch",
+        name="FixMatch",
+        year=2020,
+        family="pseudo-label",
+        supports_gpu=True,
+        paper_title="FixMatch: Simplifying Semi-Supervised Learning with Consistency and Confidence",
+        paper_pdf="https://arxiv.org/abs/2001.07685",
+        official_code="",
+    )
+
+    def __init__(self, spec: FixMatchSpec | None = None) -> None:
+        self.spec = spec or FixMatchSpec()
+        self._bundle: TorchModelBundle | None = None
+        self._backend: str | None = None
+
+    def fit(self, data: Any, *, device: DeviceSpec, seed: int = 0) -> FixMatchMethod:
+        start = perf_counter()
+        logger.info("Starting %s.fit", self.info.method_id)
+        logger.debug(
+            "params lambda_u=%s p_cutoff=%s temperature=%s hard_label=%s use_cat=%s "
+            "batch_size=%s max_epochs=%s detach_target=%s has_model_bundle=%s device=%s seed=%s",
+            self.spec.lambda_u,
+            self.spec.p_cutoff,
+            self.spec.temperature,
+            self.spec.hard_label,
+            self.spec.use_cat,
+            self.spec.batch_size,
+            self.spec.max_epochs,
+            self.spec.detach_target,
+            bool(self.spec.model_bundle),
+            device,
+            seed,
+        )
+        if data is None:
+            raise InductiveValidationError("data must not be None.")
+
+        backend = detect_backend(data.X_l)
+        if backend != "torch":
+            raise InductiveValidationError("FixMatch requires torch tensors (torch backend).")
+
+        ds = ensure_torch_data(data, device=device)
+        torch = optional_import("torch", extra="inductive-torch")
+
+        if ds.X_u_w is None or ds.X_u_s is None:
+            raise InductiveValidationError("FixMatch requires X_u_w and X_u_s.")
+
+        X_l = ds.X_l
+        y_l = ensure_1d_labels_torch(ds.y_l, name="y_l")
+        X_u_w = ds.X_u_w
+        X_u_s = ds.X_u_s
+        logger.info(
+            "FixMatch sizes: n_labeled=%s n_unlabeled=%s",
+            int(X_l.shape[0]),
+            int(X_u_w.shape[0]),
+        )
+
+        if int(X_l.shape[0]) == 0:
+            raise InductiveValidationError("X_l must be non-empty.")
+        if int(X_u_w.shape[0]) == 0 or int(X_u_s.shape[0]) == 0:
+            raise InductiveValidationError("X_u_w and X_u_s must be non-empty.")
+        if int(X_u_w.shape[0]) != int(X_u_s.shape[0]):
+            raise InductiveValidationError("X_u_w and X_u_s must have the same number of rows.")
+
+        ensure_float_tensor(X_l, name="X_l")
+        ensure_float_tensor(X_u_w, name="X_u_w")
+        ensure_float_tensor(X_u_s, name="X_u_s")
+
+        if y_l.dtype != torch.int64:
+            raise InductiveValidationError("y_l must be int64 for torch cross entropy.")
+
+        if self.spec.model_bundle is None:
+            raise InductiveValidationError("model_bundle must be provided for FixMatch.")
+        bundle = ensure_model_bundle(self.spec.model_bundle)
+        model = bundle.model
+        optimizer = bundle.optimizer
+        ensure_model_device(model, device=X_l.device)
+
+        if int(self.spec.batch_size) <= 0:
+            raise InductiveValidationError("batch_size must be >= 1.")
+        if int(self.spec.max_epochs) <= 0:
+            raise InductiveValidationError("max_epochs must be >= 1.")
+        if float(self.spec.lambda_u) < 0:
+            raise InductiveValidationError("lambda_u must be >= 0.")
+        if not (0.0 <= float(self.spec.p_cutoff) <= 1.0):
+            raise InductiveValidationError("p_cutoff must be in [0, 1].")
+        if float(self.spec.temperature) <= 0:
+            raise InductiveValidationError("temperature must be > 0.")
+
+        steps_l = num_batches(int(X_l.shape[0]), int(self.spec.batch_size))
+        steps_u = num_batches(int(X_u_w.shape[0]), int(self.spec.batch_size))
+        steps_per_epoch = max(int(steps_l), int(steps_u))
+
+        gen_l = torch.Generator().manual_seed(int(seed))
+        gen_u = torch.Generator().manual_seed(int(seed) + 1)
+
+        model.train()
+        for _ in range(int(self.spec.max_epochs)):
+            iter_l = cycle_batches(
+                X_l,
+                y_l,
+                batch_size=int(self.spec.batch_size),
+                generator=gen_l,
+                steps=steps_per_epoch,
+            )
+            iter_u_idx = cycle_batch_indices(
+                int(X_u_w.shape[0]),
+                batch_size=int(self.spec.batch_size),
+                generator=gen_u,
+                device=X_u_w.device,
+                steps=steps_per_epoch,
+            )
+            for (x_lb, y_lb), idx_u in zip(iter_l, iter_u_idx, strict=False):
+                x_uw = X_u_w[idx_u]
+                x_us = X_u_s[idx_u]
+
+                if bool(self.spec.use_cat):
+                    inputs = torch.cat([x_lb, x_uw, x_us], dim=0)
+                    logits = extract_logits(model(inputs))
+                    if int(logits.ndim) != 2:
+                        raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+                    num_lb = int(x_lb.shape[0])
+                    num_u = int(x_uw.shape[0])
+                    expected = num_lb + num_u + int(x_us.shape[0])
+                    if int(logits.shape[0]) != expected:
+                        raise InductiveValidationError(
+                            "Concatenated logits batch size does not match inputs."
+                        )
+                    logits_l = logits[:num_lb]
+                    logits_uw = logits[num_lb : num_lb + num_u]
+                    logits_us = logits[num_lb + num_u :]
+                else:
+                    logits_l = extract_logits(model(x_lb))
+                    logits_us = extract_logits(model(x_us))
+                    with torch.no_grad():
+                        logits_uw = extract_logits(model(x_uw))
+
+                if int(logits_l.ndim) != 2 or int(logits_uw.ndim) != 2 or int(logits_us.ndim) != 2:
+                    raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+                if logits_uw.shape != logits_us.shape:
+                    raise InductiveValidationError("Unlabeled logits shape mismatch.")
+                if logits_uw.shape[1] != logits_l.shape[1]:
+                    raise InductiveValidationError("Logits must agree on class dimension.")
+                if y_lb.min().item() < 0 or y_lb.max().item() >= int(logits_l.shape[1]):
+                    raise InductiveValidationError("y_l labels must be within [0, n_classes).")
+
+                sup_loss = torch.nn.functional.cross_entropy(logits_l, y_lb)
+                probs_uw = torch.softmax(logits_uw, dim=1)
+                if bool(self.spec.detach_target):
+                    probs_uw = probs_uw.detach()
+                mask = (probs_uw.max(dim=1).values >= float(self.spec.p_cutoff)).to(logits_us.dtype)
+
+                pseudo_soft = _sharpen(probs_uw, temperature=float(self.spec.temperature))
+                if bool(self.spec.hard_label):
+                    pseudo = pseudo_soft.argmax(dim=1)
+                    loss_u = torch.nn.functional.cross_entropy(logits_us, pseudo, reduction="none")
+                else:
+                    log_probs = torch.nn.functional.log_softmax(logits_us, dim=1)
+                    loss_u = -(pseudo_soft * log_probs).sum(dim=1)
+
+                if int(mask.numel()) == 0:
+                    unsup_loss = torch.zeros((), device=logits_us.device)
+                else:
+                    denom = mask.sum().clamp_min(1.0)
+                    unsup_loss = (loss_u * mask).sum() / denom
+
+                loss = sup_loss + float(self.spec.lambda_u) * unsup_loss
+
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+        self._bundle = bundle
+        self._backend = backend
+        logger.info("Finished %s.fit in %.3fs", self.info.method_id, perf_counter() - start)
+        return self
+
+    def predict_proba(self, X: Any) -> Any:
+        if self._bundle is None:
+            raise RuntimeError("FixMatchMethod is not fitted yet. Call fit() first.")
+        backend = self._backend or detect_backend(X)
+        if backend != "torch":
+            raise InductiveValidationError("FixMatch predict_proba requires torch tensors.")
+        torch = optional_import("torch", extra="inductive-torch")
+        if not isinstance(X, torch.Tensor):
+            raise InductiveValidationError("predict_proba requires torch.Tensor inputs.")
+
+        model = self._bundle.model
+        was_training = model.training
+        model.eval()
+        with torch.no_grad():
+            logits = extract_logits(model(X))
+            if int(logits.ndim) != 2:
+                raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+            proba = torch.softmax(logits, dim=1)
+        if was_training:
+            model.train()
+        return proba
+
+    def predict(self, X: Any) -> Any:
+        proba = self.predict_proba(X)
+        return proba.argmax(dim=1)

@@ -1,0 +1,126 @@
+site_name: ModSSC
+site_description: A modular framework for semi-supervised classification, inductive and transductive
+site_url: https://modssc.github.io/ModSSC
+repo_url: https://github.com/ModSSC/ModSSC
+repo_name: ModSSC
+
+theme:
+  name: material
+  language: en
+  logo: assets/logo.png
+  favicon: assets/logo.png
+  palette:
+    - scheme: default
+      primary: blue grey
+      accent: blue
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue grey
+      accent: blue
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  font:
+    text: Inter
+    code: JetBrains Mono
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.footer
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/sidebar-toggle.js
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - User Guide:
+      - Index: user-guide/index.md
+      - Overview: user-guide/overview.md
+      - Data Loader: user-guide/data-loader.md
+      - Sampling: user-guide/sampling.md
+      - Preprocess: user-guide/preprocess.md
+      - Graph: user-guide/graph.md
+      - Data Augmentation: user-guide/data-augmentation.md
+      - Views: user-guide/views.md
+      - Supervised: user-guide/supervised.md
+      - Evaluation: user-guide/evaluation.md
+      - HPO: user-guide/hpo.md
+      - Transductive: user-guide/transductive.md
+      - Inductive: user-guide/inductive.md
+      - Datasets and Catalog: user-guide/datasets-and-catalog.md
+      - Caching and Reproducibility: user-guide/caching-and-reproducibility.md
+  - CLI:
+      - Overview: cli/index.md
+      - Datasets: cli/datasets.md
+      - Sampling: cli/sampling.md
+      - Preprocess: cli/preprocess.md
+      - Evaluation: cli/evaluation.md
+      - Graph: cli/graph.md
+      - Inductive: cli/inductive.md
+      - Supervised: cli/supervised.md
+      - Transductive: cli/transductive.md
+      - Augmentation: cli/augmentation.md
+  - API Reference:
+      - Overview: reference/index.md
+      - data_loader: reference/data_loader.md
+      - sampling: reference/sampling.md
+      - preprocess: reference/preprocess.md
+      - graph: reference/graph.md
+      - data_augmentation: reference/data_augmentation.md
+      - views: reference/views.md
+      - supervised: reference/supervised.md
+      - evaluation: reference/evaluation.md
+      - transductive: reference/transductive.md
+  - Examples:
+      - Overview: examples/index.md
+      - Notebooks: examples/notebooks.md
+      - Scripts: examples/scripts.md
+  - Bench:
+      - HPO: bench/hpo.md
+  - Glossary: glossary.md
+  - FAQ: faq.md
+  - Development:
+      - Overview: development/index.md
+      - Contributing: development/contributing.md
+      - Testing: development/testing.md
+      - Style: development/style.md
+      - Release: development/release.md
+  - Release Notes: release-notes.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_signature: true
+            heading_level: 2
+            filters:
+              - "!^__"
+  - enumerate-headings:
+      increment_across_pages: true
+      toc_depth: 2
+      exclude:
+        - index.md
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - attr_list
+  - md_in_html

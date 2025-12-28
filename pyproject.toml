@@ -1,0 +1,280 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "modssc"
+dynamic = ["version"]
+description = "ModSSC: a modular framework for semi-supervised classification on heterogeneous data"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "ModSSC contributors" }]
+keywords = ["semi-supervised", "classification"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Information Analysis",
+]
+
+dependencies = [
+  "PyYAML>=6.0",
+  "platformdirs>=4.0",
+  "numpy>=1.24,<2.4",
+  "typer>=0.12.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/ModSSC/ModSSC"
+Repository = "https://github.com/ModSSC/ModSSC"
+Documentation = "https://github.com/ModSSC/ModSSC/tree/main/docs"
+Changelog = "https://github.com/ModSSC/ModSSC/blob/main/CHANGELOG.md"
+Issues = "https://github.com/ModSSC/ModSSC/issues"
+
+[project.scripts]
+modssc = "modssc.cli.app:app"
+modssc-datasets = "modssc.cli.datasets:app"
+modssc-sampling = "modssc.cli.sampling:app"
+modssc-preprocess = "modssc.cli.preprocess:app"
+modssc-graph = "modssc.cli.graph:app"
+modssc-inductive = "modssc.cli.inductive:app"
+modssc-transductive = "modssc.cli.transductive:app"
+modssc-augmentation = "modssc.cli.augmentation:app"
+modssc-evaluation = "modssc.cli.evaluation:app"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.4",
+  "pytest-cov>=4.1",
+  "pytest-xdist>=3.5",
+  "pytest-timeout>=2.2",
+  "ruff>=0.6.0",
+  "pre-commit>=3.7",
+  "build>=1.2",
+  "twine>=4.0",
+]
+
+docs = [
+  "mkdocs>=1.6",
+  "mkdocs-material>=9.5",
+  "mkdocs-enumerate-headings-plugin",
+  "mkdocstrings[python]>=0.25",
+  "pymdown-extensions>=10.0",
+]
+
+sklearn = [
+  "scikit-learn",
+]
+
+text = [
+  "datasets",
+]
+
+hf = [
+  "datasets",
+]
+
+openml = [
+  "scikit-learn",
+]
+
+tfds = [
+  "tensorflow-datasets",
+  "tensorflow",
+  "tf-keras",
+]
+
+inductive-torch = [
+  "torch",
+]
+
+inductive-tf = [
+  "tensorflow",
+  "tf-keras",
+]
+
+supervised-torch = [
+  "torch",
+]
+
+vision = [
+  "torch",
+  "torchvision",
+]
+
+audio = [
+  "torch",
+  "torchaudio",
+  "torchcodec",
+]
+
+graph = [
+  "torch",
+  "torch-geometric",
+]
+
+transductive-torch = [
+  "torch",
+]
+
+transductive-pyg = [
+  "torch",
+  "torch-geometric",
+]
+
+transductive-advanced = [
+  "torch",
+  "torch-geometric",
+]
+
+graph-faiss = [
+  "faiss-cpu",
+]
+
+datasets = [
+  "scikit-learn",
+  "datasets",
+  "tensorflow-datasets",
+  "tensorflow",
+  "tf-keras",
+  "torch",
+  "torchvision",
+  "torchaudio",
+  "torch-geometric",
+]
+
+
+# Optional alias if you prefer: pip install "modssc[data]"
+data = [
+  "scikit-learn",
+  "datasets",
+  "tensorflow-datasets",
+  "tensorflow",
+  "tf-keras",
+  "torch",
+  "torchvision",
+  "torchaudio",
+  "torch-geometric",
+]
+
+
+# Preprocess brick extras
+preprocess-sklearn = [
+  "scikit-learn",
+]
+
+preprocess-text = [
+  "sentence-transformers",
+  "transformers",
+]
+
+preprocess-vision = [
+  "torch",
+  "torchvision",
+  "Pillow",
+  "open-clip-torch",
+]
+
+preprocess-audio = [
+  "torch",
+  "torchaudio",
+]
+
+preprocess-graph = [
+  "scipy",
+]
+
+
+# Meta extra: pip install "modssc[preprocess]"
+preprocess = [
+  "scikit-learn",
+  "sentence-transformers",
+  "transformers",
+  "torch",
+  "torchvision",
+  "Pillow",
+  "open-clip-torch",
+  "torchaudio",
+  "scipy",
+]
+
+
+# One-shot install for full-feature runs: pip install "modssc[full]"
+full = [
+  "scikit-learn",
+  "datasets",
+  "tensorflow-datasets",
+  "tensorflow",
+  "tf-keras",
+  "torch",
+  "torchvision",
+  "torchaudio",
+  "torchcodec",
+  "torch-geometric",
+  "sentence-transformers",
+  "transformers",
+  "Pillow",
+  "open-clip-torch",
+  "scipy",
+]
+
+[tool.hatch.version]
+path = "src/modssc/__about__.py"
+
+[tool.hatch.build]
+exclude = [
+  "/bench",
+  "/runs",
+  "/cache",
+  "/artifacts",
+  "/outputs",
+  "/data",
+  "/site",
+  "/docs/articles_codes",
+]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-q --cov=modssc --cov-report=term-missing --cov-fail-under=95 --timeout=300 --timeout-method=thread --strict-markers"
+testpaths = ["tests"]
+markers = [
+  "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+  "memory_intensive: marks tests as memory intensive",
+]
+# Improve test collection and discovery
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["E501"]
+
+[tool.coverage.run]
+branch = true
+source = ["modssc"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+omit = [
+  "*/modssc/inductive/*",
+  "*/modssc/inductive/*/*",
+  "*/modssc/supervised/backends/torch/*",
+  "*/modssc/transductive/methods/gnn/*",
+  "*/modssc/transductive/methods/advanced/*",
+  "*/modssc/transductive/methods/classic/label_propagation.py",
+  "*/modssc/transductive/methods/classic/label_spreading.py",
+  "*/modssc/transductive/methods/pde/poisson_learning.py",
+]

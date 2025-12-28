@@ -1,0 +1,71 @@
+name: Add a new SSL method
+description: Request or propose a new semi-supervised method implementation.
+labels: ["method"]
+body:
+  - type: textarea
+    attributes:
+      label: Paper reference
+      description: Title, authors, venue, year, link (arXiv or DOI).
+    validations:
+      required: true
+
+  - type: dropdown
+    attributes:
+      label: Setting
+      options:
+        - "inductive"
+        - "transductive"
+        - "both"
+    validations:
+      required: true
+
+  - type: dropdown
+    attributes:
+      label: Modality
+      options:
+        - "tabular"
+        - "vision"
+        - "text"
+        - "audio"
+        - "graph"
+        - "multi"
+    validations:
+      required: true
+
+  - type: dropdown
+    attributes:
+      label: Backend target
+      options:
+        - "sklearn"
+        - "torch"
+        - "tensorflow"
+        - "other"
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Expected results
+      description: Datasets, label regime, metric, expected numbers and tolerances.
+      placeholder: |
+        CIFAR-10, 40 labels, accuracy ~ 93.0 ± 0.5
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: Notes about reproduction
+      description: Any tricky details (augmentations, EMA, schedules, thresholds).
+    validations:
+      required: false
+
+  - type: checkboxes
+    attributes:
+      label: Contribution checklist
+      options:
+        - label: I will add tests (smoke + unit, integration if relevant).
+          required: false
+        - label: I will add a recipe config and a quickstart example.
+          required: false
+        - label: I will add a changelog note (CHANGELOG.md).
+          required: false

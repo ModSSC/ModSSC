@@ -1,0 +1,73 @@
+run:
+  name: "mnist_label_propagation_knn"
+  seed: 7
+  output_dir: "runs"
+
+dataset:
+  id: "torchvision:MNIST"
+
+sampling:
+  seed: 7
+  plan:
+    split:
+      kind: "holdout"
+      test_fraction: 0.2
+      val_fraction: 0.1
+      stratify: true
+      shuffle: true
+    labeling:
+      mode: "count"
+      value: 100
+      strategy: "balanced"
+    imbalance:
+      kind: "none"
+    policy:
+      respect_official_test: true
+
+preprocess:
+  seed: 7
+  fit_on: "train_labeled"
+  cache: true
+  plan:
+    output_key: "features.X"
+    steps:
+      - id: "vision.resize"
+        params:
+          height: 32
+          width: 32
+      - id: "vision.ensure_num_channels"
+        params:
+          num_channels: 3
+      - id: "vision.openclip"
+        params:
+          model_id: "openclip:ViT-B-32/openai"
+      - id: "core.to_numpy"
+
+graph:
+  enabled: true
+  seed: 7
+  spec:
+    scheme: "knn"
+    metric: "cosine"
+    k: 30
+    symmetrize: "mutual"
+    weights:
+      kind: "heat"
+      sigma: 0.5
+    normalize: "rw"
+    self_loops: true
+    backend: "auto"
+    chunk_size: 512
+    feature_field: "features.X"
+
+method:
+  kind: "transductive"
+  id: "label_propagation"
+  device:
+    device: "auto"
+    dtype: "float32"
+  params: {}
+
+evaluation:
+  report_splits: ["val", "test"]
+  metrics: ["accuracy", "macro_f1"]

@@ -1,0 +1,71 @@
+run:
+  name: "toy_label_propagation_knn"
+  seed: 7
+  output_dir: "runs"
+  fail_fast: true
+
+dataset:
+  id: "toy"
+
+sampling:
+  seed: 7
+  plan:
+    split:
+      kind: "holdout"
+      test_fraction: 0.0
+      val_fraction: 0.2
+      stratify: true
+      shuffle: true
+    labeling:
+      mode: "fraction"
+      value: 0.1
+      strategy: "balanced"
+      min_per_class: 1
+    imbalance:
+      kind: "none"
+    policy:
+      respect_official_test: true
+      allow_override_official: false
+
+preprocess:
+  seed: 7
+  fit_on: "train_labeled"
+  cache: true
+  plan:
+    output_key: "features.X"
+    steps:
+      - id: "core.ensure_2d"
+      - id: "core.to_numpy"
+
+graph:
+  enabled: true
+  seed: 7
+  cache: true
+  spec:
+    scheme: "knn"
+    metric: "euclidean"
+    k: 8
+    symmetrize: "mutual"
+    weights:
+      kind: "heat"
+      sigma: 1.0
+    normalize: "rw"
+    self_loops: true
+    backend: "numpy"
+    chunk_size: 128
+    feature_field: "features.X"
+
+method:
+  kind: "transductive"
+  id: "label_propagation"
+  device:
+    device: "auto"
+    dtype: "float32"
+  params:
+    max_iter: 50
+    tol: 1.0e-4
+    normalize_rows: true
+
+evaluation:
+  report_splits: ["val", "test"]
+  metrics: ["accuracy", "macro_f1"]

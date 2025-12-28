@@ -1,0 +1,88 @@
+from __future__ import annotations
+
+from modssc.data_loader.types import DatasetSpec
+
+TEXT_CATALOG: dict[str, DatasetSpec] = {
+    "ag_news": DatasetSpec(
+        key="ag_news",
+        provider="hf",
+        uri="hf:ag_news",
+        modality="text",
+        task="classification",
+        description="AG News (Hugging Face datasets).",
+        required_extra="hf",
+        source_kwargs={"text_column": "text", "label_column": "label", "prefer_test_split": True},
+    ),
+    "imdb": DatasetSpec(
+        key="imdb",
+        provider="hf",
+        uri="hf:imdb",
+        modality="text",
+        task="classification",
+        description="IMDB (Hugging Face datasets).",
+        required_extra="hf",
+        source_kwargs={"text_column": "text", "label_column": "label", "prefer_test_split": True},
+    ),
+    "amazon_polarity": DatasetSpec(
+        key="amazon_polarity",
+        provider="hf",
+        uri="hf:amazon_polarity",
+        modality="text",
+        task="classification",
+        description="Amazon-2 sentiment (Hugging Face datasets).",
+        required_extra="hf",
+        source_kwargs={
+            "text_column": "content",
+            "label_column": "label",
+            "prefer_test_split": True,
+        },
+    ),
+    "amazon_reviews_multi_en": DatasetSpec(
+        key="amazon_reviews_multi_en",
+        provider="hf",
+        uri="hf:amazon_reviews_multi/en",
+        modality="text",
+        task="classification",
+        description="Amazon-5 reviews (amazon_reviews_multi/en). Labels are 1-5.",
+        required_extra="hf",
+        source_kwargs={
+            "text_column": "review_body",
+            "label_column": "stars",
+            "prefer_test_split": True,
+        },
+    ),
+    "dbpedia_14": DatasetSpec(
+        key="dbpedia_14",
+        provider="hf",
+        uri="hf:dbpedia_14",
+        modality="text",
+        task="classification",
+        description="DBpedia-14 (Hugging Face datasets).",
+        required_extra="hf",
+        source_kwargs={
+            "text_column": "content",
+            "label_column": "label",
+            "prefer_test_split": True,
+        },
+    ),
+    "yelp_polarity": DatasetSpec(
+        key="yelp_polarity",
+        provider="hf",
+        uri="hf:yelp_polarity",
+        modality="text",
+        task="classification",
+        description="Yelp-2 sentiment (Hugging Face datasets).",
+        required_extra="hf",
+        source_kwargs={"text_column": "text", "label_column": "label", "prefer_test_split": True},
+    ),
+    "yelp_review_full": DatasetSpec(
+        key="yelp_review_full",
+        provider="hf",
+        uri="hf:yelp_review_full",
+        modality="text",
+        task="classification",
+        description="Yelp-5 reviews (Hugging Face datasets).",
+        required_extra="hf",
+        source_kwargs={"text_column": "text", "label_column": "label", "prefer_test_split": True},
+    ),
+}

@@ -1,0 +1,79 @@
+name: Bug report
+description: Report a reproducible bug.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please provide a minimal reproduction.
+
+  - type: checkboxes
+    attributes:
+      label: Preflight
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: I can reproduce this with the latest main branch.
+          required: false
+
+  - type: textarea
+    attributes:
+      label: Description
+      description: What is wrong, and why it matters.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      description: Provide exact steps (commands, config files, minimal code).
+      placeholder: |
+        1. pip install -e ".[dev]"
+        2. modssc-datasets list
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Actual behavior / logs
+      description: Paste relevant logs or traceback (redact secrets).
+      render: text
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: ModSSC version
+      placeholder: 0.0.1.dev0 (or commit hash)
+    validations:
+      required: false
+
+  - type: dropdown
+    attributes:
+      label: Backend
+      options:
+        - "sklearn"
+        - "torch"
+        - "tensorflow"
+        - "graph (pyg)"
+        - "other / not sure"
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: Environment
+      description: Python version, OS, CPU/GPU, install extras, etc.
+      placeholder: |
+        python: 3.12
+        os: macOS 14
+        extras: [torch, vision]
+    validations:
+      required: false

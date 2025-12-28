@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use ModSSC in your research, please cite it."
+title: "ModSSC: A Modular Framework for Semi-Supervised Classification on Heterogeneous Data"
+authors:
+  - family-names: "Barbaux"
+    given-names: "Melvin"
+license: "MIT"
+repository-code: "https://github.com/ModSSC/ModSSC"
+url: "https://hal.science/hal-05415109"
+keywords:
+  - semi-supervised learning
+  - classification
+  - reproducibility
+  - transductive learning
+  - inductive learning
+preferred-citation:
+  type: unpublished
+  title: "ModSSC: A Modular Framework for Semi-Supervised Classification on Heterogeneous Data"
+  authors:
+    - family-names: "Barbaux"
+      given-names: "Melvin"
+  year: 2025
+  month: 12
+  url: "https://hal.science/hal-05415109"
+  notes: "Preprint describing the open source ModSSC framework for inductive and transductive semi-supervised classification on heterogeneous data."
+  identifiers:
+    - type: other
+      value: "hal-05415109"
+      description: "HAL ID"

@@ -1,0 +1,1 @@
+"""Small graph construction operations."""
