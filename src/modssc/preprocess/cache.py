@@ -35,8 +35,27 @@ def default_cache_dir() -> Path:
     return Path(user_cache_dir("modssc")) / "preprocess"
 
 
+_WINDOWS_INVALID_CHARS = set('<>:"/\\|?*')
+
+
+def _safe_path_component(value: str) -> str:
+    if os.name != "nt":
+        return value
+    cleaned = []
+    for ch in value:
+        if ord(ch) < 32 or ch in _WINDOWS_INVALID_CHARS:
+            cleaned.append("_")
+        else:
+            cleaned.append(ch)
+    safe = "".join(cleaned).replace("..", ".").rstrip(" .")
+    if safe in {"", ".", ".."}:
+        return "_"
+    return safe
+
+
 def _safe_name(key: str) -> str:
-    return key.replace("/", "_").replace("..", ".").replace(".", "__")
+    name = key.replace("/", "_").replace("..", ".").replace(".", "__")
+    return _safe_path_component(name)
 
 
 def _require_torch():
@@ -205,13 +224,13 @@ class CacheManager:
         return cls(root=root, dataset_fingerprint=dataset_fingerprint)
 
     def dataset_dir(self) -> Path:
-        return self.root / self.dataset_fingerprint
+        return self.root / _safe_path_component(self.dataset_fingerprint)
 
     def step_dir(self, step_fingerprint: str) -> Path:
-        return self.dataset_dir() / "steps" / step_fingerprint
+        return self.dataset_dir() / "steps" / _safe_path_component(step_fingerprint)
 
     def split_dir(self, step_fingerprint: str, split: str) -> Path:
-        return self.step_dir(step_fingerprint) / split
+        return self.step_dir(step_fingerprint) / _safe_path_component(split)
 
     def has_step_outputs(self, step_fingerprint: str, *, split: str) -> bool:
         return (self.step_dir(step_fingerprint) / "manifest.json").exists() and self.split_dir(
