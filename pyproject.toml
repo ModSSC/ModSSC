@@ -135,7 +135,7 @@ transductive-advanced = [
 ]
 
 graph-faiss = [
-  "faiss-cpu",
+  "faiss-cpu; platform_system != 'Darwin'",
 ]
 
 datasets = [
@@ -218,6 +218,7 @@ full = [
   "torchaudio",
   "torchcodec",
   "torch-geometric",
+  "faiss-cpu; platform_system != 'Darwin'",
   "sentence-transformers",
   "transformers",
   "Pillow",

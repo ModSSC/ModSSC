@@ -1,8 +1,10 @@
 # ModSSC
 
-[![Ruff](https://github.com/ModSSC/ModSSC/actions/workflows/ruff.yml/badge.svg)](https://github.com/ModSSC/ModSSC/actions/workflows/ruff.yml)
-[![Tests](https://github.com/ModSSC/ModSSC/actions/workflows/tests.yml/badge.svg)](https://github.com/ModSSC/ModSSC/actions/workflows/tests.yml)
-[![codecov](https://codecov.io/gh/ModSSC/ModSSC/graph/badge.svg?token=5S1R9H5L8G)](https://codecov.io/gh/ModSSC/ModSSC)
+[![Ruff](https://img.shields.io/github/actions/workflow/status/ModSSC/ModSSC/ruff.yml?branch=main&style=for-the-badge&label=ruff&color=0B3D91&labelColor=0B2D5E)](https://github.com/ModSSC/ModSSC/actions/workflows/ruff.yml)
+[![Tests](https://img.shields.io/github/actions/workflow/status/ModSSC/ModSSC/tests.yml?branch=main&style=for-the-badge&label=tests&color=0B3D91&labelColor=0B2D5E)](https://github.com/ModSSC/ModSSC/actions/workflows/tests.yml)
+[![codecov](https://img.shields.io/codecov/c/github/ModSSC/ModSSC?token=5S1R9H5L8G&style=for-the-badge&label=coverage&color=0B3D91&labelColor=0B2D5E)](https://codecov.io/gh/ModSSC/ModSSC)
+[![Downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fmichaelthomasletts.github.io%2Fpepy-stats%2Fmodssc.json&style=for-the-badge&logo=python&labelColor=0B2D5E&color=0B3D91)](https://pepy.tech/project/modssc)
+[![Stars](https://img.shields.io/github/stars/ModSSC/ModSSC?style=for-the-badge&label=stars&color=0B3D91&labelColor=0B2D5E)](https://github.com/ModSSC/ModSSC/stargazers)
 
 ModSSC is a modular framework for semi-supervised classification across heterogeneous
 modalities (text, vision, tabular, graph). It is designed for academic research: clear
