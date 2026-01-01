@@ -11,5 +11,21 @@ repos:
     rev: v0.14.9
     hooks:
       - id: ruff
-        args: ["--fix"]
+        args: ["."]
+        pass_filenames: false
+        always_run: true
       - id: ruff-format
+        args: ["--check", "."]
+        pass_filenames: false
+        always_run: true
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: >-
+          bash -c 'if [ ! -x ./.venv/bin/python ]; then echo "Missing ./.venv/bin/python. Run: python3 -m venv .venv && ./.venv/bin/pip install -e \".[dev,full]\""; exit 1; fi; exec ./.venv/bin/python -m pytest'
+        language: system
+        args: ["-n", "4", "--dist", "loadgroup", "--cov-report=xml:coverage.xml"]
+        pass_filenames: false
+        always_run: true
