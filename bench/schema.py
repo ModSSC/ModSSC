@@ -124,6 +124,7 @@ class GraphConfig:
     seed: int | None
     cache: bool
     spec: dict[str, Any]
+    cache_dir: str | None = None
 
 
 @dataclass(frozen=True)
@@ -271,11 +272,12 @@ class ExperimentConfig:
         graph_cfg = None
         if "graph" in data:
             graph = _as_mapping(data.get("graph", {}), name="graph")
-            _check_unknown(graph, {"enabled", "seed", "cache", "spec"}, name="graph")
+            _check_unknown(graph, {"enabled", "seed", "cache", "cache_dir", "spec"}, name="graph")
             graph_cfg = GraphConfig(
                 enabled=_optional_bool(graph, "enabled", default=False),
                 seed=_optional_int(graph, "seed"),
                 cache=_optional_bool(graph, "cache", default=True),
+                cache_dir=_optional_str(graph, "cache_dir"),
                 spec=_optional_mapping(graph, "spec"),
             )
 

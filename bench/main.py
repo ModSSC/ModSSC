@@ -430,6 +430,7 @@ def run_experiment(config_path: Path) -> int:
                 seed=graph_seed,
                 dataset_fingerprint=ds_fp,
                 cache=cfg.graph.cache,
+                cache_dir=cfg.graph.cache_dir,
                 include_test=use_test,
             )
             artifacts["graph"] = {

@@ -74,6 +74,7 @@ graph:
   enabled: true
   seed: 4
   cache: true
+  cache_dir: cache/graphs
   spec:
     scheme: knn
     metric: cosine
