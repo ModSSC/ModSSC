@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import logging
+from collections.abc import Mapping, Sequence
+from functools import lru_cache
 from pathlib import Path
 from time import perf_counter
 from typing import Any
@@ -9,6 +11,7 @@ from typing import Any
 import numpy as np
 
 from modssc.data_loader.types import LoadedDataset, Split
+from modssc.device import resolve_device_name
 from modssc.preprocess.cache import CacheManager
 from modssc.preprocess.errors import PreprocessCacheError, PreprocessValidationError
 from modssc.preprocess.fingerprint import derive_seed, fingerprint
@@ -25,6 +28,10 @@ _IMPLICIT_CONSUMES: dict[str, tuple[str, ...]] = {
 }
 
 
+_MAX_ESTIMATE_ITEMS = 1024
+_MAX_ESTIMATE_DEPTH = 2
+
+
 def _shape_of(value: Any) -> tuple[int, ...] | None:
     shape = getattr(value, "shape", None)
     if shape is None:
@@ -33,6 +40,233 @@ def _shape_of(value: Any) -> tuple[int, ...] | None:
         return tuple(int(s) for s in shape)
     except Exception:
         return None
+
+
+@lru_cache(maxsize=1)
+def _get_torch() -> Any | None:
+    try:
+        import importlib
+
+        return importlib.import_module("torch")
+    except Exception:
+        return None
+
+
+def _estimate_collection_bytes(
+    values: Any, *, max_items: int, depth: int, total_len: int | None
+) -> tuple[int, int, bool]:
+    size = 0
+    unknown = 0
+    approx = False
+    count = 0
+    for item in values:
+        item_size, item_unknown, item_approx = _estimate_bytes(
+            item, max_items=max_items, depth=depth
+        )
+        size += item_size
+        unknown += item_unknown
+        approx = approx or item_approx
+        count += 1
+        if count >= max_items:
+            break
+    if total_len is not None and total_len > count:
+        approx = True
+        if unknown == 0 and count > 0:
+            size = int(size * (total_len / count))
+        else:
+            unknown += total_len - count
+    elif total_len is None and count >= max_items:
+        approx = True
+    return size, unknown, approx
+
+
+def _estimate_bytes(
+    value: Any, *, max_items: int = _MAX_ESTIMATE_ITEMS, depth: int = 0
+) -> tuple[int, int, bool]:
+    if value is None:
+        return 0, 0, False
+
+    nbytes = getattr(value, "nbytes", None)
+    if nbytes is not None:
+        try:
+            return int(nbytes), 0, False
+        except Exception:
+            pass
+
+    if isinstance(value, (bytes, bytearray, memoryview)):
+        return int(len(value)), 0, False
+    if isinstance(value, str):
+        return len(value.encode("utf-8")), 0, False
+
+    torch = _get_torch()
+    if torch is not None and isinstance(value, torch.Tensor):
+        return int(value.element_size() * value.nelement()), 0, False
+
+    data = getattr(value, "data", None)
+    indices = getattr(value, "indices", None)
+    indptr = getattr(value, "indptr", None)
+    if data is not None and indices is not None and indptr is not None:
+        try:
+            return int(data.nbytes + indices.nbytes + indptr.nbytes), 0, False
+        except Exception:
+            pass
+
+    if depth >= _MAX_ESTIMATE_DEPTH:
+        return 0, 1, False
+
+    if isinstance(value, Mapping):
+        return _estimate_collection_bytes(
+            value.values(), max_items=max_items, depth=depth + 1, total_len=len(value)
+        )
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        return _estimate_collection_bytes(
+            value, max_items=max_items, depth=depth + 1, total_len=len(value)
+        )
+
+    return 0, 1, False
+
+
+def _format_bytes(size: int) -> str:
+    size_f = float(size)
+    for unit in ("B", "KB", "MB", "GB", "TB"):
+        if size_f < 1024.0 or unit == "TB":
+            if unit == "B":
+                return f"{int(size_f)} B"
+            return f"{size_f:.1f} {unit}"
+        size_f /= 1024.0
+    return f"{size_f:.1f} PB"
+
+
+def _format_size_estimate(size: int, unknown: int, approx: bool) -> str:
+    if size == 0 and unknown > 0:
+        return "unknown"
+    label = _format_bytes(size)
+    extras: list[str] = []
+    if approx:
+        extras.append("approx")
+    if unknown:
+        extras.append(f"unknown={unknown}")
+    if extras:
+        return f"{label} ({', '.join(extras)})"
+    return label
+
+
+def _split_data_size(
+    store: ArtifactStore | None, *, output_key: str | None = None
+) -> tuple[int, int, bool]:
+    if store is None:
+        return 0, 0, False
+    keys: list[str] = []
+    x_key = None
+    if output_key and store.has(output_key):
+        x_key = output_key
+    else:
+        x_key = "features.X" if store.has("features.X") else "raw.X"
+    y_key = "labels.y" if store.has("labels.y") else "raw.y"
+    if store.has(x_key):
+        keys.append(x_key)
+    if store.has(y_key) and y_key not in keys:
+        keys.append(y_key)
+    if store.has("graph.edge_index") and "graph.edge_index" not in keys:
+        keys.append("graph.edge_index")
+    if store.has("graph.edge_weight") and "graph.edge_weight" not in keys:
+        keys.append("graph.edge_weight")
+    for key in store.data:
+        if key.startswith("graph.mask."):
+            keys.append(key)
+    total = 0
+    unknown = 0
+    approx = False
+    for key in keys:
+        size, key_unknown, key_approx = _estimate_bytes(store.get(key))
+        total += size
+        unknown += key_unknown
+        approx = approx or key_approx
+    return total, unknown, approx
+
+
+def _format_split_size(store: ArtifactStore | None, *, output_key: str | None = None) -> str:
+    if store is None:
+        return "n/a"
+    size, unknown, approx = _split_data_size(store, output_key=output_key)
+    return _format_size_estimate(size, unknown, approx)
+
+
+def _device_from_outputs(torch: Any, outputs: dict[str, Any] | None) -> str | None:
+    if torch is None or outputs is None:
+        return None
+    for value in outputs.values():
+        if isinstance(value, torch.Tensor):
+            return str(value.device)
+    return None
+
+
+def _device_hint(step_params: dict[str, Any], step_obj: Any) -> str | None:
+    if isinstance(step_params, dict):
+        device = step_params.get("device")
+        if device is not None:
+            return str(device)
+    device = getattr(step_obj, "device", None)
+    if device is not None:
+        return str(device)
+    return None
+
+
+def _normalize_device_name(device: str | None, torch: Any | None) -> str | None:
+    if device is None:
+        return None
+    if device == "auto":
+        return resolve_device_name(device, torch=torch)
+    return device
+
+
+def _gpu_model_for_device(torch: Any, device: str) -> str | None:
+    try:
+        torch_device = torch.device(device)
+    except Exception:
+        torch_device = None
+    if torch_device is not None and torch_device.type == "cuda":
+        if not torch.cuda.is_available():
+            return None
+        index = torch_device.index
+        if index is None:
+            index = torch.cuda.current_device()
+        try:
+            return str(torch.cuda.get_device_name(index))
+        except Exception:
+            return None
+    if torch_device is not None and torch_device.type == "mps":
+        return "Apple MPS"
+    if device.startswith("mps"):
+        return "Apple MPS"
+    return None
+
+
+def _maybe_log_gpu_info(
+    step_params: dict[str, Any],
+    step_obj: Any,
+    *,
+    produced_train: dict[str, Any] | None,
+    produced_test: dict[str, Any] | None,
+    use_device_hint: bool,
+) -> bool:
+    torch = _get_torch()
+    if torch is None:
+        return False
+    device = _device_from_outputs(torch, produced_train) or _device_from_outputs(
+        torch, produced_test
+    )
+    if device is None and use_device_hint:
+        device = _device_hint(step_params, step_obj)
+    device = _normalize_device_name(device, torch)
+    if device is None or not (device.startswith("cuda") or device.startswith("mps")):
+        return False
+    model = _gpu_model_for_device(torch, device)
+    if model:
+        logger.info("Preprocess GPU device: device=%s model=%s", device, model)
+    else:
+        logger.info("Preprocess GPU device: device=%s", device)
+    return True
 
 
 def _maybe_warn_nonfinite(name: str, value: Any, *, max_elems: int = 1_000_000) -> None:
@@ -267,10 +501,16 @@ def preprocess(
         _shape_of(dataset.test.X) if dataset.test is not None else None,
         _shape_of(dataset.test.y) if dataset.test is not None else None,
     )
+    logger.info(
+        "Preprocess input size: train_data=%s test_data=%s",
+        _format_split_size(train_store, output_key=plan.output_key),
+        _format_split_size(test_store, output_key=plan.output_key),
+    )
 
     prov_train = {k: f"{dataset_fp}:{k}" for k in train_store}
     prov_test = {k: f"{dataset_fp}:{k}" for k in (test_store if test_store else [])}
 
+    gpu_logged = False
     for _step_num, step in enumerate(resolved.steps):
         step_id = step.step_id
         spec = step.spec
@@ -321,6 +561,7 @@ def preprocess(
 
         # Load from cache if available, otherwise compute and save.
         produced_train: dict[str, Any] | None = None
+        train_from_cache = False
         if cm is not None and cm.has_step_outputs(step_fp, split="train"):
             try:
                 produced_train = cm.load_step_outputs(step_fingerprint=step_fp, split="train")
@@ -328,6 +569,7 @@ def preprocess(
                     raise PreprocessCacheError(
                         f"Incomplete cached outputs for step {step_id!r} (train)"
                     )
+                train_from_cache = True
             except PreprocessCacheError as e:
                 logger.warning("Preprocess cache miss for %s (train): %s", step_id, e)
                 produced_train = None
@@ -366,8 +608,9 @@ def preprocess(
             perf_counter() - step_start,
         )
 
+        produced_test: dict[str, Any] | None = None
+        test_from_cache = False
         if test_store is not None:
-            produced_test: dict[str, Any] | None = None
             if cm is not None and cm.has_step_outputs(step_fp, split="test"):
                 try:
                     produced_test = cm.load_step_outputs(step_fingerprint=step_fp, split="test")
@@ -375,6 +618,7 @@ def preprocess(
                         raise PreprocessCacheError(
                             f"Incomplete cached outputs for step {step_id!r} (test)"
                         )
+                    test_from_cache = True
                 except PreprocessCacheError as e:
                     logger.warning("Preprocess cache miss for %s (test): %s", step_id, e)
                     produced_test = None
@@ -417,6 +661,28 @@ def preprocess(
             _purge_store(train_store, keep=keep)
             if test_store is not None:
                 _purge_store(test_store, keep=keep)
+
+        if not gpu_logged:
+            computed = not train_from_cache
+            if test_store is not None:
+                computed = computed or not test_from_cache
+            gpu_logged = _maybe_log_gpu_info(
+                step.params,
+                step_obj,
+                produced_train=produced_train,
+                produced_test=produced_test,
+                use_device_hint=computed,
+            )
+
+        step_duration = perf_counter() - step_start
+        logger.info(
+            "Preprocess step done: id=%s index=%s duration_s=%.3f train_data=%s test_data=%s",
+            step_id,
+            step.index,
+            step_duration,
+            _format_split_size(train_store, output_key=plan.output_key),
+            _format_split_size(test_store, output_key=plan.output_key),
+        )
 
     # Choose final X for downstream training.
     out_key = plan.output_key

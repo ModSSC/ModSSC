@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Mapping
+from pathlib import Path
 from time import perf_counter
 from typing import Any
 
@@ -52,11 +53,13 @@ def build(
     seed: int,
     dataset_fingerprint: str | None,
     cache: bool,
+    cache_dir: str | None,
     include_test: bool,
 ) -> GraphArtifact:
     start = perf_counter()
     spec = _spec_from_dict(spec_dict)
     key = spec.feature_field
+    cache_root = Path(cache_dir).expanduser().resolve() if cache_dir else None
 
     X_train = _feature_from_artifacts(pre, key, split="train")
     X_test = _feature_from_artifacts(pre, key, split="test") if include_test else None
@@ -76,6 +79,8 @@ def build(
         spec.feature_field,
         int(seed),
     )
+    if cache_root is not None:
+        _LOGGER.debug("Graph cache_dir: %s", str(cache_root))
 
     if X_test is not None:
         X = np.concatenate([_to_numpy(X_train), _to_numpy(X_test)], axis=0)
@@ -90,6 +95,7 @@ def build(
         dataset_fingerprint=dataset_fingerprint,
         preprocess_fingerprint=pre.preprocess_fingerprint,
         cache=bool(cache),
+        cache_dir=cache_root,
     )
     _LOGGER.info(
         "Graph built: fingerprint=%s n_nodes=%s n_edges=%s duration_s=%.3f",
