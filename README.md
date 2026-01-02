@@ -2,10 +2,10 @@
 
 [![Stars](https://img.shields.io/github/stars/ModSSC/ModSSC?style=for-the-badge&label=stars&color=0B3D91&labelColor=0B2D5E)](https://github.com/ModSSC/ModSSC/stargazers)
 [![Downloads](https://img.shields.io/pepy/dt/modssc?style=for-the-badge&label=downloads&logo=python&labelColor=0B2D5E&color=0B3D91)](https://pepy.tech/projects/modssc)
+[![PyPI](https://img.shields.io/pypi/v/modssc?style=for-the-badge&label=pypi&color=0B3D91&labelColor=0B2D5E)](https://pypi.org/project/modssc/)
 [![codecov](https://img.shields.io/codecov/c/github/ModSSC/ModSSC?token=5S1R9H5L8G&style=for-the-badge&label=coverage&color=0B3D91&labelColor=0B2D5E)](https://codecov.io/gh/ModSSC/ModSSC)
 [![CI](https://img.shields.io/github/actions/workflow/status/ModSSC/ModSSC/ci.yml?branch=main&style=for-the-badge&label=ci&color=0B3D91&labelColor=0B2D5E)](https://github.com/ModSSC/ModSSC/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/github/actions/workflow/status/ModSSC/ModSSC/docs.yml?branch=main&style=for-the-badge&label=docs&color=0B3D91&labelColor=0B2D5E)](https://github.com/ModSSC/ModSSC/actions/workflows/docs.yml)
-[![License](https://img.shields.io/github/license/ModSSC/ModSSC?style=for-the-badge&label=license&color=0B3D91&labelColor=0B2D5E)](https://github.com/ModSSC/ModSSC/blob/main/LICENSE)
 
 
 ModSSC is a modular framework for semi-supervised classification across heterogeneous
