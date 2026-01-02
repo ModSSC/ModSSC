@@ -7,8 +7,8 @@ repo_name: ModSSC
 theme:
   name: material
   language: en
-  logo: assets/logo.png
-  favicon: assets/logo.png
+  logo: assets/logo.jpeg
+  favicon: assets/logo.jpeg
   palette:
     - scheme: default
       primary: blue grey
@@ -44,60 +44,45 @@ extra_javascript:
 
 nav:
   - Home: index.md
-  - Getting Started: getting-started.md
-  - User Guide:
-      - Index: user-guide/index.md
-      - Overview: user-guide/overview.md
-      - Data Loader: user-guide/data-loader.md
-      - Sampling: user-guide/sampling.md
-      - Preprocess: user-guide/preprocess.md
-      - Graph: user-guide/graph.md
-      - Data Augmentation: user-guide/data-augmentation.md
-      - Views: user-guide/views.md
-      - Supervised: user-guide/supervised.md
-      - Evaluation: user-guide/evaluation.md
-      - HPO: user-guide/hpo.md
-      - Transductive: user-guide/transductive.md
-      - Inductive: user-guide/inductive.md
-      - Datasets and Catalog: user-guide/datasets-and-catalog.md
-      - Caching and Reproducibility: user-guide/caching-and-reproducibility.md
-  - CLI:
-      - Overview: cli/index.md
-      - Datasets: cli/datasets.md
-      - Sampling: cli/sampling.md
-      - Preprocess: cli/preprocess.md
-      - Evaluation: cli/evaluation.md
-      - Graph: cli/graph.md
-      - Inductive: cli/inductive.md
-      - Supervised: cli/supervised.md
-      - Transductive: cli/transductive.md
-      - Augmentation: cli/augmentation.md
-  - API Reference:
-      - Overview: reference/index.md
-      - data_loader: reference/data_loader.md
-      - sampling: reference/sampling.md
-      - preprocess: reference/preprocess.md
-      - graph: reference/graph.md
-      - data_augmentation: reference/data_augmentation.md
-      - views: reference/views.md
-      - supervised: reference/supervised.md
-      - evaluation: reference/evaluation.md
-      - transductive: reference/transductive.md
-  - Examples:
-      - Overview: examples/index.md
-      - Notebooks: examples/notebooks.md
-      - Scripts: examples/scripts.md
-  - Bench:
-      - HPO: bench/hpo.md
-  - Glossary: glossary.md
-  - FAQ: faq.md
+  - Getting started:
+      - Installation: getting-started/installation.md
+      - Quickstart: getting-started/quickstart.md
+      - Concepts: getting-started/concepts.md
+  - Tutorials:
+      - Inductive tutorial: tutorials/inductive-toy.md
+      - Transductive tutorial: tutorials/transductive-toy.md
+  - How-to guides:
+      - Manage datasets: how-to/datasets.md
+      - Create sampling splits: how-to/sampling.md
+      - Run preprocessing plans: how-to/preprocess.md
+      - Use data augmentation: how-to/augmentation.md
+      - Build graphs and views: how-to/graph.md
+      - Generate multi-view features: how-to/views.md
+      - Compute evaluation metrics: how-to/evaluation.md
+      - Run hyperparameter search: how-to/hpo.md
+  - Reference:
+      - CLI reference: reference/cli.md
+      - Catalogs and registries: reference/catalogs.md
+      - Configuration reference: reference/configuration.md
+      - Benchmarks: reference/benchmarks.md
+      - API reference:
+          - Overview: reference/api/index.md
+          - Data loader: reference/api/data-loader.md
+          - Data augmentation: reference/api/data-augmentation.md
+          - Sampling: reference/api/sampling.md
+          - Preprocess: reference/api/preprocess.md
+          - Views: reference/api/views.md
+          - Graph: reference/api/graph.md
+          - Evaluation: reference/api/evaluation.md
+          - Inductive: reference/api/inductive.md
+          - Transductive: reference/api/transductive.md
+          - Supervised: reference/api/supervised.md
+          - HPO: reference/api/hpo.md
+          - Logging: reference/api/logging.md
+          - Device: reference/api/device.md
   - Development:
-      - Overview: development/index.md
-      - Contributing: development/contributing.md
-      - Testing: development/testing.md
-      - Style: development/style.md
-      - Release: development/release.md
-  - Release Notes: release-notes.md
+      - Contributing and development: development/contributing.md
+      - Release process: development/release-process.md
 
 plugins:
   - search
