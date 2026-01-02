@@ -4,6 +4,15 @@ on:
   push:
     branches: ["main"]
     tags: ["v*"]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/docs.yml"
+  pull_request:
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/docs.yml"
   workflow_dispatch:
 
 permissions:
@@ -21,6 +30,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -32,16 +44,24 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[docs]"
 
+      - name: Build site (strict)
+        if: github.event_name == 'pull_request'
+        run: |
+          mkdocs build --strict --site-dir site
+
       - name: Build site
+        if: github.event_name != 'pull_request'
         run: |
           mkdocs build --site-dir site
 
       - name: Upload Pages artifact
+        if: github.event_name == 'push'
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
   deploy:
+    if: github.event_name == 'push'
     needs: build
     runs-on: ubuntu-latest
     environment:
