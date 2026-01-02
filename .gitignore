@@ -39,6 +39,5 @@ outputs/
 runs/
 artifacts/
 cache/
-docs/
 log/
 coverage.xml
