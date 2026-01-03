@@ -62,6 +62,11 @@ def test_resolve_device_auto_paths(monkeypatch):
     assert torch_backend.resolve_device(DeviceSpec(device="auto")).type == "cpu"
 
 
+def test_resolve_device_unknown():
+    with pytest.raises(ValueError, match="Unknown device"):
+        torch_backend.resolve_device(DeviceSpec(device="quantum"))
+
+
 def test_dtype_from_spec_and_to_tensor():
     assert torch_backend.dtype_from_spec(DeviceSpec(dtype="float32")) == torch.float32
     assert torch_backend.dtype_from_spec(DeviceSpec(dtype="float64")) == torch.float64

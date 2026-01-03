@@ -270,12 +270,5 @@ source = ["modssc"]
 show_missing = true
 skip_empty = true
 omit = [
-  "*/modssc/inductive/*",
-  "*/modssc/inductive/*/*",
-  "*/modssc/supervised/backends/torch/*",
-  "*/modssc/transductive/methods/gnn/*",
-  "*/modssc/transductive/methods/advanced/*",
-  "*/modssc/transductive/methods/classic/label_propagation.py",
-  "*/modssc/transductive/methods/classic/label_spreading.py",
-  "*/modssc/transductive/methods/pde/poisson_learning.py",
+  "src/modssc/preprocess/cache.py",
 ]

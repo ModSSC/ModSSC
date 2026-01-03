@@ -244,6 +244,10 @@ def test_format_bytes_kb() -> None:
     assert _format_bytes(1024) == "1.0 KB"
 
 
+def test_format_bytes_pb() -> None:
+    assert _format_bytes(1024**5) == "1.0 PB"
+
+
 def test_format_size_estimate_unknown() -> None:
     assert _format_size_estimate(0, unknown=1, approx=False) == "unknown"
 
@@ -309,6 +313,11 @@ def test_gpu_model_for_device_cuda_current_device_name() -> None:
 def test_gpu_model_for_device_cuda_name_failure() -> None:
     torch = DummyTorchDevice(device_type="cuda", index=0, cuda=DummyCuda(raise_name=True))
     assert _gpu_model_for_device(torch, "cuda:0") is None
+
+
+def test_gpu_model_for_device_cpu() -> None:
+    torch = DummyTorchDevice(device_type="cpu")
+    assert _gpu_model_for_device(torch, "cpu") is None
 
 
 def test_gpu_model_for_device_mps_device() -> None:
