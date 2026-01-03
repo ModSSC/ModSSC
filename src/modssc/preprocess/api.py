@@ -129,7 +129,7 @@ def _estimate_bytes(
 def _format_bytes(size: int) -> str:
     size_f = float(size)
     for unit in ("B", "KB", "MB", "GB", "TB"):
-        if size_f < 1024.0 or unit == "TB":
+        if size_f < 1024.0:
             if unit == "B":
                 return f"{int(size_f)} B"
             return f"{size_f:.1f} {unit}"

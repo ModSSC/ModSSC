@@ -122,6 +122,12 @@ def test_prepare_data_edge_weight_length_mismatch() -> None:
         common.prepare_data(data)
 
 
+def test_prepare_data_accepts_device_instance() -> None:
+    data = _make_dataset()
+    prep = common.prepare_data(data, device=torch.device("cpu"))
+    assert prep.device.type == "cpu"
+
+
 def test_accuracy_from_logits_edge_cases() -> None:
     logits = torch.zeros((3, 2))
     y = torch.tensor([0, 1, 0])

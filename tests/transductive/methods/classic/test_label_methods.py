@@ -744,6 +744,43 @@ def test_label_spreading_auto_fallback_no_torch():
         assert isinstance(res.F, np.ndarray)
 
 
+def test_label_spreading_no_labeled_nodes_numpy():
+    n = 3
+    edge_index = np.array([[0, 1], [1, 2]])
+    edge_weight = np.array([1.0, 1.0])
+    y = np.array([-1, -1, -1])
+    labeled_mask = np.array([False, False, False])
+
+    res = label_spreading_numpy(
+        n_nodes=n,
+        edge_index=edge_index,
+        edge_weight=edge_weight,
+        y=y,
+        labeled_mask=labeled_mask,
+        spec=LabelSpreadingSpec(max_iter=2),
+    )
+    assert np.allclose(res.F, 0.0)
+
+
+@pytest.mark.skipif(torch is None, reason="torch not installed")
+def test_label_spreading_no_labeled_nodes_torch():
+    n = 3
+    edge_index = torch.tensor([[0, 1], [1, 2]], dtype=torch.long)
+    edge_weight = torch.tensor([1.0, 1.0], dtype=torch.float32)
+    y = torch.tensor([-1, -1, -1], dtype=torch.long)
+    labeled_mask = torch.tensor([False, False, False], dtype=torch.bool)
+
+    F, _, _ = label_spreading_torch(
+        n_nodes=n,
+        edge_index=edge_index,
+        edge_weight=edge_weight,
+        y=y,
+        labeled_mask=labeled_mask,
+        spec=LabelSpreadingSpec(max_iter=2),
+    )
+    assert torch.allclose(F, torch.zeros_like(F))
+
+
 @pytest.mark.skipif(torch is None, reason="torch not installed")
 def test_label_propagation_torch_invalid_weight_length():
     n = 3

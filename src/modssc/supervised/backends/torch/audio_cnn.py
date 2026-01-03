@@ -148,12 +148,12 @@ class TorchAudioCNNClassifier(BaseSupervisedClassifier):
             parsed = self._input_shape or _parse_input_shape(self.input_shape)
             if parsed is not None:
                 c, length = parsed
-                if int(X.shape[1]) == int(c * length):
-                    shape = (int(c), int(length))
-                    X3 = X.reshape(int(X.shape[0]), int(c), int(length))
-                elif int(c) == 1 and int(X.shape[1]) == int(length):
+                if int(c) == 1 and int(X.shape[1]) == int(length):
                     shape = (1, int(length))
                     X3 = X.unsqueeze(1)
+                elif int(X.shape[1]) == int(c * length):
+                    shape = (int(c), int(length))
+                    X3 = X.reshape(int(X.shape[0]), int(c), int(length))
                 else:
                     raise SupervisedValidationError(
                         "input_shape does not match X feature dimension."
