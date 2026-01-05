@@ -21,6 +21,7 @@ from modssc.sampling.result import SamplingResult
 from modssc.transductive.registry import get_method_info as get_transductive_method_info
 
 from .context import RunContext
+from .limits import apply_limits
 from .orchestrators import augmentation as aug_orch
 from .orchestrators import dataset as ds_orch
 from .orchestrators import evaluation as eval_orch
@@ -278,6 +279,15 @@ def _resolve_log_level_for_run(config_path: Path, cli_log_level: str | None) -> 
 def run_experiment(config_path: Path) -> int:
     raw = load_yaml(config_path)
     cfg = ExperimentConfig.from_dict(raw)
+    raw, limit_changes, resolved_limits = apply_limits(raw, limits=cfg.limits)
+    if limit_changes:
+        profile = resolved_limits.profile if resolved_limits is not None else None
+        profile_label = profile or "custom"
+        _LOGGER.info(
+            "Applied memory limits: profile=%s changes=%s", profile_label, len(limit_changes)
+        )
+        _LOGGER.debug("Limit adjustments: %s", limit_changes)
+        cfg = ExperimentConfig.from_dict(raw)
 
     ctx = RunContext.from_run_config(
         name=cfg.run.name,
@@ -508,6 +518,10 @@ def run_experiment(config_path: Path) -> int:
                 prepared_artifacts=prepared_artifacts,
             )
             patched_raw = deep_merge(raw, best_patch)
+            patched_raw, hpo_limit_changes, _ = apply_limits(patched_raw, limits=cfg.limits)
+            if hpo_limit_changes:
+                _LOGGER.info("Applied memory limits after HPO: changes=%s", len(hpo_limit_changes))
+                _LOGGER.debug("Limit adjustments: %s", hpo_limit_changes)
             cfg = ExperimentConfig.from_dict(patched_raw)
 
         if cfg.method.kind == "inductive":

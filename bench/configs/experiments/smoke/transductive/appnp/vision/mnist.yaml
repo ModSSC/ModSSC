@@ -4,6 +4,10 @@ run:
   output_dir: runs/transductive/appnp/vision/mnist
   fail_fast: true
   log_level: detailed
+
+limits:
+  profile: auto
+
 dataset:
   id: mnist
   download: true

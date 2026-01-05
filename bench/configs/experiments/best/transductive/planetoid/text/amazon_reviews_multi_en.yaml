@@ -4,6 +4,10 @@ run:
   output_dir: runs/transductive/planetoid/text/amazon_reviews_multi_en
   log_level: detailed
   fail_fast: true
+
+limits:
+  profile: auto
+
 dataset:
   id: amazon_reviews_multi_en
   download: true

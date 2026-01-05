@@ -4,6 +4,10 @@ run:
   output_dir: runs/transductive/label_spreading/vision/cifar10
   log_level: detailed
   fail_fast: true
+
+limits:
+  profile: auto
+
 dataset:
   id: cifar10
   download: true

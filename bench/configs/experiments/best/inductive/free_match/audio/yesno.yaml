@@ -4,6 +4,10 @@ run:
   output_dir: runs/inductive/free_match/audio/yesno
   fail_fast: true
   log_level: detailed
+
+limits:
+  profile: auto
+
 dataset:
   id: yesno
   download: true

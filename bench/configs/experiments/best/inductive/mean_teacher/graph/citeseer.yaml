@@ -4,6 +4,10 @@ run:
   output_dir: runs/inductive/mean_teacher/graph/citeseer
   fail_fast: true
   log_level: detailed
+
+limits:
+  profile: auto
+
 dataset:
   id: citeseer
   download: true

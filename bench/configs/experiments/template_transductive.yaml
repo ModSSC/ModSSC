@@ -3,6 +3,9 @@ run:
   seed: 7
   output_dir: "runs"
 
+limits:
+  profile: auto
+
 dataset:
   id: "torchvision:MNIST"
 
