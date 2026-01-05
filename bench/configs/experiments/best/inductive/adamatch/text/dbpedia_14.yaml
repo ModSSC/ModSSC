@@ -4,6 +4,10 @@ run:
   output_dir: runs/inductive/adamatch/text/dbpedia_14
   log_level: detailed
   fail_fast: true
+
+limits:
+  profile: auto
+
 dataset:
   id: dbpedia_14
   download: true

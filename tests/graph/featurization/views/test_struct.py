@@ -1,12 +1,14 @@
 from unittest.mock import MagicMock, patch
 
 import numpy as np
+import pytest
 
 from modssc.graph.featurization.views.struct import (
     StructParams,
     _build_neighbors,
     _cooccurrence_counts,
     _derive_seed,
+    _iter_random_walks,
     _ppmi_matrix_dense,
     _random_walks,
     struct_embeddings,
@@ -67,6 +69,30 @@ class TestStructEmbeddings:
         walks = _random_walks(neighbors=neigh_arr, neighbor_sets=neigh_set, params=params, seed=42)
         assert len(walks) == n_nodes * 2
 
+    def test_random_walks_node2vec_zero_weights(self, monkeypatch):
+        seen_p = []
+
+        class DummyRng:
+            def choice(self, a, p=None):
+                seen_p.append(p)
+                return int(a[0])
+
+        monkeypatch.setattr(np.random, "default_rng", lambda *_args, **_kwargs: DummyRng())
+
+        params = StructParams(method="node2vec", p=1.0, q=-1.0, walk_length=3, num_walks_per_node=1)
+        neighbors = [np.array([1]), np.array([0, 2]), np.array([1])]
+        neighbor_sets = [set(), set(), set()]
+
+        walk = next(
+            _iter_random_walks(
+                neighbors=neighbors, neighbor_sets=neighbor_sets, params=params, seed=42
+            )
+        )
+
+        assert walk.shape == (3,)
+        assert seen_p
+        assert all(p is None for p in seen_p)
+
     def test_random_walks_isolated_node(self):
         edge_index = np.array([[], []], dtype=np.int64)
         n_nodes = 1
@@ -99,6 +125,14 @@ class TestStructEmbeddings:
         assert len(row_sum) > 0
         assert len(col_sum) > 0
 
+    def test_cooccurrence_counts_no_pairs(self):
+        walks = [np.array([0, 5], dtype=np.int64)]
+        counts, row_sum, col_sum, total = _cooccurrence_counts(walks, window_size=1, n_nodes=2)
+        assert counts == {}
+        assert total == 0
+        assert row_sum.shape == (2,)
+        assert col_sum.shape == (2,)
+
     def test_ppmi_matrix_dense(self):
         n_nodes = 2
         counts = {(0, 1): 10}
@@ -113,6 +147,22 @@ class TestStructEmbeddings:
         expected = np.log(10.0)
         assert np.isclose(M[0, 1], expected)
         assert M[1, 0] == 0
+
+    def test_ppmi_matrix_dense_zeros(self):
+        counts = {}
+        row_sum = np.zeros(5)
+        col_sum = np.zeros(5)
+
+        mat = _ppmi_matrix_dense(
+            counts=counts, n_nodes=5, row_sum=row_sum, col_sum=col_sum, total=0
+        )
+        assert np.all(mat == 0)
+
+    def test_ppmi_matrix_dense_no_counts(self):
+        mat = _ppmi_matrix_dense(
+            counts={}, n_nodes=3, row_sum=np.zeros(3), col_sum=np.zeros(3), total=1
+        )
+        assert np.all(mat == 0)
 
     def test_struct_embeddings_dense_integration(self):
         edge_index = np.array([[0, 1], [1, 0]])
@@ -212,6 +262,15 @@ class TestStructEmbeddings:
         walks = _random_walks(neighbors=neigh_arr, neighbor_sets=neigh_set, params=params, seed=42)
         assert len(walks) == 0
 
+    def test_iter_random_walks_requires_neighbor_sets(self):
+        params = StructParams(method="node2vec", num_walks_per_node=1, walk_length=2)
+        with pytest.raises(ValueError, match="neighbor_sets required"):
+            list(
+                _iter_random_walks(
+                    neighbors=[np.array([1])], neighbor_sets=None, params=params, seed=42
+                )
+            )
+
     def test_ppmi_out_of_bounds(self):
         M = _ppmi_matrix_dense(
             n_nodes=2,
@@ -222,18 +281,6 @@ class TestStructEmbeddings:
         )
 
         assert np.all(M == 0)
-
-    def test_node2vec_weights_sum_zero(self):
-        edge_index = np.array([[0, 1, 1, 2], [1, 0, 2, 1]])
-        n_nodes = 3
-        neigh_arr, neigh_set = _build_neighbors(edge_index, n_nodes=n_nodes)
-
-        params = StructParams(
-            method="node2vec", p=float("inf"), q=float("inf"), walk_length=3, num_walks_per_node=1
-        )
-
-        walks = _random_walks(neighbors=neigh_arr, neighbor_sets=neigh_set, params=params, seed=42)
-        assert len(walks) == 3
 
     def test_sparse_out_of_bounds(self):
         edge_index = np.array([[0, 1], [1, 0]])

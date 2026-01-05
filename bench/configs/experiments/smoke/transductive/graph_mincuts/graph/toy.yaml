@@ -5,6 +5,10 @@ run:
   fail_fast: true
 
   log_level: detailed
+
+limits:
+  profile: auto
+
 dataset:
   id: "toy"
   options:

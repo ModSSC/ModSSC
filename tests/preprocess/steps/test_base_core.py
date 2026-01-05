@@ -6,6 +6,7 @@ from modssc.preprocess.steps.base import FittableStep, TransformStep, fit_subset
 from modssc.preprocess.steps.core.copy_raw import CopyRawStep
 from modssc.preprocess.steps.core.ensure_2d import Ensure2DStep
 from modssc.preprocess.steps.core.pca import PcaStep
+from modssc.preprocess.steps.core.random_projection import RandomProjectionStep
 from modssc.preprocess.store import ArtifactStore
 
 
@@ -176,3 +177,70 @@ def test_copy_raw_step():
     rng = np.random.default_rng()
     res = step.transform(store, rng=rng)
     assert res["features.X"] is store.require("raw.X")
+
+
+def test_random_projection_fit_transform():
+    step = RandomProjectionStep(n_components=2, normalize=True)
+    store = ArtifactStore()
+
+    X = np.array(
+        [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0]], dtype=np.float32
+    )
+    store.set("features.X", X)
+
+    rng = np.random.default_rng(42)
+
+    step.fit(store, fit_indices=np.array([0, 1, 2]), rng=rng)
+
+    assert step.W_ is not None
+    assert step.W_.shape == (4, 2)
+
+    result = step.transform(store, rng=rng)
+    Z = result["features.X"]
+
+    assert Z.shape == (3, 2)
+
+    expected_Z = X @ step.W_
+    np.testing.assert_array_almost_equal(Z, expected_Z)
+
+
+def test_random_projection_no_normalize():
+    step = RandomProjectionStep(n_components=2, normalize=False)
+    store = ArtifactStore()
+    X = np.zeros((2, 4), dtype=np.float32)
+    store.set("features.X", X)
+    rng = np.random.default_rng(42)
+
+    step.fit(store, fit_indices=np.array([0, 1]), rng=rng)
+
+    assert step.W_.shape == (4, 2)
+
+
+def test_random_projection_invalid_input_dim():
+    step = RandomProjectionStep(n_components=2)
+    store = ArtifactStore()
+
+    store.set("features.X", np.array([1, 2, 3]))
+    rng = np.random.default_rng(42)
+
+    with pytest.raises(PreprocessValidationError, match="expects 2D features.X"):
+        step.fit(store, fit_indices=np.array([0]), rng=rng)
+
+
+def test_random_projection_invalid_n_components():
+    step = RandomProjectionStep(n_components=0)
+    store = ArtifactStore()
+    store.set("features.X", np.zeros((2, 2)))
+    rng = np.random.default_rng(42)
+
+    with pytest.raises(PreprocessValidationError, match="n_components must be > 0"):
+        step.fit(store, fit_indices=np.array([0]), rng=rng)
+
+
+def test_random_projection_transform_before_fit():
+    step = RandomProjectionStep(n_components=2)
+    store = ArtifactStore()
+    rng = np.random.default_rng(42)
+
+    with pytest.raises(PreprocessValidationError, match="called before fit"):
+        step.transform(store, rng=rng)

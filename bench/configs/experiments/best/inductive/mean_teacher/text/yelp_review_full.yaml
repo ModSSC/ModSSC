@@ -4,6 +4,10 @@ run:
   output_dir: runs/inductive/mean_teacher/text/yelp_review_full
   log_level: detailed
   fail_fast: true
+
+limits:
+  profile: auto
+
 dataset:
   id: yelp_review_full
   download: true
