@@ -4,6 +4,10 @@ run:
   output_dir: runs/transductive/dgi/vision/mnist
   log_level: detailed
   fail_fast: true
+
+limits:
+  profile: auto
+
 dataset:
   id: mnist
   download: true

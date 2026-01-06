@@ -4,6 +4,10 @@ run:
   output_dir: runs/inductive/free_match/tabular/breast_cancer
   log_level: detailed
   fail_fast: true
+
+limits:
+  profile: auto
+
 dataset:
   id: breast_cancer
   download: true

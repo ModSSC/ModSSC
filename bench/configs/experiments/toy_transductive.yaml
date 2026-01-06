@@ -4,6 +4,9 @@ run:
   output_dir: "runs"
   fail_fast: true
 
+limits:
+  profile: auto
+
 dataset:
   id: "toy"
 

@@ -108,6 +108,75 @@ def test_struct_embeddings_sparse_counts_path():
         assert emb.shape == (2, 2)
 
 
+def test_struct_embeddings_sparse_empty_counts(monkeypatch):
+    edge_index = np.array([[0, 1], [1, 0]])
+    params = StructParams(dim=2, max_dense_nodes=1)
+
+    monkeypatch.setattr(
+        "modssc.graph.featurization.views.struct._cooccurrence_counts",
+        lambda *a, **k: ({}, np.zeros(2, dtype=np.int64), np.zeros(2, dtype=np.int64), 0),
+    )
+
+    mock_scipy = MagicMock()
+    mock_sklearn = MagicMock()
+    mock_svd_cls = MagicMock()
+    mock_svd_inst = MagicMock()
+    mock_svd_inst.fit_transform.return_value = np.zeros((2, 2), dtype=np.float32)
+    mock_svd_cls.return_value = mock_svd_inst
+    mock_sklearn.TruncatedSVD = mock_svd_cls
+
+    with patch("modssc.graph.featurization.views.struct.optional_import") as mock_import:
+        mock_import.side_effect = (
+            lambda name, extra=None: mock_scipy if "scipy" in name else mock_sklearn
+        )
+        emb = struct_embeddings(edge_index=edge_index, n_nodes=2, params=params, seed=42)
+        assert emb.shape == (2, 2)
+
+
+def test_struct_embeddings_sparse_missing_row_col_masks():
+    with (
+        patch("modssc.graph.featurization.views.struct._cooccurrence_counts") as mock_counts,
+        patch("modssc.graph.featurization.views.struct.optional_import") as mock_import,
+    ):
+        counts = {(0, 1): 1}
+        row_arr = np.asarray([], dtype=np.int64)
+        col_arr = np.asarray([], dtype=np.int64)
+        total = 1
+
+        mock_counts.return_value = (counts, row_arr, col_arr, total)
+
+        mock_scipy = MagicMock()
+        mock_sklearn = MagicMock()
+
+        def import_side_effect(name, extra=None):
+            if "scipy" in name:
+                return mock_scipy
+            if "sklearn" in name:
+                return mock_sklearn
+            return MagicMock()
+
+        mock_import.side_effect = import_side_effect
+
+        mock_svd = MagicMock()
+        mock_sklearn.TruncatedSVD.return_value = mock_svd
+        mock_svd.fit_transform.return_value = np.zeros((2, 2), dtype=np.float32)
+
+        mock_csr = MagicMock()
+        mock_scipy.csr_matrix.return_value = mock_csr
+
+        params = StructParams(
+            dim=2, max_dense_nodes=0, window_size=1, num_walks_per_node=1, walk_length=1
+        )
+
+        emb = struct_embeddings(edge_index=np.array([[0], [1]]), n_nodes=2, params=params, seed=42)
+
+        assert emb.shape == (2, 2)
+        mock_scipy.csr_matrix.assert_called_once()
+        data, (rows, cols) = mock_scipy.csr_matrix.call_args[0][0]
+        assert len(rows) == 0
+        assert len(cols) == 0
+
+
 def test_ppmi_dense_skips_missing_row_col():
     counts = {(0, 0): 1}
     row_sum = np.asarray([], dtype=np.float64)

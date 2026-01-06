@@ -56,6 +56,15 @@ def _optional_int(data: Mapping[str, Any], key: str) -> int | None:
     return int(val)
 
 
+def _optional_positive_int(data: Mapping[str, Any], key: str, *, name: str) -> int | None:
+    val = _optional_int(data, key)
+    if val is None:
+        return None
+    if int(val) <= 0:
+        raise BenchConfigError(f"{name}.{key} must be > 0 when provided")
+    return int(val)
+
+
 def _optional_bool(data: Mapping[str, Any], key: str, *, default: bool) -> bool:
     val = data.get(key, default)
     if not isinstance(val, bool):
@@ -88,6 +97,17 @@ class RunConfig:
     output_dir: str
     fail_fast: bool = True
     log_level: str | None = None
+
+
+@dataclass(frozen=True)
+class LimitsConfig:
+    profile: str | None = None
+    max_preprocess_batch_size: int | None = None
+    max_method_batch_size: int | None = None
+    max_method_sup_batch_size: int | None = None
+    max_graph_chunk_size: int | None = None
+    max_train_samples: int | None = None
+    max_test_samples: int | None = None
 
 
 @dataclass(frozen=True)
@@ -201,6 +221,7 @@ class ExperimentConfig:
     views: ViewsConfig | None = None
     augmentation: AugmentationConfig | None = None
     search: SearchConfig | None = None
+    limits: LimitsConfig | None = None
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, Any]) -> ExperimentConfig:
@@ -209,6 +230,7 @@ class ExperimentConfig:
             data,
             {
                 "run",
+                "limits",
                 "dataset",
                 "sampling",
                 "preprocess",
@@ -231,6 +253,50 @@ class ExperimentConfig:
             fail_fast=_optional_bool(run, "fail_fast", default=True),
             log_level=_optional_str(run, "log_level"),
         )
+
+        limits_cfg = None
+        if "limits" in data:
+            limits_raw = data.get("limits", {})
+            if limits_raw is None:
+                limits_raw = {}
+            limits = _as_mapping(limits_raw, name="limits")
+            _check_unknown(
+                limits,
+                {
+                    "profile",
+                    "max_preprocess_batch_size",
+                    "max_method_batch_size",
+                    "max_method_sup_batch_size",
+                    "max_graph_chunk_size",
+                    "max_train_samples",
+                    "max_test_samples",
+                },
+                name="limits",
+            )
+            profile = _optional_str(limits, "profile")
+            if profile is not None:
+                profile = profile.lower()
+                if profile not in {"auto", "v100", "h100"}:
+                    raise BenchConfigError("limits.profile must be auto, v100, or h100")
+            limits_cfg = LimitsConfig(
+                profile=profile,
+                max_preprocess_batch_size=_optional_positive_int(
+                    limits, "max_preprocess_batch_size", name="limits"
+                ),
+                max_method_batch_size=_optional_positive_int(
+                    limits, "max_method_batch_size", name="limits"
+                ),
+                max_method_sup_batch_size=_optional_positive_int(
+                    limits, "max_method_sup_batch_size", name="limits"
+                ),
+                max_graph_chunk_size=_optional_positive_int(
+                    limits, "max_graph_chunk_size", name="limits"
+                ),
+                max_train_samples=_optional_positive_int(
+                    limits, "max_train_samples", name="limits"
+                ),
+                max_test_samples=_optional_positive_int(limits, "max_test_samples", name="limits"),
+            )
 
         dataset = _as_mapping(data.get("dataset", {}), name="dataset")
         _check_unknown(dataset, {"id", "options", "download", "cache_dir"}, name="dataset")
@@ -449,6 +515,7 @@ class ExperimentConfig:
 
         return cls(
             run=run_cfg,
+            limits=limits_cfg,
             dataset=ds_cfg,
             sampling=sampling_cfg,
             preprocess=preprocess_cfg,

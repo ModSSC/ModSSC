@@ -4,6 +4,10 @@ run:
   output_dir: runs/transductive/poisson_learning/tabular/breast_cancer
   log_level: detailed
   fail_fast: true
+
+limits:
+  profile: auto
+
 dataset:
   id: breast_cancer
   download: true

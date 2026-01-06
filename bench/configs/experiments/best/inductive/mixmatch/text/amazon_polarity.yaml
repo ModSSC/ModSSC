@@ -4,6 +4,10 @@ run:
   output_dir: runs/inductive/mixmatch/text/amazon_polarity
   log_level: detailed
   fail_fast: true
+
+limits:
+  profile: auto
+
 dataset:
   id: amazon_polarity
   download: true

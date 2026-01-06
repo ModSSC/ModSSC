@@ -4,6 +4,10 @@ run:
   output_dir: runs/transductive/gat/tabular/iris
   fail_fast: true
   log_level: detailed
+
+limits:
+  profile: auto
+
 dataset:
   id: iris
   download: true

@@ -38,6 +38,36 @@ def test_graph_cache_sharded(tmp_path):
     assert np.array_equal(loaded.edge_weight, edge_weight)
 
 
+def test_graph_cache_save_no_overwrite(tmp_path):
+    cache = GraphCache(root=tmp_path)
+    graph = GraphArtifact(
+        n_nodes=10,
+        edge_index=np.zeros((2, 0), dtype=np.int64),
+        edge_weight=None,
+        directed=False,
+        meta={},
+    )
+    manifest = {"n_nodes": 10}
+
+    d = cache.save(fingerprint="fp1", graph=graph, manifest=manifest)
+    assert d.exists()
+
+    with patch("modssc.graph.cache.GraphCache._clear_entry_dir") as mock_clear:
+        cache.save(fingerprint="fp1", graph=graph, manifest=manifest, overwrite=False)
+        mock_clear.assert_not_called()
+
+        cache.save(fingerprint="fp1", graph=graph, manifest=manifest, overwrite=True)
+        mock_clear.assert_called()
+
+
+def test_graph_cache_missing_root_methods(tmp_path):
+    root = tmp_path / "non_existent"
+    cache = GraphCache(root=root)
+
+    assert cache.list() == []
+    assert cache.purge() == 0
+
+
 def test_graph_cache_errors(tmp_path):
     cache = GraphCache(root=tmp_path)
 
@@ -169,6 +199,13 @@ def test_graph_cache_sharded_missing_edge_weight_second_pass(tmp_path, monkeypat
     monkeypatch.setattr("modssc.graph.cache.np.load", fake_load)
     with pytest.raises(GraphCacheError, match="Shard missing edge_weight"):
         cache._load_edges_sharded(d, num_shards=1)
+
+
+def test_views_cache_missing_root_methods(tmp_path):
+    root = tmp_path / "non_existent"
+    cache = ViewsCache(root=root)
+
+    assert cache.list() == []
 
 
 def test_views_cache(tmp_path):

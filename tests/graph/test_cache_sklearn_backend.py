@@ -25,69 +25,6 @@ def _require_sklearn() -> None:
         pytest.skip(f"sklearn unavailable: {exc}")
 
 
-def test_graph_cache_save_no_overwrite(tmp_path):
-    cache = GraphCache(root=tmp_path)
-    graph = GraphArtifact(
-        n_nodes=10,
-        edge_index=np.zeros((2, 0), dtype=np.int64),
-        edge_weight=None,
-        directed=False,
-        meta={},
-    )
-    manifest = {"n_nodes": 10}
-
-    d = cache.save(fingerprint="fp1", graph=graph, manifest=manifest)
-    assert d.exists()
-
-    with patch("modssc.graph.cache.GraphCache._clear_entry_dir") as mock_clear:
-        cache.save(fingerprint="fp1", graph=graph, manifest=manifest, overwrite=False)
-        mock_clear.assert_not_called()
-
-        cache.save(fingerprint="fp1", graph=graph, manifest=manifest, overwrite=True)
-        mock_clear.assert_called()
-
-
-def test_graph_cache_missing_root_methods(tmp_path):
-    root = tmp_path / "non_existent"
-    cache = GraphCache(root=root)
-
-    assert cache.list() == []
-
-    assert cache.purge() == 0
-
-
-def test_graph_cache_existing_root_methods(tmp_path):
-    cache = GraphCache(root=tmp_path)
-
-    (tmp_path / "fp1").mkdir()
-    (tmp_path / "fp2").mkdir()
-    (tmp_path / "file.txt").touch()
-
-    entries = cache.list()
-    assert "fp1" in entries
-    assert "fp2" in entries
-    assert "file.txt" not in entries
-
-    n = cache.purge()
-    assert n == 2
-    assert not (tmp_path / "fp1").exists()
-    assert (tmp_path / "file.txt").exists()
-
-
-def test_views_cache_missing_root_methods(tmp_path):
-    root = tmp_path / "non_existent"
-    cache = ViewsCache(root=root)
-
-    assert cache.list() == []
-
-
-def test_views_cache_existing_root_methods(tmp_path):
-    cache = ViewsCache(root=tmp_path)
-    (tmp_path / "fp1").mkdir()
-
-    assert cache.list() == ["fp1"]
-
-
 def test_knn_edges_sklearn_include_self():
     with patch("modssc.graph.construction.backends.sklearn_backend.optional_import") as mock_import:
         mock_sklearn = MagicMock()

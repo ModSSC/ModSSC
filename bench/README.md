@@ -33,6 +33,18 @@ python -m bench.main --config bench/configs/experiments/toy_inductive.yaml
 python -m bench.main --config bench/configs/experiments/toy_transductive.yaml
 ```
 
+## Memory limits
+Use `limits` in the YAML to cap batch sizes and graph chunking when GPUs are tight on memory:
+
+```yaml
+limits:
+  profile: auto
+  max_method_batch_size: 128
+  max_graph_chunk_size: 512
+```
+
+Profiles apply default caps (`auto` resolves to `v100` or `h100`); explicit `max_*` overrides them.
+
 Artifacts:
 - runs/<name-timestamp>/config.yaml
 - runs/<name-timestamp>/run.json

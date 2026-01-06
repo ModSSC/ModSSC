@@ -4,6 +4,10 @@ run:
   output_dir: runs/transductive/label_spreading/text/imdb
   log_level: detailed
   fail_fast: true
+
+limits:
+  profile: auto
+
 dataset:
   id: imdb
   download: true
