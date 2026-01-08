@@ -4,10 +4,8 @@ run:
   output_dir: runs/inductive/uda/audio/yesno
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: yesno
   download: true
@@ -45,7 +43,7 @@ preprocess:
         max_length: 16000
     - id: core.to_torch
       params:
-        device: "auto"
+        device: auto
         dtype: float32
 augmentation:
   enabled: true
@@ -66,9 +64,12 @@ method:
   kind: inductive
   id: uda
   device:
-    device: "auto"
+    device: auto
     dtype: float32
-  params: {}
+  params:
+    max_epochs: 5
+    p_cutoff: 0.6
+    tsa_schedule: linear
   model:
     classifier_id: audio_pretrained
     classifier_backend: torch

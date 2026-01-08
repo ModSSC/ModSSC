@@ -232,7 +232,7 @@ class SoftMatchMethod(InductiveMethod):
         gen_u = torch.Generator().manual_seed(int(seed) + 1)
 
         model.train()
-        for _ in range(int(self.spec.max_epochs)):
+        for epoch in range(int(self.spec.max_epochs)):
             iter_l = cycle_batches(
                 X_l,
                 y_l,
@@ -247,7 +247,7 @@ class SoftMatchMethod(InductiveMethod):
                 device=X_u_w.device,
                 steps=steps_per_epoch,
             )
-            for (x_lb, y_lb), idx_u in zip(iter_l, iter_u_idx, strict=False):
+            for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
                 x_uw = X_u_w[idx_u]
                 x_us = X_u_s[idx_u]
 
@@ -316,6 +316,33 @@ class SoftMatchMethod(InductiveMethod):
 
                 denom_w = weight.sum().clamp_min(1.0)
                 unsup_loss = (loss_u * weight).sum() / denom_w
+
+                if step == 0:
+                    mu_mean = float(mu.mean().item())
+                    var_mean = float(var.mean().item())
+                    weight_mean = float(weight.mean().item()) if int(weight.numel()) else 0.0
+                    if self._p_model is not None and self._p_target is not None:
+                        p_model_min = float(self._p_model.min().item())
+                        p_model_max = float(self._p_model.max().item())
+                        p_target_min = float(self._p_target.min().item())
+                        p_target_max = float(self._p_target.max().item())
+                    else:
+                        p_model_min = p_model_max = p_target_min = p_target_max = 0.0
+                    logger.debug(
+                        "SoftMatch epoch=%s mu_mean=%.3f var_mean=%.3f weight_mean=%.3f "
+                        "dist_align=%s dist_uniform=%s p_model[min=%.3f max=%.3f] "
+                        "p_target[min=%.3f max=%.3f]",
+                        epoch,
+                        mu_mean,
+                        var_mean,
+                        weight_mean,
+                        self.spec.dist_align,
+                        self.spec.dist_uniform,
+                        p_model_min,
+                        p_model_max,
+                        p_target_min,
+                        p_target_max,
+                    )
 
                 loss = sup_loss + float(self.spec.lambda_u) * unsup_loss
 

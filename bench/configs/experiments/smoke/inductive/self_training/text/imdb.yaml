@@ -4,10 +4,8 @@ run:
   output_dir: runs/inductive/self_training/text/imdb
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: imdb
   download: true
@@ -53,18 +51,18 @@ preprocess:
         n_components: 16
     - id: core.to_torch
       params:
-        device: "auto"
+        device: auto
         dtype: float32
 method:
   kind: inductive
   id: self_training
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     classifier_id: mlp
     classifier_backend: torch
-    max_iter: 3
+    max_iter: 5
     confidence_threshold: 0.8
     classifier_params:
       hidden_sizes:

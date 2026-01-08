@@ -4,10 +4,22 @@ import numpy as np
 
 
 def labels_to_onehot(y: np.ndarray, *, n_classes: int) -> np.ndarray:
-    y = np.asarray(y, dtype=np.int64)
-    out = np.zeros((y.shape[0], n_classes), dtype=np.float32)
-    valid = y >= 0
-    out[np.arange(y.shape[0])[valid], y[valid]] = 1.0
+    if n_classes <= 0:
+        raise ValueError(f"n_classes must be positive, got {n_classes}")
+    y_arr = np.asarray(y).reshape(-1)
+    if np.issubdtype(y_arr.dtype, np.floating):
+        if not np.isfinite(y_arr).all():
+            raise ValueError("y must contain finite integer class ids")
+        y_int = y_arr.astype(np.int64)
+        if not np.all(y_arr == y_int):
+            raise ValueError("y must contain integer class ids")
+    else:
+        y_int = y_arr.astype(np.int64, copy=False)
+    out = np.zeros((y_int.shape[0], n_classes), dtype=np.float32)
+    valid = y_int >= 0
+    if valid.any() and int(y_int[valid].max()) >= int(n_classes):
+        raise ValueError("y contains class ids outside [0, n_classes)")
+    out[np.arange(y_int.shape[0])[valid], y_int[valid]] = 1.0
     return out
 
 

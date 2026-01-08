@@ -182,7 +182,7 @@ class AdaMatchMethod(InductiveMethod):
         gen_u = torch.Generator().manual_seed(int(seed) + 1)
 
         model.train()
-        for _ in range(int(self.spec.max_epochs)):
+        for epoch in range(int(self.spec.max_epochs)):
             iter_l = cycle_batches(
                 X_l,
                 y_l,
@@ -197,7 +197,7 @@ class AdaMatchMethod(InductiveMethod):
                 device=X_u_w.device,
                 steps=steps_per_epoch,
             )
-            for (x_lb, y_lb), idx_u in zip(iter_l, iter_u_idx, strict=False):
+            for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
                 x_uw = X_u_w[idx_u]
                 x_us = X_u_s[idx_u]
 
@@ -254,6 +254,20 @@ class AdaMatchMethod(InductiveMethod):
 
                 denom = mask.sum().clamp_min(1.0)
                 unsup_loss = (loss_u * mask).sum() / denom
+
+                if step == 0 and self._p_model is not None and self._p_target is not None:
+                    mask_mean = float(mask.mean().item()) if int(mask.numel()) else 0.0
+                    logger.debug(
+                        "AdaMatch epoch=%s p_rel=%.4f mask_mean=%.3f "
+                        "p_model[min=%.3f max=%.3f] p_target[min=%.3f max=%.3f]",
+                        epoch,
+                        float(p_rel),
+                        mask_mean,
+                        float(self._p_model.min().item()),
+                        float(self._p_model.max().item()),
+                        float(self._p_target.min().item()),
+                        float(self._p_target.max().item()),
+                    )
 
                 loss = sup_loss + float(self.spec.lambda_u) * unsup_loss
 

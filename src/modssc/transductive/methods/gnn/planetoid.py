@@ -90,12 +90,13 @@ class PlanetoidMethod(TransductiveMethod):
         n_nodes = prep.n_nodes
         self._n_nodes = n_nodes
         self._n_classes = prep.n_classes
+        val_count = int(prep.val_mask.sum()) if prep.val_mask is not None else None
         logger.info(
             "Planetoid sizes: n_nodes=%s n_classes=%s train=%s val=%s",
             prep.n_nodes,
             prep.n_classes,
             int(prep.train_mask.sum()),
-            int(prep.val_mask.sum()),
+            val_count if val_count is not None else "none",
         )
 
         edge_index_np = prep.edge_index.detach().cpu().numpy()

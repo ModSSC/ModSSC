@@ -222,7 +222,7 @@ class FreeMatchMethod(InductiveMethod):
         gen_u = torch.Generator().manual_seed(int(seed) + 1)
 
         model.train()
-        for _ in range(int(self.spec.max_epochs)):
+        for epoch in range(int(self.spec.max_epochs)):
             iter_l = cycle_batches(
                 X_l,
                 y_l,
@@ -237,7 +237,7 @@ class FreeMatchMethod(InductiveMethod):
                 device=X_u_w.device,
                 steps=steps_per_epoch,
             )
-            for (x_lb, y_lb), idx_u in zip(iter_l, iter_u_idx, strict=False):
+            for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
                 x_uw = X_u_w[idx_u]
                 x_us = X_u_s[idx_u]
 
@@ -306,6 +306,20 @@ class FreeMatchMethod(InductiveMethod):
                     ent_loss = self._entropy_loss(logits_s, self._label_hist, self._p_model)
                 else:
                     ent_loss = torch.zeros((), device=logits_us.device)
+
+                if step == 0 and self._p_model is not None and self._label_hist is not None:
+                    mask_mean = float(mask.mean().item()) if int(mask.numel()) else 0.0
+                    logger.debug(
+                        "FreeMatch epoch=%s time_p=%.3f mask_mean=%.3f "
+                        "p_model[min=%.3f max=%.3f] label_hist[min=%.3f max=%.3f]",
+                        epoch,
+                        float(self._time_p.item()) if self._time_p is not None else 0.0,
+                        mask_mean,
+                        float(self._p_model.min().item()),
+                        float(self._p_model.max().item()),
+                        float(self._label_hist.min().item()),
+                        float(self._label_hist.max().item()),
+                    )
 
                 loss = (
                     sup_loss

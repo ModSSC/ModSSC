@@ -640,6 +640,24 @@ def test_mixmatch_fit_predict_mixup_helpers():
         mixmatch._forward_head(bad_bundle, features=feat)
 
 
+def test_mixmatch_mixup_randperm_uses_cpu(monkeypatch):
+    X = torch.zeros((4, 2))
+    y = torch.zeros((4, 2))
+    calls = {}
+    orig_randperm = torch.randperm
+
+    def _spy_randperm(n, *args, **kwargs):
+        calls["device"] = kwargs.get("device")
+        calls["generator"] = kwargs.get("generator")
+        return orig_randperm(n, generator=kwargs.get("generator"), device="cpu")
+
+    monkeypatch.setattr(torch, "randperm", _spy_randperm)
+    mixmatch._mixup(X, y, alpha=0.5, generator=torch.Generator().manual_seed(0))
+
+    assert str(calls["device"]) == "cpu"
+    assert calls["generator"] is not None
+
+
 def test_adamatch_fit_predict_and_alignment():
     data = make_torch_ssl_dataset()
     bundle = make_model_bundle()

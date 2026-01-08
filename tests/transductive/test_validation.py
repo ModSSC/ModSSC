@@ -81,7 +81,7 @@ def test_validate_node_dataset_y_wrong_dim():
 def test_validate_node_dataset_mismatch_len():
     data = SimpleNamespace(
         X=np.array([[1], [2], [3]]),
-        y=np.array([1, 2]),
+        y=np.array([0, 1]),
         graph=SimpleNamespace(edge_index=np.array([[0], [1]])),
         masks={},
     )
@@ -92,7 +92,7 @@ def test_validate_node_dataset_mismatch_len():
 
 
 def test_validate_node_dataset_no_graph():
-    data = SimpleNamespace(X=np.array([[1], [2]]), y=np.array([1, 2]), graph=None, masks={})
+    data = SimpleNamespace(X=np.array([[1], [2]]), y=np.array([0, 1]), graph=None, masks={})
     with pytest.raises(TransductiveValidationError, match="data.graph must not be None"):
         validate_node_dataset(data)
 
@@ -100,7 +100,7 @@ def test_validate_node_dataset_no_graph():
 def test_validate_node_dataset_no_edge_index():
     data = SimpleNamespace(
         X=np.array([[1], [2]]),
-        y=np.array([1, 2]),
+        y=np.array([0, 1]),
         graph=SimpleNamespace(),
         masks={},
     )
@@ -111,7 +111,7 @@ def test_validate_node_dataset_no_edge_index():
 def test_validate_node_dataset_edge_index_wrong_shape():
     data = SimpleNamespace(
         X=np.array([[1], [2]]),
-        y=np.array([1, 2]),
+        y=np.array([0, 1]),
         graph=SimpleNamespace(edge_index=np.array([0, 1])),
         masks={},
     )
@@ -122,7 +122,7 @@ def test_validate_node_dataset_edge_index_wrong_shape():
 def test_validate_node_dataset_edge_index_out_of_bounds():
     data = SimpleNamespace(
         X=np.array([[1], [2]]),
-        y=np.array([1, 2]),
+        y=np.array([0, 1]),
         graph=SimpleNamespace(edge_index=np.array([[0, 2], [1, 0]])),
         masks={},
     )
@@ -135,7 +135,7 @@ def test_validate_node_dataset_edge_index_out_of_bounds():
 def test_validate_node_dataset_empty_edge_index():
     data = SimpleNamespace(
         X=np.array([[1], [2]]),
-        y=np.array([1, 2]),
+        y=np.array([0, 1]),
         graph=SimpleNamespace(edge_index=np.empty((2, 0))),
         masks={},
     )
@@ -145,7 +145,7 @@ def test_validate_node_dataset_empty_edge_index():
 def test_validate_node_dataset_mask_wrong_shape():
     data = SimpleNamespace(
         X=np.array([[1], [2]]),
-        y=np.array([1, 2]),
+        y=np.array([0, 1]),
         graph=SimpleNamespace(edge_index=np.array([[0, 1], [1, 0]])),
         masks={"train_mask": np.array([True])},
     )
@@ -156,7 +156,71 @@ def test_validate_node_dataset_mask_wrong_shape():
 def test_validate_node_dataset_success():
     data = SimpleNamespace(
         X=np.array([[1], [2]]),
+        y=np.array([0, 1]),
+        graph=SimpleNamespace(edge_index=np.array([[0, 1], [1, 0]])),
+        masks={"train_mask": np.array([True, False])},
+    )
+    validate_node_dataset(data)
+
+
+def test_validate_node_dataset_non_contiguous_labels():
+    data = SimpleNamespace(
+        X=np.array([[1], [2]]),
         y=np.array([1, 2]),
+        graph=SimpleNamespace(edge_index=np.array([[0, 1], [1, 0]])),
+        masks={"train_mask": np.array([True, False])},
+    )
+    with pytest.raises(TransductiveValidationError, match="contiguous class ids"):
+        validate_node_dataset(data)
+
+
+def test_validate_node_dataset_non_integer_labels():
+    data = SimpleNamespace(
+        X=np.array([[1], [2]]),
+        y=np.array([0.0, 1.5]),
+        graph=SimpleNamespace(edge_index=np.array([[0, 1], [1, 0]])),
+        masks={"train_mask": np.array([True, False])},
+    )
+    with pytest.raises(TransductiveValidationError, match="integer class ids"):
+        validate_node_dataset(data)
+
+
+def test_validate_node_dataset_float_integer_labels():
+    data = SimpleNamespace(
+        X=np.array([[1], [2]]),
+        y=np.array([0.0, 1.0]),
+        graph=SimpleNamespace(edge_index=np.array([[0, 1], [1, 0]])),
+        masks={"train_mask": np.array([True, False])},
+    )
+    validate_node_dataset(data)
+
+
+def test_validate_node_dataset_non_finite_labels():
+    data = SimpleNamespace(
+        X=np.array([[1], [2]]),
+        y=np.array([0.0, np.nan]),
+        graph=SimpleNamespace(edge_index=np.array([[0, 1], [1, 0]])),
+        masks={"train_mask": np.array([True, False])},
+    )
+    with pytest.raises(TransductiveValidationError, match="finite integer class ids"):
+        validate_node_dataset(data)
+
+
+def test_validate_node_dataset_non_numeric_labels():
+    data = SimpleNamespace(
+        X=np.array([[1], [2]]),
+        y=np.array(["0", "1"]),
+        graph=SimpleNamespace(edge_index=np.array([[0, 1], [1, 0]])),
+        masks={"train_mask": np.array([True, False])},
+    )
+    with pytest.raises(TransductiveValidationError, match="integer class ids"):
+        validate_node_dataset(data)
+
+
+def test_validate_node_dataset_all_negative_labels():
+    data = SimpleNamespace(
+        X=np.array([[1], [2]]),
+        y=np.array([-1, -1]),
         graph=SimpleNamespace(edge_index=np.array([[0, 1], [1, 0]])),
         masks={"train_mask": np.array([True, False])},
     )

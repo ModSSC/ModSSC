@@ -163,7 +163,7 @@ class UDAMethod(InductiveMethod):
 
         step_idx = 0
         model.train()
-        for _ in range(int(self.spec.max_epochs)):
+        for epoch in range(int(self.spec.max_epochs)):
             iter_l = cycle_batches(
                 X_l,
                 y_l,
@@ -178,7 +178,7 @@ class UDAMethod(InductiveMethod):
                 device=X_u_w.device,
                 steps=steps_per_epoch,
             )
-            for (x_lb, y_lb), idx_u in zip(iter_l, iter_u_idx, strict=False):
+            for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
                 x_uw = X_u_w[idx_u]
                 x_us = X_u_s[idx_u]
 
@@ -240,6 +240,27 @@ class UDAMethod(InductiveMethod):
                     unsup_loss = kl.mean() * 0.0
                 else:
                     unsup_loss = (kl * mask).sum() / mask.sum()
+
+                if step == 0:
+                    tsa_val = None
+                    if self.spec.tsa_schedule != "none":
+                        tsa_val = _tsa_threshold(
+                            str(self.spec.tsa_schedule),
+                            step=step_idx,
+                            total=total_steps,
+                            n_classes=int(logits_l.shape[1]),
+                        )
+                    mask_mean = float(mask.mean().item()) if int(mask.numel()) else 0.0
+                    logger.debug(
+                        "UDA epoch=%s tsa=%s p_cutoff=%s mask_mean=%.3f sup_loss=%.4f "
+                        "unsup_loss=%.4f",
+                        epoch,
+                        f"{tsa_val:.4f}" if tsa_val is not None else "none",
+                        self.spec.p_cutoff,
+                        mask_mean,
+                        float(sup_loss.item()),
+                        float(unsup_loss.item()),
+                    )
 
                 loss = sup_loss + float(self.spec.lambda_u) * unsup_loss
 

@@ -89,6 +89,8 @@ def test_build_mlp_and_logreg_bundles() -> None:
         force_hidden_sizes=(),
     )
     assert isinstance(logreg.model, torch.nn.Sequential)
+    assert len(list(logreg.model)) == 1
+    assert isinstance(logreg.model[0], torch.nn.Linear)
 
 
 def test_image_audio_text_helpers_and_bundles() -> None:

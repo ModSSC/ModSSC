@@ -92,12 +92,13 @@ class GRANDMethod(TransductiveMethod):
             norm_mode="rw",  # random-walk propagation
             cache=self._prep_cache,
         )
+        val_count = int(prep.val_mask.sum()) if prep.val_mask is not None else None
         logger.info(
             "GRAND sizes: n_nodes=%s n_classes=%s train=%s val=%s",
             prep.n_nodes,
             prep.n_classes,
             int(prep.train_mask.sum()),
-            int(prep.val_mask.sum()),
+            val_count if val_count is not None else "none",
         )
         self._n_nodes = prep.n_nodes
         self._edge_index = prep.edge_index
@@ -180,9 +181,22 @@ class GRANDMethod(TransductiveMethod):
                     best_val = val_loss
                     best_state = {k: v.detach().clone() for k, v in model.state_dict().items()}
                     bad_epochs = 0
+                    logger.debug("GRAND epoch=%s val_loss=%.4f best updated", _epoch, val_loss)
                 else:
                     bad_epochs += 1
+                    logger.debug(
+                        "GRAND epoch=%s val_loss=%.4f bad_epochs=%s/%s",
+                        _epoch,
+                        val_loss,
+                        bad_epochs,
+                        self.spec.patience,
+                    )
                     if bad_epochs >= self.spec.patience:
+                        logger.debug(
+                            "GRAND early_stop epoch=%s best_val=%.4f",
+                            _epoch,
+                            best_val,
+                        )
                         break
 
         if best_state is not None:

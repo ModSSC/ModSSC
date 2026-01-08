@@ -4,10 +4,8 @@ run:
   output_dir: runs/inductive/fixmatch/text/imdb
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: imdb
   download: true
@@ -53,7 +51,7 @@ preprocess:
         n_components: 16
     - id: core.to_torch
       params:
-        device: "auto"
+        device: auto
         dtype: float32
 augmentation:
   enabled: true
@@ -74,9 +72,12 @@ method:
   kind: inductive
   id: fixmatch
   device:
-    device: "auto"
+    device: auto
     dtype: float32
-  params: {}
+  params:
+    max_epochs: 8
+    p_cutoff: 0.5
+    use_cat: true
   model:
     classifier_id: mlp
     classifier_backend: torch

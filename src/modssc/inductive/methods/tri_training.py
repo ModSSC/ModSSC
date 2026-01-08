@@ -244,7 +244,14 @@ class TriTrainingMethod(InductiveMethod):
                 new_added += int(idx.numel())
 
             if new_added == 0:
+                logger.debug("Tri-training iter=%s no new labels; stopping.", iter_count)
                 break
+            logger.debug(
+                "Tri-training iter=%s new_added=%s threshold=%s",
+                iter_count,
+                new_added,
+                self.spec.confidence_threshold,
+            )
             iter_count += 1
 
         for i in range(3):

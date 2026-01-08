@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Literal
@@ -15,6 +16,8 @@ from modssc.transductive.validation import validate_node_dataset
 # NOTE: This module is only imported when a torch-based method is instantiated
 # (through the method registry), so importing torch here is acceptable.
 torch = optional_import("torch", extra="transductive-torch")
+
+logger = logging.getLogger(__name__)
 
 NormMode = Literal["rw", "sym"]
 
@@ -367,12 +370,36 @@ def train_fullbatch(
                 best_epoch = int(epoch)
                 best_state = {k: v.detach().clone() for k, v in model.state_dict().items()}
                 bad_epochs = 0
+                logger.debug(
+                    "train_fullbatch epoch=%s val_loss=%.4f best updated",
+                    epoch,
+                    val_loss,
+                )
             else:
                 bad_epochs += 1
+                logger.debug(
+                    "train_fullbatch epoch=%s val_loss=%.4f bad_epochs=%s/%s",
+                    epoch,
+                    val_loss,
+                    bad_epochs,
+                    patience,
+                )
                 if bad_epochs >= int(patience):
+                    logger.debug(
+                        "train_fullbatch early_stop epoch=%s best_epoch=%s best_val_loss=%.4f",
+                        epoch,
+                        best_epoch,
+                        best_val_loss if best_val_loss is not None else float("nan"),
+                    )
                     break
 
     if best_state is not None:
         model.load_state_dict(best_state)
 
+    logger.debug(
+        "train_fullbatch done n_epochs=%s best_epoch=%s best_val_loss=%s",
+        epoch + 1,
+        best_epoch,
+        best_val_loss,
+    )
     return TrainResult(n_epochs=epoch + 1, best_epoch=best_epoch, best_val_loss=best_val_loss)

@@ -238,7 +238,7 @@ class FlexMatchMethod(InductiveMethod):
         gen_u = torch.Generator().manual_seed(int(seed) + 1)
 
         model.train()
-        for _ in range(int(self.spec.max_epochs)):
+        for epoch in range(int(self.spec.max_epochs)):
             iter_l = cycle_batches(
                 X_l,
                 y_l,
@@ -253,7 +253,7 @@ class FlexMatchMethod(InductiveMethod):
                 device=X_u_w.device,
                 steps=steps_per_epoch,
             )
-            for (x_lb, y_lb), idx_u in zip(iter_l, iter_u_idx, strict=False):
+            for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
                 x_uw = X_u_w[idx_u]
                 x_us = X_u_s[idx_u]
                 idx_global = idx_u_all[idx_u]
@@ -315,6 +315,19 @@ class FlexMatchMethod(InductiveMethod):
 
                 denom = mask.sum().clamp_min(1.0)
                 unsup_loss = (loss_u * mask).sum() / denom
+
+                if step == 0:
+                    mask_mean = float(mask.mean().item()) if int(mask.numel()) else 0.0
+                    logger.debug(
+                        "FlexMatch epoch=%s p_cutoff=%s thresh_warmup=%s class_acc_mean=%.3f "
+                        "thresh_mean=%.3f mask_mean=%.3f",
+                        epoch,
+                        self.spec.p_cutoff,
+                        self.spec.thresh_warmup,
+                        float(class_acc.mean().item()),
+                        float(thresh.mean().item()),
+                        mask_mean,
+                    )
 
                 select = max_probs >= float(self.spec.p_cutoff)
                 if int(select.sum().item()) > 0:

@@ -37,6 +37,32 @@ def validate_node_dataset(data: NodeDatasetLike) -> None:
     if X.shape[0] != y.shape[0]:
         raise TransductiveValidationError("X and y must have the same first dimension")
 
+    y_arr = np.asarray(y)
+    if np.issubdtype(y_arr.dtype, np.integer):
+        y_int = y_arr.astype(np.int64, copy=False)
+    elif np.issubdtype(y_arr.dtype, np.floating):
+        if not np.isfinite(y_arr).all():
+            raise TransductiveValidationError(
+                "y must contain finite integer class ids; found non-finite values"
+            )
+        y_int = y_arr.astype(np.int64)
+        if not np.all(y_arr == y_int):
+            raise TransductiveValidationError(
+                "y must contain integer class ids; run preprocess step 'labels.encode'"
+            )
+    else:
+        raise TransductiveValidationError(
+            "y must contain integer class ids; run preprocess step 'labels.encode'"
+        )
+
+    y_valid = y_int[y_int >= 0]
+    if y_valid.size:
+        classes = np.unique(y_valid)
+        if not np.array_equal(classes, np.arange(int(classes.size))):
+            raise TransductiveValidationError(
+                "y must contain contiguous class ids starting at 0; run preprocess step 'labels.encode'"
+            )
+
     if data.graph is None:
         raise TransductiveValidationError("data.graph must not be None")
 

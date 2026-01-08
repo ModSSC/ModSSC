@@ -4,10 +4,8 @@ run:
   output_dir: runs/inductive/tri_training/vision/mnist
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: mnist
   download: true
@@ -66,18 +64,18 @@ preprocess:
     - id: core.copy_raw
     - id: core.to_torch
       params:
-        device: "auto"
+        device: auto
         dtype: float32
 method:
   kind: inductive
   id: tri_training
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     classifier_id: image_pretrained
     classifier_backend: torch
-    max_iter: 3
+    max_iter: 5
     max_new_labels: 5
     classifier_params:
       model_name: resnet18

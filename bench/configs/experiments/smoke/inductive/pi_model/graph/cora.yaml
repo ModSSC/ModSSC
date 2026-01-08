@@ -4,10 +4,8 @@ run:
   output_dir: runs/inductive/pi_model/graph/cora
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: cora
   download: true
@@ -52,7 +50,7 @@ preprocess:
         embed_epochs: 1
     - id: core.to_torch
       params:
-        device: "auto"
+        device: auto
         dtype: float32
 augmentation:
   enabled: true
@@ -73,9 +71,11 @@ method:
   kind: inductive
   id: pi_model
   device:
-    device: "auto"
+    device: auto
     dtype: float32
-  params: {}
+  params:
+    max_epochs: 3
+    unsup_warm_up: 0.0
   model:
     classifier_id: mlp
     classifier_backend: torch

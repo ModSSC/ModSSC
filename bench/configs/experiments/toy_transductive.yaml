@@ -3,6 +3,7 @@ run:
   seed: 7
   output_dir: "runs"
   fail_fast: true
+  log_level: detailed
 
 limits:
   profile: auto

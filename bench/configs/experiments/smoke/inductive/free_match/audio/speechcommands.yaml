@@ -4,10 +4,8 @@ run:
   output_dir: runs/inductive/free_match/audio/speechcommands
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: speechcommands
   download: true
@@ -52,7 +50,7 @@ preprocess:
         max_length: 16000
     - id: core.to_torch
       params:
-        device: "auto"
+        device: auto
         dtype: float32
 augmentation:
   enabled: true
@@ -73,9 +71,10 @@ method:
   kind: inductive
   id: free_match
   device:
-    device: "auto"
+    device: auto
     dtype: float32
-  params: {}
+  params:
+    max_epochs: 3
   model:
     classifier_id: audio_pretrained
     classifier_backend: torch
