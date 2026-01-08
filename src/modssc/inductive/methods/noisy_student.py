@@ -268,7 +268,7 @@ class NoisyStudentMethod(InductiveMethod):
                 x_uw = X_uw[idx_u]
                 x_us = X_us[idx_u]
 
-                if bool(self.spec.use_cat):
+                if bool(self.spec.use_cat) and not bool(self.spec.freeze_bn):
                     inputs = torch.cat([x_lb, x_us], dim=0)
                     logits = extract_logits(student(inputs))
                     if int(logits.ndim) != 2:
@@ -283,9 +283,18 @@ class NoisyStudentMethod(InductiveMethod):
                     logits_us = logits[num_lb:]
                 else:
                     logits_l = extract_logits(student(x_lb))
-                    logits_us = extract_logits(student(x_us))
+                    with freeze_batchnorm(student, enabled=bool(self.spec.freeze_bn)):
+                        logits_us = extract_logits(student(x_us))
                 if int(logits_l.ndim) != 2 or int(logits_us.ndim) != 2:
                     raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+                if int(logits_l.shape[0]) != int(x_lb.shape[0]):
+                    raise InductiveValidationError(
+                        "Labeled logits batch size does not match inputs."
+                    )
+                if int(logits_us.shape[0]) != int(x_us.shape[0]):
+                    raise InductiveValidationError(
+                        "Unlabeled logits batch size does not match inputs."
+                    )
 
                 if logits_l.shape[1] != logits_us.shape[1]:
                     raise InductiveValidationError("Logits must agree on class dimension.")

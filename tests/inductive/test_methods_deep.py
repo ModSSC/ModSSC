@@ -178,6 +178,32 @@ class _BadBatch(torch.nn.Module):
         return torch.zeros((batch, self.n_classes), device=x.device)
 
 
+class _BadBatchOnUnlabeled(torch.nn.Module):
+    def __init__(self, n_classes: int = 2):
+        super().__init__()
+        self.dummy = torch.nn.Parameter(torch.zeros(1))
+        self.n_classes = int(n_classes)
+
+    def forward(self, x):
+        batch = int(x.shape[0])
+        if float(x.sum().item()) <= 0.0:
+            return torch.zeros((batch, self.n_classes), device=x.device)
+        return torch.zeros((max(0, batch - 1), self.n_classes), device=x.device)
+
+
+class _BadBatchOnLabeled(torch.nn.Module):
+    def __init__(self, n_classes: int = 2):
+        super().__init__()
+        self.dummy = torch.nn.Parameter(torch.zeros(1))
+        self.n_classes = int(n_classes)
+
+    def forward(self, x):
+        batch = int(x.shape[0])
+        if float(x.sum().item()) <= 0.0:
+            return torch.zeros((max(0, batch - 1), self.n_classes), device=x.device)
+        return torch.zeros((batch, self.n_classes), device=x.device)
+
+
 class _ConditionalClasses(torch.nn.Module):
     def __init__(self):
         super().__init__()
@@ -1006,6 +1032,7 @@ def test_noisy_student_fit_predict_variants():
             detach_target=True,
             temperature=1.0,
             p_cutoff=0.0,
+            freeze_bn=False,
         )
     )
     _fit_predict(method, data)
@@ -1397,6 +1424,7 @@ def test_use_cat_bad_logits_ndim(method_cls):
     overrides = {"use_cat": True}
     if method_cls is NoisyStudentMethod:
         overrides["teacher_epochs"] = 0
+        overrides["freeze_bn"] = False
     spec = _make_spec(method_cls, bundle, **overrides)
     with pytest.raises(InductiveValidationError):
         method_cls(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
@@ -1409,9 +1437,42 @@ def test_use_cat_bad_concat_batch(method_cls):
     overrides = {"use_cat": True}
     if method_cls is NoisyStudentMethod:
         overrides["teacher_epochs"] = 0
+        overrides["freeze_bn"] = False
     spec = _make_spec(method_cls, bundle, **overrides)
     with pytest.raises(InductiveValidationError):
         method_cls(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_noisy_student_unlabeled_batch_mismatch():
+    x_lb = torch.zeros((2, 2))
+    y_lb = torch.tensor([0, 1], dtype=torch.int64)
+    x_u = torch.ones((2, 2))
+    data = DummyDataset(X_l=x_lb, y_l=y_lb, X_u=x_u, X_u_w=x_u, X_u_s=x_u)
+    bundle = _make_bundle_for(_BadBatchOnUnlabeled())
+    spec = NoisyStudentSpec(
+        model_bundle=bundle,
+        batch_size=2,
+        max_epochs=1,
+        teacher_epochs=0,
+    )
+    with pytest.raises(InductiveValidationError, match="Unlabeled logits batch size"):
+        NoisyStudentMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_noisy_student_labeled_batch_mismatch():
+    x_lb = torch.zeros((2, 2))
+    y_lb = torch.tensor([0, 1], dtype=torch.int64)
+    x_u = torch.ones((2, 2))
+    data = DummyDataset(X_l=x_lb, y_l=y_lb, X_u=x_u, X_u_w=x_u, X_u_s=x_u)
+    bundle = _make_bundle_for(_BadBatchOnLabeled())
+    spec = NoisyStudentSpec(
+        model_bundle=bundle,
+        batch_size=2,
+        max_epochs=1,
+        teacher_epochs=0,
+    )
+    with pytest.raises(InductiveValidationError, match="Labeled logits batch size"):
+        NoisyStudentMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
 
 
 @pytest.mark.parametrize("method_cls", CAT_METHODS + [PiModelMethod, MeanTeacherMethod])
