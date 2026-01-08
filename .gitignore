@@ -32,6 +32,7 @@ Thumbs.db
 
 # Docs build output
 site/
+docs/article_code/
 
 # Local artifacts, caches, runs
 data/

@@ -81,15 +81,10 @@ def register_builtin_methods() -> None:
         status="implemented",
     )
     register_method("uda", "modssc.inductive.methods.uda:UDAMethod", status="implemented")
-    register_method("vat", "modssc.inductive.methods.vat:VATMethod", status="planned")
+    register_method("vat", "modssc.inductive.methods.vat:VATMethod", status="implemented")
     register_method(
         "noisy_student",
         "modssc.inductive.methods.noisy_student:NoisyStudentMethod",
-        status="planned",
-    )
-    register_method(
-        "self_training",
-        "modssc.inductive.methods.self_training:SelfTrainingMethod",
         status="implemented",
     )
     register_method(

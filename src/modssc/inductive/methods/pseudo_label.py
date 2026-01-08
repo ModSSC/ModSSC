@@ -38,7 +38,7 @@ class PseudoLabelSpec(BaseClassifierSpec):
 
 
 class PseudoLabelMethod(InductiveMethod):
-    """Classic pseudo-labeling with iterative self-training (CPU/GPU)."""
+    """Classic pseudo-labeling with iterative refinement (CPU/GPU)."""
 
     info = MethodInfo(
         method_id="pseudo_label",

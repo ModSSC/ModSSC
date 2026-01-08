@@ -7,14 +7,15 @@ from .flexmatch import FlexMatchMethod
 from .free_match import FreeMatchMethod
 from .mean_teacher import MeanTeacherMethod
 from .mixmatch import MixMatchMethod
+from .noisy_student import NoisyStudentMethod
 from .pi_model import PiModelMethod
 from .pseudo_label import PseudoLabelMethod
 from .s4vm import S4VMMethod
-from .self_training import SelfTrainingMethod
 from .softmatch import SoftMatchMethod
 from .tri_training import TriTrainingMethod
 from .tsvm import TSVMMethod
 from .uda import UDAMethod
+from .vat import VATMethod
 
 __all__ = [
     "CoTrainingMethod",
@@ -24,12 +25,13 @@ __all__ = [
     "FreeMatchMethod",
     "MeanTeacherMethod",
     "MixMatchMethod",
+    "NoisyStudentMethod",
     "PiModelMethod",
     "PseudoLabelMethod",
     "S4VMMethod",
-    "SelfTrainingMethod",
     "SoftMatchMethod",
     "TriTrainingMethod",
     "TSVMMethod",
     "UDAMethod",
+    "VATMethod",
 ]

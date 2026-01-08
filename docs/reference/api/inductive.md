@@ -13,14 +13,14 @@ Instantiate a method by ID:
 ```python
 import numpy as np
 from modssc.inductive import DeviceSpec, InductiveDataset, get_method_class
-from modssc.inductive.methods.self_training import SelfTrainingSpec
+from modssc.inductive.methods.pseudo_label import PseudoLabelSpec
 
 X_l = np.random.randn(5, 4)
 y_l = np.array([0, 1, 0, 1, 0])
 X_u = np.random.randn(20, 4)
 
-spec = SelfTrainingSpec(classifier_id="knn", classifier_backend="numpy")
-method = get_method_class("self_training")(spec=spec)
+spec = PseudoLabelSpec(classifier_id="knn", classifier_backend="numpy")
+method = get_method_class("pseudo_label")(spec=spec)
 method.fit(InductiveDataset(X_l=X_l, y_l=y_l, X_u=X_u), device=DeviceSpec(device="cpu"), seed=0)
 ```
 
