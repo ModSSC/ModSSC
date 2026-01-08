@@ -118,7 +118,7 @@ def test_registry_register_errors():
     with pytest.raises(ValueError):
         registry.register_method(
             "dup_id",
-            "modssc.inductive.methods.self_training:SelfTrainingMethod",
+            "modssc.inductive.methods.pi_model:PiModelMethod",
         )
     with pytest.raises(ValueError):
         registry.register_method(
@@ -131,8 +131,10 @@ def test_registry_register_errors():
 def test_registry_available_methods_and_get_class():
     methods_all = registry.available_methods(available_only=False)
     assert "vat" in methods_all
+    assert "noisy_student" in methods_all
     methods_avail = registry.available_methods(available_only=True)
-    assert "vat" not in methods_avail
+    assert "vat" in methods_avail
+    assert "noisy_student" in methods_avail
     cls = registry.get_method_class("pseudo_label")
     assert hasattr(cls, "info")
     with pytest.raises(KeyError):

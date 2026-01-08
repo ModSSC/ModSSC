@@ -1,5 +1,5 @@
 run:
-  name: "imdb_self_training"
+  name: "imdb_pseudo_label"
   seed: 123
   output_dir: "runs"
   fail_fast: true
@@ -50,7 +50,7 @@ preprocess:
 
 method:
   kind: "inductive"
-  id: "self_training"
+  id: "pseudo_label"
   device:
     device: "auto"
     dtype: "float32"
@@ -59,8 +59,8 @@ method:
     classifier_backend: "sklearn"
     classifier_params:
       max_iter: 1000
-    max_iter: 20
-    confidence_threshold: 0.9
+    max_iter: 10
+    confidence_threshold: 0.95
 
 evaluation:
   split_for_model_selection: "val"

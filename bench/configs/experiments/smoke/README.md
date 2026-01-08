@@ -111,17 +111,6 @@ python -m bench.main --config bench/configs/experiments/smoke/inductive/s4vm/tex
 python -m bench.main --config bench/configs/experiments/smoke/inductive/s4vm/vision/mnist.yaml > log/inductive/s4vm/vision/mnist.log 2>&1
 ```
 
-## inductive/self_training
-
-```
-mkdir -p log/inductive/self_training/audio log/inductive/self_training/graph log/inductive/self_training/tabular log/inductive/self_training/text log/inductive/self_training/vision
-python -m bench.main --config bench/configs/experiments/smoke/inductive/self_training/audio/speechcommands.yaml > log/inductive/self_training/audio/speechcommands.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/inductive/self_training/graph/cora.yaml > log/inductive/self_training/graph/cora.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/inductive/self_training/tabular/iris.yaml > log/inductive/self_training/tabular/iris.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/inductive/self_training/text/imdb.yaml > log/inductive/self_training/text/imdb.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/inductive/self_training/vision/mnist.yaml > log/inductive/self_training/vision/mnist.log 2>&1
-```
-
 ## inductive/softmatch
 
 ```

@@ -16,7 +16,6 @@ from modssc.inductive.methods.co_training import (
 )
 from modssc.inductive.methods.pseudo_label import PseudoLabelMethod, PseudoLabelSpec
 from modssc.inductive.methods.s4vm import S4VMMethod, S4VMSpec
-from modssc.inductive.methods.self_training import SelfTrainingMethod, SelfTrainingSpec
 from modssc.inductive.methods.tri_training import TriTrainingMethod, TriTrainingSpec
 from modssc.inductive.methods.tsvm import (
     TSVMMethod,
@@ -32,7 +31,7 @@ from .conftest import DummyDataset, make_numpy_dataset, make_torch_dataset
 
 @pytest.mark.parametrize(
     "method_cls,spec_cls",
-    [(PseudoLabelMethod, PseudoLabelSpec), (SelfTrainingMethod, SelfTrainingSpec)],
+    [(PseudoLabelMethod, PseudoLabelSpec)],
 )
 def test_classic_numpy_methods_fit_predict(method_cls, spec_cls):
     data = make_numpy_dataset()
@@ -51,7 +50,7 @@ def test_classic_numpy_methods_fit_predict(method_cls, spec_cls):
 
 @pytest.mark.parametrize(
     "method_cls,spec_cls",
-    [(PseudoLabelMethod, PseudoLabelSpec), (SelfTrainingMethod, SelfTrainingSpec)],
+    [(PseudoLabelMethod, PseudoLabelSpec)],
 )
 def test_classic_torch_methods_fit_predict(method_cls, spec_cls):
     data = make_torch_dataset()
@@ -79,17 +78,6 @@ def test_classic_methods_errors_and_backend_mismatch():
     PseudoLabelMethod(PseudoLabelSpec(min_new_labels=10)).fit(
         data, device=DeviceSpec(device="cpu"), seed=0
     )
-    SelfTrainingMethod(SelfTrainingSpec(min_new_labels=10)).fit(
-        data, device=DeviceSpec(device="cpu"), seed=0
-    )
-
-    data_empty = DummyDataset(
-        X_l=np.zeros((0, 2), dtype=np.float32), y_l=np.array([], dtype=np.int64), X_u=data.X_u
-    )
-    with pytest.raises(InductiveValidationError):
-        SelfTrainingMethod(SelfTrainingSpec()).fit(
-            data_empty, device=DeviceSpec(device="cpu"), seed=0
-        )
 
     method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
     method._backend = ""
@@ -100,18 +88,6 @@ def test_classic_methods_errors_and_backend_mismatch():
 
     with pytest.raises(RuntimeError):
         PseudoLabelMethod(PseudoLabelSpec()).predict(data.X_l)
-
-    st = SelfTrainingMethod(SelfTrainingSpec())
-    with pytest.raises(RuntimeError):
-        st.predict(data.X_l)
-    with pytest.raises(RuntimeError):
-        st.predict_proba(data.X_l)
-    st.fit(data, device=DeviceSpec(device="cpu"), seed=0)
-    st._backend = ""
-    with pytest.raises(InductiveValidationError):
-        st.predict_proba(torch.tensor([[0.0, 1.0]]))
-    with pytest.raises(InductiveValidationError):
-        st.predict(torch.tensor([[0.0, 1.0]]))
 
 
 def _make_views_numpy():
@@ -879,47 +855,6 @@ def test_pseudo_label_additional_branches_numpy_torch():
     PseudoLabelMethod(spec_break).fit(data_t, device=DeviceSpec(device="cpu"), seed=0)
 
 
-def test_self_training_additional_branches_numpy_torch():
-    data = make_numpy_dataset()
-    empty = DummyDataset(
-        X_l=np.zeros((0, 2), dtype=np.float32),
-        y_l=np.array([0], dtype=np.int64),
-        X_u=data.X_u,
-    )
-    with pytest.raises(InductiveValidationError):
-        SelfTrainingMethod(SelfTrainingSpec()).fit(empty, device=DeviceSpec(device="cpu"), seed=0)
-
-    spec = SelfTrainingSpec(max_iter=2, confidence_threshold=0.0, min_new_labels=1)
-    SelfTrainingMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
-
-    data_t = make_torch_dataset()
-    spec_t = SelfTrainingSpec(
-        max_iter=2,
-        confidence_threshold=0.0,
-        min_new_labels=1,
-        classifier_backend="torch",
-    )
-    SelfTrainingMethod(spec_t).fit(data_t, device=DeviceSpec(device="cpu"), seed=0)
-
-    data_t_none = DummyDataset(X_l=data_t.X_l, y_l=data_t.y_l, X_u=None)
-    SelfTrainingMethod(SelfTrainingSpec(classifier_backend="torch")).fit(
-        data_t_none, device=DeviceSpec(device="cpu"), seed=0
-    )
-
-    data_empty_t = DummyDataset(
-        X_l=torch.zeros((0, 2)), y_l=torch.zeros((0,), dtype=torch.int64), X_u=data_t.X_u
-    )
-    with pytest.raises(InductiveValidationError):
-        SelfTrainingMethod(SelfTrainingSpec(classifier_backend="torch")).fit(
-            data_empty_t, device=DeviceSpec(device="cpu"), seed=0
-        )
-
-    spec_break = SelfTrainingSpec(
-        max_iter=1, confidence_threshold=0.0, min_new_labels=10, classifier_backend="torch"
-    )
-    SelfTrainingMethod(spec_break).fit(data_t, device=DeviceSpec(device="cpu"), seed=0)
-
-
 def test_pseudo_label_torch_empty_xl_hits_check(monkeypatch):
     data_t = make_torch_dataset()
     empty = DummyDataset(
@@ -932,22 +867,6 @@ def test_pseudo_label_torch_empty_xl_hits_check(monkeypatch):
     )
     with pytest.raises(InductiveValidationError):
         PseudoLabelMethod(PseudoLabelSpec(classifier_backend="torch")).fit(
-            empty, device=DeviceSpec(device="cpu"), seed=0
-        )
-
-
-def test_self_training_torch_empty_xl_hits_check(monkeypatch):
-    data_t = make_torch_dataset()
-    empty = DummyDataset(
-        X_l=torch.zeros((0, 2)), y_l=torch.zeros((0,), dtype=torch.int64), X_u=data_t.X_u
-    )
-
-    monkeypatch.setattr(
-        "modssc.inductive.methods.self_training.ensure_1d_labels_torch",
-        lambda y, name="y_l": y,
-    )
-    with pytest.raises(InductiveValidationError):
-        SelfTrainingMethod(SelfTrainingSpec(classifier_backend="torch")).fit(
             empty, device=DeviceSpec(device="cpu"), seed=0
         )
 
@@ -965,21 +884,6 @@ def test_pseudo_label_numpy_empty_xl_hits_check(monkeypatch):
     )
     with pytest.raises(InductiveValidationError):
         PseudoLabelMethod(PseudoLabelSpec()).fit(empty, device=DeviceSpec(device="cpu"), seed=0)
-
-
-def test_self_training_numpy_empty_xl_hits_check(monkeypatch):
-    data = make_numpy_dataset()
-    empty = DummyDataset(
-        X_l=np.zeros((0, 2), dtype=np.float32),
-        y_l=np.array([0], dtype=np.int64),
-        X_u=data.X_u,
-    )
-    monkeypatch.setattr(
-        "modssc.inductive.methods.self_training.ensure_numpy_data",
-        lambda data: data,
-    )
-    with pytest.raises(InductiveValidationError):
-        SelfTrainingMethod(SelfTrainingSpec()).fit(empty, device=DeviceSpec(device="cpu"), seed=0)
 
 
 def test_tsvm_helpers_and_fit_predict_numpy():

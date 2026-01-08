@@ -15,6 +15,7 @@ from modssc.inductive.methods import (
     mixmatch,
     softmatch,
     uda,
+    vat,
 )
 from modssc.inductive.methods.adamatch import AdaMatchMethod, AdaMatchSpec
 from modssc.inductive.methods.fixmatch import FixMatchMethod, FixMatchSpec
@@ -22,9 +23,11 @@ from modssc.inductive.methods.flexmatch import FlexMatchMethod, FlexMatchSpec
 from modssc.inductive.methods.free_match import FreeMatchMethod, FreeMatchSpec
 from modssc.inductive.methods.mean_teacher import MeanTeacherMethod, MeanTeacherSpec
 from modssc.inductive.methods.mixmatch import MixMatchMethod, MixMatchSpec
+from modssc.inductive.methods.noisy_student import NoisyStudentMethod, NoisyStudentSpec
 from modssc.inductive.methods.pi_model import PiModelMethod, PiModelSpec
 from modssc.inductive.methods.softmatch import SoftMatchMethod, SoftMatchSpec
 from modssc.inductive.methods.uda import UDAMethod, UDASpec
+from modssc.inductive.methods.vat import VATMethod, VATSpec
 from modssc.inductive.types import DeviceSpec
 
 from .conftest import (
@@ -45,6 +48,8 @@ DEEP_METHODS = [
     AdaMatchMethod,
     FreeMatchMethod,
     SoftMatchMethod,
+    VATMethod,
+    NoisyStudentMethod,
 ]
 
 
@@ -58,6 +63,8 @@ DEEP_METHOD_MODULES = {
     AdaMatchMethod: "modssc.inductive.methods.adamatch",
     FreeMatchMethod: "modssc.inductive.methods.free_match",
     SoftMatchMethod: "modssc.inductive.methods.softmatch",
+    VATMethod: "modssc.inductive.methods.vat",
+    NoisyStudentMethod: "modssc.inductive.methods.noisy_student",
 }
 
 
@@ -68,6 +75,7 @@ CAT_METHODS = [
     AdaMatchMethod,
     FreeMatchMethod,
     SoftMatchMethod,
+    NoisyStudentMethod,
 ]
 
 
@@ -108,6 +116,14 @@ def _make_spec(method_cls, bundle, **overrides):
         kwargs = {"model_bundle": bundle, "batch_size": 2, "max_epochs": 1}
         kwargs.update(overrides)
         return SoftMatchSpec(**kwargs)
+    if method_cls is VATMethod:
+        kwargs = {"model_bundle": bundle, "batch_size": 2, "max_epochs": 1}
+        kwargs.update(overrides)
+        return VATSpec(**kwargs)
+    if method_cls is NoisyStudentMethod:
+        kwargs = {"model_bundle": bundle, "batch_size": 2, "max_epochs": 1}
+        kwargs.update(overrides)
+        return NoisyStudentSpec(**kwargs)
     raise AssertionError("unknown method")
 
 
@@ -186,6 +202,55 @@ class _LogitsByBatch(torch.nn.Module):
         return torch.zeros((batch,), device=x.device)
 
 
+class _GradSensitiveLogits(torch.nn.Module):
+    def __init__(self, n_classes: int = 2):
+        super().__init__()
+        self.dummy = torch.nn.Parameter(torch.zeros(1))
+        self.n_classes = int(n_classes)
+
+    def forward(self, x):
+        batch = int(x.shape[0])
+        if x.requires_grad:
+            return torch.zeros((batch,), device=x.device)
+        return torch.zeros((batch, self.n_classes), device=x.device)
+
+
+class _CountedLogits(torch.nn.Module):
+    def __init__(self, in_dim: int = 2, n_classes: int = 2, *, bad_call: int = 3):
+        super().__init__()
+        self.fc = torch.nn.Linear(int(in_dim), int(n_classes), bias=False)
+        self.bad_call = int(bad_call)
+        self.calls = 0
+
+    def forward(self, x):
+        self.calls += 1
+        logits = self.fc(x)
+        if self.calls >= self.bad_call:
+            return logits[:, 0]
+        return logits
+
+
+class _LinearLogits(torch.nn.Module):
+    def __init__(self, n_classes: int = 2):
+        super().__init__()
+        self.fc = torch.nn.Linear(2, n_classes, bias=False)
+
+    def forward(self, x):
+        return self.fc(x)
+
+
+class _TeacherLogits1D(_LinearLogits):
+    def forward(self, x):
+        logits = super().forward(x)
+        return logits[:, 0]
+
+
+class _TeacherLogitsTrunc(_LinearLogits):
+    def forward(self, x):
+        logits = super().forward(x)
+        return logits[:, :1]
+
+
 def test_deep_methods_validation_errors():
     data_np = make_numpy_dataset()
     data_t = make_torch_dataset()
@@ -234,23 +299,41 @@ def test_deep_methods_empty_inputs(method_cls):
     with pytest.raises(InductiveValidationError):
         method_cls(spec).fit(empty_xl, device=DeviceSpec(device="cpu"), seed=0)
 
-    empty_u = DummyDataset(
-        X_l=data.X_l,
-        y_l=data.y_l,
-        X_u=data.X_u,
-        X_u_w=torch.zeros((0, data.X_l.shape[1])),
-        X_u_s=torch.zeros((0, data.X_l.shape[1])),
-    )
+    if method_cls is VATMethod:
+        empty_u = DummyDataset(
+            X_l=data.X_l,
+            y_l=data.y_l,
+            X_u=torch.zeros((0, data.X_l.shape[1])),
+            X_u_w=data.X_u_w,
+            X_u_s=data.X_u_s,
+        )
+    else:
+        empty_u = DummyDataset(
+            X_l=data.X_l,
+            y_l=data.y_l,
+            X_u=data.X_u,
+            X_u_w=torch.zeros((0, data.X_l.shape[1])),
+            X_u_s=torch.zeros((0, data.X_l.shape[1])),
+        )
     with pytest.raises(InductiveValidationError):
         method_cls(spec).fit(empty_u, device=DeviceSpec(device="cpu"), seed=0)
 
-    mismatch = DummyDataset(
-        X_l=data.X_l,
-        y_l=data.y_l,
-        X_u=data.X_u,
-        X_u_w=torch.zeros((2, data.X_l.shape[1])),
-        X_u_s=torch.zeros((3, data.X_l.shape[1])),
-    )
+    if method_cls is VATMethod:
+        mismatch = DummyDataset(
+            X_l=data.X_l,
+            y_l=data.y_l,
+            X_u=torch.zeros((0, data.X_l.shape[1])),
+            X_u_w=data.X_u_w,
+            X_u_s=data.X_u_s,
+        )
+    else:
+        mismatch = DummyDataset(
+            X_l=data.X_l,
+            y_l=data.y_l,
+            X_u=data.X_u,
+            X_u_w=torch.zeros((2, data.X_l.shape[1])),
+            X_u_s=torch.zeros((3, data.X_l.shape[1])),
+        )
     with pytest.raises(InductiveValidationError):
         method_cls(spec).fit(mismatch, device=DeviceSpec(device="cpu"), seed=0)
 
@@ -369,6 +452,40 @@ def test_deep_method_specific_invalid_specs():
 
     with pytest.raises(InductiveValidationError):
         FlexMatchMethod(_make_spec(FlexMatchMethod, bundle, temperature=0.0)).fit(
+            data, device=DeviceSpec(device="cpu"), seed=0
+        )
+
+    with pytest.raises(InductiveValidationError):
+        VATMethod(_make_spec(VATMethod, bundle, xi=0.0)).fit(
+            data, device=DeviceSpec(device="cpu"), seed=0
+        )
+    with pytest.raises(InductiveValidationError):
+        VATMethod(_make_spec(VATMethod, bundle, eps=0.0)).fit(
+            data, device=DeviceSpec(device="cpu"), seed=0
+        )
+    with pytest.raises(InductiveValidationError):
+        VATMethod(_make_spec(VATMethod, bundle, num_iters=0)).fit(
+            data, device=DeviceSpec(device="cpu"), seed=0
+        )
+    with pytest.raises(InductiveValidationError):
+        VATMethod(_make_spec(VATMethod, bundle, unsup_warm_up=-0.1)).fit(
+            data, device=DeviceSpec(device="cpu"), seed=0
+        )
+
+    with pytest.raises(InductiveValidationError):
+        NoisyStudentMethod(_make_spec(NoisyStudentMethod, bundle, p_cutoff=-0.1)).fit(
+            data, device=DeviceSpec(device="cpu"), seed=0
+        )
+    with pytest.raises(InductiveValidationError):
+        NoisyStudentMethod(_make_spec(NoisyStudentMethod, bundle, temperature=0.0)).fit(
+            data, device=DeviceSpec(device="cpu"), seed=0
+        )
+    with pytest.raises(InductiveValidationError):
+        NoisyStudentMethod(_make_spec(NoisyStudentMethod, bundle, teacher_epochs=-1)).fit(
+            data, device=DeviceSpec(device="cpu"), seed=0
+        )
+    with pytest.raises(InductiveValidationError):
+        NoisyStudentMethod(_make_spec(NoisyStudentMethod, bundle, unsup_warm_up=-0.1)).fit(
             data, device=DeviceSpec(device="cpu"), seed=0
         )
 
@@ -840,6 +957,323 @@ def test_softmatch_fit_predict_and_stats():
     method2._update_stats(torch.tensor([0.5]), torch.tensor([0]))
 
 
+def test_vat_fit_predict_variants():
+    data = make_torch_ssl_dataset()
+    bundle = make_model_bundle()
+    method = VATMethod(
+        VATSpec(
+            model_bundle=bundle,
+            batch_size=2,
+            max_epochs=1,
+            xi=1e-6,
+            eps=2.5,
+            num_iters=1,
+            unsup_warm_up=0.0,
+            freeze_bn=True,
+            detach_target=True,
+        )
+    )
+    _fit_predict(method, data)
+
+    bundle2 = make_model_bundle()
+    method2 = VATMethod(
+        VATSpec(
+            model_bundle=bundle2,
+            batch_size=2,
+            max_epochs=1,
+            xi=1e-4,
+            eps=1.0,
+            num_iters=1,
+            unsup_warm_up=0.5,
+            freeze_bn=False,
+            detach_target=False,
+        )
+    )
+    _fit_predict(method2, data)
+
+
+def test_noisy_student_fit_predict_variants():
+    data = make_torch_ssl_dataset()
+    bundle = make_model_bundle()
+    method = NoisyStudentMethod(
+        NoisyStudentSpec(
+            model_bundle=bundle,
+            batch_size=2,
+            max_epochs=1,
+            teacher_epochs=1,
+            use_cat=True,
+            hard_label=True,
+            detach_target=True,
+            temperature=1.0,
+            p_cutoff=0.0,
+        )
+    )
+    _fit_predict(method, data)
+
+    bundle2 = make_model_bundle()
+    bundle2 = bundle2.__class__(model=bundle2.model, optimizer=bundle2.optimizer, ema_model=None)
+    method2 = NoisyStudentMethod(
+        NoisyStudentSpec(
+            model_bundle=bundle2,
+            batch_size=2,
+            max_epochs=1,
+            teacher_epochs=0,
+            use_cat=False,
+            hard_label=False,
+            detach_target=False,
+            temperature=0.5,
+            p_cutoff=1.0,
+            unsup_warm_up=0.5,
+            freeze_bn=False,
+        )
+    )
+    _fit_predict(method2, data)
+
+
+def test_vat_vat_loss_error_paths():
+    data = make_torch_ssl_dataset()
+    method = VATMethod()
+    model_ok = make_model_bundle().model
+
+    with pytest.raises(InductiveValidationError):
+        method._vat_loss(
+            model_ok,
+            data.X_u,
+            xi=1e-6,
+            eps=1.0,
+            num_iters=0,
+            freeze_bn=True,
+            detach_target=True,
+        )
+
+    bad_model = _BadLogits1D()
+    with pytest.raises(InductiveValidationError):
+        method._vat_loss(
+            bad_model,
+            data.X_u,
+            xi=1e-6,
+            eps=1.0,
+            num_iters=1,
+            freeze_bn=True,
+            detach_target=True,
+        )
+    with pytest.raises(InductiveValidationError):
+        method._vat_loss(
+            bad_model,
+            data.X_u,
+            xi=1e-6,
+            eps=1.0,
+            num_iters=1,
+            freeze_bn=True,
+            detach_target=False,
+        )
+
+
+def test_vat_vat_loss_bad_logits_d():
+    data = make_torch_ssl_dataset()
+    method = VATMethod()
+    bad_model = _GradSensitiveLogits()
+    with pytest.raises(InductiveValidationError):
+        method._vat_loss(
+            bad_model,
+            data.X_u,
+            xi=1e-6,
+            eps=1.0,
+            num_iters=1,
+            freeze_bn=True,
+            detach_target=True,
+        )
+
+
+def test_vat_vat_loss_bad_logits_adv():
+    data = make_torch_ssl_dataset()
+    method = VATMethod()
+    bad_model = _CountedLogits(in_dim=int(data.X_u.shape[1]), bad_call=3)
+    with pytest.raises(InductiveValidationError):
+        method._vat_loss(
+            bad_model,
+            data.X_u,
+            xi=1e-6,
+            eps=1.0,
+            num_iters=1,
+            freeze_bn=True,
+            detach_target=True,
+        )
+
+
+def test_vat_requires_unlabeled_data():
+    data = make_torch_ssl_dataset()
+    missing = DummyDataset(
+        X_l=data.X_l,
+        y_l=data.y_l,
+        X_u=None,
+        X_u_w=None,
+        X_u_s=None,
+    )
+    method = VATMethod(VATSpec(model_bundle=make_model_bundle()))
+    with pytest.raises(InductiveValidationError):
+        method.fit(missing, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_vat_fit_bad_logits_and_labels():
+    data = make_torch_ssl_dataset()
+    bundle = _make_bundle_for(_BadLogits1D())
+    method = VATMethod(VATSpec(model_bundle=bundle, batch_size=2, max_epochs=1))
+    with pytest.raises(InductiveValidationError):
+        method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+    bad = DummyDataset(
+        X_l=data.X_l,
+        y_l=torch.tensor([0, 2, 2, 0], dtype=torch.int64),
+        X_u=data.X_u,
+        X_u_w=data.X_u_w,
+        X_u_s=data.X_u_s,
+    )
+    method_ok = VATMethod(VATSpec(model_bundle=make_model_bundle(), batch_size=2, max_epochs=1))
+    with pytest.raises(InductiveValidationError):
+        method_ok.fit(bad, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_vat_predict_proba_backend_mismatch():
+    bundle = make_model_bundle()
+    method = VATMethod(VATSpec(model_bundle=bundle))
+    method._bundle = bundle
+    method._backend = None
+    with pytest.raises(InductiveValidationError):
+        method.predict_proba(make_numpy_dataset().X_l)
+
+
+def test_noisy_student_train_teacher_errors():
+    data = make_torch_ssl_dataset()
+    method = NoisyStudentMethod()
+
+    bad_model = _BadLogits1D()
+    optimizer = torch.optim.SGD(bad_model.parameters(), lr=0.1)
+    with pytest.raises(InductiveValidationError):
+        method._train_teacher(
+            bad_model,
+            optimizer,
+            data.X_l,
+            data.y_l,
+            batch_size=2,
+            epochs=1,
+            seed=0,
+        )
+
+    ok_model = _LinearLogits()
+    optimizer2 = torch.optim.SGD(ok_model.parameters(), lr=0.1)
+    bad_y = torch.tensor([0, 2, 2, 0], dtype=torch.int64)
+    with pytest.raises(InductiveValidationError):
+        method._train_teacher(
+            ok_model,
+            optimizer2,
+            data.X_l,
+            bad_y,
+            batch_size=2,
+            epochs=1,
+            seed=0,
+        )
+
+
+def test_noisy_student_requires_unlabeled_data():
+    data = make_torch_ssl_dataset()
+    missing = DummyDataset(
+        X_l=data.X_l,
+        y_l=data.y_l,
+        X_u=None,
+        X_u_w=None,
+        X_u_s=None,
+    )
+    method = NoisyStudentMethod(
+        NoisyStudentSpec(model_bundle=make_model_bundle(), teacher_epochs=0)
+    )
+    with pytest.raises(InductiveValidationError):
+        method.fit(missing, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_noisy_student_teacher_logits_errors():
+    data = make_torch_ssl_dataset()
+
+    student = _LinearLogits()
+    teacher = _TeacherLogits1D()
+    bundle = TorchModelBundle(
+        model=student,
+        optimizer=torch.optim.SGD(student.parameters(), lr=0.1),
+        ema_model=teacher,
+    )
+    method = NoisyStudentMethod(
+        NoisyStudentSpec(model_bundle=bundle, batch_size=2, max_epochs=1, teacher_epochs=0)
+    )
+    with pytest.raises(InductiveValidationError):
+        method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+    student2 = _LinearLogits()
+    teacher2 = _TeacherLogitsTrunc()
+    bundle2 = TorchModelBundle(
+        model=student2,
+        optimizer=torch.optim.SGD(student2.parameters(), lr=0.1),
+        ema_model=teacher2,
+    )
+    method2 = NoisyStudentMethod(
+        NoisyStudentSpec(model_bundle=bundle2, batch_size=2, max_epochs=1, teacher_epochs=0)
+    )
+    with pytest.raises(InductiveValidationError):
+        method2.fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_noisy_student_predict_proba_backend_mismatch():
+    bundle = make_model_bundle()
+    method = NoisyStudentMethod(NoisyStudentSpec(model_bundle=bundle))
+    method._bundle = bundle
+    method._backend = None
+    with pytest.raises(InductiveValidationError):
+        method.predict_proba(make_numpy_dataset().X_l)
+
+
+def test_noisy_student_mask_branches():
+    data = make_torch_ssl_dataset()
+
+    model = _LinearLogits()
+    with torch.no_grad():
+        model.fc.weight.zero_()
+    bundle = TorchModelBundle(
+        model=model,
+        optimizer=torch.optim.SGD(model.parameters(), lr=0.1),
+        ema_model=copy.deepcopy(model),
+    )
+    method = NoisyStudentMethod(
+        NoisyStudentSpec(
+            model_bundle=bundle,
+            batch_size=2,
+            max_epochs=1,
+            teacher_epochs=0,
+            hard_label=True,
+            p_cutoff=0.99,
+        )
+    )
+    method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+    model2 = _LinearLogits()
+    with torch.no_grad():
+        model2.fc.weight.zero_()
+    bundle2 = TorchModelBundle(
+        model=model2,
+        optimizer=torch.optim.SGD(model2.parameters(), lr=0.1),
+        ema_model=copy.deepcopy(model2),
+    )
+    method2 = NoisyStudentMethod(
+        NoisyStudentSpec(
+            model_bundle=bundle2,
+            batch_size=2,
+            max_epochs=1,
+            teacher_epochs=0,
+            hard_label=False,
+            p_cutoff=0.0,
+        )
+    )
+    method2.fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
 @pytest.mark.parametrize(
     "module",
     [fixmatch, flexmatch, mixmatch, adamatch, free_match, softmatch],
@@ -936,6 +1370,7 @@ def test_deep_methods_empty_xl_hits_check(method_cls, monkeypatch):
         FreeMatchMethod,
         SoftMatchMethod,
         MixMatchMethod,
+        NoisyStudentMethod,
     ],
 )
 def test_deep_methods_xu_mismatch_hits_check(method_cls, monkeypatch):
@@ -959,7 +1394,10 @@ def test_deep_methods_xu_mismatch_hits_check(method_cls, monkeypatch):
 def test_use_cat_bad_logits_ndim(method_cls):
     data = _data_for_method(method_cls)
     bundle = _make_bundle_for(_BadLogits1D())
-    spec = _make_spec(method_cls, bundle, use_cat=True)
+    overrides = {"use_cat": True}
+    if method_cls is NoisyStudentMethod:
+        overrides["teacher_epochs"] = 0
+    spec = _make_spec(method_cls, bundle, **overrides)
     with pytest.raises(InductiveValidationError):
         method_cls(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
 
@@ -968,7 +1406,10 @@ def test_use_cat_bad_logits_ndim(method_cls):
 def test_use_cat_bad_concat_batch(method_cls):
     data = _data_for_method(method_cls)
     bundle = _make_bundle_for(_BadBatch())
-    spec = _make_spec(method_cls, bundle, use_cat=True)
+    overrides = {"use_cat": True}
+    if method_cls is NoisyStudentMethod:
+        overrides["teacher_epochs"] = 0
+    spec = _make_spec(method_cls, bundle, **overrides)
     with pytest.raises(InductiveValidationError):
         method_cls(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
 
@@ -977,7 +1418,10 @@ def test_use_cat_bad_concat_batch(method_cls):
 def test_non_use_cat_bad_logits_ndim(method_cls):
     data = _data_for_method(method_cls)
     bundle = _make_bundle_for(_BadLogits1D(), with_ema=method_cls is MeanTeacherMethod)
-    spec = _make_spec(method_cls, bundle)
+    overrides = {}
+    if method_cls is NoisyStudentMethod:
+        overrides["teacher_epochs"] = 0
+    spec = _make_spec(method_cls, bundle, **overrides)
     with pytest.raises(InductiveValidationError):
         method_cls(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
 
@@ -994,7 +1438,10 @@ def test_non_use_cat_unlabeled_shape_mismatch(method_cls):
         meta=getattr(data, "meta", None),
     )
     bundle = _make_bundle_for(_ConditionalClasses(), with_ema=method_cls is MeanTeacherMethod)
-    spec = _make_spec(method_cls, bundle)
+    overrides = {}
+    if method_cls is NoisyStudentMethod:
+        overrides["teacher_epochs"] = 0
+    spec = _make_spec(method_cls, bundle, **overrides)
     with pytest.raises(InductiveValidationError):
         method_cls(spec).fit(data_mismatch, device=DeviceSpec(device="cpu"), seed=0)
 
@@ -1011,7 +1458,10 @@ def test_non_use_cat_class_dim_mismatch(method_cls):
         meta=getattr(data, "meta", None),
     )
     bundle = _make_bundle_for(_ConditionalClasses(), with_ema=method_cls is MeanTeacherMethod)
-    spec = _make_spec(method_cls, bundle)
+    overrides = {}
+    if method_cls is NoisyStudentMethod:
+        overrides["teacher_epochs"] = 0
+    spec = _make_spec(method_cls, bundle, **overrides)
     with pytest.raises(InductiveValidationError):
         method_cls(spec).fit(data_mismatch, device=DeviceSpec(device="cpu"), seed=0)
 
@@ -1028,7 +1478,10 @@ def test_non_use_cat_y_l_range_error(method_cls):
         meta=getattr(data, "meta", None),
     )
     bundle = make_model_bundle()
-    spec = _make_spec(method_cls, bundle)
+    overrides = {}
+    if method_cls is NoisyStudentMethod:
+        overrides["teacher_epochs"] = 0
+    spec = _make_spec(method_cls, bundle, **overrides)
     with pytest.raises(InductiveValidationError):
         method_cls(spec).fit(bad, device=DeviceSpec(device="cpu"), seed=0)
 
@@ -1112,6 +1565,42 @@ def test_mean_teacher_check_teacher_mismatches():
     teacher3 = torch.nn.Linear(2, 2, bias=False).to(device="meta")
     with pytest.raises(InductiveValidationError):
         mt._check_teacher(student, teacher3)
+
+
+def test_noisy_student_check_teacher_mismatches():
+    ns = NoisyStudentMethod(NoisyStudentSpec(model_bundle=make_model_bundle()))
+    student = torch.nn.Linear(2, 2, bias=False)
+    with pytest.raises(InductiveValidationError):
+        ns._check_teacher(student, student)
+
+    teacher = torch.nn.Sequential(torch.nn.Linear(2, 2), torch.nn.Linear(2, 2))
+    with pytest.raises(InductiveValidationError):
+        ns._check_teacher(student, teacher)
+
+    teacher2 = torch.nn.Linear(3, 2, bias=False)
+    with pytest.raises(InductiveValidationError):
+        ns._check_teacher(student, teacher2)
+
+    teacher3 = torch.nn.Linear(2, 2, bias=False).to(device="meta")
+    with pytest.raises(InductiveValidationError):
+        ns._check_teacher(student, teacher3)
+
+
+def test_noisy_student_init_teacher_errors():
+    ns = NoisyStudentMethod(NoisyStudentSpec(model_bundle=make_model_bundle()))
+    student = torch.nn.Linear(2, 2, bias=False)
+    teacher = torch.nn.Linear(3, 2, bias=False)
+    with pytest.raises(InductiveValidationError):
+        ns._init_teacher(student, teacher)
+
+
+def test_vat_l2_normalize_helpers():
+    with pytest.raises(InductiveValidationError):
+        vat._l2_normalize([1.0, 2.0])
+
+    empty = torch.zeros((0, 2))
+    out = vat._l2_normalize(empty)
+    assert int(out.numel()) == 0
 
 
 def test_flexmatch_meta_validation_and_state_branches():
