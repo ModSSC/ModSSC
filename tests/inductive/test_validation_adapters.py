@@ -158,6 +158,11 @@ def test_to_numpy_dataset_views_and_meta():
         _require_numpy_views({1: data.X_l})
 
 
+def test_to_torch_dataset_none():
+    with pytest.raises(InductiveValidationError, match="data must not be None"):
+        to_torch_dataset(None)
+
+
 def test_to_torch_dataset_success_auto_device():
     data = make_torch_dataset()
     out = to_torch_dataset(data, device=DeviceSpec(device="auto"), require_same_device=False)

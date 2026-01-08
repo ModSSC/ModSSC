@@ -76,11 +76,14 @@ def _build_mlp_bundle(
 ) -> TorchModelBundle:
     torch = _torch()
     input_dim = _infer_input_dim(sample)
-    hidden_sizes = force_hidden_sizes or _normalize_hidden_sizes(
-        params.get("hidden_sizes"),
-        params.get("hidden_dim"),
-        default=(256, 128),
-    )
+    if force_hidden_sizes is None:
+        hidden_sizes = _normalize_hidden_sizes(
+            params.get("hidden_sizes"),
+            params.get("hidden_dim"),
+            default=(256, 128),
+        )
+    else:
+        hidden_sizes = tuple(force_hidden_sizes)
     activation = str(params.get("activation", "relu"))
     dropout = float(params.get("dropout", 0.1))
     lr = float(params.get("lr", 1e-3))

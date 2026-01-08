@@ -437,6 +437,15 @@ def test_co_training_torch_type_checks(monkeypatch):
         )
 
 
+def test_co_training_torch_device_mismatch():
+    data, views = _make_views_torch()
+    y_l = torch.zeros_like(data.y_l, device="meta")
+    ds = DummyDataset(X_l=data.X_l, y_l=y_l, views=views)
+    method = CoTrainingMethod(CoTrainingSpec(classifier_backend="torch"))
+    with pytest.raises(InductiveValidationError, match="same device"):
+        method.fit(ds, device=DeviceSpec(device="cpu"), seed=0)
+
+
 def test_co_training_view_keys_spec():
     data, views = _make_views_numpy()
     ds = DummyDataset(X_l=data.X_l, y_l=data.y_l, views=views)

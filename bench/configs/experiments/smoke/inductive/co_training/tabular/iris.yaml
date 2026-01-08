@@ -4,10 +4,8 @@ run:
   output_dir: runs/inductive/co_training/tabular/iris
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: iris
   download: true
@@ -45,18 +43,18 @@ preprocess:
         n_components: 4
     - id: core.to_torch
       params:
-        device: "auto"
+        device: auto
         dtype: float32
 method:
   kind: inductive
   id: co_training
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     classifier_id: mlp
     classifier_backend: torch
-    max_iter: 3
+    max_iter: 5
     k_per_class: 1
     classifier_params:
       hidden_sizes:

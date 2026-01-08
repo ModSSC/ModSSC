@@ -640,6 +640,65 @@ def test_mixmatch_fit_predict_mixup_helpers():
         mixmatch._forward_head(bad_bundle, features=feat)
 
 
+def test_mixmatch_mixup_randperm_uses_cpu(monkeypatch):
+    X = torch.zeros((4, 2))
+    y = torch.zeros((4, 2))
+    calls = {}
+    orig_randperm = torch.randperm
+
+    def _spy_randperm(n, *args, **kwargs):
+        calls["device"] = kwargs.get("device")
+        calls["generator"] = kwargs.get("generator")
+        return orig_randperm(n, generator=kwargs.get("generator"), device="cpu")
+
+    monkeypatch.setattr(torch, "randperm", _spy_randperm)
+    mixmatch._mixup(X, y, alpha=0.5, generator=torch.Generator().manual_seed(0))
+
+    assert str(calls["device"]) == "cpu"
+    assert calls["generator"] is not None
+
+
+def test_mixmatch_mixup_moves_perm_to_device(monkeypatch):
+    class _FakeCudaTensor(torch.Tensor):
+        @property
+        def device(self):
+            return torch.device("cuda")
+
+    X = torch.zeros((4, 2)).as_subclass(_FakeCudaTensor)
+    y = torch.zeros((4, 2))
+    calls = {"to_devices": []}
+    orig_ones = torch.ones
+    orig_to = torch.Tensor.to
+
+    def _spy_ones(*args, **kwargs):
+        if "device" in kwargs:
+            kwargs = dict(kwargs)
+            kwargs["device"] = "cpu"
+        return orig_ones(*args, **kwargs)
+
+    def _spy_to(self, *args, **kwargs):
+        device = kwargs.get("device")
+        if device is None and args:
+            device = args[0]
+        if device is not None:
+            calls["to_devices"].append(device)
+        if "device" in kwargs:
+            kwargs = dict(kwargs)
+            kwargs["device"] = "cpu"
+        elif args:
+            new_args = list(args)
+            new_args[0] = torch.device("cpu")
+            args = tuple(new_args)
+        return orig_to(self, *args, **kwargs)
+
+    monkeypatch.setattr(torch, "ones", _spy_ones)
+    monkeypatch.setattr(torch.Tensor, "to", _spy_to, raising=False)
+
+    mixmatch._mixup(X, y, alpha=0.0, generator=torch.Generator().manual_seed(0))
+
+    assert any(str(device) == "cuda" for device in calls["to_devices"])
+
+
 def test_adamatch_fit_predict_and_alignment():
     data = make_torch_ssl_dataset()
     bundle = make_model_bundle()

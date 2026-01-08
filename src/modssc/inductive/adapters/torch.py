@@ -99,6 +99,8 @@ def to_torch_dataset(
 
     If device.device == "auto", only device consistency is enforced.
     """
+    if data is None:
+        raise InductiveValidationError("data must not be None.")
     X_l = _require_tensor(data.X_l, name="X_l")
     y_l = _require_tensor(data.y_l, name="y_l")
     _check_2d(X_l, name="X_l")

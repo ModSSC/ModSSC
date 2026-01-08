@@ -106,12 +106,13 @@ class APPNPMethod(TransductiveMethod):
             norm_mode="rw",  # APPNP uses random-walk / PPR propagation
             cache=self._prep_cache,
         )
+        val_count = int(prep.val_mask.sum()) if prep.val_mask is not None else None
         logger.info(
             "APPNP sizes: n_nodes=%s n_classes=%s train=%s val=%s",
             prep.n_nodes,
             prep.n_classes,
             int(prep.train_mask.sum()),
-            int(prep.val_mask.sum()),
+            val_count if val_count is not None else "none",
         )
 
         self._model = _APPNPNet(

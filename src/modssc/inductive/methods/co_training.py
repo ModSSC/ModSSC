@@ -195,6 +195,9 @@ class CoTrainingMethod(InductiveMethod):
             v1_l, v1_u = _view_payload_torch(data.views[keys[0]], name=keys[0])
             v2_l, v2_u = _view_payload_torch(data.views[keys[1]], name=keys[1])
 
+        if backend == "torch" and (y_l.device != v1_l.device or y_l.device != v2_l.device):
+            raise InductiveValidationError("y_l must be on the same device as the view tensors.")
+
         if v1_l.shape[0] != y_l.shape[0] or v2_l.shape[0] != y_l.shape[0]:
             raise InductiveValidationError("View X_l must align with y_l length.")
         if v1_u.shape[0] != v2_u.shape[0]:
@@ -250,9 +253,10 @@ class CoTrainingMethod(InductiveMethod):
                     threshold=self.spec.confidence_threshold,
                 )
 
-            if (idx1.numel() if backend == "torch" else idx1.size) == 0 and (
-                idx2.numel() if backend == "torch" else idx2.size
-            ) == 0:
+            sel1 = int(idx1.numel()) if backend == "torch" else int(idx1.size)
+            sel2 = int(idx2.numel()) if backend == "torch" else int(idx2.size)
+            if sel1 == 0 and sel2 == 0:
+                logger.debug("Co-training iter=%s no new labels; stopping.", iter_count)
                 break
 
             if backend == "numpy":
@@ -290,6 +294,13 @@ class CoTrainingMethod(InductiveMethod):
                 X1_u = X1_u[mask]
                 X2_u = X2_u[mask]
 
+            logger.debug(
+                "Co-training iter=%s selected_view1=%s selected_view2=%s remaining=%s",
+                iter_count,
+                sel1,
+                sel2,
+                int(X1_u.shape[0]),
+            )
             iter_count += 1
 
         clf1.fit(X1_l, y1_l)

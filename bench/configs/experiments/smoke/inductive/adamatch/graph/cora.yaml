@@ -4,10 +4,8 @@ run:
   output_dir: runs/inductive/adamatch/graph/cora
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: cora
   download: true
@@ -52,7 +50,7 @@ preprocess:
         embed_epochs: 1
     - id: core.to_torch
       params:
-        device: "auto"
+        device: auto
         dtype: float32
 augmentation:
   enabled: true
@@ -73,9 +71,11 @@ method:
   kind: inductive
   id: adamatch
   device:
-    device: "auto"
+    device: auto
     dtype: float32
-  params: {}
+  params:
+    max_epochs: 3
+    p_cutoff: 0.8
   model:
     classifier_id: mlp
     classifier_backend: torch

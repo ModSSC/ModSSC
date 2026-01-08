@@ -183,7 +183,7 @@ class MeanTeacherMethod(InductiveMethod):
         step_idx = 0
         student.train()
         teacher.train()
-        for _ in range(int(self.spec.max_epochs)):
+        for epoch in range(int(self.spec.max_epochs)):
             iter_l = cycle_batches(
                 X_l,
                 y_l,
@@ -198,7 +198,7 @@ class MeanTeacherMethod(InductiveMethod):
                 device=X_u_w.device,
                 steps=steps_per_epoch,
             )
-            for (x_lb, y_lb), idx_u in zip(iter_l, iter_u_idx, strict=False):
+            for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
                 logits_l = extract_logits(student(x_lb))
                 if int(logits_l.ndim) != 2:
                     raise InductiveValidationError("Model logits must be 2D (batch, classes).")
@@ -225,6 +225,16 @@ class MeanTeacherMethod(InductiveMethod):
 
                 warm = 1.0 if warmup_steps <= 0 else min(float(step_idx) / float(warmup_steps), 1.0)
                 loss = sup_loss + float(self.spec.lambda_u) * unsup_loss * float(warm)
+
+                if step == 0:
+                    logger.debug(
+                        "MeanTeacher epoch=%s warm=%.3f sup_loss=%.4f unsup_loss=%.4f ema_decay=%s",
+                        epoch,
+                        float(warm),
+                        float(sup_loss.item()),
+                        float(unsup_loss.item()),
+                        self.spec.ema_decay,
+                    )
 
                 optimizer.zero_grad()
                 loss.backward()

@@ -65,7 +65,9 @@ def _mixup(
         lam = dist.sample((batch,)).to(device=X.device, dtype=X.dtype)
         lam = torch.max(lam, 1.0 - lam)
 
-    perm = torch.randperm(batch, generator=generator, device=X.device)
+    perm = torch.randperm(batch, generator=generator, device="cpu")
+    if X.device.type != "cpu":
+        perm = perm.to(device=X.device)
     X2 = X[perm]
     y2 = y[perm]
 
@@ -216,7 +218,7 @@ class MixMatchMethod(InductiveMethod):
 
         step_idx = 0
         model.train()
-        for _ in range(int(self.spec.max_epochs)):
+        for epoch in range(int(self.spec.max_epochs)):
             iter_l = cycle_batches(
                 X_l,
                 y_l,
@@ -231,7 +233,7 @@ class MixMatchMethod(InductiveMethod):
                 device=X_u_w.device,
                 steps=steps_per_epoch,
             )
-            for (x_lb, y_lb), idx_u in zip(iter_l, iter_u_idx, strict=False):
+            for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
                 x_uw = X_u_w[idx_u]
                 x_us = X_u_s[idx_u]
 
@@ -289,6 +291,15 @@ class MixMatchMethod(InductiveMethod):
 
                 warm = 1.0 if warmup_steps <= 0 else min(float(step_idx) / float(warmup_steps), 1.0)
                 loss = sup_loss + float(self.spec.lambda_u) * unsup_loss * float(warm)
+
+                if step == 0:
+                    logger.debug(
+                        "MixMatch epoch=%s warm=%.3f sup_loss=%.4f unsup_loss=%.4f",
+                        epoch,
+                        float(warm),
+                        float(sup_loss.item()),
+                        float(unsup_loss.item()),
+                    )
 
                 optimizer.zero_grad()
                 loss.backward()

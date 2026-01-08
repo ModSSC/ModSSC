@@ -155,7 +155,7 @@ class FixMatchMethod(InductiveMethod):
         gen_u = torch.Generator().manual_seed(int(seed) + 1)
 
         model.train()
-        for _ in range(int(self.spec.max_epochs)):
+        for epoch in range(int(self.spec.max_epochs)):
             iter_l = cycle_batches(
                 X_l,
                 y_l,
@@ -170,7 +170,7 @@ class FixMatchMethod(InductiveMethod):
                 device=X_u_w.device,
                 steps=steps_per_epoch,
             )
-            for (x_lb, y_lb), idx_u in zip(iter_l, iter_u_idx, strict=False):
+            for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
                 x_uw = X_u_w[idx_u]
                 x_us = X_u_s[idx_u]
 
@@ -223,6 +223,17 @@ class FixMatchMethod(InductiveMethod):
                 else:
                     denom = mask.sum().clamp_min(1.0)
                     unsup_loss = (loss_u * mask).sum() / denom
+
+                if step == 0:
+                    mask_mean = float(mask.mean().item()) if int(mask.numel()) else 0.0
+                    logger.debug(
+                        "FixMatch epoch=%s p_cutoff=%s mask_mean=%.3f sup_loss=%.4f unsup_loss=%.4f",
+                        epoch,
+                        self.spec.p_cutoff,
+                        mask_mean,
+                        float(sup_loss.item()),
+                        float(unsup_loss.item()),
+                    )
 
                 loss = sup_loss + float(self.spec.lambda_u) * unsup_loss
 

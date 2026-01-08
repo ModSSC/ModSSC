@@ -4,10 +4,8 @@ run:
   output_dir: runs/inductive/softmatch/vision/mnist
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: mnist
   download: true
@@ -62,7 +60,7 @@ preprocess:
     - id: core.copy_raw
     - id: core.to_torch
       params:
-        device: "auto"
+        device: auto
         dtype: float32
 augmentation:
   enabled: true
@@ -83,9 +81,10 @@ method:
   kind: inductive
   id: softmatch
   device:
-    device: "auto"
+    device: auto
     dtype: float32
-  params: {}
+  params:
+    max_epochs: 3
   model:
     classifier_id: image_pretrained
     classifier_backend: torch

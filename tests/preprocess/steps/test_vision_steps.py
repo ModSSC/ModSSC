@@ -12,6 +12,7 @@ def test_channels_order_step():
     from modssc.preprocess.steps.vision.channels_order import ChannelsOrderStep
 
     step = ChannelsOrderStep(order="NCHW")
+    step_invalid = ChannelsOrderStep(order="noop")
     store = ArtifactStore()
     rng = np.random.default_rng(42)
 
@@ -19,6 +20,8 @@ def test_channels_order_step():
     store.set("raw.X", img_nhwc)
     res = step.transform(store, rng=rng)
     assert res["raw.X"].shape == (2, 3, 32, 32)
+    res = step_invalid.transform(store, rng=rng)
+    assert res["raw.X"] is img_nhwc
 
     step_nhwc = ChannelsOrderStep(order="NHWC")
     img_nchw = np.zeros((2, 3, 32, 32))
@@ -254,6 +257,11 @@ def test_zca_whitening_step():
     with pytest.raises(PreprocessValidationError, match="dimension mismatch"):
         step.transform(store, rng=rng)
 
+    store.set("raw.X", np.zeros((10,)))
+    with pytest.raises(PreprocessValidationError, match="at least 2 dimensions"):
+        step.transform(store, rng=rng)
+
+    store.set("raw.X", np.random.randn(10, 5))
     with pytest.raises(PreprocessValidationError, match="empty selection"):
         step.fit(store, fit_indices=np.array([]), rng=rng)
 
