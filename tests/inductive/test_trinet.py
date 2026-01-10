@@ -558,6 +558,27 @@ def test_trinet_fit_and_predict_with_fine_tune():
     assert int(pred.shape[0]) == int(data.X_l.shape[0])
 
 
+def test_trinet_fit_output_smearing_cuda_generator():
+    if not torch.cuda.is_available():
+        pytest.skip("CUDA unavailable")
+    device = "cuda"
+    data = make_torch_dataset(device=device)
+    shared = _make_shared_bundle()
+    shared.model.to(device)
+    heads = (_make_head_bundle(), _make_head_bundle(), _make_head_bundle())
+    for head in heads:
+        head.model.to(device)
+    spec = _valid_spec(
+        shared,
+        heads,
+        output_smearing_std=0.1,
+        pool_base=2,
+        max_rounds=1,
+        fine_tune_interval=1,
+    )
+    TriNetMethod(spec).fit(data, device=DeviceSpec(device=device), seed=0)
+
+
 def test_trinet_fit_sigma_t_after_flag():
     data = make_torch_dataset()
     shared = _make_shared_bundle()

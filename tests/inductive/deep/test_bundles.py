@@ -93,6 +93,39 @@ def test_build_mlp_and_logreg_bundles() -> None:
     assert isinstance(logreg.model[0], torch.nn.Linear)
 
 
+def test_build_mlp_feature_bundle() -> None:
+    sample = torch.randn(2, 3)
+    bundle = bundles._build_mlp_feature_bundle(
+        sample,
+        num_classes=2,
+        params={"hidden_sizes": (4,), "dropout": 0.0},
+        seed=0,
+        ema=False,
+    )
+    out = bundle.model(sample)
+    assert set(out.keys()) == {"logits", "feat"}
+    assert out["logits"].shape[0] == int(sample.shape[0])
+    assert out["feat"].shape[0] == int(sample.shape[0])
+
+    bundle_dropout = bundles._build_mlp_feature_bundle(
+        sample,
+        num_classes=2,
+        params={"hidden_sizes": (4,), "dropout": 0.2},
+        seed=0,
+        ema=False,
+    )
+    assert any(isinstance(layer, torch.nn.Dropout) for layer in bundle_dropout.model.backbone)
+
+    with pytest.raises(InductiveValidationError, match="hidden_sizes must be positive"):
+        bundles._build_mlp_feature_bundle(
+            sample,
+            num_classes=2,
+            params={"hidden_sizes": (-1,)},
+            seed=0,
+            ema=False,
+        )
+
+
 def test_image_audio_text_helpers_and_bundles() -> None:
     sample4 = torch.randn(2, 3, 4, 4)
     assert bundles._infer_image_shape(sample4, input_shape=None) == (3, 4, 4)
@@ -313,6 +346,97 @@ def test_image_pretrained_wrapper_branches(monkeypatch) -> None:
     assert X2.shape[1:] == (1, 2, 2)
 
 
+def test_image_pretrained_wrapper_return_features(monkeypatch) -> None:
+    from modssc.supervised.backends.torch import image_pretrained as ip
+
+    class DummyModel(torch.nn.Module):
+        def __init__(self, in_ch: int = 3):
+            super().__init__()
+            self.conv = torch.nn.Conv2d(in_ch, 4, kernel_size=1)
+            self.fc = torch.nn.Linear(4, 2)
+
+        def forward(self, x):
+            x = self.conv(x)
+            x = x.mean(dim=(2, 3))
+            return self.fc(x)
+
+    sample = torch.randn(2, 3, 4, 4)
+    monkeypatch.setattr(ip, "_load_model", lambda *_args, **_kwargs: DummyModel())
+    bundle = bundles._build_image_pretrained_bundle(
+        sample,
+        num_classes=2,
+        params={"weights": None, "return_features": True, "input_layout": "channels_first"},
+        seed=0,
+        ema=False,
+    )
+    out = bundle.model(sample)
+    assert set(out.keys()) == {"logits", "feat"}
+
+    class DummyNoHead(DummyModel):
+        def forward(self, x):
+            x = self.conv(x)
+            return x.mean(dim=(2, 3))
+
+    monkeypatch.setattr(ip, "_load_model", lambda *_args, **_kwargs: DummyNoHead())
+    bundle_no_head = bundles._build_image_pretrained_bundle(
+        sample,
+        num_classes=2,
+        params={"weights": None, "return_features": True},
+        seed=0,
+        ema=False,
+    )
+    out_no_head = bundle_no_head.model(sample)
+    assert torch.allclose(out_no_head["feat"], out_no_head["logits"])
+
+    class DummyBad(DummyModel):
+        def forward(self, x):
+            x = self.conv(x)
+            x = x.mean(dim=(2, 3))
+            return {"logits": x}
+
+    monkeypatch.setattr(ip, "_load_model", lambda *_args, **_kwargs: DummyBad())
+    bundle_bad = bundles._build_image_pretrained_bundle(
+        sample,
+        num_classes=2,
+        params={"weights": None, "return_features": True},
+        seed=0,
+        ema=False,
+    )
+    with pytest.raises(InductiveValidationError, match="return_features failed"):
+        bundle_bad.model(sample)
+
+    class NoInputHead(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.param = torch.nn.Parameter(torch.zeros(2))
+
+        def forward(self):
+            return self.param
+
+    class DummyNoInputModel(torch.nn.Module):
+        def __init__(self, in_ch: int = 3):
+            super().__init__()
+            self.conv = torch.nn.Conv2d(in_ch, 4, kernel_size=1)
+            self.fc = NoInputHead()
+
+        def forward(self, x):
+            x = self.conv(x)
+            x = x.mean(dim=(2, 3))
+            return self.fc()
+
+    monkeypatch.setattr(ip, "_load_model", lambda *_args, **_kwargs: DummyNoInputModel())
+    monkeypatch.setattr(ip, "_replace_classifier", lambda model, _n, _t: model.fc)
+    bundle_empty = bundles._build_image_pretrained_bundle(
+        sample,
+        num_classes=2,
+        params={"weights": None, "return_features": True},
+        seed=0,
+        ema=False,
+    )
+    out_empty = bundle_empty.model(sample)
+    assert set(out_empty.keys()) == {"logits", "feat"}
+
+
 def test_build_audio_pretrained_bundle_wrapper(monkeypatch) -> None:
     from modssc.supervised.backends.torch import audio_pretrained as ap
 
@@ -350,6 +474,16 @@ def test_build_audio_pretrained_bundle_wrapper(monkeypatch) -> None:
     out = wrapper(sample)
     assert out.shape[0] == int(sample.shape[0])
     wrapper.train(True)
+
+    bundle_features = bundles._build_audio_pretrained_bundle(
+        sample,
+        num_classes=2,
+        params={"freeze_backbone": True, "return_features": True},
+        seed=0,
+        ema=False,
+    )
+    out_features = bundle_features.model(sample)
+    assert set(out_features.keys()) == {"logits", "feat"}
 
     bundle_unfrozen = bundles._build_audio_pretrained_bundle(
         sample,
@@ -422,6 +556,27 @@ def test_build_torch_bundle_from_classifier(monkeypatch) -> None:
         ),
         TorchModelBundle,
     )
+    mlp_features = bundles.build_torch_bundle_from_classifier(
+        classifier_id="mlp",
+        classifier_backend="torch",
+        classifier_params={"return_features": True, "hidden_sizes": (4,), "dropout": 0.0},
+        sample=sample,
+        num_classes=2,
+        ema=False,
+    )
+    out = mlp_features.model(sample)
+    assert set(out.keys()) == {"logits", "feat"}
+
+    logreg_features = bundles.build_torch_bundle_from_classifier(
+        classifier_id="logreg",
+        classifier_backend="torch",
+        classifier_params={"return_features": True},
+        sample=sample,
+        num_classes=2,
+        ema=False,
+    )
+    out_log = logreg_features.model(sample)
+    assert torch.allclose(out_log["feat"], sample)
     assert isinstance(
         bundles.build_torch_bundle_from_classifier(
             classifier_id="image_cnn",

@@ -463,7 +463,7 @@ class TriNetMethod(InductiveMethod):
                 y_l,
                 n_classes=n_classes,
                 std=float(self.spec.output_smearing_std),
-                generator=torch.Generator().manual_seed(int(seed) + i),
+                generator=torch.Generator(device=y_l.device).manual_seed(int(seed) + i),
             )
             for i in range(3)
         ]
@@ -495,7 +495,9 @@ class TriNetMethod(InductiveMethod):
                         y_l,
                         n_classes=n_classes,
                         std=float(self.spec.output_smearing_std),
-                        generator=torch.Generator().manual_seed(int(seed) + 1000 + t * 10 + i),
+                        generator=torch.Generator(device=y_l.device).manual_seed(
+                            int(seed) + 1000 + t * 10 + i
+                        ),
                     )
                     for i in range(3)
                 ]

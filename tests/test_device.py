@@ -115,3 +115,121 @@ def test_best_device_missing_is_available() -> None:
 
     torch = _TorchNoCheck()
     assert device_mod._best_device_from_torch(torch) == "cpu"
+
+
+def test_mps_is_available_with_none() -> None:
+    device_mod.mps_is_available.cache_clear()
+    assert device_mod.mps_is_available(None) is False
+
+
+def test_mps_is_available_missing_mps() -> None:
+    class _TorchNoBackends:
+        pass
+
+    device_mod.mps_is_available.cache_clear()
+    assert device_mod.mps_is_available(_TorchNoBackends()) is False
+
+
+def test_mps_is_available_is_built_false() -> None:
+    class _MpsBuiltFalse:
+        def is_built(self):
+            return False
+
+        def is_available(self):
+            return True
+
+    class _Backends:
+        def __init__(self) -> None:
+            self.mps = _MpsBuiltFalse()
+
+    class _Torch:
+        def __init__(self) -> None:
+            self.backends = _Backends()
+
+        def zeros(self, *args, **kwargs):
+            return object()
+
+    device_mod.mps_is_available.cache_clear()
+    assert device_mod.mps_is_available(_Torch()) is False
+
+
+def test_mps_is_available_is_built_raises() -> None:
+    class _MpsBuiltRaises:
+        def is_built(self):
+            raise RuntimeError("boom")
+
+        def is_available(self):
+            return True
+
+    class _Backends:
+        def __init__(self) -> None:
+            self.mps = _MpsBuiltRaises()
+
+    class _Torch:
+        def __init__(self) -> None:
+            self.backends = _Backends()
+
+        def zeros(self, *args, **kwargs):
+            return object()
+
+    device_mod.mps_is_available.cache_clear()
+    assert device_mod.mps_is_available(_Torch()) is False
+
+
+def test_mps_is_available_is_available_not_callable() -> None:
+    class _MpsNoAvailable:
+        is_available = True
+
+    class _Backends:
+        def __init__(self) -> None:
+            self.mps = _MpsNoAvailable()
+
+    class _Torch:
+        def __init__(self) -> None:
+            self.backends = _Backends()
+
+        def zeros(self, *args, **kwargs):
+            return object()
+
+    device_mod.mps_is_available.cache_clear()
+    assert device_mod.mps_is_available(_Torch()) is False
+
+
+def test_mps_is_available_is_available_raises() -> None:
+    class _MpsAvailableRaises:
+        def is_available(self):
+            raise RuntimeError("boom")
+
+    class _Backends:
+        def __init__(self) -> None:
+            self.mps = _MpsAvailableRaises()
+
+    class _Torch:
+        def __init__(self) -> None:
+            self.backends = _Backends()
+
+        def zeros(self, *args, **kwargs):
+            return object()
+
+    device_mod.mps_is_available.cache_clear()
+    assert device_mod.mps_is_available(_Torch()) is False
+
+
+def test_mps_is_available_zeros_raises() -> None:
+    class _MpsAvailableTrue:
+        def is_available(self):
+            return True
+
+    class _Backends:
+        def __init__(self) -> None:
+            self.mps = _MpsAvailableTrue()
+
+    class _Torch:
+        def __init__(self) -> None:
+            self.backends = _Backends()
+
+        def zeros(self, *args, **kwargs):
+            raise RuntimeError("boom")
+
+    device_mod.mps_is_available.cache_clear()
+    assert device_mod.mps_is_available(_Torch()) is False
