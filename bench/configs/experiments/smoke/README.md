@@ -11,6 +11,17 @@ python -m bench.main --config bench/configs/experiments/smoke/inductive/adamatch
 python -m bench.main --config bench/configs/experiments/smoke/inductive/adamatch/vision/mnist.yaml > log/inductive/adamatch/vision/mnist.log 2>&1
 ```
 
+## inductive/adsh
+
+```
+mkdir -p log/inductive/adsh/audio log/inductive/adsh/graph log/inductive/adsh/tabular log/inductive/adsh/text log/inductive/adsh/vision
+python -m bench.main --config bench/configs/experiments/smoke/inductive/adsh/audio/speechcommands.yaml > log/inductive/adsh/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/adsh/graph/cora.yaml > log/inductive/adsh/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/adsh/tabular/iris.yaml > log/inductive/adsh/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/adsh/text/imdb.yaml > log/inductive/adsh/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/adsh/vision/mnist.yaml > log/inductive/adsh/vision/mnist.log 2>&1
+```
+
 ## inductive/co_training
 
 ```
@@ -20,6 +31,61 @@ python -m bench.main --config bench/configs/experiments/smoke/inductive/co_train
 python -m bench.main --config bench/configs/experiments/smoke/inductive/co_training/tabular/iris.yaml > log/inductive/co_training/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/inductive/co_training/text/imdb.yaml > log/inductive/co_training/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/inductive/co_training/vision/mnist.yaml > log/inductive/co_training/vision/mnist.log 2>&1
+```
+
+## inductive/comatch
+
+```
+mkdir -p log/inductive/comatch/audio log/inductive/comatch/graph log/inductive/comatch/tabular log/inductive/comatch/text log/inductive/comatch/vision
+python -m bench.main --config bench/configs/experiments/smoke/inductive/comatch/audio/speechcommands.yaml > log/inductive/comatch/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/comatch/graph/cora.yaml > log/inductive/comatch/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/comatch/tabular/iris.yaml > log/inductive/comatch/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/comatch/text/imdb.yaml > log/inductive/comatch/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/comatch/vision/mnist.yaml > log/inductive/comatch/vision/mnist.log 2>&1
+```
+
+## inductive/daso
+
+```
+mkdir -p log/inductive/daso/audio log/inductive/daso/graph log/inductive/daso/tabular log/inductive/daso/text log/inductive/daso/vision
+python -m bench.main --config bench/configs/experiments/smoke/inductive/daso/audio/speechcommands.yaml > log/inductive/daso/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/daso/graph/cora.yaml > log/inductive/daso/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/daso/tabular/iris.yaml > log/inductive/daso/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/daso/text/imdb.yaml > log/inductive/daso/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/daso/vision/mnist.yaml > log/inductive/daso/vision/mnist.log 2>&1
+```
+
+## inductive/deep_co_training
+
+```
+mkdir -p log/inductive/deep_co_training/audio log/inductive/deep_co_training/graph log/inductive/deep_co_training/tabular log/inductive/deep_co_training/text log/inductive/deep_co_training/vision
+python -m bench.main --config bench/configs/experiments/smoke/inductive/deep_co_training/audio/speechcommands.yaml > log/inductive/deep_co_training/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/deep_co_training/graph/cora.yaml > log/inductive/deep_co_training/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/deep_co_training/tabular/iris.yaml > log/inductive/deep_co_training/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/deep_co_training/text/imdb.yaml > log/inductive/deep_co_training/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/deep_co_training/vision/mnist.yaml > log/inductive/deep_co_training/vision/mnist.log 2>&1
+```
+
+## inductive/defixmatch
+
+```
+mkdir -p log/inductive/defixmatch/audio log/inductive/defixmatch/graph log/inductive/defixmatch/tabular log/inductive/defixmatch/text log/inductive/defixmatch/vision
+python -m bench.main --config bench/configs/experiments/smoke/inductive/defixmatch/audio/speechcommands.yaml > log/inductive/defixmatch/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/defixmatch/graph/cora.yaml > log/inductive/defixmatch/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/defixmatch/tabular/iris.yaml > log/inductive/defixmatch/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/defixmatch/text/imdb.yaml > log/inductive/defixmatch/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/defixmatch/vision/mnist.yaml > log/inductive/defixmatch/vision/mnist.log 2>&1
+```
+
+## inductive/democratic_co_learning
+
+```
+mkdir -p log/inductive/democratic_co_learning/audio log/inductive/democratic_co_learning/graph log/inductive/democratic_co_learning/tabular log/inductive/democratic_co_learning/text log/inductive/democratic_co_learning/vision
+python -m bench.main --config bench/configs/experiments/smoke/inductive/democratic_co_learning/audio/speechcommands.yaml > log/inductive/democratic_co_learning/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/democratic_co_learning/graph/cora.yaml > log/inductive/democratic_co_learning/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/democratic_co_learning/tabular/iris.yaml > log/inductive/democratic_co_learning/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/democratic_co_learning/text/imdb.yaml > log/inductive/democratic_co_learning/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/democratic_co_learning/vision/mnist.yaml > log/inductive/democratic_co_learning/vision/mnist.log 2>&1
 ```
 
 ## inductive/fixmatch
@@ -67,6 +133,18 @@ python -m bench.main --config bench/configs/experiments/smoke/inductive/mean_tea
 python -m bench.main --config bench/configs/experiments/smoke/inductive/mean_teacher/vision/mnist.yaml > log/inductive/mean_teacher/vision/mnist.log 2>&1
 ```
 
+## inductive/meta_pseudo_labels
+
+```
+mkdir -p log/inductive/meta_pseudo_labels/audio log/inductive/meta_pseudo_labels/graph log/inductive/meta_pseudo_labels/tabular log/inductive/meta_pseudo_labels/text log/inductive/meta_pseudo_labels/vision
+python -m bench.main --config bench/configs/experiments/smoke/inductive/meta_pseudo_labels/audio/speechcommands.yaml > log/inductive/meta_pseudo_labels/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/meta_pseudo_labels/audio/yesno.yaml > log/inductive/meta_pseudo_labels/audio/yesno.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/meta_pseudo_labels/graph/cora.yaml > log/inductive/meta_pseudo_labels/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/meta_pseudo_labels/tabular/iris.yaml > log/inductive/meta_pseudo_labels/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/meta_pseudo_labels/text/imdb.yaml > log/inductive/meta_pseudo_labels/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/meta_pseudo_labels/vision/mnist.yaml > log/inductive/meta_pseudo_labels/vision/mnist.log 2>&1
+```
+
 ## inductive/mixmatch
 
 ```
@@ -76,6 +154,17 @@ python -m bench.main --config bench/configs/experiments/smoke/inductive/mixmatch
 python -m bench.main --config bench/configs/experiments/smoke/inductive/mixmatch/tabular/iris.yaml > log/inductive/mixmatch/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/inductive/mixmatch/text/imdb.yaml > log/inductive/mixmatch/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/inductive/mixmatch/vision/mnist.yaml > log/inductive/mixmatch/vision/mnist.log 2>&1
+```
+
+## inductive/noisy_student
+
+```
+mkdir -p log/inductive/noisy_student/audio log/inductive/noisy_student/graph log/inductive/noisy_student/tabular log/inductive/noisy_student/text log/inductive/noisy_student/vision
+python -m bench.main --config bench/configs/experiments/smoke/inductive/noisy_student/audio/speechcommands.yaml > log/inductive/noisy_student/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/noisy_student/graph/cora.yaml > log/inductive/noisy_student/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/noisy_student/tabular/iris.yaml > log/inductive/noisy_student/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/noisy_student/text/imdb.yaml > log/inductive/noisy_student/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/noisy_student/vision/mnist.yaml > log/inductive/noisy_student/vision/mnist.log 2>&1
 ```
 
 ## inductive/pi_model
@@ -111,6 +200,39 @@ python -m bench.main --config bench/configs/experiments/smoke/inductive/s4vm/tex
 python -m bench.main --config bench/configs/experiments/smoke/inductive/s4vm/vision/mnist.yaml > log/inductive/s4vm/vision/mnist.log 2>&1
 ```
 
+## inductive/self_training
+
+```
+mkdir -p log/inductive/self_training/audio log/inductive/self_training/graph log/inductive/self_training/tabular log/inductive/self_training/text log/inductive/self_training/vision
+python -m bench.main --config bench/configs/experiments/smoke/inductive/self_training/audio/speechcommands.yaml > log/inductive/self_training/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/self_training/graph/cora.yaml > log/inductive/self_training/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/self_training/tabular/iris.yaml > log/inductive/self_training/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/self_training/text/imdb.yaml > log/inductive/self_training/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/self_training/vision/mnist.yaml > log/inductive/self_training/vision/mnist.log 2>&1
+```
+
+## inductive/setred
+
+```
+mkdir -p log/inductive/setred/audio log/inductive/setred/graph log/inductive/setred/tabular log/inductive/setred/text log/inductive/setred/vision
+python -m bench.main --config bench/configs/experiments/smoke/inductive/setred/audio/speechcommands.yaml > log/inductive/setred/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/setred/graph/cora.yaml > log/inductive/setred/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/setred/tabular/iris.yaml > log/inductive/setred/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/setred/text/imdb.yaml > log/inductive/setred/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/setred/vision/mnist.yaml > log/inductive/setred/vision/mnist.log 2>&1
+```
+
+## inductive/simclr_v2
+
+```
+mkdir -p log/inductive/simclr_v2/audio log/inductive/simclr_v2/graph log/inductive/simclr_v2/tabular log/inductive/simclr_v2/text log/inductive/simclr_v2/vision
+python -m bench.main --config bench/configs/experiments/smoke/inductive/simclr_v2/audio/speechcommands.yaml > log/inductive/simclr_v2/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/simclr_v2/graph/cora.yaml > log/inductive/simclr_v2/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/simclr_v2/tabular/iris.yaml > log/inductive/simclr_v2/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/simclr_v2/text/imdb.yaml > log/inductive/simclr_v2/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/simclr_v2/vision/mnist.yaml > log/inductive/simclr_v2/vision/mnist.log 2>&1
+```
+
 ## inductive/softmatch
 
 ```
@@ -122,6 +244,17 @@ python -m bench.main --config bench/configs/experiments/smoke/inductive/softmatc
 python -m bench.main --config bench/configs/experiments/smoke/inductive/softmatch/vision/mnist.yaml > log/inductive/softmatch/vision/mnist.log 2>&1
 ```
 
+## inductive/temporal_ensembling
+
+```
+mkdir -p log/inductive/temporal_ensembling/audio log/inductive/temporal_ensembling/graph log/inductive/temporal_ensembling/tabular log/inductive/temporal_ensembling/text log/inductive/temporal_ensembling/vision
+python -m bench.main --config bench/configs/experiments/smoke/inductive/temporal_ensembling/audio/speechcommands.yaml > log/inductive/temporal_ensembling/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/temporal_ensembling/graph/cora.yaml > log/inductive/temporal_ensembling/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/temporal_ensembling/tabular/iris.yaml > log/inductive/temporal_ensembling/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/temporal_ensembling/text/imdb.yaml > log/inductive/temporal_ensembling/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/temporal_ensembling/vision/mnist.yaml > log/inductive/temporal_ensembling/vision/mnist.log 2>&1
+```
+
 ## inductive/tri_training
 
 ```
@@ -131,6 +264,17 @@ python -m bench.main --config bench/configs/experiments/smoke/inductive/tri_trai
 python -m bench.main --config bench/configs/experiments/smoke/inductive/tri_training/tabular/iris.yaml > log/inductive/tri_training/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/inductive/tri_training/text/imdb.yaml > log/inductive/tri_training/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/inductive/tri_training/vision/mnist.yaml > log/inductive/tri_training/vision/mnist.log 2>&1
+```
+
+## inductive/trinet
+
+```
+mkdir -p log/inductive/trinet/audio log/inductive/trinet/graph log/inductive/trinet/tabular log/inductive/trinet/text log/inductive/trinet/vision
+python -m bench.main --config bench/configs/experiments/smoke/inductive/trinet/audio/speechcommands.yaml > log/inductive/trinet/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/trinet/graph/cora.yaml > log/inductive/trinet/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/trinet/tabular/iris.yaml > log/inductive/trinet/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/trinet/text/imdb.yaml > log/inductive/trinet/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/trinet/vision/mnist.yaml > log/inductive/trinet/vision/mnist.log 2>&1
 ```
 
 ## inductive/tsvm
@@ -154,6 +298,17 @@ python -m bench.main --config bench/configs/experiments/smoke/inductive/uda/grap
 python -m bench.main --config bench/configs/experiments/smoke/inductive/uda/tabular/iris.yaml > log/inductive/uda/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/inductive/uda/text/imdb.yaml > log/inductive/uda/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/inductive/uda/vision/mnist.yaml > log/inductive/uda/vision/mnist.log 2>&1
+```
+
+## inductive/vat
+
+```
+mkdir -p log/inductive/vat/audio log/inductive/vat/graph log/inductive/vat/tabular log/inductive/vat/text log/inductive/vat/vision
+python -m bench.main --config bench/configs/experiments/smoke/inductive/vat/audio/speechcommands.yaml > log/inductive/vat/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/vat/graph/cora.yaml > log/inductive/vat/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/vat/tabular/iris.yaml > log/inductive/vat/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/vat/text/imdb.yaml > log/inductive/vat/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/inductive/vat/vision/mnist.yaml > log/inductive/vat/vision/mnist.log 2>&1
 ```
 
 ## transductive/appnp

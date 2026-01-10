@@ -5,7 +5,7 @@ from typing import Any
 
 import numpy as np
 
-from modssc.device import resolve_device_name
+from modssc.device import mps_is_available, resolve_device_name
 
 from ..errors import OptionalDependencyError
 from ..optional import optional_import
@@ -42,9 +42,7 @@ def to_pyg_data(
             raise OptionalDependencyError(
                 "torch", "transductive-torch", message="CUDA not available"
             )
-        if requested == "mps" and (
-            not getattr(torch.backends, "mps", None) or not torch.backends.mps.is_available()
-        ):
+        if requested == "mps" and not mps_is_available(torch):
             raise OptionalDependencyError(
                 "torch", "transductive-torch", message="MPS not available"
             )

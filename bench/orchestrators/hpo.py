@@ -191,6 +191,7 @@ def _objective_value(
     expected_labeled_count = prepared_artifacts.get("expected_labeled_count")
     X_u_w = prepared_artifacts["X_u_w"]
     X_u_s = prepared_artifacts["X_u_s"]
+    X_u_s_1 = prepared_artifacts.get("X_u_s_1")
     use_test = prepared_artifacts["use_test"]
 
     if cfg.method.kind == "inductive":
@@ -200,6 +201,7 @@ def _objective_value(
             views=views,
             X_u_w=X_u_w,
             X_u_s=X_u_s,
+            X_u_s_1=X_u_s_1,
             cfg=cfg.method,
             seed=seed,
         )

@@ -5,7 +5,7 @@ from typing import Any
 
 import numpy as np
 
-from modssc.device import resolve_device_name
+from modssc.device import mps_is_available, resolve_device_name
 from modssc.preprocess.errors import PreprocessValidationError
 from modssc.preprocess.optional import require
 from modssc.preprocess.store import ArtifactStore
@@ -21,7 +21,7 @@ def _resolve_device(torch, device: str) -> Any:
             raise PreprocessValidationError("CUDA not available for labels.to_torch")
         return torch.device("cuda")
     if resolved == "mps":
-        if not getattr(torch.backends, "mps", None) or not torch.backends.mps.is_available():
+        if not mps_is_available(torch):
             raise PreprocessValidationError("MPS not available for labels.to_torch")
         return torch.device("mps")
     raise PreprocessValidationError(f"Unknown device: {requested!r}")

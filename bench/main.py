@@ -463,6 +463,7 @@ def run_experiment(config_path: Path) -> int:
 
         X_u_w = None
         X_u_s = None
+        X_u_s_1 = None
         if (
             cfg.augmentation is not None
             and cfg.augmentation.enabled
@@ -472,7 +473,8 @@ def run_experiment(config_path: Path) -> int:
             idx_u = np.asarray(sampling.indices["train_unlabeled"], dtype=np.int64)
             X_u = _select_rows(pre.dataset.train.X, idx_u)
             aug_seed = ctx.seed_for("augmentation", cfg.augmentation.seed)
-            X_u_w, X_u_s = aug_orch.run(
+            strong_views = 2 if cfg.method.method_id == "comatch" else 1
+            X_u_w, X_u_s, X_u_s_1 = aug_orch.run(
                 X_u,
                 weak_plan=cfg.augmentation.weak,
                 strong_plan=cfg.augmentation.strong,
@@ -480,6 +482,7 @@ def run_experiment(config_path: Path) -> int:
                 mode=cfg.augmentation.mode,
                 modality=cfg.augmentation.modality,
                 sample_ids=idx_u,
+                strong_views=strong_views,
             )
             artifacts["augmentation"] = {"seed": aug_seed, "mode": cfg.augmentation.mode}
 
@@ -504,6 +507,7 @@ def run_experiment(config_path: Path) -> int:
             "graph": graph,
             "X_u_w": X_u_w,
             "X_u_s": X_u_s,
+            "X_u_s_1": X_u_s_1,
             "use_test": use_test,
             "masks": masks,
             "expected_labeled_count": expected_labeled_count,
@@ -533,6 +537,7 @@ def run_experiment(config_path: Path) -> int:
                 views=views,
                 X_u_w=X_u_w,
                 X_u_s=X_u_s,
+                X_u_s_1=X_u_s_1,
                 cfg=cfg.method,
                 seed=method_seed,
             )

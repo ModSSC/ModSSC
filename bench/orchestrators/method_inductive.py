@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
 from dataclasses import is_dataclass, replace
 from time import perf_counter
 from typing import Any
@@ -136,29 +137,115 @@ def _inject_model_bundle(
         return spec
     if spec is None:
         raise ValueError("method.model is set but no dataclass spec is available")
-    if not hasattr(spec, "model_bundle"):
-        raise ValueError("method.model is set but the method spec has no model_bundle field")
-    if getattr(model_cfg, "factory", None):
-        factory = load_object(model_cfg.factory)
-        bundle = factory(**dict(model_cfg.params))
-        return replace(spec, model_bundle=bundle)
 
-    if not is_torch_tensor(X_l):
-        raise ValueError("Torch model bundle requires torch.Tensor inputs (use core.to_torch).")
-    num_classes = _infer_num_classes(y_l)
-    ema = model_cfg.ema
-    if ema is None:
-        ema = str(method_id) == "mean_teacher"
-    bundle = build_torch_bundle_from_classifier(
-        classifier_id=model_cfg.classifier_id,
-        classifier_backend=model_cfg.classifier_backend,
-        classifier_params=model_cfg.classifier_params,
-        sample=X_l,
-        num_classes=num_classes,
-        seed=int(seed),
-        ema=bool(ema),
-    )
-    return replace(spec, model_bundle=bundle)
+    def _make_bundle(
+        *,
+        seed_offset: int,
+        sample_override: Any | None = None,
+        classifier_id: str | None = None,
+        classifier_backend: str | None = None,
+        classifier_params: dict[str, Any] | None = None,
+        ema: bool | None = None,
+    ) -> Any:
+        has_override = any(
+            value is not None
+            for value in (classifier_id, classifier_backend, classifier_params, ema)
+        )
+        if getattr(model_cfg, "factory", None):
+            if has_override:
+                raise ValueError(
+                    "method.model.factory cannot be combined with classifier overrides"
+                )
+            factory = load_object(model_cfg.factory)
+            return factory(**dict(model_cfg.params))
+        sample = sample_override if sample_override is not None else X_l
+        if not is_torch_tensor(sample):
+            raise ValueError("Torch model bundle requires torch.Tensor inputs (use core.to_torch).")
+        num_classes = _infer_num_classes(y_l)
+        local_classifier_id = classifier_id or model_cfg.classifier_id
+        local_classifier_backend = classifier_backend or model_cfg.classifier_backend
+        local_classifier_params = (
+            model_cfg.classifier_params if classifier_params is None else classifier_params
+        )
+        if local_classifier_id is None:
+            raise ValueError("classifier_id must be provided for torch model bundles")
+        if ema is None:
+            ema = model_cfg.ema
+        if ema is None:
+            ema = str(method_id) == "mean_teacher"
+        return build_torch_bundle_from_classifier(
+            classifier_id=local_classifier_id,
+            classifier_backend=local_classifier_backend,
+            classifier_params=local_classifier_params,
+            sample=sample,
+            num_classes=num_classes,
+            seed=int(seed) + int(seed_offset),
+            ema=bool(ema),
+        )
+
+    if hasattr(spec, "model_bundle"):
+        return replace(spec, model_bundle=_make_bundle(seed_offset=0))
+    if hasattr(spec, "teacher_bundle") and hasattr(spec, "student_bundle"):
+        return replace(
+            spec,
+            student_bundle=_make_bundle(seed_offset=0),
+            teacher_bundle=_make_bundle(seed_offset=1),
+        )
+    if hasattr(spec, "model_bundle_1") and hasattr(spec, "model_bundle_2"):
+        return replace(
+            spec,
+            model_bundle_1=_make_bundle(seed_offset=0),
+            model_bundle_2=_make_bundle(seed_offset=1),
+        )
+    if hasattr(spec, "pretrain_bundle") and hasattr(spec, "finetune_bundle"):
+        return replace(
+            spec,
+            pretrain_bundle=_make_bundle(seed_offset=0),
+            finetune_bundle=_make_bundle(seed_offset=1),
+        )
+    if hasattr(spec, "shared_bundle") and hasattr(spec, "head_bundles"):
+        if getattr(model_cfg, "factory", None):
+            raise ValueError("TriNet does not support model.factory; use classifier config.")
+        shared_bundle = _make_bundle(seed_offset=0)
+        if not is_torch_tensor(X_l):
+            raise ValueError("TriNet requires torch.Tensor inputs (use core.to_torch).")
+        sample = X_l[:1] if getattr(X_l, "ndim", 0) > 0 and int(X_l.shape[0]) > 1 else X_l
+        output = shared_bundle.model(sample)
+        head_sample = None
+        if is_torch_tensor(output):
+            head_sample = output.detach()
+        elif isinstance(output, Mapping):
+            for key in ("feat", "features", "embedding", "proj", "projection", "z", "logits"):
+                candidate = output.get(key)
+                if is_torch_tensor(candidate):
+                    head_sample = candidate.detach()
+                    break
+        elif isinstance(output, tuple) and output and is_torch_tensor(output[0]):
+            head_sample = output[0].detach()
+        if head_sample is None:
+            raise ValueError(
+                "TriNet head construction requires shared model to return a torch.Tensor."
+            )
+        head_classifier_id = model_cfg.classifier_id
+        if head_classifier_id not in {"mlp", "logreg"}:
+            head_classifier_id = "logreg"
+        head_bundles = tuple(
+            _make_bundle(
+                seed_offset=1 + idx,
+                sample_override=head_sample,
+                classifier_id=head_classifier_id,
+                classifier_backend="torch",
+                classifier_params=model_cfg.classifier_params,
+                ema=False,
+            )
+            for idx in range(3)
+        )
+        return replace(
+            spec,
+            shared_bundle=shared_bundle,
+            head_bundles=head_bundles,
+        )
+    raise ValueError("method.model is set but the method spec has no model_bundle field")
 
 
 def run(
@@ -168,6 +255,7 @@ def run(
     views: ViewsResult | None,
     X_u_w: Any | None,
     X_u_s: Any | None,
+    X_u_s_1: Any | None,
     cfg: MethodConfig,
     seed: int,
 ) -> Any:
@@ -199,7 +287,19 @@ def run(
     X_u = _select_rows(X_train, idx_u)
     y_l = _labels_for_backend(pre, X_l, idx_l)
 
+    if X_u_s_1 is not None and is_torch_tensor(X_l) and not is_torch_tensor(X_u_s_1):
+        X_u_s_1 = _to_torch_like(X_u_s_1, ref=X_l)
+
     views_payload = _build_views(views, idx_l=idx_l, idx_u=idx_u, ref=X_l) if views else None
+    if X_u_s_1 is not None:
+        if cfg.method_id == "comatch":
+            if views_payload:
+                _LOGGER.debug("CoMatch ignores view plan to attach X_u_s_1.")
+            views_payload = {"X_u_s_1": X_u_s_1}
+        elif views_payload is None:
+            views_payload = {"X_u_s_1": X_u_s_1}
+        else:
+            _LOGGER.debug("Skipping X_u_s_1 injection because views payload is non-empty.")
 
     meta: dict[str, Any] = {
         "dataset_fingerprint": pre.dataset.meta.get("dataset_fingerprint"),

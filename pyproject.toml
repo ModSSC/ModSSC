@@ -269,6 +269,3 @@ source = ["modssc"]
 [tool.coverage.report]
 show_missing = true
 skip_empty = true
-omit = [
-  "src/modssc/preprocess/cache.py",
-]

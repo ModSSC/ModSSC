@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 import numpy as np
 
-from modssc.device import resolve_device_name
+from modssc.device import mps_is_available, resolve_device_name
 
 from ..errors import OptionalDependencyError
 from ..optional import optional_import
@@ -28,7 +28,7 @@ def resolve_device(spec: DeviceSpec):
             )
         return torch.device("cuda")
     if resolved == "mps":
-        if not getattr(torch.backends, "mps", None) or not torch.backends.mps.is_available():  # type: ignore[attr-defined]
+        if not mps_is_available(torch):
             raise OptionalDependencyError(
                 "torch", "transductive-torch", message="MPS not available"
             )

@@ -43,6 +43,9 @@ class FakeTorch:
     def device(self, name: str) -> str:
         return f"device:{name}"
 
+    def zeros(self, *args, **kwargs):
+        return object()
+
     def as_tensor(self, x, device=None, dtype=None):
         return {"value": np.asarray(x), "device": device, "dtype": dtype}
 

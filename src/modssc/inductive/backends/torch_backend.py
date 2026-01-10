@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from modssc.device import resolve_device_name
+from modssc.device import mps_is_available, resolve_device_name
 
 from ..errors import OptionalDependencyError
 from ..optional import optional_import
@@ -24,7 +24,7 @@ def resolve_device(spec: DeviceSpec):
             raise OptionalDependencyError("torch", "inductive-torch", message="CUDA not available")
         return torch.device("cuda")
     if resolved == "mps":
-        if not getattr(torch.backends, "mps", None) or not torch.backends.mps.is_available():  # type: ignore[attr-defined]
+        if not mps_is_available(torch):
             raise OptionalDependencyError("torch", "inductive-torch", message="MPS not available")
         return torch.device("mps")
     raise ValueError(f"Unknown device: {requested!r}")

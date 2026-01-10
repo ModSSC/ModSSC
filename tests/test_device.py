@@ -29,6 +29,9 @@ class _FakeTorch:
         self.cuda = _FakeCuda(cuda_available)
         self.backends = _FakeBackends(mps_available)
 
+    def zeros(self, *args, **kwargs):
+        return object()
+
 
 def test_resolve_device_name_passthrough() -> None:
     assert device_mod.resolve_device_name("cpu") == "cpu"

@@ -1,0 +1,101 @@
+run:
+  name: smoke_graph_inductive_comatch_cora
+  seed: 5
+  output_dir: runs/inductive/comatch/graph/cora
+  fail_fast: true
+  log_level: detailed
+limits:
+  profile: auto
+dataset:
+  id: cora
+  download: true
+  options:
+    max_nodes: 2000
+sampling:
+  seed: 5
+  plan:
+    split:
+      kind: holdout
+      test_fraction: 0.2
+      val_fraction: 0.1
+      stratify: true
+      shuffle: true
+    labeling:
+      mode: fraction
+      value: 0.2
+      strategy: balanced
+      min_per_class: 1
+    imbalance:
+      kind: none
+    policy:
+      respect_official_test: true
+      use_official_graph_masks: true
+      allow_override_official: false
+preprocess:
+  seed: 5
+  fit_on: train_labeled
+  cache: true
+  plan:
+    output_key: features.X
+    steps:
+    - id: labels.encode
+    - id: graph.node2vec
+      params:
+        embedding_dim: 16
+        num_walks: 2
+        walk_length: 5
+        window_size: 2
+        num_negative: 2
+        batch_size: 256
+        embed_epochs: 1
+    - id: core.to_torch
+      params:
+        device: auto
+        dtype: float32
+augmentation:
+  enabled: true
+  seed: 5
+  mode: fixed
+  modality: tabular
+  weak:
+    steps:
+    - id: tabular.gaussian_noise
+      params:
+        std: 0.01
+  strong:
+    steps:
+    - id: tabular.feature_dropout
+      params:
+        p: 0.2
+method:
+  kind: inductive
+  id: comatch
+  device:
+    device: auto
+    dtype: float32
+  params:
+    max_epochs: 8
+    p_cutoff: 0.5
+    use_cat: true
+  model:
+    classifier_id: mlp
+    classifier_backend: torch
+    classifier_params:
+      return_features: true
+      hidden_sizes:
+      - 128
+      activation: relu
+      dropout: 0.1
+      lr: 0.001
+      weight_decay: 0.0
+      batch_size: 256
+      max_epochs: 50
+    ema: false
+evaluation:
+  split_for_model_selection: val
+  report_splits:
+  - val
+  - test
+  metrics:
+  - accuracy
+  - macro_f1

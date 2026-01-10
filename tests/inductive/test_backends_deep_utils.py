@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 import torch
 
+from modssc import device as device_mod
 from modssc.inductive.backends import torch_backend
 from modssc.inductive.deep import TorchModelBundle, validate_torch_model_bundle
 from modssc.inductive.errors import InductiveValidationError, OptionalDependencyError
@@ -33,7 +34,12 @@ def test_resolve_device_cuda_unavailable(monkeypatch):
 def test_resolve_device_mps_available(monkeypatch):
     if not hasattr(torch.backends, "mps"):
         pytest.skip("torch.backends.mps not available")
+    device_mod.mps_is_available.cache_clear()
+    if hasattr(torch.backends.mps, "is_built"):
+        monkeypatch.setattr(torch.backends.mps, "is_built", lambda: True)
     monkeypatch.setattr(torch.backends.mps, "is_available", lambda: True)
+    orig_empty = torch.empty
+    monkeypatch.setattr(torch, "zeros", lambda *args, **kwargs: orig_empty(*args))
     dev = torch_backend.resolve_device(DeviceSpec(device="mps"))
     assert dev.type == "mps"
 
@@ -42,6 +48,7 @@ def test_resolve_device_mps_unavailable(monkeypatch):
     if not hasattr(torch.backends, "mps"):
         pytest.skip("torch.backends.mps not available")
     monkeypatch.setattr(torch.backends.mps, "is_available", lambda: False)
+    device_mod.mps_is_available.cache_clear()
     with pytest.raises(OptionalDependencyError):
         torch_backend.resolve_device(DeviceSpec(device="mps"))
 
@@ -49,16 +56,23 @@ def test_resolve_device_mps_unavailable(monkeypatch):
 def test_resolve_device_auto_paths(monkeypatch):
     if hasattr(torch.backends, "mps"):
         monkeypatch.setattr(torch.backends.mps, "is_available", lambda: True)
+    device_mod.mps_is_available.cache_clear()
     monkeypatch.setattr(torch.cuda, "is_available", lambda: True)
     assert torch_backend.resolve_device(DeviceSpec(device="auto")).type == "cuda"
 
     monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
     if hasattr(torch.backends, "mps"):
+        if hasattr(torch.backends.mps, "is_built"):
+            monkeypatch.setattr(torch.backends.mps, "is_built", lambda: True)
         monkeypatch.setattr(torch.backends.mps, "is_available", lambda: True)
+        device_mod.mps_is_available.cache_clear()
+        orig_empty = torch.empty
+        monkeypatch.setattr(torch, "zeros", lambda *args, **kwargs: orig_empty(*args))
         assert torch_backend.resolve_device(DeviceSpec(device="auto")).type == "mps"
 
     if hasattr(torch.backends, "mps"):
         monkeypatch.setattr(torch.backends.mps, "is_available", lambda: False)
+    device_mod.mps_is_available.cache_clear()
     assert torch_backend.resolve_device(DeviceSpec(device="auto")).type == "cpu"
 
 

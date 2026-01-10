@@ -9,6 +9,7 @@ from typing import Any
 import numpy as np
 from platformdirs import user_cache_dir
 
+from modssc.device import mps_is_available
 from modssc.preprocess.errors import OptionalDependencyError, PreprocessCacheError
 from modssc.preprocess.fingerprint import stable_json_dumps
 
@@ -186,14 +187,14 @@ def _load_value(path: Path, desc: dict[str, Any]) -> Any:
         dtype_name = dtype_str.split(".", 1)[-1] if dtype_str else ""
         dtype = getattr(torch, dtype_name, None) if dtype_name else None
         device_str = str(desc.get("device") or "")
-        device = torch.device(device_str) if device_str else None
+        device = _resolve_cache_device(torch, device_str)
         return torch.as_tensor(arr, device=device, dtype=dtype)
     if t == "torch_pt":
         torch = _require_torch()
         obj = torch.load(fp, map_location="cpu")
         device_str = str(desc.get("device") or "")
         if device_str:
-            return obj.to(torch.device(device_str))
+            return obj.to(_resolve_cache_device(torch, device_str))
         return obj
     if t == "json":
         import json
@@ -211,6 +212,16 @@ def _load_value(path: Path, desc: dict[str, Any]) -> Any:
             ) from e
         return sparse.load_npz(fp)
     raise PreprocessCacheError(f"Unsupported cached value type: {t!r}")
+
+
+def _resolve_cache_device(torch: Any, device_str: str) -> Any | None:
+    if not device_str:
+        return None
+    if device_str.startswith("cuda") and not torch.cuda.is_available():
+        return torch.device("cpu")
+    if device_str.startswith("mps") and not mps_is_available(torch):
+        return torch.device("cpu")
+    return torch.device(device_str)
 
 
 @dataclass

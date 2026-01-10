@@ -14,8 +14,13 @@ from modssc.inductive.methods.co_training import (
     _view_predict_payload_numpy,
     _view_predict_payload_torch,
 )
+from modssc.inductive.methods.democratic_co_learning import (
+    DemocraticCoLearningMethod,
+    DemocraticCoLearningSpec,
+)
 from modssc.inductive.methods.pseudo_label import PseudoLabelMethod, PseudoLabelSpec
 from modssc.inductive.methods.s4vm import S4VMMethod, S4VMSpec
+from modssc.inductive.methods.self_training import SelfTrainingMethod, SelfTrainingSpec
 from modssc.inductive.methods.tri_training import TriTrainingMethod, TriTrainingSpec
 from modssc.inductive.methods.tsvm import (
     TSVMMethod,
@@ -31,7 +36,7 @@ from .conftest import DummyDataset, make_numpy_dataset, make_torch_dataset
 
 @pytest.mark.parametrize(
     "method_cls,spec_cls",
-    [(PseudoLabelMethod, PseudoLabelSpec)],
+    [(PseudoLabelMethod, PseudoLabelSpec), (SelfTrainingMethod, SelfTrainingSpec)],
 )
 def test_classic_numpy_methods_fit_predict(method_cls, spec_cls):
     data = make_numpy_dataset()
@@ -50,7 +55,7 @@ def test_classic_numpy_methods_fit_predict(method_cls, spec_cls):
 
 @pytest.mark.parametrize(
     "method_cls,spec_cls",
-    [(PseudoLabelMethod, PseudoLabelSpec)],
+    [(PseudoLabelMethod, PseudoLabelSpec), (SelfTrainingMethod, SelfTrainingSpec)],
 )
 def test_classic_torch_methods_fit_predict(method_cls, spec_cls):
     data = make_torch_dataset()
@@ -505,6 +510,34 @@ def test_co_training_predict_torch_classes():
             X_l=data.X_l, y_l=data.y_l, views={"v1": {"X": data.X_l}, "v2": {"X": data.X_l}}
         )
     )
+    assert int(pred.shape[0]) == int(data.X_l.shape[0])
+
+
+def test_democratic_co_learning_numpy_fit_predict():
+    data = make_numpy_dataset()
+    spec = DemocraticCoLearningSpec(max_iter=1, n_learners=3)
+    method = DemocraticCoLearningMethod(spec)
+    method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+    proba = method.predict_proba(data.X_l)
+    assert proba.shape[0] == data.X_l.shape[0]
+    pred = method.predict(data.X_l)
+    assert pred.shape[0] == data.X_l.shape[0]
+
+    data_none = DummyDataset(X_l=data.X_l, y_l=data.y_l, X_u=None)
+    method2 = DemocraticCoLearningMethod(spec)
+    method2.fit(data_none, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_democratic_co_learning_torch_fit_predict():
+    data = make_torch_dataset()
+    spec = DemocraticCoLearningSpec(max_iter=1, n_learners=3, classifier_backend="torch")
+    method = DemocraticCoLearningMethod(spec)
+    method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+    proba = method.predict_proba(data.X_l)
+    assert int(proba.shape[0]) == int(data.X_l.shape[0])
+    pred = method.predict(data.X_l)
     assert int(pred.shape[0]) == int(data.X_l.shape[0])
 
 

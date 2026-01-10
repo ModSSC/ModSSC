@@ -110,6 +110,60 @@ def _build_mlp_bundle(
     return TorchModelBundle(model=model, optimizer=optimizer, ema_model=ema_model)
 
 
+def _build_mlp_feature_bundle(
+    sample: Any,
+    *,
+    num_classes: int,
+    params: Mapping[str, Any],
+    seed: int,
+    ema: bool,
+    force_hidden_sizes: tuple[int, ...] | None = None,
+) -> TorchModelBundle:
+    torch = _torch()
+    input_dim = _infer_input_dim(sample)
+    if force_hidden_sizes is None:
+        hidden_sizes = _normalize_hidden_sizes(
+            params.get("hidden_sizes"),
+            params.get("hidden_dim"),
+            default=(256, 128),
+        )
+    else:
+        hidden_sizes = tuple(force_hidden_sizes)
+    activation = str(params.get("activation", "relu"))
+    dropout = float(params.get("dropout", 0.1))
+    lr = float(params.get("lr", 1e-3))
+    weight_decay = float(params.get("weight_decay", 0.0))
+
+    class _MLPWithFeatures(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            layers: list[Any] = []
+            in_features = int(input_dim)
+            for h in hidden_sizes:
+                if int(h) <= 0:
+                    raise InductiveValidationError("hidden_sizes must be positive.")
+                layers.append(torch.nn.Linear(in_features, int(h)))
+                layers.append(_make_activation(activation, torch))
+                if float(dropout) > 0.0:
+                    layers.append(torch.nn.Dropout(p=float(dropout)))
+                in_features = int(h)
+            self.backbone = torch.nn.Sequential(*layers) if layers else None
+            self.head = torch.nn.Linear(in_features, int(num_classes))
+
+        def forward(self, x: Any) -> Any:
+            feats = self.backbone(x) if self.backbone is not None else x
+            logits = self.head(feats)
+            return {"logits": logits, "feat": feats}
+
+    torch.manual_seed(int(seed))
+    model = _MLPWithFeatures().to(sample.device)
+    optimizer = torch.optim.AdamW(
+        model.parameters(), lr=float(lr), weight_decay=float(weight_decay)
+    )
+    ema_model = _maybe_ema(model, enabled=ema)
+    return TorchModelBundle(model=model, optimizer=optimizer, ema_model=ema_model)
+
+
 def _infer_image_shape(sample: Any, *, input_shape: Any | None) -> tuple[int, int, int]:
     torch = _torch()
     if not isinstance(sample, torch.Tensor):
@@ -370,7 +424,28 @@ def _build_image_pretrained_bundle(
 
         def forward(self, X: Any):
             X4 = self._prepare(X)
-            return self.model(X4)
+            if not return_features:
+                return self.model(X4)
+            captured: dict[str, Any] = {}
+
+            def _capture(_module, inputs, _output):
+                if inputs:
+                    captured["feat"] = inputs[0]
+
+            hook = self.head.register_forward_hook(_capture)
+            try:
+                logits = self.model(X4)
+            finally:
+                hook.remove()
+            feat = captured.get("feat")
+            if feat is None:
+                if isinstance(logits, torch.Tensor):
+                    feat = logits
+                else:
+                    raise InductiveValidationError(
+                        "image_pretrained return_features failed to capture features."
+                    )
+            return {"logits": logits, "feat": feat}
 
     model_name = str(params.get("model_name", "resnet18"))
     weights = params.get("weights", "DEFAULT")
@@ -378,6 +453,7 @@ def _build_image_pretrained_bundle(
     input_layout = str(params.get("input_layout", "channels_first"))
     auto_channel_repeat = bool(params.get("auto_channel_repeat", True))
     input_shape = _parse_image_input_shape(params.get("input_shape"))
+    return_features = bool(params.get("return_features", False))
     lr = float(params.get("lr", 1e-4))
     weight_decay = float(params.get("weight_decay", 1e-4))
 
@@ -457,10 +533,14 @@ def _build_audio_pretrained_bundle(
                     feats = audio_pretrained_backend._extract_features(self.backbone, X2, torch)
             else:
                 feats = audio_pretrained_backend._extract_features(self.backbone, X2, torch)
-            return self.head(feats)
+            logits = self.head(feats)
+            if return_features:
+                return {"logits": logits, "feat": feats}
+            return logits
 
     bundle_name = str(params.get("bundle", "WAV2VEC2_BASE"))
     freeze_backbone = bool(params.get("freeze_backbone", True))
+    return_features = bool(params.get("return_features", False))
     lr = float(params.get("lr", 1e-4))
     weight_decay = float(params.get("weight_decay", 1e-4))
 
@@ -512,6 +592,7 @@ def build_torch_bundle_from_classifier(
         )
 
     params = dict(classifier_params or {})
+    return_features = bool(params.get("return_features", False))
     torch = _torch()
     sample = _take_sample(sample)
     if not isinstance(sample, torch.Tensor):
@@ -524,6 +605,14 @@ def build_torch_bundle_from_classifier(
 
     key = str(classifier_id)
     if key == "mlp":
+        if return_features:
+            return _build_mlp_feature_bundle(
+                sample,
+                num_classes=num_classes,
+                params=params,
+                seed=seed,
+                ema=ema,
+            )
         return _build_mlp_bundle(
             sample,
             num_classes=num_classes,
@@ -532,6 +621,15 @@ def build_torch_bundle_from_classifier(
             ema=ema,
         )
     if key == "logreg":
+        if return_features:
+            return _build_mlp_feature_bundle(
+                sample,
+                num_classes=num_classes,
+                params=params,
+                seed=seed,
+                ema=ema,
+                force_hidden_sizes=(),
+            )
         return _build_mlp_bundle(
             sample,
             num_classes=num_classes,
