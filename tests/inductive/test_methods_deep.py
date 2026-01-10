@@ -9,6 +9,8 @@ from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods import (
     adamatch,
+    adsh,
+    defixmatch,
     fixmatch,
     flexmatch,
     free_match,
@@ -18,6 +20,8 @@ from modssc.inductive.methods import (
     vat,
 )
 from modssc.inductive.methods.adamatch import AdaMatchMethod, AdaMatchSpec
+from modssc.inductive.methods.adsh import ADSHMethod, ADSHSpec
+from modssc.inductive.methods.defixmatch import DeFixMatchMethod, DeFixMatchSpec
 from modssc.inductive.methods.fixmatch import FixMatchMethod, FixMatchSpec
 from modssc.inductive.methods.flexmatch import FlexMatchMethod, FlexMatchSpec
 from modssc.inductive.methods.free_match import FreeMatchMethod, FreeMatchSpec
@@ -26,6 +30,10 @@ from modssc.inductive.methods.mixmatch import MixMatchMethod, MixMatchSpec
 from modssc.inductive.methods.noisy_student import NoisyStudentMethod, NoisyStudentSpec
 from modssc.inductive.methods.pi_model import PiModelMethod, PiModelSpec
 from modssc.inductive.methods.softmatch import SoftMatchMethod, SoftMatchSpec
+from modssc.inductive.methods.temporal_ensembling import (
+    TemporalEnsemblingMethod,
+    TemporalEnsemblingSpec,
+)
 from modssc.inductive.methods.uda import UDAMethod, UDASpec
 from modssc.inductive.methods.vat import VATMethod, VATSpec
 from modssc.inductive.types import DeviceSpec
@@ -41,7 +49,10 @@ from .conftest import (
 DEEP_METHODS = [
     PiModelMethod,
     MeanTeacherMethod,
+    TemporalEnsemblingMethod,
+    DeFixMatchMethod,
     FixMatchMethod,
+    ADSHMethod,
     FlexMatchMethod,
     UDAMethod,
     MixMatchMethod,
@@ -56,7 +67,10 @@ DEEP_METHODS = [
 DEEP_METHOD_MODULES = {
     PiModelMethod: "modssc.inductive.methods.pi_model",
     MeanTeacherMethod: "modssc.inductive.methods.mean_teacher",
+    TemporalEnsemblingMethod: "modssc.inductive.methods.temporal_ensembling",
+    DeFixMatchMethod: "modssc.inductive.methods.defixmatch",
     FixMatchMethod: "modssc.inductive.methods.fixmatch",
+    ADSHMethod: "modssc.inductive.methods.adsh",
     FlexMatchMethod: "modssc.inductive.methods.flexmatch",
     UDAMethod: "modssc.inductive.methods.uda",
     MixMatchMethod: "modssc.inductive.methods.mixmatch",
@@ -69,7 +83,9 @@ DEEP_METHOD_MODULES = {
 
 
 CAT_METHODS = [
+    DeFixMatchMethod,
     FixMatchMethod,
+    ADSHMethod,
     FlexMatchMethod,
     UDAMethod,
     AdaMatchMethod,
@@ -88,10 +104,22 @@ def _make_spec(method_cls, bundle, **overrides):
         kwargs = {"model_bundle": bundle, "batch_size": 2, "max_epochs": 1}
         kwargs.update(overrides)
         return MeanTeacherSpec(**kwargs)
+    if method_cls is TemporalEnsemblingMethod:
+        kwargs = {"model_bundle": bundle, "batch_size": 2, "max_epochs": 1}
+        kwargs.update(overrides)
+        return TemporalEnsemblingSpec(**kwargs)
+    if method_cls is DeFixMatchMethod:
+        kwargs = {"model_bundle": bundle, "batch_size": 2, "max_epochs": 1}
+        kwargs.update(overrides)
+        return DeFixMatchSpec(**kwargs)
     if method_cls is FixMatchMethod:
         kwargs = {"model_bundle": bundle, "batch_size": 2, "max_epochs": 1}
         kwargs.update(overrides)
         return FixMatchSpec(**kwargs)
+    if method_cls is ADSHMethod:
+        kwargs = {"model_bundle": bundle, "batch_size": 2, "max_epochs": 1}
+        kwargs.update(overrides)
+        return ADSHSpec(**kwargs)
     if method_cls is FlexMatchMethod:
         kwargs = {"model_bundle": bundle, "batch_size": 2, "max_epochs": 1}
         kwargs.update(overrides)
@@ -165,6 +193,22 @@ class _BadLogits1D(torch.nn.Module):
 
     def forward(self, x):
         return torch.zeros((int(x.shape[0]),), device=x.device)
+
+
+class _SafeLabels(torch.Tensor):
+    @staticmethod
+    def __new__(cls, base):
+        return torch.Tensor._make_subclass(cls, base, base.requires_grad)
+
+    def min(self, *args, **kwargs):
+        if int(self.numel()) == 0:
+            return torch.tensor(0, device=self.device, dtype=self.dtype)
+        return super().min(*args, **kwargs)
+
+    def max(self, *args, **kwargs):
+        if int(self.numel()) == 0:
+            return torch.tensor(0, device=self.device, dtype=self.dtype)
+        return super().max(*args, **kwargs)
 
 
 class _BadBatch(torch.nn.Module):
@@ -395,6 +439,22 @@ def test_deep_method_specific_invalid_specs():
         FixMatchMethod(_make_spec(FixMatchMethod, bundle, temperature=0.0)).fit(
             data, device=DeviceSpec(device="cpu"), seed=0
         )
+    with pytest.raises(InductiveValidationError):
+        ADSHMethod(_make_spec(ADSHMethod, bundle, p_cutoff=0.0)).fit(
+            data, device=DeviceSpec(device="cpu"), seed=0
+        )
+    with pytest.raises(InductiveValidationError):
+        ADSHMethod(_make_spec(ADSHMethod, bundle, score_warmup_epochs=-1)).fit(
+            data, device=DeviceSpec(device="cpu"), seed=0
+        )
+    with pytest.raises(InductiveValidationError):
+        DeFixMatchMethod(_make_spec(DeFixMatchMethod, bundle, p_cutoff=1.5)).fit(
+            data, device=DeviceSpec(device="cpu"), seed=0
+        )
+    with pytest.raises(InductiveValidationError):
+        DeFixMatchMethod(_make_spec(DeFixMatchMethod, bundle, temperature=0.0)).fit(
+            data, device=DeviceSpec(device="cpu"), seed=0
+        )
 
     with pytest.raises(InductiveValidationError):
         FlexMatchMethod(_make_spec(FlexMatchMethod, bundle, p_cutoff=-1.0)).fit(
@@ -466,6 +526,15 @@ def test_deep_method_specific_invalid_specs():
         PiModelMethod(_make_spec(PiModelMethod, bundle, unsup_warm_up=-0.1)).fit(
             data, device=DeviceSpec(device="cpu"), seed=0
         )
+
+    with pytest.raises(InductiveValidationError):
+        TemporalEnsemblingMethod(_make_spec(TemporalEnsemblingMethod, bundle, alpha=1.0)).fit(
+            data, device=DeviceSpec(device="cpu"), seed=0
+        )
+    with pytest.raises(InductiveValidationError):
+        TemporalEnsemblingMethod(
+            _make_spec(TemporalEnsemblingMethod, bundle, unsup_warm_up=-0.1)
+        ).fit(data, device=DeviceSpec(device="cpu"), seed=0)
 
     with pytest.raises(InductiveValidationError):
         MeanTeacherMethod(_make_spec(MeanTeacherMethod, bundle, ema_decay=1.5)).fit(
@@ -557,6 +626,82 @@ def test_pi_model_fit_predict_variants():
     _fit_predict(method2, data)
 
 
+def test_temporal_ensembling_fit_predict_variants():
+    data = make_torch_ssl_dataset()
+    bundle = make_model_bundle()
+
+    method = TemporalEnsemblingMethod(
+        TemporalEnsemblingSpec(
+            model_bundle=bundle,
+            batch_size=2,
+            max_epochs=1,
+            unsup_warm_up=0.0,
+            alpha=0.0,
+            freeze_bn=False,
+            detach_target=True,
+        )
+    )
+    _fit_predict(method, data)
+
+    bundle2 = make_model_bundle()
+    method2 = TemporalEnsemblingMethod(
+        TemporalEnsemblingSpec(
+            model_bundle=bundle2,
+            batch_size=2,
+            max_epochs=2,
+            unsup_warm_up=0.5,
+            alpha=0.6,
+            freeze_bn=True,
+            detach_target=False,
+        )
+    )
+    _fit_predict(method2, data)
+
+
+def test_temporal_ensembling_unlabeled_logits_dim_error():
+    data = make_torch_ssl_dataset()
+    data_grad = DummyDataset(
+        X_l=data.X_l,
+        y_l=data.y_l,
+        X_u=data.X_u,
+        X_u_w=data.X_u_w.clone().requires_grad_(True),
+        X_u_s=data.X_u_s.clone().requires_grad_(True),
+    )
+    bundle = _make_bundle_for(_GradSensitiveLogits())
+    spec = TemporalEnsemblingSpec(model_bundle=bundle, batch_size=2, max_epochs=1)
+    with pytest.raises(InductiveValidationError, match="Model logits must be 2D"):
+        TemporalEnsemblingMethod(spec).fit(data_grad, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_temporal_ensembling_targets_not_initialized(monkeypatch):
+    data = make_torch_ssl_dataset()
+    bundle = _make_bundle_for(_LinearLogits())
+    spec = TemporalEnsemblingSpec(model_bundle=bundle, batch_size=2, max_epochs=1)
+
+    def _zeros_like(*_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr(torch, "zeros_like", _zeros_like)
+    with pytest.raises(InductiveValidationError, match="targets not initialized"):
+        TemporalEnsemblingMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_temporal_ensembling_predictions_not_initialized(monkeypatch):
+    data = make_torch_ssl_dataset()
+    bundle = make_model_bundle()
+    spec = TemporalEnsemblingSpec(model_bundle=bundle, batch_size=2, max_epochs=1)
+
+    def _empty_iter(*_args, **_kwargs):
+        return iter(())
+
+    monkeypatch.setattr("modssc.inductive.methods.temporal_ensembling.cycle_batches", _empty_iter)
+    monkeypatch.setattr(
+        "modssc.inductive.methods.temporal_ensembling.cycle_batch_indices", _empty_iter
+    )
+    with pytest.raises(InductiveValidationError, match="predictions not initialized"):
+        TemporalEnsemblingMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
 def test_mean_teacher_fit_predict_and_errors():
     data = make_torch_ssl_dataset()
     bundle = make_model_bundle()
@@ -619,6 +764,288 @@ def test_fixmatch_fit_predict_variants_and_sharpen():
     assert torch.allclose(fixmatch._sharpen(probs, temperature=1.0), probs)
     with pytest.raises(InductiveValidationError):
         fixmatch._sharpen(probs, temperature=0.0)
+
+
+def test_defixmatch_fit_predict_variants_and_views():
+    data = make_torch_ssl_dataset()
+    views = {"X_l_s": data.X_l + 0.01}
+    ds = DummyDataset(
+        X_l=data.X_l,
+        y_l=data.y_l,
+        X_u=data.X_u,
+        X_u_w=data.X_u_w,
+        X_u_s=data.X_u_s,
+        views=views,
+    )
+    bundle = make_model_bundle()
+    method = DeFixMatchMethod(
+        DeFixMatchSpec(
+            model_bundle=bundle,
+            batch_size=2,
+            max_epochs=1,
+            use_cat=True,
+            hard_label=True,
+            detach_target=True,
+            temperature=1.0,
+            p_cutoff=0.0,
+        )
+    )
+    _fit_predict(method, ds)
+
+    bundle2 = make_model_bundle()
+    method2 = DeFixMatchMethod(
+        DeFixMatchSpec(
+            model_bundle=bundle2,
+            batch_size=2,
+            max_epochs=1,
+            use_cat=False,
+            hard_label=False,
+            detach_target=False,
+            temperature=0.5,
+            p_cutoff=1.0,
+        )
+    )
+    _fit_predict(method2, data)
+
+    probs = torch.tensor([[0.4, 0.6]])
+    assert torch.allclose(defixmatch._sharpen(probs, temperature=1.0), probs)
+
+
+def test_defixmatch_predict_proba_requires_tensor():
+    data = make_torch_ssl_dataset()
+    bundle = make_model_bundle()
+    method = DeFixMatchMethod(DeFixMatchSpec(model_bundle=bundle, batch_size=2, max_epochs=1))
+    method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
+    with pytest.raises(InductiveValidationError, match="predict_proba requires torch.Tensor"):
+        method.predict_proba(data.X_l.cpu().numpy())
+
+
+@pytest.mark.parametrize(
+    ("view_factory", "match"),
+    [
+        (lambda d: torch.zeros((int(d.X_l.shape[0]),), dtype=d.X_l.dtype), "X_l_s must be 2D"),
+        (
+            lambda d: torch.zeros(
+                (int(d.X_l.shape[0]) - 1, int(d.X_l.shape[1])), dtype=d.X_l.dtype
+            ),
+            "same number of rows",
+        ),
+        (
+            lambda d: torch.zeros(
+                (int(d.X_l.shape[0]), int(d.X_l.shape[1]) + 1), dtype=d.X_l.dtype
+            ),
+            "same feature dimension",
+        ),
+    ],
+)
+def test_defixmatch_labeled_strong_view_shape_errors(view_factory, match):
+    data = make_torch_ssl_dataset()
+    views = {"X_l_s": view_factory(data)}
+    ds = DummyDataset(
+        X_l=data.X_l,
+        y_l=data.y_l,
+        X_u=data.X_u,
+        X_u_w=data.X_u_w,
+        X_u_s=data.X_u_s,
+        views=views,
+    )
+    method = DeFixMatchMethod(
+        DeFixMatchSpec(model_bundle=make_model_bundle(), batch_size=2, max_epochs=1)
+    )
+    with pytest.raises(InductiveValidationError, match=match):
+        method.fit(ds, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_defixmatch_views_without_strong_key_uses_default():
+    data = make_torch_ssl_dataset()
+    views = {"unused": data.X_l + 0.01}
+    ds = DummyDataset(
+        X_l=data.X_l,
+        y_l=data.y_l,
+        X_u=data.X_u,
+        X_u_w=data.X_u_w,
+        X_u_s=data.X_u_s,
+        views=views,
+    )
+    method = DeFixMatchMethod(
+        DeFixMatchSpec(model_bundle=make_model_bundle(), batch_size=2, max_epochs=1)
+    )
+    _fit_predict(method, ds)
+
+
+def test_defixmatch_use_cat_labeled_strong_batch_mismatch():
+    class _WeirdTensor(torch.Tensor):
+        @staticmethod
+        def __new__(cls, base):
+            return torch.Tensor._make_subclass(cls, base, base.requires_grad)
+
+        def __getitem__(self, idx):
+            out = super().__getitem__(idx)
+            if int(out.shape[0]) > 0:
+                return out[:-1]
+            return out
+
+    data = make_torch_ssl_dataset()
+    views = {"X_l_s": _WeirdTensor(data.X_l.clone())}
+    ds = DummyDataset(
+        X_l=data.X_l,
+        y_l=data.y_l,
+        X_u=data.X_u,
+        X_u_w=data.X_u_w,
+        X_u_s=data.X_u_s,
+        views=views,
+    )
+    method = DeFixMatchMethod(
+        DeFixMatchSpec(
+            model_bundle=make_model_bundle(),
+            batch_size=2,
+            max_epochs=1,
+            use_cat=True,
+        )
+    )
+    with pytest.raises(InductiveValidationError, match="Labeled strong batch size mismatch"):
+        method.fit(ds, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_defixmatch_labeled_logits_shape_mismatch():
+    class _MismatchLogits(torch.nn.Module):
+        def __init__(self, shapes: list[int]):
+            super().__init__()
+            self.shapes = shapes
+            self.calls = 0
+            self.dummy = torch.nn.Parameter(torch.zeros(1))
+
+        def forward(self, x):
+            idx = min(self.calls, len(self.shapes) - 1)
+            self.calls += 1
+            return torch.zeros((int(x.shape[0]), self.shapes[idx]), device=x.device)
+
+    data = make_torch_ssl_dataset()
+    model = _MismatchLogits([2, 3, 2, 2])
+    bundle = TorchModelBundle(model=model, optimizer=torch.optim.SGD(model.parameters(), lr=0.1))
+    method = DeFixMatchMethod(
+        DeFixMatchSpec(model_bundle=bundle, batch_size=2, max_epochs=1, use_cat=False)
+    )
+    with pytest.raises(InductiveValidationError, match="Labeled logits shape mismatch"):
+        method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_defixmatch_empty_masks_zero_losses(monkeypatch):
+    def _empty_cycle_batch_indices(_n, *, batch_size, generator, device, steps):
+        empty = torch.tensor([], dtype=torch.int64, device=device)
+        for _ in range(int(steps)):
+            yield empty
+
+    data = make_torch_ssl_dataset()
+    y_safe = _SafeLabels(data.y_l)
+    data = DummyDataset(
+        X_l=data.X_l,
+        y_l=y_safe,
+        X_u=data.X_u,
+        X_u_w=data.X_u_w,
+        X_u_s=data.X_u_s,
+    )
+    method = DeFixMatchMethod(
+        DeFixMatchSpec(model_bundle=make_model_bundle(), batch_size=2, max_epochs=1)
+    )
+    monkeypatch.setattr(defixmatch, "cycle_batch_indices", _empty_cycle_batch_indices)
+    method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_adsh_fit_predict_variants_and_scores():
+    data = make_torch_ssl_dataset()
+    bundle = make_model_bundle()
+    method = ADSHMethod(
+        ADSHSpec(
+            model_bundle=bundle,
+            batch_size=2,
+            max_epochs=1,
+            use_cat=True,
+            detach_target=True,
+            score_warmup_epochs=0,
+            p_cutoff=0.95,
+            majority_class=0,
+        )
+    )
+    _fit_predict(method, data)
+
+    bundle2 = make_model_bundle()
+    method2 = ADSHMethod(
+        ADSHSpec(
+            model_bundle=bundle2,
+            batch_size=2,
+            max_epochs=1,
+            use_cat=False,
+            detach_target=False,
+            score_warmup_epochs=2,
+            p_cutoff=1.0,
+        )
+    )
+    _fit_predict(method2, data)
+
+
+def test_adsh_unlabeled_batch_row_mismatch(monkeypatch):
+    data = make_torch_ssl_dataset()
+    bad = DummyDataset(
+        X_l=data.X_l,
+        y_l=data.y_l,
+        X_u=data.X_u,
+        X_u_w=data.X_u_w,
+        X_u_s=data.X_u_s[:1],
+    )
+    method = ADSHMethod(ADSHSpec(model_bundle=make_model_bundle(), batch_size=2, max_epochs=1))
+    monkeypatch.setattr(adsh, "ensure_torch_data", lambda _data, device: bad)
+    with pytest.raises(
+        InductiveValidationError, match="X_u_w and X_u_s must have the same number of rows"
+    ):
+        method.fit(bad, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_adsh_eval_mode_initial_logits_branch():
+    data = make_torch_ssl_dataset()
+    bundle = make_model_bundle()
+    bundle.model.eval()
+    method = ADSHMethod(ADSHSpec(model_bundle=bundle, batch_size=2, max_epochs=1))
+    method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_adsh_majority_class_validation():
+    data = make_torch_ssl_dataset()
+    bundle = make_model_bundle()
+    with pytest.raises(InductiveValidationError):
+        ADSHMethod(
+            ADSHSpec(
+                model_bundle=bundle,
+                batch_size=2,
+                max_epochs=1,
+                majority_class="0",  # type: ignore[arg-type]
+            )
+        ).fit(data, device=DeviceSpec(device="cpu"), seed=0)
+    with pytest.raises(InductiveValidationError):
+        ADSHMethod(
+            ADSHSpec(
+                model_bundle=bundle,
+                batch_size=2,
+                max_epochs=1,
+                majority_class=5,
+            )
+        ).fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_adsh_use_cat_bad_logits_ndim():
+    data = make_torch_ssl_dataset()
+    bundle = _make_bundle_for(_LogitsByBatch())
+    spec = ADSHSpec(model_bundle=bundle, batch_size=2, max_epochs=1, use_cat=True)
+    with pytest.raises(InductiveValidationError):
+        ADSHMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_adsh_non_use_cat_bad_logits_ndim():
+    data = make_torch_ssl_dataset()
+    bundle = _make_bundle_for(_CountedLogits())
+    spec = ADSHSpec(model_bundle=bundle, batch_size=2, max_epochs=1, use_cat=False)
+    with pytest.raises(InductiveValidationError):
+        ADSHMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
 
 
 def test_flexmatch_fit_predict_variants_and_meta_helpers():
@@ -1303,7 +1730,7 @@ def test_noisy_student_mask_branches():
 
 @pytest.mark.parametrize(
     "module",
-    [fixmatch, flexmatch, mixmatch, adamatch, free_match, softmatch],
+    [fixmatch, flexmatch, mixmatch, adamatch, free_match, softmatch, defixmatch],
 )
 def test_sharpen_errors(module):
     probs = torch.tensor([[0.4, 0.6]])
@@ -1390,6 +1817,7 @@ def test_deep_methods_empty_xl_hits_check(method_cls, monkeypatch):
 @pytest.mark.parametrize(
     "method_cls",
     [
+        DeFixMatchMethod,
         FixMatchMethod,
         FlexMatchMethod,
         UDAMethod,
@@ -1398,6 +1826,7 @@ def test_deep_methods_empty_xl_hits_check(method_cls, monkeypatch):
         SoftMatchMethod,
         MixMatchMethod,
         NoisyStudentMethod,
+        TemporalEnsemblingMethod,
     ],
 )
 def test_deep_methods_xu_mismatch_hits_check(method_cls, monkeypatch):
@@ -1475,7 +1904,9 @@ def test_noisy_student_labeled_batch_mismatch():
         NoisyStudentMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
 
 
-@pytest.mark.parametrize("method_cls", CAT_METHODS + [PiModelMethod, MeanTeacherMethod])
+@pytest.mark.parametrize(
+    "method_cls", CAT_METHODS + [PiModelMethod, MeanTeacherMethod, TemporalEnsemblingMethod]
+)
 def test_non_use_cat_bad_logits_ndim(method_cls):
     data = _data_for_method(method_cls)
     bundle = _make_bundle_for(_BadLogits1D(), with_ema=method_cls is MeanTeacherMethod)
@@ -1487,7 +1918,9 @@ def test_non_use_cat_bad_logits_ndim(method_cls):
         method_cls(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
 
 
-@pytest.mark.parametrize("method_cls", CAT_METHODS + [PiModelMethod, MeanTeacherMethod])
+@pytest.mark.parametrize(
+    "method_cls", CAT_METHODS + [PiModelMethod, MeanTeacherMethod, TemporalEnsemblingMethod]
+)
 def test_non_use_cat_unlabeled_shape_mismatch(method_cls):
     data = _data_for_method(method_cls)
     data_mismatch = DummyDataset(
@@ -1507,7 +1940,9 @@ def test_non_use_cat_unlabeled_shape_mismatch(method_cls):
         method_cls(spec).fit(data_mismatch, device=DeviceSpec(device="cpu"), seed=0)
 
 
-@pytest.mark.parametrize("method_cls", CAT_METHODS + [PiModelMethod, MeanTeacherMethod])
+@pytest.mark.parametrize(
+    "method_cls", CAT_METHODS + [PiModelMethod, MeanTeacherMethod, TemporalEnsemblingMethod]
+)
 def test_non_use_cat_class_dim_mismatch(method_cls):
     data = _data_for_method(method_cls)
     data_mismatch = DummyDataset(
@@ -1527,7 +1962,9 @@ def test_non_use_cat_class_dim_mismatch(method_cls):
         method_cls(spec).fit(data_mismatch, device=DeviceSpec(device="cpu"), seed=0)
 
 
-@pytest.mark.parametrize("method_cls", CAT_METHODS + [PiModelMethod, MeanTeacherMethod])
+@pytest.mark.parametrize(
+    "method_cls", CAT_METHODS + [PiModelMethod, MeanTeacherMethod, TemporalEnsemblingMethod]
+)
 def test_non_use_cat_y_l_range_error(method_cls):
     data = _data_for_method(method_cls)
     bad = DummyDataset(
@@ -1893,3 +2330,219 @@ def test_fixmatch_empty_unlabeled_batch(monkeypatch):
         "modssc.inductive.methods.fixmatch.cycle_batch_indices", fake_cycle_batch_indices
     )
     method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_adsh_update_scores_errors():
+    data = make_torch_ssl_dataset()
+    score = torch.zeros((2, 1))
+    with pytest.raises(InductiveValidationError):
+        adsh._update_scores(
+            data.X_u_w,
+            make_model_bundle().model,
+            score=score,
+            batch_size=2,
+            p_cutoff=0.5,
+            majority_class=0,
+        )
+
+    bad_device_score = torch.zeros((2,), device="meta")
+    with pytest.raises(InductiveValidationError):
+        adsh._update_scores(
+            data.X_u_w,
+            make_model_bundle().model,
+            score=bad_device_score,
+            batch_size=2,
+            p_cutoff=0.5,
+            majority_class=0,
+        )
+
+    with pytest.raises(InductiveValidationError):
+        adsh._update_scores(
+            data.X_u_w,
+            _BadLogits1D(),
+            score=torch.zeros((2,)),
+            batch_size=2,
+            p_cutoff=0.5,
+            majority_class=0,
+        )
+
+    with pytest.raises(InductiveValidationError):
+        adsh._update_scores(
+            data.X_u_w,
+            _LinearLogits(n_classes=3),
+            score=torch.zeros((2,)),
+            batch_size=2,
+            p_cutoff=0.5,
+            majority_class=0,
+        )
+
+
+def test_adsh_update_scores_logic():
+    class _FixedLogits(torch.nn.Module):
+        def __init__(self, logits):
+            super().__init__()
+            self.logits = logits
+            self.offset = 0
+
+        def forward(self, x):
+            batch = int(x.shape[0])
+            out = self.logits[self.offset : self.offset + batch]
+            self.offset += batch
+            return out
+
+    X_u_w = torch.zeros((11, 2))
+    logits = torch.tensor(
+        [[5.0, 0.0, 0.0]] + [[0.5, 0.0, 0.0]] * 9 + [[0.0, 1.0, 0.0]],
+        dtype=torch.float32,
+    )
+    model = _FixedLogits(logits)
+    score = torch.full((3,), 0.95)
+    updated = adsh._update_scores(
+        X_u_w,
+        model,
+        score=score,
+        batch_size=4,
+        p_cutoff=0.95,
+        majority_class=0,
+    )
+    expected = torch.softmax(torch.tensor([0.0, 1.0, 0.0]), dim=0)[1].item()
+    assert updated[0].item() == pytest.approx(0.95)
+    assert updated[1].item() == pytest.approx(expected, rel=1e-3)
+    assert updated[2].item() == pytest.approx(0.95)
+    assert model.training
+
+
+def test_adsh_update_scores_majority_missing():
+    class _FixedLogits(torch.nn.Module):
+        def __init__(self, logits):
+            super().__init__()
+            self.logits = logits
+            self.offset = 0
+
+        def forward(self, x):
+            batch = int(x.shape[0])
+            out = self.logits[self.offset : self.offset + batch]
+            self.offset += batch
+            return out
+
+    X_u_w = torch.zeros((2, 2))
+    logits = torch.tensor(
+        [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
+        dtype=torch.float32,
+    )
+    model = _FixedLogits(logits)
+    model.eval()
+    score = torch.full((3,), 0.9)
+    updated = adsh._update_scores(
+        X_u_w,
+        model,
+        score=score,
+        batch_size=2,
+        p_cutoff=0.9,
+        majority_class=2,
+    )
+    assert not model.training
+    assert updated[2].item() == pytest.approx(0.9)
+
+
+def test_adsh_update_scores_count_zero():
+    class _FixedLogits(torch.nn.Module):
+        def __init__(self, logits):
+            super().__init__()
+            self.logits = logits
+            self.offset = 0
+
+        def forward(self, x):
+            batch = int(x.shape[0])
+            out = self.logits[self.offset : self.offset + batch]
+            self.offset += batch
+            return out
+
+    X_u_w = torch.zeros((3, 2))
+    logits = torch.tensor(
+        [[0.2, 0.0, 0.0], [0.2, 0.0, 0.0], [0.0, 1.0, 0.0]],
+        dtype=torch.float32,
+    )
+    model = _FixedLogits(logits)
+    score = torch.full((3,), 0.9)
+    updated = adsh._update_scores(
+        X_u_w,
+        model,
+        score=score,
+        batch_size=2,
+        p_cutoff=0.9,
+        majority_class=0,
+    )
+    assert updated[0].item() == pytest.approx(0.9)
+    assert updated[1].item() < 0.9
+
+
+def test_adsh_update_scores_idx_clamp(monkeypatch):
+    class _FixedLogits(torch.nn.Module):
+        def __init__(self, logits):
+            super().__init__()
+            self.logits = logits
+            self.offset = 0
+
+        def forward(self, x):
+            batch = int(x.shape[0])
+            out = self.logits[self.offset : self.offset + batch]
+            self.offset += batch
+            return out
+
+    X_u_w = torch.zeros((1, 2))
+    logits = torch.tensor([[0.0, 1.0]], dtype=torch.float32)
+    model = _FixedLogits(logits)
+    score = torch.full((2,), 0.5)
+
+    monkeypatch.setattr(adsh, "round", lambda _val: 10.0)
+    updated = adsh._update_scores(
+        X_u_w,
+        model,
+        score=score,
+        batch_size=1,
+        p_cutoff=0.5,
+        majority_class=0,
+    )
+    assert updated[1].item() <= 0.5
+
+
+def test_adsh_score_length_mismatch():
+    class _SwitchingClasses(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.dummy = torch.nn.Parameter(torch.zeros(1))
+            self.calls = 0
+
+        def forward(self, x):
+            self.calls += 1
+            batch = int(x.shape[0])
+            if self.calls == 1:
+                return torch.zeros((batch, 3), device=x.device)
+            return torch.zeros((batch, 2), device=x.device)
+
+    data = make_torch_ssl_dataset()
+    model = _SwitchingClasses()
+    bundle = TorchModelBundle(
+        model=model,
+        optimizer=torch.optim.SGD(model.parameters(), lr=0.1),
+        ema_model=None,
+    )
+    method = ADSHMethod(ADSHSpec(model_bundle=bundle, batch_size=2, max_epochs=1))
+    with pytest.raises(InductiveValidationError, match="score length"):
+        method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_adsh_y_lb_range_error(monkeypatch):
+    data = make_torch_ssl_dataset()
+    spec = ADSHSpec(model_bundle=make_model_bundle(), batch_size=2, max_epochs=1)
+
+    def fake_cycle_batches(X, y, *, batch_size, generator, steps):
+        x_bad = X[:2]
+        y_bad = torch.tensor([0, 3], dtype=torch.int64)
+        for _ in range(int(steps)):
+            yield x_bad, y_bad
+
+    monkeypatch.setattr("modssc.inductive.methods.adsh.cycle_batches", fake_cycle_batches)
+    with pytest.raises(InductiveValidationError, match="y_l labels must be within"):
+        ADSHMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)

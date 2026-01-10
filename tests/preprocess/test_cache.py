@@ -371,6 +371,13 @@ def test_require_torch_missing(monkeypatch):
         cache_mod._require_torch()
 
 
+def test_require_torch_success():
+    import modssc.preprocess.cache as cache_mod
+
+    torch_mod = cache_mod._require_torch()
+    assert torch_mod.__name__ == "torch"
+
+
 def test_save_load_torch_tensor_npy(tmp_path, monkeypatch):
     import modssc.preprocess.cache as cache_mod
 
@@ -394,6 +401,12 @@ def test_save_load_torch_tensor_npy(tmp_path, monkeypatch):
 
     class DummyTorch:
         float32 = "float32"
+
+        class _Cuda:
+            def is_available(self):
+                return True
+
+        cuda = _Cuda()
 
         def device(self, name):
             return f"dev:{name}"
@@ -468,6 +481,12 @@ def test_save_load_torch_tensor_pt(tmp_path, monkeypatch):
         def __init__(self):
             self.saved = []
 
+            class _Cuda:
+                def is_available(self):
+                    return True
+
+            self.cuda = _Cuda()
+
         def save(self, obj, path):
             Path(path).write_text("pt")
             self.saved.append(path)
@@ -491,3 +510,38 @@ def test_save_load_torch_tensor_pt(tmp_path, monkeypatch):
 
     obj = cache_mod._load_value(tmp_path, {"type": "torch_pt", "path": "tensor.pt", "device": ""})
     assert isinstance(obj, DummyObj)
+
+
+def test_safe_path_component_helpers(monkeypatch):
+    import modssc.preprocess.cache as cache_mod
+
+    assert cache_mod._safe_path_component("alpha") == "alpha"
+    monkeypatch.setattr(cache_mod.os, "name", "nt", raising=False)
+    assert cache_mod._safe_path_component("a<b>c") == "a_b_c"
+    assert cache_mod._safe_path_component("..") == "_"
+
+
+def test_safe_name_helper():
+    import modssc.preprocess.cache as cache_mod
+
+    assert cache_mod._safe_name("foo/bar..baz") == "foo_bar__baz"
+
+
+def test_tensor_and_sparse_detection_helpers():
+    import modssc.preprocess.cache as cache_mod
+
+    class DummyTorch:
+        __module__ = "torch.fake"
+
+        def __init__(self):
+            self.shape = (1,)
+            self.dtype = "float32"
+            self.device = "cpu"
+
+    class DummySparse:
+        __module__ = "scipy.sparse.csr"
+
+    assert cache_mod._is_torch_tensor(DummyTorch()) is True
+    assert cache_mod._is_torch_tensor(np.zeros((1,))) is False
+    assert cache_mod._is_scipy_sparse(DummySparse()) is True
+    assert cache_mod._is_scipy_sparse(object()) is False

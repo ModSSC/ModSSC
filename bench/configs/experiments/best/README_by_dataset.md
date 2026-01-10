@@ -5,21 +5,29 @@
 ### speechcommands
 
 ```
-mkdir -p log/inductive/adamatch/audio log/inductive/co_training/audio log/inductive/fixmatch/audio log/inductive/flexmatch/audio log/inductive/free_match/audio log/inductive/mean_teacher/audio log/inductive/mixmatch/audio log/inductive/pi_model/audio log/inductive/pseudo_label/audio log/inductive/s4vm/audio log/inductive/softmatch/audio log/inductive/tri_training/audio log/inductive/tsvm/audio log/inductive/uda/audio log/transductive/appnp/audio log/transductive/chebnet/audio log/transductive/dgi/audio log/transductive/gat/audio log/transductive/gcn/audio log/transductive/gcnii/audio log/transductive/grand/audio log/transductive/graph_mincuts/audio log/transductive/graphsage/audio log/transductive/label_propagation/audio log/transductive/label_spreading/audio log/transductive/node2vec/audio log/transductive/planetoid/audio log/transductive/poisson_learning/audio log/transductive/sgc/audio log/transductive/tsvm/audio
+mkdir -p log/inductive/adamatch/audio log/inductive/co_training/audio log/inductive/comatch/audio log/inductive/daso/audio log/inductive/deep_co_training/audio log/inductive/fixmatch/audio log/inductive/flexmatch/audio log/inductive/free_match/audio log/inductive/mean_teacher/audio log/inductive/meta_pseudo_labels/audio log/inductive/mixmatch/audio log/inductive/noisy_student/audio log/inductive/pi_model/audio log/inductive/pseudo_label/audio log/inductive/s4vm/audio log/inductive/simclr_v2/audio log/inductive/softmatch/audio log/inductive/tri_training/audio log/inductive/trinet/audio log/inductive/tsvm/audio log/inductive/uda/audio log/inductive/vat/audio log/transductive/appnp/audio log/transductive/chebnet/audio log/transductive/dgi/audio log/transductive/gat/audio log/transductive/gcn/audio log/transductive/gcnii/audio log/transductive/grand/audio log/transductive/graph_mincuts/audio log/transductive/graphsage/audio log/transductive/label_propagation/audio log/transductive/label_spreading/audio log/transductive/node2vec/audio log/transductive/planetoid/audio log/transductive/poisson_learning/audio log/transductive/sgc/audio log/transductive/tsvm/audio
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/audio/speechcommands.yaml > log/inductive/adamatch/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/audio/speechcommands.yaml > log/inductive/co_training/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/audio/speechcommands.yaml > log/inductive/comatch/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/audio/speechcommands.yaml > log/inductive/daso/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/audio/speechcommands.yaml > log/inductive/deep_co_training/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/audio/speechcommands.yaml > log/inductive/fixmatch/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/audio/speechcommands.yaml > log/inductive/flexmatch/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/audio/speechcommands.yaml > log/inductive/free_match/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/audio/speechcommands.yaml > log/inductive/mean_teacher/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/audio/speechcommands.yaml > log/inductive/meta_pseudo_labels/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/audio/speechcommands.yaml > log/inductive/mixmatch/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/audio/speechcommands.yaml > log/inductive/noisy_student/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/audio/speechcommands.yaml > log/inductive/pi_model/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/audio/speechcommands.yaml > log/inductive/pseudo_label/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/audio/speechcommands.yaml > log/inductive/s4vm/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/audio/speechcommands.yaml > log/inductive/simclr_v2/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/audio/speechcommands.yaml > log/inductive/softmatch/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/audio/speechcommands.yaml > log/inductive/tri_training/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/audio/speechcommands.yaml > log/inductive/trinet/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/audio/speechcommands.yaml > log/inductive/tsvm/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/audio/speechcommands.yaml > log/inductive/uda/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/audio/speechcommands.yaml > log/inductive/vat/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/audio/speechcommands.yaml > log/transductive/appnp/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/audio/speechcommands.yaml > log/transductive/chebnet/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/audio/speechcommands.yaml > log/transductive/dgi/audio/speechcommands.log 2>&1
@@ -41,21 +49,29 @@ python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/a
 ### yesno
 
 ```
-mkdir -p log/inductive/adamatch/audio log/inductive/co_training/audio log/inductive/fixmatch/audio log/inductive/flexmatch/audio log/inductive/free_match/audio log/inductive/mean_teacher/audio log/inductive/mixmatch/audio log/inductive/pi_model/audio log/inductive/pseudo_label/audio log/inductive/s4vm/audio log/inductive/softmatch/audio log/inductive/tri_training/audio log/inductive/tsvm/audio log/inductive/uda/audio log/transductive/appnp/audio log/transductive/chebnet/audio log/transductive/dgi/audio log/transductive/gat/audio log/transductive/gcn/audio log/transductive/gcnii/audio log/transductive/grand/audio log/transductive/graph_mincuts/audio log/transductive/graphsage/audio log/transductive/label_propagation/audio log/transductive/label_spreading/audio log/transductive/node2vec/audio log/transductive/planetoid/audio log/transductive/poisson_learning/audio log/transductive/sgc/audio log/transductive/tsvm/audio
+mkdir -p log/inductive/adamatch/audio log/inductive/co_training/audio log/inductive/comatch/audio log/inductive/daso/audio log/inductive/deep_co_training/audio log/inductive/fixmatch/audio log/inductive/flexmatch/audio log/inductive/free_match/audio log/inductive/mean_teacher/audio log/inductive/meta_pseudo_labels/audio log/inductive/mixmatch/audio log/inductive/noisy_student/audio log/inductive/pi_model/audio log/inductive/pseudo_label/audio log/inductive/s4vm/audio log/inductive/simclr_v2/audio log/inductive/softmatch/audio log/inductive/tri_training/audio log/inductive/trinet/audio log/inductive/tsvm/audio log/inductive/uda/audio log/inductive/vat/audio log/transductive/appnp/audio log/transductive/chebnet/audio log/transductive/dgi/audio log/transductive/gat/audio log/transductive/gcn/audio log/transductive/gcnii/audio log/transductive/grand/audio log/transductive/graph_mincuts/audio log/transductive/graphsage/audio log/transductive/label_propagation/audio log/transductive/label_spreading/audio log/transductive/node2vec/audio log/transductive/planetoid/audio log/transductive/poisson_learning/audio log/transductive/sgc/audio log/transductive/tsvm/audio
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/audio/yesno.yaml > log/inductive/adamatch/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/audio/yesno.yaml > log/inductive/co_training/audio/yesno.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/audio/yesno.yaml > log/inductive/comatch/audio/yesno.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/audio/yesno.yaml > log/inductive/daso/audio/yesno.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/audio/yesno.yaml > log/inductive/deep_co_training/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/audio/yesno.yaml > log/inductive/fixmatch/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/audio/yesno.yaml > log/inductive/flexmatch/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/audio/yesno.yaml > log/inductive/free_match/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/audio/yesno.yaml > log/inductive/mean_teacher/audio/yesno.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/audio/yesno.yaml > log/inductive/meta_pseudo_labels/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/audio/yesno.yaml > log/inductive/mixmatch/audio/yesno.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/audio/yesno.yaml > log/inductive/noisy_student/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/audio/yesno.yaml > log/inductive/pi_model/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/audio/yesno.yaml > log/inductive/pseudo_label/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/audio/yesno.yaml > log/inductive/s4vm/audio/yesno.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/audio/yesno.yaml > log/inductive/simclr_v2/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/audio/yesno.yaml > log/inductive/softmatch/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/audio/yesno.yaml > log/inductive/tri_training/audio/yesno.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/audio/yesno.yaml > log/inductive/trinet/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/audio/yesno.yaml > log/inductive/tsvm/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/audio/yesno.yaml > log/inductive/uda/audio/yesno.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/audio/yesno.yaml > log/inductive/vat/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/audio/yesno.yaml > log/transductive/appnp/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/audio/yesno.yaml > log/transductive/chebnet/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/audio/yesno.yaml > log/transductive/dgi/audio/yesno.log 2>&1
@@ -79,21 +95,29 @@ python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/a
 ### citeseer
 
 ```
-mkdir -p log/inductive/adamatch/graph log/inductive/co_training/graph log/inductive/fixmatch/graph log/inductive/flexmatch/graph log/inductive/free_match/graph log/inductive/mean_teacher/graph log/inductive/mixmatch/graph log/inductive/pi_model/graph log/inductive/pseudo_label/graph log/inductive/s4vm/graph log/inductive/softmatch/graph log/inductive/tri_training/graph log/inductive/tsvm/graph log/inductive/uda/graph log/transductive/appnp/graph log/transductive/chebnet/graph log/transductive/dgi/graph log/transductive/gat/graph log/transductive/gcn/graph log/transductive/gcnii/graph log/transductive/grand/graph log/transductive/graph_mincuts/graph log/transductive/graphsage/graph log/transductive/label_propagation/graph log/transductive/label_spreading/graph log/transductive/node2vec/graph log/transductive/planetoid/graph log/transductive/poisson_learning/graph log/transductive/sgc/graph log/transductive/tsvm/graph
+mkdir -p log/inductive/adamatch/graph log/inductive/co_training/graph log/inductive/comatch/graph log/inductive/daso/graph log/inductive/deep_co_training/graph log/inductive/fixmatch/graph log/inductive/flexmatch/graph log/inductive/free_match/graph log/inductive/mean_teacher/graph log/inductive/meta_pseudo_labels/graph log/inductive/mixmatch/graph log/inductive/noisy_student/graph log/inductive/pi_model/graph log/inductive/pseudo_label/graph log/inductive/s4vm/graph log/inductive/simclr_v2/graph log/inductive/softmatch/graph log/inductive/tri_training/graph log/inductive/trinet/graph log/inductive/tsvm/graph log/inductive/uda/graph log/inductive/vat/graph log/transductive/appnp/graph log/transductive/chebnet/graph log/transductive/dgi/graph log/transductive/gat/graph log/transductive/gcn/graph log/transductive/gcnii/graph log/transductive/grand/graph log/transductive/graph_mincuts/graph log/transductive/graphsage/graph log/transductive/label_propagation/graph log/transductive/label_spreading/graph log/transductive/node2vec/graph log/transductive/planetoid/graph log/transductive/poisson_learning/graph log/transductive/sgc/graph log/transductive/tsvm/graph
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/graph/citeseer.yaml > log/inductive/adamatch/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/graph/citeseer.yaml > log/inductive/co_training/graph/citeseer.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/graph/citeseer.yaml > log/inductive/comatch/graph/citeseer.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/graph/citeseer.yaml > log/inductive/daso/graph/citeseer.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/graph/citeseer.yaml > log/inductive/deep_co_training/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/graph/citeseer.yaml > log/inductive/fixmatch/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/graph/citeseer.yaml > log/inductive/flexmatch/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/graph/citeseer.yaml > log/inductive/free_match/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/graph/citeseer.yaml > log/inductive/mean_teacher/graph/citeseer.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/graph/citeseer.yaml > log/inductive/meta_pseudo_labels/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/graph/citeseer.yaml > log/inductive/mixmatch/graph/citeseer.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/graph/citeseer.yaml > log/inductive/noisy_student/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/graph/citeseer.yaml > log/inductive/pi_model/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/graph/citeseer.yaml > log/inductive/pseudo_label/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/graph/citeseer.yaml > log/inductive/s4vm/graph/citeseer.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/graph/citeseer.yaml > log/inductive/simclr_v2/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/graph/citeseer.yaml > log/inductive/softmatch/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/graph/citeseer.yaml > log/inductive/tri_training/graph/citeseer.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/graph/citeseer.yaml > log/inductive/trinet/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/graph/citeseer.yaml > log/inductive/tsvm/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/graph/citeseer.yaml > log/inductive/uda/graph/citeseer.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/graph/citeseer.yaml > log/inductive/vat/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/graph/citeseer.yaml > log/transductive/appnp/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/graph/citeseer.yaml > log/transductive/chebnet/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/graph/citeseer.yaml > log/transductive/dgi/graph/citeseer.log 2>&1
@@ -115,21 +139,29 @@ python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/g
 ### cora
 
 ```
-mkdir -p log/inductive/adamatch/graph log/inductive/co_training/graph log/inductive/fixmatch/graph log/inductive/flexmatch/graph log/inductive/free_match/graph log/inductive/mean_teacher/graph log/inductive/mixmatch/graph log/inductive/pi_model/graph log/inductive/pseudo_label/graph log/inductive/s4vm/graph log/inductive/softmatch/graph log/inductive/tri_training/graph log/inductive/tsvm/graph log/inductive/uda/graph log/transductive/appnp/graph log/transductive/chebnet/graph log/transductive/dgi/graph log/transductive/gat/graph log/transductive/gcn/graph log/transductive/gcnii/graph log/transductive/grand/graph log/transductive/graph_mincuts/graph log/transductive/graphsage/graph log/transductive/label_propagation/graph log/transductive/label_spreading/graph log/transductive/node2vec/graph log/transductive/planetoid/graph log/transductive/poisson_learning/graph log/transductive/sgc/graph log/transductive/tsvm/graph
+mkdir -p log/inductive/adamatch/graph log/inductive/co_training/graph log/inductive/comatch/graph log/inductive/daso/graph log/inductive/deep_co_training/graph log/inductive/fixmatch/graph log/inductive/flexmatch/graph log/inductive/free_match/graph log/inductive/mean_teacher/graph log/inductive/meta_pseudo_labels/graph log/inductive/mixmatch/graph log/inductive/noisy_student/graph log/inductive/pi_model/graph log/inductive/pseudo_label/graph log/inductive/s4vm/graph log/inductive/simclr_v2/graph log/inductive/softmatch/graph log/inductive/tri_training/graph log/inductive/trinet/graph log/inductive/tsvm/graph log/inductive/uda/graph log/inductive/vat/graph log/transductive/appnp/graph log/transductive/chebnet/graph log/transductive/dgi/graph log/transductive/gat/graph log/transductive/gcn/graph log/transductive/gcnii/graph log/transductive/grand/graph log/transductive/graph_mincuts/graph log/transductive/graphsage/graph log/transductive/label_propagation/graph log/transductive/label_spreading/graph log/transductive/node2vec/graph log/transductive/planetoid/graph log/transductive/poisson_learning/graph log/transductive/sgc/graph log/transductive/tsvm/graph
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/graph/cora.yaml > log/inductive/adamatch/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/graph/cora.yaml > log/inductive/co_training/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/graph/cora.yaml > log/inductive/comatch/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/graph/cora.yaml > log/inductive/daso/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/graph/cora.yaml > log/inductive/deep_co_training/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/graph/cora.yaml > log/inductive/fixmatch/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/graph/cora.yaml > log/inductive/flexmatch/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/graph/cora.yaml > log/inductive/free_match/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/graph/cora.yaml > log/inductive/mean_teacher/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/graph/cora.yaml > log/inductive/meta_pseudo_labels/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/graph/cora.yaml > log/inductive/mixmatch/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/graph/cora.yaml > log/inductive/noisy_student/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/graph/cora.yaml > log/inductive/pi_model/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/graph/cora.yaml > log/inductive/pseudo_label/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/graph/cora.yaml > log/inductive/s4vm/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/graph/cora.yaml > log/inductive/simclr_v2/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/graph/cora.yaml > log/inductive/softmatch/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/graph/cora.yaml > log/inductive/tri_training/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/graph/cora.yaml > log/inductive/trinet/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/graph/cora.yaml > log/inductive/tsvm/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/graph/cora.yaml > log/inductive/uda/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/graph/cora.yaml > log/inductive/vat/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/graph/cora.yaml > log/transductive/appnp/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/graph/cora.yaml > log/transductive/chebnet/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/graph/cora.yaml > log/transductive/dgi/graph/cora.log 2>&1
@@ -151,21 +183,29 @@ python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/g
 ### pubmed
 
 ```
-mkdir -p log/inductive/adamatch/graph log/inductive/co_training/graph log/inductive/fixmatch/graph log/inductive/flexmatch/graph log/inductive/free_match/graph log/inductive/mean_teacher/graph log/inductive/mixmatch/graph log/inductive/pi_model/graph log/inductive/pseudo_label/graph log/inductive/s4vm/graph log/inductive/softmatch/graph log/inductive/tri_training/graph log/inductive/tsvm/graph log/inductive/uda/graph log/transductive/appnp/graph log/transductive/chebnet/graph log/transductive/dgi/graph log/transductive/gat/graph log/transductive/gcn/graph log/transductive/gcnii/graph log/transductive/grand/graph log/transductive/graph_mincuts/graph log/transductive/graphsage/graph log/transductive/label_propagation/graph log/transductive/label_spreading/graph log/transductive/node2vec/graph log/transductive/planetoid/graph log/transductive/poisson_learning/graph log/transductive/sgc/graph log/transductive/tsvm/graph
+mkdir -p log/inductive/adamatch/graph log/inductive/co_training/graph log/inductive/comatch/graph log/inductive/daso/graph log/inductive/deep_co_training/graph log/inductive/fixmatch/graph log/inductive/flexmatch/graph log/inductive/free_match/graph log/inductive/mean_teacher/graph log/inductive/meta_pseudo_labels/graph log/inductive/mixmatch/graph log/inductive/noisy_student/graph log/inductive/pi_model/graph log/inductive/pseudo_label/graph log/inductive/s4vm/graph log/inductive/simclr_v2/graph log/inductive/softmatch/graph log/inductive/tri_training/graph log/inductive/trinet/graph log/inductive/tsvm/graph log/inductive/uda/graph log/inductive/vat/graph log/transductive/appnp/graph log/transductive/chebnet/graph log/transductive/dgi/graph log/transductive/gat/graph log/transductive/gcn/graph log/transductive/gcnii/graph log/transductive/grand/graph log/transductive/graph_mincuts/graph log/transductive/graphsage/graph log/transductive/label_propagation/graph log/transductive/label_spreading/graph log/transductive/node2vec/graph log/transductive/planetoid/graph log/transductive/poisson_learning/graph log/transductive/sgc/graph log/transductive/tsvm/graph
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/graph/pubmed.yaml > log/inductive/adamatch/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/graph/pubmed.yaml > log/inductive/co_training/graph/pubmed.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/graph/pubmed.yaml > log/inductive/comatch/graph/pubmed.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/graph/pubmed.yaml > log/inductive/daso/graph/pubmed.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/graph/pubmed.yaml > log/inductive/deep_co_training/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/graph/pubmed.yaml > log/inductive/fixmatch/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/graph/pubmed.yaml > log/inductive/flexmatch/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/graph/pubmed.yaml > log/inductive/free_match/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/graph/pubmed.yaml > log/inductive/mean_teacher/graph/pubmed.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/graph/pubmed.yaml > log/inductive/meta_pseudo_labels/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/graph/pubmed.yaml > log/inductive/mixmatch/graph/pubmed.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/graph/pubmed.yaml > log/inductive/noisy_student/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/graph/pubmed.yaml > log/inductive/pi_model/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/graph/pubmed.yaml > log/inductive/pseudo_label/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/graph/pubmed.yaml > log/inductive/s4vm/graph/pubmed.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/graph/pubmed.yaml > log/inductive/simclr_v2/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/graph/pubmed.yaml > log/inductive/softmatch/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/graph/pubmed.yaml > log/inductive/tri_training/graph/pubmed.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/graph/pubmed.yaml > log/inductive/trinet/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/graph/pubmed.yaml > log/inductive/tsvm/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/graph/pubmed.yaml > log/inductive/uda/graph/pubmed.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/graph/pubmed.yaml > log/inductive/vat/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/graph/pubmed.yaml > log/transductive/appnp/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/graph/pubmed.yaml > log/transductive/chebnet/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/graph/pubmed.yaml > log/transductive/dgi/graph/pubmed.log 2>&1
@@ -189,21 +229,29 @@ python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/g
 ### adult
 
 ```
-mkdir -p log/inductive/adamatch/tabular log/inductive/co_training/tabular log/inductive/fixmatch/tabular log/inductive/flexmatch/tabular log/inductive/free_match/tabular log/inductive/mean_teacher/tabular log/inductive/mixmatch/tabular log/inductive/pi_model/tabular log/inductive/pseudo_label/tabular log/inductive/s4vm/tabular log/inductive/softmatch/tabular log/inductive/tri_training/tabular log/inductive/tsvm/tabular log/inductive/uda/tabular log/transductive/appnp/tabular log/transductive/chebnet/tabular log/transductive/dgi/tabular log/transductive/gat/tabular log/transductive/gcn/tabular log/transductive/gcnii/tabular log/transductive/grand/tabular log/transductive/graph_mincuts/tabular log/transductive/graphsage/tabular log/transductive/label_propagation/tabular log/transductive/label_spreading/tabular log/transductive/node2vec/tabular log/transductive/planetoid/tabular log/transductive/poisson_learning/tabular log/transductive/sgc/tabular log/transductive/tsvm/tabular
+mkdir -p log/inductive/adamatch/tabular log/inductive/co_training/tabular log/inductive/comatch/tabular log/inductive/daso/tabular log/inductive/deep_co_training/tabular log/inductive/fixmatch/tabular log/inductive/flexmatch/tabular log/inductive/free_match/tabular log/inductive/mean_teacher/tabular log/inductive/meta_pseudo_labels/tabular log/inductive/mixmatch/tabular log/inductive/noisy_student/tabular log/inductive/pi_model/tabular log/inductive/pseudo_label/tabular log/inductive/s4vm/tabular log/inductive/simclr_v2/tabular log/inductive/softmatch/tabular log/inductive/tri_training/tabular log/inductive/trinet/tabular log/inductive/tsvm/tabular log/inductive/uda/tabular log/inductive/vat/tabular log/transductive/appnp/tabular log/transductive/chebnet/tabular log/transductive/dgi/tabular log/transductive/gat/tabular log/transductive/gcn/tabular log/transductive/gcnii/tabular log/transductive/grand/tabular log/transductive/graph_mincuts/tabular log/transductive/graphsage/tabular log/transductive/label_propagation/tabular log/transductive/label_spreading/tabular log/transductive/node2vec/tabular log/transductive/planetoid/tabular log/transductive/poisson_learning/tabular log/transductive/sgc/tabular log/transductive/tsvm/tabular
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/tabular/adult.yaml > log/inductive/adamatch/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/tabular/adult.yaml > log/inductive/co_training/tabular/adult.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/tabular/adult.yaml > log/inductive/comatch/tabular/adult.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/tabular/adult.yaml > log/inductive/daso/tabular/adult.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/tabular/adult.yaml > log/inductive/deep_co_training/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/tabular/adult.yaml > log/inductive/fixmatch/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/tabular/adult.yaml > log/inductive/flexmatch/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/tabular/adult.yaml > log/inductive/free_match/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/tabular/adult.yaml > log/inductive/mean_teacher/tabular/adult.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/tabular/adult.yaml > log/inductive/meta_pseudo_labels/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/tabular/adult.yaml > log/inductive/mixmatch/tabular/adult.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/tabular/adult.yaml > log/inductive/noisy_student/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/tabular/adult.yaml > log/inductive/pi_model/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/tabular/adult.yaml > log/inductive/pseudo_label/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/tabular/adult.yaml > log/inductive/s4vm/tabular/adult.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/tabular/adult.yaml > log/inductive/simclr_v2/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/tabular/adult.yaml > log/inductive/softmatch/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/tabular/adult.yaml > log/inductive/tri_training/tabular/adult.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/tabular/adult.yaml > log/inductive/trinet/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/tabular/adult.yaml > log/inductive/tsvm/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/tabular/adult.yaml > log/inductive/uda/tabular/adult.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/tabular/adult.yaml > log/inductive/vat/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/tabular/adult.yaml > log/transductive/appnp/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/tabular/adult.yaml > log/transductive/chebnet/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/tabular/adult.yaml > log/transductive/dgi/tabular/adult.log 2>&1
@@ -225,21 +273,29 @@ python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/t
 ### breast_cancer
 
 ```
-mkdir -p log/inductive/adamatch/tabular log/inductive/co_training/tabular log/inductive/fixmatch/tabular log/inductive/flexmatch/tabular log/inductive/free_match/tabular log/inductive/mean_teacher/tabular log/inductive/mixmatch/tabular log/inductive/pi_model/tabular log/inductive/pseudo_label/tabular log/inductive/s4vm/tabular log/inductive/softmatch/tabular log/inductive/tri_training/tabular log/inductive/tsvm/tabular log/inductive/uda/tabular log/transductive/appnp/tabular log/transductive/chebnet/tabular log/transductive/dgi/tabular log/transductive/gat/tabular log/transductive/gcn/tabular log/transductive/gcnii/tabular log/transductive/grand/tabular log/transductive/graph_mincuts/tabular log/transductive/graphsage/tabular log/transductive/label_propagation/tabular log/transductive/label_spreading/tabular log/transductive/node2vec/tabular log/transductive/planetoid/tabular log/transductive/poisson_learning/tabular log/transductive/sgc/tabular log/transductive/tsvm/tabular
+mkdir -p log/inductive/adamatch/tabular log/inductive/co_training/tabular log/inductive/comatch/tabular log/inductive/daso/tabular log/inductive/deep_co_training/tabular log/inductive/fixmatch/tabular log/inductive/flexmatch/tabular log/inductive/free_match/tabular log/inductive/mean_teacher/tabular log/inductive/meta_pseudo_labels/tabular log/inductive/mixmatch/tabular log/inductive/noisy_student/tabular log/inductive/pi_model/tabular log/inductive/pseudo_label/tabular log/inductive/s4vm/tabular log/inductive/simclr_v2/tabular log/inductive/softmatch/tabular log/inductive/tri_training/tabular log/inductive/trinet/tabular log/inductive/tsvm/tabular log/inductive/uda/tabular log/inductive/vat/tabular log/transductive/appnp/tabular log/transductive/chebnet/tabular log/transductive/dgi/tabular log/transductive/gat/tabular log/transductive/gcn/tabular log/transductive/gcnii/tabular log/transductive/grand/tabular log/transductive/graph_mincuts/tabular log/transductive/graphsage/tabular log/transductive/label_propagation/tabular log/transductive/label_spreading/tabular log/transductive/node2vec/tabular log/transductive/planetoid/tabular log/transductive/poisson_learning/tabular log/transductive/sgc/tabular log/transductive/tsvm/tabular
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/tabular/breast_cancer.yaml > log/inductive/adamatch/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/tabular/breast_cancer.yaml > log/inductive/co_training/tabular/breast_cancer.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/tabular/breast_cancer.yaml > log/inductive/comatch/tabular/breast_cancer.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/tabular/breast_cancer.yaml > log/inductive/daso/tabular/breast_cancer.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/tabular/breast_cancer.yaml > log/inductive/deep_co_training/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/tabular/breast_cancer.yaml > log/inductive/fixmatch/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/tabular/breast_cancer.yaml > log/inductive/flexmatch/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/tabular/breast_cancer.yaml > log/inductive/free_match/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/tabular/breast_cancer.yaml > log/inductive/mean_teacher/tabular/breast_cancer.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/tabular/breast_cancer.yaml > log/inductive/meta_pseudo_labels/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/tabular/breast_cancer.yaml > log/inductive/mixmatch/tabular/breast_cancer.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/tabular/breast_cancer.yaml > log/inductive/noisy_student/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/tabular/breast_cancer.yaml > log/inductive/pi_model/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/tabular/breast_cancer.yaml > log/inductive/pseudo_label/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/tabular/breast_cancer.yaml > log/inductive/s4vm/tabular/breast_cancer.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/tabular/breast_cancer.yaml > log/inductive/simclr_v2/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/tabular/breast_cancer.yaml > log/inductive/softmatch/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/tabular/breast_cancer.yaml > log/inductive/tri_training/tabular/breast_cancer.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/tabular/breast_cancer.yaml > log/inductive/trinet/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/tabular/breast_cancer.yaml > log/inductive/tsvm/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/tabular/breast_cancer.yaml > log/inductive/uda/tabular/breast_cancer.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/tabular/breast_cancer.yaml > log/inductive/vat/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/tabular/breast_cancer.yaml > log/transductive/appnp/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/tabular/breast_cancer.yaml > log/transductive/chebnet/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/tabular/breast_cancer.yaml > log/transductive/dgi/tabular/breast_cancer.log 2>&1
@@ -261,21 +317,29 @@ python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/t
 ### iris
 
 ```
-mkdir -p log/inductive/adamatch/tabular log/inductive/co_training/tabular log/inductive/fixmatch/tabular log/inductive/flexmatch/tabular log/inductive/free_match/tabular log/inductive/mean_teacher/tabular log/inductive/mixmatch/tabular log/inductive/pi_model/tabular log/inductive/pseudo_label/tabular log/inductive/s4vm/tabular log/inductive/softmatch/tabular log/inductive/tri_training/tabular log/inductive/tsvm/tabular log/inductive/uda/tabular log/transductive/appnp/tabular log/transductive/chebnet/tabular log/transductive/dgi/tabular log/transductive/gat/tabular log/transductive/gcn/tabular log/transductive/gcnii/tabular log/transductive/grand/tabular log/transductive/graph_mincuts/tabular log/transductive/graphsage/tabular log/transductive/label_propagation/tabular log/transductive/label_spreading/tabular log/transductive/node2vec/tabular log/transductive/planetoid/tabular log/transductive/poisson_learning/tabular log/transductive/sgc/tabular log/transductive/tsvm/tabular
+mkdir -p log/inductive/adamatch/tabular log/inductive/co_training/tabular log/inductive/comatch/tabular log/inductive/daso/tabular log/inductive/deep_co_training/tabular log/inductive/fixmatch/tabular log/inductive/flexmatch/tabular log/inductive/free_match/tabular log/inductive/mean_teacher/tabular log/inductive/meta_pseudo_labels/tabular log/inductive/mixmatch/tabular log/inductive/noisy_student/tabular log/inductive/pi_model/tabular log/inductive/pseudo_label/tabular log/inductive/s4vm/tabular log/inductive/simclr_v2/tabular log/inductive/softmatch/tabular log/inductive/tri_training/tabular log/inductive/trinet/tabular log/inductive/tsvm/tabular log/inductive/uda/tabular log/inductive/vat/tabular log/transductive/appnp/tabular log/transductive/chebnet/tabular log/transductive/dgi/tabular log/transductive/gat/tabular log/transductive/gcn/tabular log/transductive/gcnii/tabular log/transductive/grand/tabular log/transductive/graph_mincuts/tabular log/transductive/graphsage/tabular log/transductive/label_propagation/tabular log/transductive/label_spreading/tabular log/transductive/node2vec/tabular log/transductive/planetoid/tabular log/transductive/poisson_learning/tabular log/transductive/sgc/tabular log/transductive/tsvm/tabular
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/tabular/iris.yaml > log/inductive/adamatch/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/tabular/iris.yaml > log/inductive/co_training/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/tabular/iris.yaml > log/inductive/comatch/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/tabular/iris.yaml > log/inductive/daso/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/tabular/iris.yaml > log/inductive/deep_co_training/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/tabular/iris.yaml > log/inductive/fixmatch/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/tabular/iris.yaml > log/inductive/flexmatch/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/tabular/iris.yaml > log/inductive/free_match/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/tabular/iris.yaml > log/inductive/mean_teacher/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/tabular/iris.yaml > log/inductive/meta_pseudo_labels/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/tabular/iris.yaml > log/inductive/mixmatch/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/tabular/iris.yaml > log/inductive/noisy_student/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/tabular/iris.yaml > log/inductive/pi_model/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/tabular/iris.yaml > log/inductive/pseudo_label/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/tabular/iris.yaml > log/inductive/s4vm/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/tabular/iris.yaml > log/inductive/simclr_v2/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/tabular/iris.yaml > log/inductive/softmatch/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/tabular/iris.yaml > log/inductive/tri_training/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/tabular/iris.yaml > log/inductive/trinet/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/tabular/iris.yaml > log/inductive/tsvm/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/tabular/iris.yaml > log/inductive/uda/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/tabular/iris.yaml > log/inductive/vat/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/tabular/iris.yaml > log/transductive/appnp/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/tabular/iris.yaml > log/transductive/chebnet/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/tabular/iris.yaml > log/transductive/dgi/tabular/iris.log 2>&1
@@ -297,21 +361,29 @@ python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/t
 ### toy
 
 ```
-mkdir -p log/inductive/adamatch/tabular log/inductive/co_training/tabular log/inductive/fixmatch/tabular log/inductive/flexmatch/tabular log/inductive/free_match/tabular log/inductive/mean_teacher/tabular log/inductive/mixmatch/tabular log/inductive/pi_model/tabular log/inductive/pseudo_label/tabular log/inductive/s4vm/tabular log/inductive/softmatch/tabular log/inductive/tri_training/tabular log/inductive/tsvm/tabular log/inductive/uda/tabular log/transductive/appnp/tabular log/transductive/chebnet/tabular log/transductive/dgi/tabular log/transductive/gat/tabular log/transductive/gcn/tabular log/transductive/gcnii/tabular log/transductive/grand/tabular log/transductive/graph_mincuts/tabular log/transductive/graphsage/tabular log/transductive/label_propagation/tabular log/transductive/label_spreading/tabular log/transductive/node2vec/tabular log/transductive/planetoid/tabular log/transductive/poisson_learning/tabular log/transductive/sgc/tabular log/transductive/tsvm/tabular
+mkdir -p log/inductive/adamatch/tabular log/inductive/co_training/tabular log/inductive/comatch/tabular log/inductive/daso/tabular log/inductive/deep_co_training/tabular log/inductive/fixmatch/tabular log/inductive/flexmatch/tabular log/inductive/free_match/tabular log/inductive/mean_teacher/tabular log/inductive/meta_pseudo_labels/tabular log/inductive/mixmatch/tabular log/inductive/noisy_student/tabular log/inductive/pi_model/tabular log/inductive/pseudo_label/tabular log/inductive/s4vm/tabular log/inductive/simclr_v2/tabular log/inductive/softmatch/tabular log/inductive/tri_training/tabular log/inductive/trinet/tabular log/inductive/tsvm/tabular log/inductive/uda/tabular log/inductive/vat/tabular log/transductive/appnp/tabular log/transductive/chebnet/tabular log/transductive/dgi/tabular log/transductive/gat/tabular log/transductive/gcn/tabular log/transductive/gcnii/tabular log/transductive/grand/tabular log/transductive/graph_mincuts/tabular log/transductive/graphsage/tabular log/transductive/label_propagation/tabular log/transductive/label_spreading/tabular log/transductive/node2vec/tabular log/transductive/planetoid/tabular log/transductive/poisson_learning/tabular log/transductive/sgc/tabular log/transductive/tsvm/tabular
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/tabular/toy.yaml > log/inductive/adamatch/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/tabular/toy.yaml > log/inductive/co_training/tabular/toy.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/tabular/toy.yaml > log/inductive/comatch/tabular/toy.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/tabular/toy.yaml > log/inductive/daso/tabular/toy.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/tabular/toy.yaml > log/inductive/deep_co_training/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/tabular/toy.yaml > log/inductive/fixmatch/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/tabular/toy.yaml > log/inductive/flexmatch/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/tabular/toy.yaml > log/inductive/free_match/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/tabular/toy.yaml > log/inductive/mean_teacher/tabular/toy.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/tabular/toy.yaml > log/inductive/meta_pseudo_labels/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/tabular/toy.yaml > log/inductive/mixmatch/tabular/toy.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/tabular/toy.yaml > log/inductive/noisy_student/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/tabular/toy.yaml > log/inductive/pi_model/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/tabular/toy.yaml > log/inductive/pseudo_label/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/tabular/toy.yaml > log/inductive/s4vm/tabular/toy.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/tabular/toy.yaml > log/inductive/simclr_v2/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/tabular/toy.yaml > log/inductive/softmatch/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/tabular/toy.yaml > log/inductive/tri_training/tabular/toy.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/tabular/toy.yaml > log/inductive/trinet/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/tabular/toy.yaml > log/inductive/tsvm/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/tabular/toy.yaml > log/inductive/uda/tabular/toy.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/tabular/toy.yaml > log/inductive/vat/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/tabular/toy.yaml > log/transductive/appnp/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/tabular/toy.yaml > log/transductive/chebnet/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/tabular/toy.yaml > log/transductive/dgi/tabular/toy.log 2>&1
@@ -335,21 +407,29 @@ python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/t
 ### ag_news
 
 ```
-mkdir -p log/inductive/adamatch/text log/inductive/co_training/text log/inductive/fixmatch/text log/inductive/flexmatch/text log/inductive/free_match/text log/inductive/mean_teacher/text log/inductive/mixmatch/text log/inductive/pi_model/text log/inductive/pseudo_label/text log/inductive/s4vm/text log/inductive/softmatch/text log/inductive/tri_training/text log/inductive/tsvm/text log/inductive/uda/text log/transductive/appnp/text log/transductive/chebnet/text log/transductive/dgi/text log/transductive/gat/text log/transductive/gcn/text log/transductive/gcnii/text log/transductive/grand/text log/transductive/graph_mincuts/text log/transductive/graphsage/text log/transductive/label_propagation/text log/transductive/label_spreading/text log/transductive/node2vec/text log/transductive/planetoid/text log/transductive/poisson_learning/text log/transductive/sgc/text log/transductive/tsvm/text
+mkdir -p log/inductive/adamatch/text log/inductive/co_training/text log/inductive/comatch/text log/inductive/daso/text log/inductive/deep_co_training/text log/inductive/fixmatch/text log/inductive/flexmatch/text log/inductive/free_match/text log/inductive/mean_teacher/text log/inductive/meta_pseudo_labels/text log/inductive/mixmatch/text log/inductive/noisy_student/text log/inductive/pi_model/text log/inductive/pseudo_label/text log/inductive/s4vm/text log/inductive/simclr_v2/text log/inductive/softmatch/text log/inductive/tri_training/text log/inductive/trinet/text log/inductive/tsvm/text log/inductive/uda/text log/inductive/vat/text log/transductive/appnp/text log/transductive/chebnet/text log/transductive/dgi/text log/transductive/gat/text log/transductive/gcn/text log/transductive/gcnii/text log/transductive/grand/text log/transductive/graph_mincuts/text log/transductive/graphsage/text log/transductive/label_propagation/text log/transductive/label_spreading/text log/transductive/node2vec/text log/transductive/planetoid/text log/transductive/poisson_learning/text log/transductive/sgc/text log/transductive/tsvm/text
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/text/ag_news.yaml > log/inductive/adamatch/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/text/ag_news.yaml > log/inductive/co_training/text/ag_news.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/text/ag_news.yaml > log/inductive/comatch/text/ag_news.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/text/ag_news.yaml > log/inductive/daso/text/ag_news.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/text/ag_news.yaml > log/inductive/deep_co_training/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/text/ag_news.yaml > log/inductive/fixmatch/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/text/ag_news.yaml > log/inductive/flexmatch/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/text/ag_news.yaml > log/inductive/free_match/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/text/ag_news.yaml > log/inductive/mean_teacher/text/ag_news.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/text/ag_news.yaml > log/inductive/meta_pseudo_labels/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/text/ag_news.yaml > log/inductive/mixmatch/text/ag_news.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/text/ag_news.yaml > log/inductive/noisy_student/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/text/ag_news.yaml > log/inductive/pi_model/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/text/ag_news.yaml > log/inductive/pseudo_label/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/text/ag_news.yaml > log/inductive/s4vm/text/ag_news.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/text/ag_news.yaml > log/inductive/simclr_v2/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/text/ag_news.yaml > log/inductive/softmatch/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/text/ag_news.yaml > log/inductive/tri_training/text/ag_news.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/text/ag_news.yaml > log/inductive/trinet/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/text/ag_news.yaml > log/inductive/tsvm/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/text/ag_news.yaml > log/inductive/uda/text/ag_news.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/text/ag_news.yaml > log/inductive/vat/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/text/ag_news.yaml > log/transductive/appnp/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/text/ag_news.yaml > log/transductive/chebnet/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/text/ag_news.yaml > log/transductive/dgi/text/ag_news.log 2>&1
@@ -371,21 +451,29 @@ python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/t
 ### amazon_polarity
 
 ```
-mkdir -p log/inductive/adamatch/text log/inductive/co_training/text log/inductive/fixmatch/text log/inductive/flexmatch/text log/inductive/free_match/text log/inductive/mean_teacher/text log/inductive/mixmatch/text log/inductive/pi_model/text log/inductive/pseudo_label/text log/inductive/s4vm/text log/inductive/softmatch/text log/inductive/tri_training/text log/inductive/tsvm/text log/inductive/uda/text log/transductive/appnp/text log/transductive/chebnet/text log/transductive/dgi/text log/transductive/gat/text log/transductive/gcn/text log/transductive/gcnii/text log/transductive/grand/text log/transductive/graph_mincuts/text log/transductive/graphsage/text log/transductive/label_propagation/text log/transductive/label_spreading/text log/transductive/node2vec/text log/transductive/planetoid/text log/transductive/poisson_learning/text log/transductive/sgc/text log/transductive/tsvm/text
+mkdir -p log/inductive/adamatch/text log/inductive/co_training/text log/inductive/comatch/text log/inductive/daso/text log/inductive/deep_co_training/text log/inductive/fixmatch/text log/inductive/flexmatch/text log/inductive/free_match/text log/inductive/mean_teacher/text log/inductive/meta_pseudo_labels/text log/inductive/mixmatch/text log/inductive/noisy_student/text log/inductive/pi_model/text log/inductive/pseudo_label/text log/inductive/s4vm/text log/inductive/simclr_v2/text log/inductive/softmatch/text log/inductive/tri_training/text log/inductive/trinet/text log/inductive/tsvm/text log/inductive/uda/text log/inductive/vat/text log/transductive/appnp/text log/transductive/chebnet/text log/transductive/dgi/text log/transductive/gat/text log/transductive/gcn/text log/transductive/gcnii/text log/transductive/grand/text log/transductive/graph_mincuts/text log/transductive/graphsage/text log/transductive/label_propagation/text log/transductive/label_spreading/text log/transductive/node2vec/text log/transductive/planetoid/text log/transductive/poisson_learning/text log/transductive/sgc/text log/transductive/tsvm/text
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/text/amazon_polarity.yaml > log/inductive/adamatch/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/text/amazon_polarity.yaml > log/inductive/co_training/text/amazon_polarity.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/text/amazon_polarity.yaml > log/inductive/comatch/text/amazon_polarity.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/text/amazon_polarity.yaml > log/inductive/daso/text/amazon_polarity.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/text/amazon_polarity.yaml > log/inductive/deep_co_training/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/text/amazon_polarity.yaml > log/inductive/fixmatch/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/text/amazon_polarity.yaml > log/inductive/flexmatch/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/text/amazon_polarity.yaml > log/inductive/free_match/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/text/amazon_polarity.yaml > log/inductive/mean_teacher/text/amazon_polarity.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/text/amazon_polarity.yaml > log/inductive/meta_pseudo_labels/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/text/amazon_polarity.yaml > log/inductive/mixmatch/text/amazon_polarity.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/text/amazon_polarity.yaml > log/inductive/noisy_student/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/text/amazon_polarity.yaml > log/inductive/pi_model/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/text/amazon_polarity.yaml > log/inductive/pseudo_label/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/text/amazon_polarity.yaml > log/inductive/s4vm/text/amazon_polarity.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/text/amazon_polarity.yaml > log/inductive/simclr_v2/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/text/amazon_polarity.yaml > log/inductive/softmatch/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/text/amazon_polarity.yaml > log/inductive/tri_training/text/amazon_polarity.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/text/amazon_polarity.yaml > log/inductive/trinet/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/text/amazon_polarity.yaml > log/inductive/tsvm/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/text/amazon_polarity.yaml > log/inductive/uda/text/amazon_polarity.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/text/amazon_polarity.yaml > log/inductive/vat/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/text/amazon_polarity.yaml > log/transductive/appnp/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/text/amazon_polarity.yaml > log/transductive/chebnet/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/text/amazon_polarity.yaml > log/transductive/dgi/text/amazon_polarity.log 2>&1
@@ -407,21 +495,29 @@ python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/t
 ### amazon_reviews_multi_en
 
 ```
-mkdir -p log/inductive/adamatch/text log/inductive/co_training/text log/inductive/fixmatch/text log/inductive/flexmatch/text log/inductive/free_match/text log/inductive/mean_teacher/text log/inductive/mixmatch/text log/inductive/pi_model/text log/inductive/pseudo_label/text log/inductive/s4vm/text log/inductive/softmatch/text log/inductive/tri_training/text log/inductive/tsvm/text log/inductive/uda/text log/transductive/appnp/text log/transductive/chebnet/text log/transductive/dgi/text log/transductive/gat/text log/transductive/gcn/text log/transductive/gcnii/text log/transductive/grand/text log/transductive/graph_mincuts/text log/transductive/graphsage/text log/transductive/label_propagation/text log/transductive/label_spreading/text log/transductive/node2vec/text log/transductive/planetoid/text log/transductive/poisson_learning/text log/transductive/sgc/text log/transductive/tsvm/text
+mkdir -p log/inductive/adamatch/text log/inductive/co_training/text log/inductive/comatch/text log/inductive/daso/text log/inductive/deep_co_training/text log/inductive/fixmatch/text log/inductive/flexmatch/text log/inductive/free_match/text log/inductive/mean_teacher/text log/inductive/meta_pseudo_labels/text log/inductive/mixmatch/text log/inductive/noisy_student/text log/inductive/pi_model/text log/inductive/pseudo_label/text log/inductive/s4vm/text log/inductive/simclr_v2/text log/inductive/softmatch/text log/inductive/tri_training/text log/inductive/trinet/text log/inductive/tsvm/text log/inductive/uda/text log/inductive/vat/text log/transductive/appnp/text log/transductive/chebnet/text log/transductive/dgi/text log/transductive/gat/text log/transductive/gcn/text log/transductive/gcnii/text log/transductive/grand/text log/transductive/graph_mincuts/text log/transductive/graphsage/text log/transductive/label_propagation/text log/transductive/label_spreading/text log/transductive/node2vec/text log/transductive/planetoid/text log/transductive/poisson_learning/text log/transductive/sgc/text log/transductive/tsvm/text
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/text/amazon_reviews_multi_en.yaml > log/inductive/adamatch/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/text/amazon_reviews_multi_en.yaml > log/inductive/co_training/text/amazon_reviews_multi_en.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/text/amazon_reviews_multi_en.yaml > log/inductive/comatch/text/amazon_reviews_multi_en.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/text/amazon_reviews_multi_en.yaml > log/inductive/daso/text/amazon_reviews_multi_en.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/text/amazon_reviews_multi_en.yaml > log/inductive/deep_co_training/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/text/amazon_reviews_multi_en.yaml > log/inductive/fixmatch/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/text/amazon_reviews_multi_en.yaml > log/inductive/flexmatch/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/text/amazon_reviews_multi_en.yaml > log/inductive/free_match/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/text/amazon_reviews_multi_en.yaml > log/inductive/mean_teacher/text/amazon_reviews_multi_en.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/text/amazon_reviews_multi_en.yaml > log/inductive/meta_pseudo_labels/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/text/amazon_reviews_multi_en.yaml > log/inductive/mixmatch/text/amazon_reviews_multi_en.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/text/amazon_reviews_multi_en.yaml > log/inductive/noisy_student/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/text/amazon_reviews_multi_en.yaml > log/inductive/pi_model/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/text/amazon_reviews_multi_en.yaml > log/inductive/pseudo_label/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/text/amazon_reviews_multi_en.yaml > log/inductive/s4vm/text/amazon_reviews_multi_en.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/text/amazon_reviews_multi_en.yaml > log/inductive/simclr_v2/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/text/amazon_reviews_multi_en.yaml > log/inductive/softmatch/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/text/amazon_reviews_multi_en.yaml > log/inductive/tri_training/text/amazon_reviews_multi_en.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/text/amazon_reviews_multi_en.yaml > log/inductive/trinet/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/text/amazon_reviews_multi_en.yaml > log/inductive/tsvm/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/text/amazon_reviews_multi_en.yaml > log/inductive/uda/text/amazon_reviews_multi_en.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/text/amazon_reviews_multi_en.yaml > log/inductive/vat/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/text/amazon_reviews_multi_en.yaml > log/transductive/appnp/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/text/amazon_reviews_multi_en.yaml > log/transductive/chebnet/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/text/amazon_reviews_multi_en.yaml > log/transductive/dgi/text/amazon_reviews_multi_en.log 2>&1
@@ -443,21 +539,29 @@ python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/t
 ### dbpedia_14
 
 ```
-mkdir -p log/inductive/adamatch/text log/inductive/co_training/text log/inductive/fixmatch/text log/inductive/flexmatch/text log/inductive/free_match/text log/inductive/mean_teacher/text log/inductive/mixmatch/text log/inductive/pi_model/text log/inductive/pseudo_label/text log/inductive/s4vm/text log/inductive/softmatch/text log/inductive/tri_training/text log/inductive/tsvm/text log/inductive/uda/text log/transductive/appnp/text log/transductive/chebnet/text log/transductive/dgi/text log/transductive/gat/text log/transductive/gcn/text log/transductive/gcnii/text log/transductive/grand/text log/transductive/graph_mincuts/text log/transductive/graphsage/text log/transductive/label_propagation/text log/transductive/label_spreading/text log/transductive/node2vec/text log/transductive/planetoid/text log/transductive/poisson_learning/text log/transductive/sgc/text log/transductive/tsvm/text
+mkdir -p log/inductive/adamatch/text log/inductive/co_training/text log/inductive/comatch/text log/inductive/daso/text log/inductive/deep_co_training/text log/inductive/fixmatch/text log/inductive/flexmatch/text log/inductive/free_match/text log/inductive/mean_teacher/text log/inductive/meta_pseudo_labels/text log/inductive/mixmatch/text log/inductive/noisy_student/text log/inductive/pi_model/text log/inductive/pseudo_label/text log/inductive/s4vm/text log/inductive/simclr_v2/text log/inductive/softmatch/text log/inductive/tri_training/text log/inductive/trinet/text log/inductive/tsvm/text log/inductive/uda/text log/inductive/vat/text log/transductive/appnp/text log/transductive/chebnet/text log/transductive/dgi/text log/transductive/gat/text log/transductive/gcn/text log/transductive/gcnii/text log/transductive/grand/text log/transductive/graph_mincuts/text log/transductive/graphsage/text log/transductive/label_propagation/text log/transductive/label_spreading/text log/transductive/node2vec/text log/transductive/planetoid/text log/transductive/poisson_learning/text log/transductive/sgc/text log/transductive/tsvm/text
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/text/dbpedia_14.yaml > log/inductive/adamatch/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/text/dbpedia_14.yaml > log/inductive/co_training/text/dbpedia_14.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/text/dbpedia_14.yaml > log/inductive/comatch/text/dbpedia_14.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/text/dbpedia_14.yaml > log/inductive/daso/text/dbpedia_14.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/text/dbpedia_14.yaml > log/inductive/deep_co_training/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/text/dbpedia_14.yaml > log/inductive/fixmatch/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/text/dbpedia_14.yaml > log/inductive/flexmatch/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/text/dbpedia_14.yaml > log/inductive/free_match/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/text/dbpedia_14.yaml > log/inductive/mean_teacher/text/dbpedia_14.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/text/dbpedia_14.yaml > log/inductive/meta_pseudo_labels/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/text/dbpedia_14.yaml > log/inductive/mixmatch/text/dbpedia_14.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/text/dbpedia_14.yaml > log/inductive/noisy_student/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/text/dbpedia_14.yaml > log/inductive/pi_model/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/text/dbpedia_14.yaml > log/inductive/pseudo_label/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/text/dbpedia_14.yaml > log/inductive/s4vm/text/dbpedia_14.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/text/dbpedia_14.yaml > log/inductive/simclr_v2/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/text/dbpedia_14.yaml > log/inductive/softmatch/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/text/dbpedia_14.yaml > log/inductive/tri_training/text/dbpedia_14.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/text/dbpedia_14.yaml > log/inductive/trinet/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/text/dbpedia_14.yaml > log/inductive/tsvm/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/text/dbpedia_14.yaml > log/inductive/uda/text/dbpedia_14.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/text/dbpedia_14.yaml > log/inductive/vat/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/text/dbpedia_14.yaml > log/transductive/appnp/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/text/dbpedia_14.yaml > log/transductive/chebnet/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/text/dbpedia_14.yaml > log/transductive/dgi/text/dbpedia_14.log 2>&1
@@ -479,21 +583,29 @@ python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/t
 ### imdb
 
 ```
-mkdir -p log/inductive/adamatch/text log/inductive/co_training/text log/inductive/fixmatch/text log/inductive/flexmatch/text log/inductive/free_match/text log/inductive/mean_teacher/text log/inductive/mixmatch/text log/inductive/pi_model/text log/inductive/pseudo_label/text log/inductive/s4vm/text log/inductive/softmatch/text log/inductive/tri_training/text log/inductive/tsvm/text log/inductive/uda/text log/transductive/appnp/text log/transductive/chebnet/text log/transductive/dgi/text log/transductive/gat/text log/transductive/gcn/text log/transductive/gcnii/text log/transductive/grand/text log/transductive/graph_mincuts/text log/transductive/graphsage/text log/transductive/label_propagation/text log/transductive/label_spreading/text log/transductive/node2vec/text log/transductive/planetoid/text log/transductive/poisson_learning/text log/transductive/sgc/text log/transductive/tsvm/text
+mkdir -p log/inductive/adamatch/text log/inductive/co_training/text log/inductive/comatch/text log/inductive/daso/text log/inductive/deep_co_training/text log/inductive/fixmatch/text log/inductive/flexmatch/text log/inductive/free_match/text log/inductive/mean_teacher/text log/inductive/meta_pseudo_labels/text log/inductive/mixmatch/text log/inductive/noisy_student/text log/inductive/pi_model/text log/inductive/pseudo_label/text log/inductive/s4vm/text log/inductive/simclr_v2/text log/inductive/softmatch/text log/inductive/tri_training/text log/inductive/trinet/text log/inductive/tsvm/text log/inductive/uda/text log/inductive/vat/text log/transductive/appnp/text log/transductive/chebnet/text log/transductive/dgi/text log/transductive/gat/text log/transductive/gcn/text log/transductive/gcnii/text log/transductive/grand/text log/transductive/graph_mincuts/text log/transductive/graphsage/text log/transductive/label_propagation/text log/transductive/label_spreading/text log/transductive/node2vec/text log/transductive/planetoid/text log/transductive/poisson_learning/text log/transductive/sgc/text log/transductive/tsvm/text
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/text/imdb.yaml > log/inductive/adamatch/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/text/imdb.yaml > log/inductive/co_training/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/text/imdb.yaml > log/inductive/comatch/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/text/imdb.yaml > log/inductive/daso/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/text/imdb.yaml > log/inductive/deep_co_training/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/text/imdb.yaml > log/inductive/fixmatch/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/text/imdb.yaml > log/inductive/flexmatch/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/text/imdb.yaml > log/inductive/free_match/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/text/imdb.yaml > log/inductive/mean_teacher/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/text/imdb.yaml > log/inductive/meta_pseudo_labels/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/text/imdb.yaml > log/inductive/mixmatch/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/text/imdb.yaml > log/inductive/noisy_student/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/text/imdb.yaml > log/inductive/pi_model/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/text/imdb.yaml > log/inductive/pseudo_label/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/text/imdb.yaml > log/inductive/s4vm/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/text/imdb.yaml > log/inductive/simclr_v2/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/text/imdb.yaml > log/inductive/softmatch/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/text/imdb.yaml > log/inductive/tri_training/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/text/imdb.yaml > log/inductive/trinet/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/text/imdb.yaml > log/inductive/tsvm/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/text/imdb.yaml > log/inductive/uda/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/text/imdb.yaml > log/inductive/vat/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/text/imdb.yaml > log/transductive/appnp/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/text/imdb.yaml > log/transductive/chebnet/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/text/imdb.yaml > log/transductive/dgi/text/imdb.log 2>&1
@@ -515,21 +627,29 @@ python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/t
 ### yelp_polarity
 
 ```
-mkdir -p log/inductive/adamatch/text log/inductive/co_training/text log/inductive/fixmatch/text log/inductive/flexmatch/text log/inductive/free_match/text log/inductive/mean_teacher/text log/inductive/mixmatch/text log/inductive/pi_model/text log/inductive/pseudo_label/text log/inductive/s4vm/text log/inductive/softmatch/text log/inductive/tri_training/text log/inductive/tsvm/text log/inductive/uda/text log/transductive/appnp/text log/transductive/chebnet/text log/transductive/dgi/text log/transductive/gat/text log/transductive/gcn/text log/transductive/gcnii/text log/transductive/grand/text log/transductive/graph_mincuts/text log/transductive/graphsage/text log/transductive/label_propagation/text log/transductive/label_spreading/text log/transductive/node2vec/text log/transductive/planetoid/text log/transductive/poisson_learning/text log/transductive/sgc/text log/transductive/tsvm/text
+mkdir -p log/inductive/adamatch/text log/inductive/co_training/text log/inductive/comatch/text log/inductive/daso/text log/inductive/deep_co_training/text log/inductive/fixmatch/text log/inductive/flexmatch/text log/inductive/free_match/text log/inductive/mean_teacher/text log/inductive/meta_pseudo_labels/text log/inductive/mixmatch/text log/inductive/noisy_student/text log/inductive/pi_model/text log/inductive/pseudo_label/text log/inductive/s4vm/text log/inductive/simclr_v2/text log/inductive/softmatch/text log/inductive/tri_training/text log/inductive/trinet/text log/inductive/tsvm/text log/inductive/uda/text log/inductive/vat/text log/transductive/appnp/text log/transductive/chebnet/text log/transductive/dgi/text log/transductive/gat/text log/transductive/gcn/text log/transductive/gcnii/text log/transductive/grand/text log/transductive/graph_mincuts/text log/transductive/graphsage/text log/transductive/label_propagation/text log/transductive/label_spreading/text log/transductive/node2vec/text log/transductive/planetoid/text log/transductive/poisson_learning/text log/transductive/sgc/text log/transductive/tsvm/text
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/text/yelp_polarity.yaml > log/inductive/adamatch/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/text/yelp_polarity.yaml > log/inductive/co_training/text/yelp_polarity.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/text/yelp_polarity.yaml > log/inductive/comatch/text/yelp_polarity.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/text/yelp_polarity.yaml > log/inductive/daso/text/yelp_polarity.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/text/yelp_polarity.yaml > log/inductive/deep_co_training/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/text/yelp_polarity.yaml > log/inductive/fixmatch/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/text/yelp_polarity.yaml > log/inductive/flexmatch/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/text/yelp_polarity.yaml > log/inductive/free_match/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/text/yelp_polarity.yaml > log/inductive/mean_teacher/text/yelp_polarity.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/text/yelp_polarity.yaml > log/inductive/meta_pseudo_labels/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/text/yelp_polarity.yaml > log/inductive/mixmatch/text/yelp_polarity.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/text/yelp_polarity.yaml > log/inductive/noisy_student/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/text/yelp_polarity.yaml > log/inductive/pi_model/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/text/yelp_polarity.yaml > log/inductive/pseudo_label/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/text/yelp_polarity.yaml > log/inductive/s4vm/text/yelp_polarity.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/text/yelp_polarity.yaml > log/inductive/simclr_v2/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/text/yelp_polarity.yaml > log/inductive/softmatch/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/text/yelp_polarity.yaml > log/inductive/tri_training/text/yelp_polarity.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/text/yelp_polarity.yaml > log/inductive/trinet/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/text/yelp_polarity.yaml > log/inductive/tsvm/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/text/yelp_polarity.yaml > log/inductive/uda/text/yelp_polarity.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/text/yelp_polarity.yaml > log/inductive/vat/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/text/yelp_polarity.yaml > log/transductive/appnp/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/text/yelp_polarity.yaml > log/transductive/chebnet/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/text/yelp_polarity.yaml > log/transductive/dgi/text/yelp_polarity.log 2>&1
@@ -551,21 +671,29 @@ python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/t
 ### yelp_review_full
 
 ```
-mkdir -p log/inductive/adamatch/text log/inductive/co_training/text log/inductive/fixmatch/text log/inductive/flexmatch/text log/inductive/free_match/text log/inductive/mean_teacher/text log/inductive/mixmatch/text log/inductive/pi_model/text log/inductive/pseudo_label/text log/inductive/s4vm/text log/inductive/softmatch/text log/inductive/tri_training/text log/inductive/tsvm/text log/inductive/uda/text log/transductive/appnp/text log/transductive/chebnet/text log/transductive/dgi/text log/transductive/gat/text log/transductive/gcn/text log/transductive/gcnii/text log/transductive/grand/text log/transductive/graph_mincuts/text log/transductive/graphsage/text log/transductive/label_propagation/text log/transductive/label_spreading/text log/transductive/node2vec/text log/transductive/planetoid/text log/transductive/poisson_learning/text log/transductive/sgc/text log/transductive/tsvm/text
+mkdir -p log/inductive/adamatch/text log/inductive/co_training/text log/inductive/comatch/text log/inductive/daso/text log/inductive/deep_co_training/text log/inductive/fixmatch/text log/inductive/flexmatch/text log/inductive/free_match/text log/inductive/mean_teacher/text log/inductive/meta_pseudo_labels/text log/inductive/mixmatch/text log/inductive/noisy_student/text log/inductive/pi_model/text log/inductive/pseudo_label/text log/inductive/s4vm/text log/inductive/simclr_v2/text log/inductive/softmatch/text log/inductive/tri_training/text log/inductive/trinet/text log/inductive/tsvm/text log/inductive/uda/text log/inductive/vat/text log/transductive/appnp/text log/transductive/chebnet/text log/transductive/dgi/text log/transductive/gat/text log/transductive/gcn/text log/transductive/gcnii/text log/transductive/grand/text log/transductive/graph_mincuts/text log/transductive/graphsage/text log/transductive/label_propagation/text log/transductive/label_spreading/text log/transductive/node2vec/text log/transductive/planetoid/text log/transductive/poisson_learning/text log/transductive/sgc/text log/transductive/tsvm/text
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/text/yelp_review_full.yaml > log/inductive/adamatch/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/text/yelp_review_full.yaml > log/inductive/co_training/text/yelp_review_full.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/text/yelp_review_full.yaml > log/inductive/comatch/text/yelp_review_full.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/text/yelp_review_full.yaml > log/inductive/daso/text/yelp_review_full.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/text/yelp_review_full.yaml > log/inductive/deep_co_training/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/text/yelp_review_full.yaml > log/inductive/fixmatch/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/text/yelp_review_full.yaml > log/inductive/flexmatch/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/text/yelp_review_full.yaml > log/inductive/free_match/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/text/yelp_review_full.yaml > log/inductive/mean_teacher/text/yelp_review_full.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/text/yelp_review_full.yaml > log/inductive/meta_pseudo_labels/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/text/yelp_review_full.yaml > log/inductive/mixmatch/text/yelp_review_full.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/text/yelp_review_full.yaml > log/inductive/noisy_student/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/text/yelp_review_full.yaml > log/inductive/pi_model/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/text/yelp_review_full.yaml > log/inductive/pseudo_label/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/text/yelp_review_full.yaml > log/inductive/s4vm/text/yelp_review_full.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/text/yelp_review_full.yaml > log/inductive/simclr_v2/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/text/yelp_review_full.yaml > log/inductive/softmatch/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/text/yelp_review_full.yaml > log/inductive/tri_training/text/yelp_review_full.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/text/yelp_review_full.yaml > log/inductive/trinet/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/text/yelp_review_full.yaml > log/inductive/tsvm/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/text/yelp_review_full.yaml > log/inductive/uda/text/yelp_review_full.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/text/yelp_review_full.yaml > log/inductive/vat/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/text/yelp_review_full.yaml > log/transductive/appnp/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/text/yelp_review_full.yaml > log/transductive/chebnet/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/text/yelp_review_full.yaml > log/transductive/dgi/text/yelp_review_full.log 2>&1
@@ -589,21 +717,29 @@ python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/t
 ### cifar10
 
 ```
-mkdir -p log/inductive/adamatch/vision log/inductive/co_training/vision log/inductive/fixmatch/vision log/inductive/flexmatch/vision log/inductive/free_match/vision log/inductive/mean_teacher/vision log/inductive/mixmatch/vision log/inductive/pi_model/vision log/inductive/pseudo_label/vision log/inductive/s4vm/vision log/inductive/softmatch/vision log/inductive/tri_training/vision log/inductive/tsvm/vision log/inductive/uda/vision log/transductive/appnp/vision log/transductive/chebnet/vision log/transductive/dgi/vision log/transductive/gat/vision log/transductive/gcn/vision log/transductive/gcnii/vision log/transductive/grand/vision log/transductive/graph_mincuts/vision log/transductive/graphsage/vision log/transductive/label_propagation/vision log/transductive/label_spreading/vision log/transductive/node2vec/vision log/transductive/planetoid/vision log/transductive/poisson_learning/vision log/transductive/sgc/vision log/transductive/tsvm/vision
+mkdir -p log/inductive/adamatch/vision log/inductive/co_training/vision log/inductive/comatch/vision log/inductive/daso/vision log/inductive/deep_co_training/vision log/inductive/fixmatch/vision log/inductive/flexmatch/vision log/inductive/free_match/vision log/inductive/mean_teacher/vision log/inductive/meta_pseudo_labels/vision log/inductive/mixmatch/vision log/inductive/noisy_student/vision log/inductive/pi_model/vision log/inductive/pseudo_label/vision log/inductive/s4vm/vision log/inductive/simclr_v2/vision log/inductive/softmatch/vision log/inductive/tri_training/vision log/inductive/trinet/vision log/inductive/tsvm/vision log/inductive/uda/vision log/inductive/vat/vision log/transductive/appnp/vision log/transductive/chebnet/vision log/transductive/dgi/vision log/transductive/gat/vision log/transductive/gcn/vision log/transductive/gcnii/vision log/transductive/grand/vision log/transductive/graph_mincuts/vision log/transductive/graphsage/vision log/transductive/label_propagation/vision log/transductive/label_spreading/vision log/transductive/node2vec/vision log/transductive/planetoid/vision log/transductive/poisson_learning/vision log/transductive/sgc/vision log/transductive/tsvm/vision
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/vision/cifar10.yaml > log/inductive/adamatch/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/vision/cifar10.yaml > log/inductive/co_training/vision/cifar10.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/vision/cifar10.yaml > log/inductive/comatch/vision/cifar10.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/vision/cifar10.yaml > log/inductive/daso/vision/cifar10.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/vision/cifar10.yaml > log/inductive/deep_co_training/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/vision/cifar10.yaml > log/inductive/fixmatch/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/vision/cifar10.yaml > log/inductive/flexmatch/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/vision/cifar10.yaml > log/inductive/free_match/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/vision/cifar10.yaml > log/inductive/mean_teacher/vision/cifar10.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/vision/cifar10.yaml > log/inductive/meta_pseudo_labels/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/vision/cifar10.yaml > log/inductive/mixmatch/vision/cifar10.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/vision/cifar10.yaml > log/inductive/noisy_student/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/vision/cifar10.yaml > log/inductive/pi_model/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/vision/cifar10.yaml > log/inductive/pseudo_label/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/vision/cifar10.yaml > log/inductive/s4vm/vision/cifar10.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/vision/cifar10.yaml > log/inductive/simclr_v2/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/vision/cifar10.yaml > log/inductive/softmatch/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/vision/cifar10.yaml > log/inductive/tri_training/vision/cifar10.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/vision/cifar10.yaml > log/inductive/trinet/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/vision/cifar10.yaml > log/inductive/tsvm/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/vision/cifar10.yaml > log/inductive/uda/vision/cifar10.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/vision/cifar10.yaml > log/inductive/vat/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/vision/cifar10.yaml > log/transductive/appnp/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/vision/cifar10.yaml > log/transductive/chebnet/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/vision/cifar10.yaml > log/transductive/dgi/vision/cifar10.log 2>&1
@@ -625,21 +761,29 @@ python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/v
 ### cifar100
 
 ```
-mkdir -p log/inductive/adamatch/vision log/inductive/co_training/vision log/inductive/fixmatch/vision log/inductive/flexmatch/vision log/inductive/free_match/vision log/inductive/mean_teacher/vision log/inductive/mixmatch/vision log/inductive/pi_model/vision log/inductive/pseudo_label/vision log/inductive/s4vm/vision log/inductive/softmatch/vision log/inductive/tri_training/vision log/inductive/tsvm/vision log/inductive/uda/vision log/transductive/appnp/vision log/transductive/chebnet/vision log/transductive/dgi/vision log/transductive/gat/vision log/transductive/gcn/vision log/transductive/gcnii/vision log/transductive/grand/vision log/transductive/graph_mincuts/vision log/transductive/graphsage/vision log/transductive/label_propagation/vision log/transductive/label_spreading/vision log/transductive/node2vec/vision log/transductive/planetoid/vision log/transductive/poisson_learning/vision log/transductive/sgc/vision log/transductive/tsvm/vision
+mkdir -p log/inductive/adamatch/vision log/inductive/co_training/vision log/inductive/comatch/vision log/inductive/daso/vision log/inductive/deep_co_training/vision log/inductive/fixmatch/vision log/inductive/flexmatch/vision log/inductive/free_match/vision log/inductive/mean_teacher/vision log/inductive/meta_pseudo_labels/vision log/inductive/mixmatch/vision log/inductive/noisy_student/vision log/inductive/pi_model/vision log/inductive/pseudo_label/vision log/inductive/s4vm/vision log/inductive/simclr_v2/vision log/inductive/softmatch/vision log/inductive/tri_training/vision log/inductive/trinet/vision log/inductive/tsvm/vision log/inductive/uda/vision log/inductive/vat/vision log/transductive/appnp/vision log/transductive/chebnet/vision log/transductive/dgi/vision log/transductive/gat/vision log/transductive/gcn/vision log/transductive/gcnii/vision log/transductive/grand/vision log/transductive/graph_mincuts/vision log/transductive/graphsage/vision log/transductive/label_propagation/vision log/transductive/label_spreading/vision log/transductive/node2vec/vision log/transductive/planetoid/vision log/transductive/poisson_learning/vision log/transductive/sgc/vision log/transductive/tsvm/vision
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/vision/cifar100.yaml > log/inductive/adamatch/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/vision/cifar100.yaml > log/inductive/co_training/vision/cifar100.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/vision/cifar100.yaml > log/inductive/comatch/vision/cifar100.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/vision/cifar100.yaml > log/inductive/daso/vision/cifar100.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/vision/cifar100.yaml > log/inductive/deep_co_training/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/vision/cifar100.yaml > log/inductive/fixmatch/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/vision/cifar100.yaml > log/inductive/flexmatch/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/vision/cifar100.yaml > log/inductive/free_match/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/vision/cifar100.yaml > log/inductive/mean_teacher/vision/cifar100.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/vision/cifar100.yaml > log/inductive/meta_pseudo_labels/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/vision/cifar100.yaml > log/inductive/mixmatch/vision/cifar100.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/vision/cifar100.yaml > log/inductive/noisy_student/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/vision/cifar100.yaml > log/inductive/pi_model/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/vision/cifar100.yaml > log/inductive/pseudo_label/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/vision/cifar100.yaml > log/inductive/s4vm/vision/cifar100.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/vision/cifar100.yaml > log/inductive/simclr_v2/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/vision/cifar100.yaml > log/inductive/softmatch/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/vision/cifar100.yaml > log/inductive/tri_training/vision/cifar100.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/vision/cifar100.yaml > log/inductive/trinet/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/vision/cifar100.yaml > log/inductive/tsvm/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/vision/cifar100.yaml > log/inductive/uda/vision/cifar100.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/vision/cifar100.yaml > log/inductive/vat/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/vision/cifar100.yaml > log/transductive/appnp/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/vision/cifar100.yaml > log/transductive/chebnet/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/vision/cifar100.yaml > log/transductive/dgi/vision/cifar100.log 2>&1
@@ -661,21 +805,29 @@ python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/v
 ### mnist
 
 ```
-mkdir -p log/inductive/adamatch/vision log/inductive/co_training/vision log/inductive/fixmatch/vision log/inductive/flexmatch/vision log/inductive/free_match/vision log/inductive/mean_teacher/vision log/inductive/mixmatch/vision log/inductive/pi_model/vision log/inductive/pseudo_label/vision log/inductive/s4vm/vision log/inductive/softmatch/vision log/inductive/tri_training/vision log/inductive/tsvm/vision log/inductive/uda/vision log/transductive/appnp/vision log/transductive/chebnet/vision log/transductive/dgi/vision log/transductive/gat/vision log/transductive/gcn/vision log/transductive/gcnii/vision log/transductive/grand/vision log/transductive/graph_mincuts/vision log/transductive/graphsage/vision log/transductive/label_propagation/vision log/transductive/label_spreading/vision log/transductive/node2vec/vision log/transductive/planetoid/vision log/transductive/poisson_learning/vision log/transductive/sgc/vision log/transductive/tsvm/vision
+mkdir -p log/inductive/adamatch/vision log/inductive/co_training/vision log/inductive/comatch/vision log/inductive/daso/vision log/inductive/deep_co_training/vision log/inductive/fixmatch/vision log/inductive/flexmatch/vision log/inductive/free_match/vision log/inductive/mean_teacher/vision log/inductive/meta_pseudo_labels/vision log/inductive/mixmatch/vision log/inductive/noisy_student/vision log/inductive/pi_model/vision log/inductive/pseudo_label/vision log/inductive/s4vm/vision log/inductive/simclr_v2/vision log/inductive/softmatch/vision log/inductive/tri_training/vision log/inductive/trinet/vision log/inductive/tsvm/vision log/inductive/uda/vision log/inductive/vat/vision log/transductive/appnp/vision log/transductive/chebnet/vision log/transductive/dgi/vision log/transductive/gat/vision log/transductive/gcn/vision log/transductive/gcnii/vision log/transductive/grand/vision log/transductive/graph_mincuts/vision log/transductive/graphsage/vision log/transductive/label_propagation/vision log/transductive/label_spreading/vision log/transductive/node2vec/vision log/transductive/planetoid/vision log/transductive/poisson_learning/vision log/transductive/sgc/vision log/transductive/tsvm/vision
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/vision/mnist.yaml > log/inductive/adamatch/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/vision/mnist.yaml > log/inductive/co_training/vision/mnist.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/vision/mnist.yaml > log/inductive/comatch/vision/mnist.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/vision/mnist.yaml > log/inductive/daso/vision/mnist.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/vision/mnist.yaml > log/inductive/deep_co_training/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/vision/mnist.yaml > log/inductive/fixmatch/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/vision/mnist.yaml > log/inductive/flexmatch/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/vision/mnist.yaml > log/inductive/free_match/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/vision/mnist.yaml > log/inductive/mean_teacher/vision/mnist.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/vision/mnist.yaml > log/inductive/meta_pseudo_labels/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/vision/mnist.yaml > log/inductive/mixmatch/vision/mnist.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/vision/mnist.yaml > log/inductive/noisy_student/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/vision/mnist.yaml > log/inductive/pi_model/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/vision/mnist.yaml > log/inductive/pseudo_label/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/vision/mnist.yaml > log/inductive/s4vm/vision/mnist.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/vision/mnist.yaml > log/inductive/simclr_v2/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/vision/mnist.yaml > log/inductive/softmatch/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/vision/mnist.yaml > log/inductive/tri_training/vision/mnist.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/vision/mnist.yaml > log/inductive/trinet/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/vision/mnist.yaml > log/inductive/tsvm/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/vision/mnist.yaml > log/inductive/uda/vision/mnist.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/vision/mnist.yaml > log/inductive/vat/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/vision/mnist.yaml > log/transductive/appnp/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/vision/mnist.yaml > log/transductive/chebnet/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/vision/mnist.yaml > log/transductive/dgi/vision/mnist.log 2>&1
@@ -697,21 +849,29 @@ python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/v
 ### stl10
 
 ```
-mkdir -p log/inductive/adamatch/vision log/inductive/co_training/vision log/inductive/fixmatch/vision log/inductive/flexmatch/vision log/inductive/free_match/vision log/inductive/mean_teacher/vision log/inductive/mixmatch/vision log/inductive/pi_model/vision log/inductive/pseudo_label/vision log/inductive/s4vm/vision log/inductive/softmatch/vision log/inductive/tri_training/vision log/inductive/tsvm/vision log/inductive/uda/vision log/transductive/appnp/vision log/transductive/chebnet/vision log/transductive/dgi/vision log/transductive/gat/vision log/transductive/gcn/vision log/transductive/gcnii/vision log/transductive/grand/vision log/transductive/graph_mincuts/vision log/transductive/graphsage/vision log/transductive/label_propagation/vision log/transductive/label_spreading/vision log/transductive/node2vec/vision log/transductive/planetoid/vision log/transductive/poisson_learning/vision log/transductive/sgc/vision log/transductive/tsvm/vision
+mkdir -p log/inductive/adamatch/vision log/inductive/co_training/vision log/inductive/comatch/vision log/inductive/daso/vision log/inductive/deep_co_training/vision log/inductive/fixmatch/vision log/inductive/flexmatch/vision log/inductive/free_match/vision log/inductive/mean_teacher/vision log/inductive/meta_pseudo_labels/vision log/inductive/mixmatch/vision log/inductive/noisy_student/vision log/inductive/pi_model/vision log/inductive/pseudo_label/vision log/inductive/s4vm/vision log/inductive/simclr_v2/vision log/inductive/softmatch/vision log/inductive/tri_training/vision log/inductive/trinet/vision log/inductive/tsvm/vision log/inductive/uda/vision log/inductive/vat/vision log/transductive/appnp/vision log/transductive/chebnet/vision log/transductive/dgi/vision log/transductive/gat/vision log/transductive/gcn/vision log/transductive/gcnii/vision log/transductive/grand/vision log/transductive/graph_mincuts/vision log/transductive/graphsage/vision log/transductive/label_propagation/vision log/transductive/label_spreading/vision log/transductive/node2vec/vision log/transductive/planetoid/vision log/transductive/poisson_learning/vision log/transductive/sgc/vision log/transductive/tsvm/vision
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/vision/stl10.yaml > log/inductive/adamatch/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/vision/stl10.yaml > log/inductive/co_training/vision/stl10.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/vision/stl10.yaml > log/inductive/comatch/vision/stl10.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/vision/stl10.yaml > log/inductive/daso/vision/stl10.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/vision/stl10.yaml > log/inductive/deep_co_training/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/vision/stl10.yaml > log/inductive/fixmatch/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/vision/stl10.yaml > log/inductive/flexmatch/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/vision/stl10.yaml > log/inductive/free_match/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/vision/stl10.yaml > log/inductive/mean_teacher/vision/stl10.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/vision/stl10.yaml > log/inductive/meta_pseudo_labels/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/vision/stl10.yaml > log/inductive/mixmatch/vision/stl10.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/vision/stl10.yaml > log/inductive/noisy_student/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/vision/stl10.yaml > log/inductive/pi_model/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/vision/stl10.yaml > log/inductive/pseudo_label/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/vision/stl10.yaml > log/inductive/s4vm/vision/stl10.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/vision/stl10.yaml > log/inductive/simclr_v2/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/vision/stl10.yaml > log/inductive/softmatch/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/vision/stl10.yaml > log/inductive/tri_training/vision/stl10.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/vision/stl10.yaml > log/inductive/trinet/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/vision/stl10.yaml > log/inductive/tsvm/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/vision/stl10.yaml > log/inductive/uda/vision/stl10.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/vision/stl10.yaml > log/inductive/vat/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/vision/stl10.yaml > log/transductive/appnp/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/vision/stl10.yaml > log/transductive/chebnet/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/vision/stl10.yaml > log/transductive/dgi/vision/stl10.log 2>&1
@@ -733,21 +893,29 @@ python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/v
 ### svhn
 
 ```
-mkdir -p log/inductive/adamatch/vision log/inductive/co_training/vision log/inductive/fixmatch/vision log/inductive/flexmatch/vision log/inductive/free_match/vision log/inductive/mean_teacher/vision log/inductive/mixmatch/vision log/inductive/pi_model/vision log/inductive/pseudo_label/vision log/inductive/s4vm/vision log/inductive/softmatch/vision log/inductive/tri_training/vision log/inductive/tsvm/vision log/inductive/uda/vision log/transductive/appnp/vision log/transductive/chebnet/vision log/transductive/dgi/vision log/transductive/gat/vision log/transductive/gcn/vision log/transductive/gcnii/vision log/transductive/grand/vision log/transductive/graph_mincuts/vision log/transductive/graphsage/vision log/transductive/label_propagation/vision log/transductive/label_spreading/vision log/transductive/node2vec/vision log/transductive/planetoid/vision log/transductive/poisson_learning/vision log/transductive/sgc/vision log/transductive/tsvm/vision
+mkdir -p log/inductive/adamatch/vision log/inductive/co_training/vision log/inductive/comatch/vision log/inductive/daso/vision log/inductive/deep_co_training/vision log/inductive/fixmatch/vision log/inductive/flexmatch/vision log/inductive/free_match/vision log/inductive/mean_teacher/vision log/inductive/meta_pseudo_labels/vision log/inductive/mixmatch/vision log/inductive/noisy_student/vision log/inductive/pi_model/vision log/inductive/pseudo_label/vision log/inductive/s4vm/vision log/inductive/simclr_v2/vision log/inductive/softmatch/vision log/inductive/tri_training/vision log/inductive/trinet/vision log/inductive/tsvm/vision log/inductive/uda/vision log/inductive/vat/vision log/transductive/appnp/vision log/transductive/chebnet/vision log/transductive/dgi/vision log/transductive/gat/vision log/transductive/gcn/vision log/transductive/gcnii/vision log/transductive/grand/vision log/transductive/graph_mincuts/vision log/transductive/graphsage/vision log/transductive/label_propagation/vision log/transductive/label_spreading/vision log/transductive/node2vec/vision log/transductive/planetoid/vision log/transductive/poisson_learning/vision log/transductive/sgc/vision log/transductive/tsvm/vision
 python -m bench.main --config bench/configs/experiments/best/inductive/adamatch/vision/svhn.yaml > log/inductive/adamatch/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/co_training/vision/svhn.yaml > log/inductive/co_training/vision/svhn.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/comatch/vision/svhn.yaml > log/inductive/comatch/vision/svhn.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/daso/vision/svhn.yaml > log/inductive/daso/vision/svhn.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/deep_co_training/vision/svhn.yaml > log/inductive/deep_co_training/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/fixmatch/vision/svhn.yaml > log/inductive/fixmatch/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/flexmatch/vision/svhn.yaml > log/inductive/flexmatch/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/free_match/vision/svhn.yaml > log/inductive/free_match/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mean_teacher/vision/svhn.yaml > log/inductive/mean_teacher/vision/svhn.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/meta_pseudo_labels/vision/svhn.yaml > log/inductive/meta_pseudo_labels/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/vision/svhn.yaml > log/inductive/mixmatch/vision/svhn.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/vision/svhn.yaml > log/inductive/noisy_student/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/vision/svhn.yaml > log/inductive/pi_model/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/vision/svhn.yaml > log/inductive/pseudo_label/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/vision/svhn.yaml > log/inductive/s4vm/vision/svhn.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/vision/svhn.yaml > log/inductive/simclr_v2/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/vision/svhn.yaml > log/inductive/softmatch/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/vision/svhn.yaml > log/inductive/tri_training/vision/svhn.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/trinet/vision/svhn.yaml > log/inductive/trinet/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/vision/svhn.yaml > log/inductive/tsvm/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/vision/svhn.yaml > log/inductive/uda/vision/svhn.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/vat/vision/svhn.yaml > log/inductive/vat/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/vision/svhn.yaml > log/transductive/appnp/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/vision/svhn.yaml > log/transductive/chebnet/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dgi/vision/svhn.yaml > log/transductive/dgi/vision/svhn.log 2>&1

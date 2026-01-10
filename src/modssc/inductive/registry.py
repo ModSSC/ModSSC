@@ -55,11 +55,35 @@ def register_builtin_methods() -> None:
         status="implemented",
     )
     register_method(
+        "self_training",
+        "modssc.inductive.methods.self_training:SelfTrainingMethod",
+        status="implemented",
+    )
+    register_method(
+        "setred",
+        "modssc.inductive.methods.setred:SetredMethod",
+        status="implemented",
+    )
+    register_method(
         "pi_model", "modssc.inductive.methods.pi_model:PiModelMethod", status="implemented"
     )
     register_method(
         "fixmatch", "modssc.inductive.methods.fixmatch:FixMatchMethod", status="implemented"
     )
+    register_method(
+        "comatch", "modssc.inductive.methods.comatch:CoMatchMethod", status="implemented"
+    )
+    register_method(
+        "defixmatch",
+        "modssc.inductive.methods.defixmatch:DeFixMatchMethod",
+        status="implemented",
+    )
+    register_method(
+        "daso",
+        "modssc.inductive.methods.daso:DASOMethod",
+        status="implemented",
+    )
+    register_method("adsh", "modssc.inductive.methods.adsh:ADSHMethod", status="implemented")
     register_method(
         "flexmatch", "modssc.inductive.methods.flexmatch:FlexMatchMethod", status="implemented"
     )
@@ -76,8 +100,23 @@ def register_builtin_methods() -> None:
         "mixmatch", "modssc.inductive.methods.mixmatch:MixMatchMethod", status="implemented"
     )
     register_method(
+        "simclr_v2",
+        "modssc.inductive.methods.simclr_v2:SimCLRv2Method",
+        status="implemented",
+    )
+    register_method(
         "mean_teacher",
         "modssc.inductive.methods.mean_teacher:MeanTeacherMethod",
+        status="implemented",
+    )
+    register_method(
+        "meta_pseudo_labels",
+        "modssc.inductive.methods.meta_pseudo_labels:MetaPseudoLabelsMethod",
+        status="implemented",
+    )
+    register_method(
+        "temporal_ensembling",
+        "modssc.inductive.methods.temporal_ensembling:TemporalEnsemblingMethod",
         status="implemented",
     )
     register_method("uda", "modssc.inductive.methods.uda:UDAMethod", status="implemented")
@@ -91,8 +130,23 @@ def register_builtin_methods() -> None:
         "co_training", "modssc.inductive.methods.co_training:CoTrainingMethod", status="implemented"
     )
     register_method(
+        "democratic_co_learning",
+        "modssc.inductive.methods.democratic_co_learning:DemocraticCoLearningMethod",
+        status="implemented",
+    )
+    register_method(
+        "deep_co_training",
+        "modssc.inductive.methods.deep_co_training:DeepCoTrainingMethod",
+        status="implemented",
+    )
+    register_method(
         "tri_training",
         "modssc.inductive.methods.tri_training:TriTrainingMethod",
+        status="implemented",
+    )
+    register_method(
+        "trinet",
+        "modssc.inductive.methods.trinet:TriNetMethod",
         status="implemented",
     )
     register_method("tsvm", "modssc.inductive.methods.tsvm:TSVMMethod", status="implemented")
