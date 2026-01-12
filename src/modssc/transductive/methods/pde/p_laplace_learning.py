@@ -203,7 +203,6 @@ def p_laplace_learning_numpy(
                 residual = float(np.max(np.abs(u_new - u)))
                 u = u_new
                 n_iter = it + 1
-                residual_cg = float(residual_cg)
                 if residual <= float(spec.tol):
                     break
             n_iter_max = max(n_iter_max, int(n_iter))

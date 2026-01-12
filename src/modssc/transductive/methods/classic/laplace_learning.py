@@ -30,16 +30,9 @@ class LaplaceLearningSpec:
     """
 
 
-def _infer_num_classes(y: np.ndarray, labeled_mask: np.ndarray) -> int:
+def _infer_num_classes(y: np.ndarray, labeled_mask: np.ndarray | None = None) -> int:
     y_valid = y[y >= 0]
-    if labeled_mask.any():
-        y_labeled = y[labeled_mask]
-        y_labeled = y_labeled[y_labeled >= 0]
-        n_classes = (
-            int(np.unique(y_labeled).size) if y_labeled.size else int(np.unique(y_valid).size)
-        )
-    else:
-        n_classes = int(np.unique(y_valid).size)
+    n_classes = int(y_valid.max()) + 1 if y_valid.size else 1
     return max(1, n_classes)
 
 
@@ -64,7 +57,7 @@ def laplace_learning_numpy(
     if not labeled_mask.any():
         raise ValueError("LaplaceLearning requires at least 1 labeled node.")
 
-    n_classes = _infer_num_classes(y, labeled_mask)
+    n_classes = _infer_num_classes(y)
     Y = labels_to_onehot(y, n_classes=n_classes).astype(np.float32, copy=False)
     Y[~labeled_mask] = 0.0
 
@@ -127,7 +120,7 @@ def laplace_learning_torch(
     if not bool(labeled_mask.any().item()):
         raise ValueError("LaplaceLearning requires at least 1 labeled node.")
 
-    n_classes = _infer_num_classes(to_numpy(y), to_numpy(labeled_mask).astype(bool))
+    n_classes = _infer_num_classes(to_numpy(y))
     Y_np = labels_to_onehot(to_numpy(y), n_classes=n_classes).astype(np.float32)
     Y_np[~to_numpy(labeled_mask).astype(bool)] = 0.0
     Y = torch.from_numpy(Y_np).to(device=y.device)

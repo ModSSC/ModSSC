@@ -1258,10 +1258,10 @@ def test_label_spreading_torch_no_edge_weight():
     assert n_iter > 0
 
 
-def test_dynamic_label_propagation_infer_num_classes_unlabeled():
+def test_dynamic_label_propagation_infer_num_classes_uses_full_labels():
     y = np.array([-1, 2, 2], dtype=np.int64)
     labeled_mask = np.array([False, False, False])
-    assert _dlp_infer_num_classes(y, labeled_mask) == 1
+    assert _dlp_infer_num_classes(y, labeled_mask) == 3
 
 
 def test_dynamic_label_propagation_knn_matrix_numpy_paths():
@@ -1495,10 +1495,10 @@ def test_dynamic_label_propagation_torch_validation(
         )
 
 
-def test_laplace_learning_infer_num_classes_unlabeled():
+def test_laplace_learning_infer_num_classes_uses_full_labels():
     y = np.array([-1, 3, 3], dtype=np.int64)
     labeled_mask = np.array([False, False, False])
-    assert _laplace_infer_num_classes(y, labeled_mask) == 1
+    assert _laplace_infer_num_classes(y, labeled_mask) == 4
 
 
 @pytest.mark.parametrize(
