@@ -119,6 +119,63 @@ def make_toy_dataset(n_nodes: int = 30, n_classes: int = 3, seed: int = 0) -> Du
             )
         ),
         __import__(
+            "modssc.transductive.methods.gnn.n_gcn", fromlist=["NGCNMethod", "NGCNSpec"]
+        ).NGCNMethod(
+            spec=__import__(
+                "modssc.transductive.methods.gnn.n_gcn", fromlist=["NGCNSpec"]
+            ).NGCNSpec(
+                hidden_dim=8,
+                gcn_layers=2,
+                K=2,
+                r=1,
+                classifier="fc",
+                max_epochs=5,
+                patience=2,
+            )
+        ),
+        __import__(
+            "modssc.transductive.methods.gnn.grafn", fromlist=["GraFNMethod", "GraFNSpec"]
+        ).GraFNMethod(
+            spec=__import__(
+                "modssc.transductive.methods.gnn.grafn", fromlist=["GraFNSpec"]
+            ).GraFNSpec(
+                hidden_dims=(8, 8),
+                max_epochs=3,
+                patience=1,
+                drop_feat_strong=0.2,
+                drop_edge_strong=0.2,
+                drop_feat_weak=0.1,
+                drop_edge_weak=0.1,
+            )
+        ),
+        __import__(
+            "modssc.transductive.methods.gnn.graphhop",
+            fromlist=["GraphHopMethod", "GraphHopSpec"],
+        ).GraphHopMethod(
+            spec=__import__(
+                "modssc.transductive.methods.gnn.graphhop", fromlist=["GraphHopSpec"]
+            ).GraphHopSpec(
+                hops=2,
+                max_iter=2,
+                max_epochs=5,
+                patience=2,
+            )
+        ),
+        __import__(
+            "modssc.transductive.methods.gnn.h_gcn", fromlist=["HGCNMethod", "HGCNSpec"]
+        ).HGCNMethod(
+            spec=__import__(
+                "modssc.transductive.methods.gnn.h_gcn", fromlist=["HGCNSpec"]
+            ).HGCNSpec(
+                hidden_dim=8,
+                weight_embed_dim=4,
+                num_layers=3,
+                channels=2,
+                max_epochs=5,
+                patience=2,
+            )
+        ),
+        __import__(
             "modssc.transductive.methods.gnn.chebnet", fromlist=["ChebNetMethod", "ChebNetSpec"]
         ).ChebNetMethod(
             spec=__import__(

@@ -10,6 +10,7 @@ import pytest
 from modssc.preprocess.cache import (
     CacheManager,
     _load_value,
+    _resolve_cache_device,
     _save_json,
     _save_value,
     default_cache_dir,
@@ -545,3 +546,36 @@ def test_tensor_and_sparse_detection_helpers():
     assert cache_mod._is_torch_tensor(np.zeros((1,))) is False
     assert cache_mod._is_scipy_sparse(DummySparse()) is True
     assert cache_mod._is_scipy_sparse(object()) is False
+
+
+class _DummyCuda:
+    def __init__(self, available: bool) -> None:
+        self._available = available
+
+    def is_available(self) -> bool:
+        return self._available
+
+
+class _DummyTorch:
+    def __init__(self, cuda_available: bool) -> None:
+        self.cuda = _DummyCuda(cuda_available)
+
+    def device(self, name: str) -> str:
+        return f"device:{name}"
+
+
+def test_resolve_cache_device_empty_string():
+    assert _resolve_cache_device(_DummyTorch(cuda_available=True), "") is None
+
+
+def test_resolve_cache_device_cuda_unavailable():
+    dummy = _DummyTorch(cuda_available=False)
+    assert _resolve_cache_device(dummy, "cuda:0") == "device:cpu"
+
+
+def test_resolve_cache_device_mps_unavailable(monkeypatch):
+    import modssc.preprocess.cache as cache_mod
+
+    monkeypatch.setattr(cache_mod, "mps_is_available", lambda _: False)
+    dummy = _DummyTorch(cuda_available=True)
+    assert _resolve_cache_device(dummy, "mps:0") == "device:cpu"

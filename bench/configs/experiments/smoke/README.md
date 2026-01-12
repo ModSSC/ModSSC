@@ -344,6 +344,17 @@ python -m bench.main --config bench/configs/experiments/smoke/transductive/dgi/t
 python -m bench.main --config bench/configs/experiments/smoke/transductive/dgi/vision/mnist.yaml > log/transductive/dgi/vision/mnist.log 2>&1
 ```
 
+## transductive/dynamic_label_propagation
+
+```
+mkdir -p log/transductive/dynamic_label_propagation/audio log/transductive/dynamic_label_propagation/graph log/transductive/dynamic_label_propagation/tabular log/transductive/dynamic_label_propagation/text log/transductive/dynamic_label_propagation/vision
+python -m bench.main --config bench/configs/experiments/smoke/transductive/dynamic_label_propagation/audio/speechcommands.yaml > log/transductive/dynamic_label_propagation/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/dynamic_label_propagation/graph/cora.yaml > log/transductive/dynamic_label_propagation/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/dynamic_label_propagation/tabular/iris.yaml > log/transductive/dynamic_label_propagation/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/dynamic_label_propagation/text/imdb.yaml > log/transductive/dynamic_label_propagation/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/dynamic_label_propagation/vision/mnist.yaml > log/transductive/dynamic_label_propagation/vision/mnist.log 2>&1
+```
+
 ## transductive/gat
 
 ```
@@ -377,6 +388,17 @@ python -m bench.main --config bench/configs/experiments/smoke/transductive/gcnii
 python -m bench.main --config bench/configs/experiments/smoke/transductive/gcnii/vision/mnist.yaml > log/transductive/gcnii/vision/mnist.log 2>&1
 ```
 
+## transductive/grafn
+
+```
+mkdir -p log/transductive/grafn/audio log/transductive/grafn/graph log/transductive/grafn/tabular log/transductive/grafn/text log/transductive/grafn/vision
+python -m bench.main --config bench/configs/experiments/smoke/transductive/grafn/audio/speechcommands.yaml > log/transductive/grafn/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/grafn/graph/cora.yaml > log/transductive/grafn/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/grafn/tabular/iris.yaml > log/transductive/grafn/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/grafn/text/imdb.yaml > log/transductive/grafn/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/grafn/vision/mnist.yaml > log/transductive/grafn/vision/mnist.log 2>&1
+```
+
 ## transductive/grand
 
 ```
@@ -400,6 +422,17 @@ python -m bench.main --config bench/configs/experiments/smoke/transductive/graph
 python -m bench.main --config bench/configs/experiments/smoke/transductive/graph_mincuts/vision/mnist.yaml > log/transductive/graph_mincuts/vision/mnist.log 2>&1
 ```
 
+## transductive/graphhop
+
+```
+mkdir -p log/transductive/graphhop/audio log/transductive/graphhop/graph log/transductive/graphhop/tabular log/transductive/graphhop/text log/transductive/graphhop/vision
+python -m bench.main --config bench/configs/experiments/smoke/transductive/graphhop/audio/speechcommands.yaml > log/transductive/graphhop/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/graphhop/graph/cora.yaml > log/transductive/graphhop/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/graphhop/tabular/iris.yaml > log/transductive/graphhop/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/graphhop/text/imdb.yaml > log/transductive/graphhop/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/graphhop/vision/mnist.yaml > log/transductive/graphhop/vision/mnist.log 2>&1
+```
+
 ## transductive/graphsage
 
 ```
@@ -409,6 +442,17 @@ python -m bench.main --config bench/configs/experiments/smoke/transductive/graph
 python -m bench.main --config bench/configs/experiments/smoke/transductive/graphsage/tabular/iris.yaml > log/transductive/graphsage/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/transductive/graphsage/text/imdb.yaml > log/transductive/graphsage/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/transductive/graphsage/vision/mnist.yaml > log/transductive/graphsage/vision/mnist.log 2>&1
+```
+
+## transductive/h_gcn
+
+```
+mkdir -p log/transductive/h_gcn/audio log/transductive/h_gcn/graph log/transductive/h_gcn/tabular log/transductive/h_gcn/text log/transductive/h_gcn/vision
+python -m bench.main --config bench/configs/experiments/smoke/transductive/h_gcn/audio/speechcommands.yaml > log/transductive/h_gcn/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/h_gcn/graph/cora.yaml > log/transductive/h_gcn/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/h_gcn/tabular/iris.yaml > log/transductive/h_gcn/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/h_gcn/text/imdb.yaml > log/transductive/h_gcn/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/h_gcn/vision/mnist.yaml > log/transductive/h_gcn/vision/mnist.log 2>&1
 ```
 
 ## transductive/label_propagation
@@ -433,6 +477,40 @@ python -m bench.main --config bench/configs/experiments/smoke/transductive/label
 python -m bench.main --config bench/configs/experiments/smoke/transductive/label_spreading/vision/mnist.yaml > log/transductive/label_spreading/vision/mnist.log 2>&1
 ```
 
+## transductive/laplace_learning
+
+```
+mkdir -p log/transductive/laplace_learning/audio log/transductive/laplace_learning/graph log/transductive/laplace_learning/tabular log/transductive/laplace_learning/text log/transductive/laplace_learning/vision
+python -m bench.main --config bench/configs/experiments/smoke/transductive/laplace_learning/audio/speechcommands.yaml > log/transductive/laplace_learning/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/laplace_learning/graph/cora.yaml > log/transductive/laplace_learning/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/laplace_learning/tabular/iris.yaml > log/transductive/laplace_learning/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/laplace_learning/text/imdb.yaml > log/transductive/laplace_learning/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/laplace_learning/vision/mnist.yaml > log/transductive/laplace_learning/vision/mnist.log 2>&1
+```
+
+## transductive/lazy_random_walk
+
+```
+mkdir -p log/transductive/lazy_random_walk/audio log/transductive/lazy_random_walk/graph log/transductive/lazy_random_walk/tabular log/transductive/lazy_random_walk/text log/transductive/lazy_random_walk/vision
+python -m bench.main --config bench/configs/experiments/smoke/transductive/lazy_random_walk/audio/speechcommands.yaml > log/transductive/lazy_random_walk/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/lazy_random_walk/graph/cora.yaml > log/transductive/lazy_random_walk/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/lazy_random_walk/graph/toy.yaml > log/transductive/lazy_random_walk/graph/toy.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/lazy_random_walk/tabular/breast_cancer.yaml > log/transductive/lazy_random_walk/tabular/breast_cancer.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/lazy_random_walk/text/imdb.yaml > log/transductive/lazy_random_walk/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/lazy_random_walk/vision/mnist.yaml > log/transductive/lazy_random_walk/vision/mnist.log 2>&1
+```
+
+## transductive/n_gcn
+
+```
+mkdir -p log/transductive/n_gcn/audio log/transductive/n_gcn/graph log/transductive/n_gcn/tabular log/transductive/n_gcn/text log/transductive/n_gcn/vision
+python -m bench.main --config bench/configs/experiments/smoke/transductive/n_gcn/audio/speechcommands.yaml > log/transductive/n_gcn/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/n_gcn/graph/cora.yaml > log/transductive/n_gcn/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/n_gcn/tabular/iris.yaml > log/transductive/n_gcn/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/n_gcn/text/imdb.yaml > log/transductive/n_gcn/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/n_gcn/vision/mnist.yaml > log/transductive/n_gcn/vision/mnist.log 2>&1
+```
+
 ## transductive/node2vec
 
 ```
@@ -442,6 +520,17 @@ python -m bench.main --config bench/configs/experiments/smoke/transductive/node2
 python -m bench.main --config bench/configs/experiments/smoke/transductive/node2vec/tabular/iris.yaml > log/transductive/node2vec/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/transductive/node2vec/text/imdb.yaml > log/transductive/node2vec/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/transductive/node2vec/vision/mnist.yaml > log/transductive/node2vec/vision/mnist.log 2>&1
+```
+
+## transductive/p_laplace_learning
+
+```
+mkdir -p log/transductive/p_laplace_learning/audio log/transductive/p_laplace_learning/graph log/transductive/p_laplace_learning/tabular log/transductive/p_laplace_learning/text log/transductive/p_laplace_learning/vision
+python -m bench.main --config bench/configs/experiments/smoke/transductive/p_laplace_learning/audio/speechcommands.yaml > log/transductive/p_laplace_learning/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/p_laplace_learning/graph/cora.yaml > log/transductive/p_laplace_learning/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/p_laplace_learning/tabular/iris.yaml > log/transductive/p_laplace_learning/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/p_laplace_learning/text/imdb.yaml > log/transductive/p_laplace_learning/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/p_laplace_learning/vision/mnist.yaml > log/transductive/p_laplace_learning/vision/mnist.log 2>&1
 ```
 
 ## transductive/planetoid
@@ -464,6 +553,17 @@ python -m bench.main --config bench/configs/experiments/smoke/transductive/poiss
 python -m bench.main --config bench/configs/experiments/smoke/transductive/poisson_learning/tabular/iris.yaml > log/transductive/poisson_learning/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/transductive/poisson_learning/text/imdb.yaml > log/transductive/poisson_learning/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/transductive/poisson_learning/vision/mnist.yaml > log/transductive/poisson_learning/vision/mnist.log 2>&1
+```
+
+## transductive/poisson_mbo
+
+```
+mkdir -p log/transductive/poisson_mbo/audio log/transductive/poisson_mbo/graph log/transductive/poisson_mbo/tabular log/transductive/poisson_mbo/text log/transductive/poisson_mbo/vision
+python -m bench.main --config bench/configs/experiments/smoke/transductive/poisson_mbo/audio/speechcommands.yaml > log/transductive/poisson_mbo/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/poisson_mbo/graph/cora.yaml > log/transductive/poisson_mbo/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/poisson_mbo/tabular/iris.yaml > log/transductive/poisson_mbo/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/poisson_mbo/text/imdb.yaml > log/transductive/poisson_mbo/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/smoke/transductive/poisson_mbo/vision/mnist.yaml > log/transductive/poisson_mbo/vision/mnist.log 2>&1
 ```
 
 ## transductive/sgc

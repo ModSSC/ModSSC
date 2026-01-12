@@ -1,0 +1,98 @@
+run:
+  name: smoke_text_transductive_graphhop_imdb
+  seed: 2
+  output_dir: runs/transductive/graphhop/text/imdb
+  fail_fast: true
+  log_level: detailed
+
+limits:
+  profile: auto
+
+dataset:
+  id: imdb
+  download: true
+  options:
+    text_column: text
+    label_column: label
+    prefer_test_split: true
+    max_train_samples: 1000
+    max_test_samples: 500
+    seed: 0
+sampling:
+  seed: 2
+  plan:
+    split:
+      kind: holdout
+      test_fraction: 0.2
+      val_fraction: 0.1
+      stratify: true
+      shuffle: true
+    labeling:
+      mode: fraction
+      value: 0.2
+      strategy: balanced
+      min_per_class: 1
+    imbalance:
+      kind: none
+    policy:
+      respect_official_test: true
+      use_official_graph_masks: true
+      allow_override_official: false
+preprocess:
+  seed: 2
+  fit_on: train_labeled
+  cache: true
+  plan:
+    output_key: features.X
+    steps:
+    - id: labels.encode
+    - id: text.ensure_strings
+    - id: text.sentence_transformer
+    - id: core.pca
+      params:
+        n_components: 16
+    - id: core.to_numpy
+method:
+  kind: transductive
+  id: graphhop
+  device:
+    device: "auto"
+    dtype: float32
+  params:
+    hops: 2
+    max_iter: 10
+    lr: 0.01
+    weight_decay: 0.0005
+    max_epochs: 3
+    patience: 1
+    min_delta: 0.01
+    temperature: 0.1
+    alpha: 1.0
+    beta: 1.0
+    symmetrize: true
+evaluation:
+  split_for_model_selection: val
+  report_splits:
+  - val
+  - test
+  metrics:
+  - accuracy
+  - macro_f1
+graph:
+  enabled: true
+  seed: 2
+  cache: true
+  cache_dir: cache/graphs
+  spec:
+    scheme: knn
+    metric: cosine
+    k: 5
+    symmetrize: mutual
+    weights:
+      kind: heat
+      sigma: 1.0
+    normalize: rw
+    self_loops: true
+    backend: numpy
+    chunk_size: 256
+    feature_field: features.X

@@ -1,0 +1,71 @@
+run:
+  name: smoke_graph_transductive_poisson_mbo_cora
+  seed: 5
+  output_dir: runs/transductive/poisson_mbo/graph/cora
+  fail_fast: true
+  log_level: detailed
+
+limits:
+  profile: auto
+
+dataset:
+  id: cora
+  download: true
+  options:
+    max_nodes: 2000
+sampling:
+  seed: 5
+  plan:
+    split:
+      kind: holdout
+      test_fraction: 0.2
+      val_fraction: 0.1
+      stratify: true
+      shuffle: true
+    labeling:
+      mode: fraction
+      value: 0.2
+      strategy: balanced
+      min_per_class: 1
+    imbalance:
+      kind: none
+    policy:
+      respect_official_test: true
+      use_official_graph_masks: true
+      allow_override_official: false
+preprocess:
+  seed: 5
+  fit_on: train_labeled
+  cache: true
+  plan:
+    output_key: features.X
+    steps:
+    - id: labels.encode
+    - id: core.ensure_2d
+    - id: core.to_numpy
+method:
+  kind: transductive
+  id: poisson_mbo
+  device:
+    device: "auto"
+    dtype: float32
+  params:
+    T: 20
+    Ninner: 5
+    Nouter: 3
+    mu: 1.0
+    d_tau: 10.0
+    smin: 0.5
+    smax: 2.0
+    n_volume_iters: 10
+    b_strategy: uniform
+    symmetrize: true
+    zero_diagonal: true
+evaluation:
+  split_for_model_selection: val
+  report_splits:
+  - val
+  - test
+  metrics:
+  - accuracy
+  - macro_f1
