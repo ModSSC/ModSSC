@@ -59,6 +59,18 @@ def register_builtin_methods() -> None:
         "label_spreading",
         "modssc.transductive.methods.classic.label_spreading:LabelSpreadingMethod",
     )
+    register_method(
+        "laplace_learning",
+        "modssc.transductive.methods.classic.laplace_learning:LaplaceLearningMethod",
+    )
+    register_method(
+        "lazy_random_walk",
+        "modssc.transductive.methods.classic.lazy_random_walk:LazyRandomWalkMethod",
+    )
+    register_method(
+        "dynamic_label_propagation",
+        "modssc.transductive.methods.classic.dynamic_label_propagation:DynamicLabelPropagationMethod",
+    )
 
     # Wave 2 (graph / PDE)
     register_method(
@@ -69,6 +81,14 @@ def register_builtin_methods() -> None:
     register_method(
         "poisson_learning",
         "modssc.transductive.methods.pde.poisson_learning:PoissonLearningMethod",
+    )
+    register_method(
+        "poisson_mbo",
+        "modssc.transductive.methods.pde.poisson_mbo:PoissonMBOMethod",
+    )
+    register_method(
+        "p_laplace_learning",
+        "modssc.transductive.methods.pde.p_laplace_learning:PLaplaceLearningMethod",
     )
 
     # GNN / embeddings (torch-only, no PyG)
@@ -81,6 +101,10 @@ def register_builtin_methods() -> None:
     register_method("dgi", "modssc.transductive.methods.gnn.dgi:DGIMethod")
     register_method("sgc", "modssc.transductive.methods.gnn.sgc:SGCMethod")
     register_method("appnp", "modssc.transductive.methods.gnn.appnp:APPNPMethod")
+    register_method("h_gcn", "modssc.transductive.methods.gnn.h_gcn:HGCNMethod")
+    register_method("n_gcn", "modssc.transductive.methods.gnn.n_gcn:NGCNMethod")
+    register_method("graphhop", "modssc.transductive.methods.gnn.graphhop:GraphHopMethod")
+    register_method("grafn", "modssc.transductive.methods.gnn.grafn:GraFNMethod")
     register_method("gcnii", "modssc.transductive.methods.gnn.gcnii:GCNIIMethod")
     register_method("grand", "modssc.transductive.methods.gnn.grand:GRANDMethod")
 
