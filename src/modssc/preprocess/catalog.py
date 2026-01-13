@@ -267,7 +267,7 @@ BUILTIN_STEPS: tuple[StepSpec, ...] = (
         description="Learn DGI embeddings from graph edges and write features.X.",
         required_extra="transductive-torch",
         modalities=("graph",),
-        consumes=("graph.edge_index", "features.X"),
+        consumes=("graph.edge_index", "features.X", "raw.X"),
         produces=("features.X",),
     ),
     # Labels

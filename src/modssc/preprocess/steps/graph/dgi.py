@@ -29,8 +29,9 @@ def _as_edge_index(edge_index: Any, *, n_nodes: int) -> np.ndarray:
     if edge_index_np.shape[0] != 2:
         raise PreprocessValidationError("graph.edge_index must have shape (2, E)")
     if edge_index_np.size:
-        min_idx = int(edge_index_np.min())
-        max_idx = int(edge_index_np.max())
+        flat = edge_index_np.ravel()
+        min_idx = int(min(flat))
+        max_idx = int(max(flat))
         if min_idx < 0 or max_idx >= n_nodes:
             raise PreprocessValidationError("graph.edge_index has out of range node indices")
     return edge_index_np.astype(np.int64, copy=False)

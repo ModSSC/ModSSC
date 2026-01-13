@@ -567,6 +567,119 @@ def test_node2vec_happy_path(monkeypatch):
     assert res["features.X"].shape == (2, 4)
 
 
+def test_dgi_ensure_2d_reshape_1d(monkeypatch):
+    from modssc.preprocess.steps.graph.dgi import GraphDGIStep
+
+    step = GraphDGIStep(embedding_dim=2, hidden_dim=2, unsup_epochs=1)
+    store = ArtifactStore()
+    store.set("graph.edge_index", np.array([[0, 1], [1, 0]]))
+    store.set("raw.X", np.array([1.0, 2.0], dtype=np.float32))
+    rng = np.random.default_rng(0)
+
+    seen = {}
+
+    def fake_train(X, *args, **kwargs):
+        seen["shape"] = X.shape
+        return np.ones((2, 2), dtype=np.float32)
+
+    monkeypatch.setattr("modssc.preprocess.steps.graph.dgi._train_dgi", fake_train)
+
+    res = step.transform(store, rng=rng)
+    assert res["features.X"].shape == (2, 2)
+    assert seen["shape"] == (2, 1)
+
+
+def test_dgi_rejects_3d_features():
+    from modssc.preprocess.steps.graph.dgi import GraphDGIStep
+
+    step = GraphDGIStep()
+    store = ArtifactStore()
+    store.set("graph.edge_index", np.array([[0, 1], [1, 0]]))
+    store.set("raw.X", np.zeros((2, 1, 1), dtype=np.float32))
+    rng = np.random.default_rng(0)
+
+    with pytest.raises(PreprocessValidationError, match="2D features"):
+        step.transform(store, rng=rng)
+
+
+def test_dgi_requires_numeric_features():
+    from modssc.preprocess.steps.graph.dgi import GraphDGIStep
+
+    step = GraphDGIStep()
+    store = ArtifactStore()
+    store.set("graph.edge_index", np.array([[0, 1], [1, 0]]))
+    store.set("raw.X", ["bad"])
+    rng = np.random.default_rng(0)
+
+    with pytest.raises(PreprocessValidationError, match="numeric features"):
+        step.transform(store, rng=rng)
+
+
+def test_dgi_edge_index_transpose_and_empty():
+    import modssc.preprocess.steps.graph.dgi as dgi_mod
+
+    edge_index = np.array([[0, 1], [1, 2], [2, 0]])
+    out = dgi_mod._as_edge_index(edge_index, n_nodes=3)
+    assert out.shape == (2, 3)
+    assert np.array_equal(out, edge_index.T)
+
+    empty = np.zeros((2, 0), dtype=np.int64)
+    out_empty = dgi_mod._as_edge_index(empty, n_nodes=3)
+    assert out_empty.shape == (2, 0)
+
+
+def test_dgi_edge_weight_length_mismatch():
+    from modssc.preprocess.steps.graph.dgi import _as_edge_weight
+
+    with pytest.raises(PreprocessValidationError, match="length mismatch"):
+        _as_edge_weight([0.5], n_edges=2)
+
+
+def test_dgi_edge_weight_provided(monkeypatch):
+    from modssc.preprocess.steps.graph.dgi import GraphDGIStep
+
+    step = GraphDGIStep(embedding_dim=2, hidden_dim=2, unsup_epochs=1)
+    store = ArtifactStore()
+    store.set("graph.edge_index", np.array([[0, 1], [1, 2], [2, 0]]))
+    store.set("graph.edge_weight", np.array([0.1, 0.2, 0.3], dtype=np.float32))
+    store.set("raw.X", np.zeros((3, 2), dtype=np.float32))
+    rng = np.random.default_rng(0)
+
+    monkeypatch.setattr(
+        "modssc.preprocess.steps.graph.dgi._train_dgi",
+        lambda *a, **k: np.ones((3, 2), dtype=np.float32),
+    )
+
+    res = step.transform(store, rng=rng)
+    assert res["features.X"].shape == (3, 2)
+
+
+@pytest.mark.parametrize("add_self_loops", [True, False])
+def test_train_dgi_torch_runs(add_self_loops):
+    pytest.importorskip("torch")
+    from modssc.preprocess.steps.graph.dgi import _train_dgi
+
+    X = np.array([[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]], dtype=np.float32)
+    edge_index = np.array([[0, 1, 2], [1, 2, 0]], dtype=np.int64)
+    edge_weight = np.ones((3,), dtype=np.float32)
+
+    emb = _train_dgi(
+        X,
+        edge_index,
+        edge_weight,
+        embedding_dim=2,
+        hidden_dim=2,
+        dropout=0.0,
+        unsup_epochs=1,
+        unsup_lr=0.01,
+        add_self_loops=add_self_loops,
+        device="cpu",
+        seed=0,
+    )
+    assert emb.shape == (3, 2)
+    assert emb.dtype == np.float32
+
+
 def test_dgi_missing_edge_index():
     from modssc.preprocess.steps.graph.dgi import GraphDGIStep
 
