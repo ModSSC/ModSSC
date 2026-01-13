@@ -6,15 +6,15 @@ from typing import Any
 import numpy as np
 
 from modssc.device import resolve_device_name
-from modssc.preprocess.errors import PreprocessValidationError
-from modssc.preprocess.optional import require
-from modssc.preprocess.store import ArtifactStore
-from modssc.transductive.methods.gnn.node2vec import (
+from modssc.graph.featurization.node2vec import (
     _build_adjacency,
     _random_walks_node2vec,
     _sample_negatives,
     _walk_pairs,
 )
+from modssc.preprocess.errors import PreprocessValidationError
+from modssc.preprocess.optional import require
+from modssc.preprocess.store import ArtifactStore
 
 
 @dataclass

@@ -93,12 +93,10 @@ def register_builtin_methods() -> None:
 
     # GNN / embeddings (torch-only, no PyG)
     register_method("chebnet", "modssc.transductive.methods.gnn.chebnet:ChebNetMethod")
-    register_method("node2vec", "modssc.transductive.methods.gnn.node2vec:Node2VecMethod")
     register_method("planetoid", "modssc.transductive.methods.gnn.planetoid:PlanetoidMethod")
     register_method("gcn", "modssc.transductive.methods.gnn.gcn:GCNMethod")
     register_method("graphsage", "modssc.transductive.methods.gnn.graphsage:GraphSAGEMethod")
     register_method("gat", "modssc.transductive.methods.gnn.gat:GATMethod")
-    register_method("dgi", "modssc.transductive.methods.gnn.dgi:DGIMethod")
     register_method("sgc", "modssc.transductive.methods.gnn.sgc:SGCMethod")
     register_method("appnp", "modssc.transductive.methods.gnn.appnp:APPNPMethod")
     register_method("h_gcn", "modssc.transductive.methods.gnn.h_gcn:HGCNMethod")
@@ -107,33 +105,6 @@ def register_builtin_methods() -> None:
     register_method("grafn", "modssc.transductive.methods.gnn.grafn:GraFNMethod")
     register_method("gcnii", "modssc.transductive.methods.gnn.gcnii:GCNIIMethod")
     register_method("grand", "modssc.transductive.methods.gnn.grand:GRANDMethod")
-
-    # Placeholders for heavier methods (registered for stable IDs)
-    register_method(
-        "nodeformer",
-        "modssc.transductive.methods.advanced.nodeformer:NodeFormerMethod",
-        status="planned",
-    )
-    register_method(
-        "graphmae2",
-        "modssc.transductive.methods.advanced.graphmae2:GraphMAE2Method",
-        status="planned",
-    )
-    register_method(
-        "sgformer",
-        "modssc.transductive.methods.advanced.sgformer:SGFormerMethod",
-        status="planned",
-    )
-    register_method(
-        "oft",
-        "modssc.transductive.methods.advanced.oft:OFTMethod",
-        status="planned",
-    )
-    register_method(
-        "llm_gnn",
-        "modssc.transductive.methods.advanced.llm_gnn:LLMGNNMethod",
-        status="planned",
-    )
 
 
 def available_methods(*, available_only: bool = True) -> list[str]:

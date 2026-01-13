@@ -565,3 +565,98 @@ def test_node2vec_happy_path(monkeypatch):
 
     res = step.transform(store, rng=rng)
     assert res["features.X"].shape == (2, 4)
+
+
+def test_dgi_missing_edge_index():
+    from modssc.preprocess.steps.graph.dgi import GraphDGIStep
+
+    step = GraphDGIStep()
+    store = ArtifactStore()
+    store.set("raw.X", np.zeros((2, 3), dtype=np.float32))
+    rng = np.random.default_rng(0)
+    with pytest.raises(PreprocessValidationError, match="graph.edge_index"):
+        step.transform(store, rng=rng)
+
+
+def test_dgi_missing_features():
+    from modssc.preprocess.steps.graph.dgi import GraphDGIStep
+
+    step = GraphDGIStep()
+    store = ArtifactStore()
+    store.set("graph.edge_index", np.array([[0, 1], [1, 0]]))
+    rng = np.random.default_rng(0)
+    with pytest.raises(PreprocessValidationError, match="raw.X or features.X"):
+        step.transform(store, rng=rng)
+
+
+def test_dgi_invalid_edge_index_shape():
+    from modssc.preprocess.steps.graph.dgi import GraphDGIStep
+
+    step = GraphDGIStep()
+    store = ArtifactStore()
+    store.set("graph.edge_index", np.array([1, 2, 3]))
+    store.set("raw.X", np.zeros((2, 3), dtype=np.float32))
+    rng = np.random.default_rng(0)
+    with pytest.raises(PreprocessValidationError, match="2D array"):
+        step.transform(store, rng=rng)
+
+    store.set("graph.edge_index", np.zeros((3, 3), dtype=np.int64))
+    with pytest.raises(PreprocessValidationError, match="shape \\(2, E\\)"):
+        step.transform(store, rng=rng)
+
+
+def test_dgi_edge_index_out_of_range():
+    from modssc.preprocess.steps.graph.dgi import GraphDGIStep
+
+    step = GraphDGIStep()
+    store = ArtifactStore()
+    store.set("raw.X", np.zeros((2, 3), dtype=np.float32))
+    store.set("graph.edge_index", np.array([[0, 3], [1, 0]]))
+    rng = np.random.default_rng(0)
+    with pytest.raises(PreprocessValidationError, match="out of range"):
+        step.transform(store, rng=rng)
+
+
+@pytest.mark.parametrize(
+    "kwargs, match",
+    [
+        ({"embedding_dim": 0}, "embedding_dim"),
+        ({"hidden_dim": 0}, "hidden_dim"),
+        ({"unsup_epochs": 0}, "unsup_epochs"),
+        ({"unsup_lr": 0.0}, "unsup_lr"),
+        ({"dropout": 1.0}, "dropout"),
+        ({"dropout": -0.1}, "dropout"),
+    ],
+)
+def test_dgi_invalid_params(monkeypatch, kwargs, match):
+    from modssc.preprocess.steps.graph.dgi import GraphDGIStep
+
+    step = GraphDGIStep(**kwargs)
+    store = ArtifactStore()
+    store.set("graph.edge_index", np.array([[0, 1], [1, 0]]))
+    store.set("raw.X", np.zeros((2, 3), dtype=np.float32))
+    rng = np.random.default_rng(0)
+
+    monkeypatch.setattr(
+        "modssc.preprocess.steps.graph.dgi._train_dgi",
+        lambda *a, **k: np.zeros((2, 4), dtype=np.float32),
+    )
+    with pytest.raises(PreprocessValidationError, match=match):
+        step.transform(store, rng=rng)
+
+
+def test_dgi_happy_path(monkeypatch):
+    from modssc.preprocess.steps.graph.dgi import GraphDGIStep
+
+    step = GraphDGIStep(embedding_dim=4, hidden_dim=4, unsup_epochs=1)
+    store = ArtifactStore()
+    store.set("graph.edge_index", np.array([[0, 1], [1, 0]]))
+    store.set("raw.X", np.zeros((2, 3), dtype=np.float32))
+    rng = np.random.default_rng(0)
+
+    monkeypatch.setattr(
+        "modssc.preprocess.steps.graph.dgi._train_dgi",
+        lambda *a, **k: np.ones((2, 4), dtype=np.float32),
+    )
+    res = step.transform(store, rng=rng)
+    assert res["features.X"].shape == (2, 4)

@@ -12,16 +12,16 @@ runner = CliRunner()
 def test_transductive_methods_list() -> None:
     res = runner.invoke(app, ["methods", "list"])
     assert res.exit_code == 0
-    assert "nodeformer" in res.stdout
+    assert "label_propagation" in res.stdout
 
 
 def test_transductive_methods_info() -> None:
-    res = runner.invoke(app, ["methods", "info", "nodeformer"])
+    res = runner.invoke(app, ["methods", "info", "label_propagation"])
     assert res.exit_code == 0
     payload = json.loads(res.stdout)
-    assert payload["method_id"] == "nodeformer"
-    assert payload["import_path"].endswith("nodeformer:NodeFormerMethod")
-    assert payload["info"]["method_id"] == "nodeformer"
+    assert payload["method_id"] == "label_propagation"
+    assert payload["import_path"].endswith("label_propagation:LabelPropagationMethod")
+    assert payload["info"]["method_id"] == "label_propagation"
 
 
 def test_transductive_methods_list_with_log_level() -> None:

@@ -29,13 +29,11 @@ from modssc.transductive.methods.gnn.common import (  # noqa: E402
     normalize_edge_weight,
     set_torch_seed,
 )
-from modssc.transductive.methods.gnn.dgi import DGIMethod, DGISpec  # noqa: E402
 from modssc.transductive.methods.gnn.gat import GATMethod, _GATConv  # noqa: E402
 from modssc.transductive.methods.gnn.gcn import GCNMethod  # noqa: E402
 from modssc.transductive.methods.gnn.gcnii import GCNIIMethod  # noqa: E402
 from modssc.transductive.methods.gnn.grand import GRANDMethod, GRANDSpec  # noqa: E402
 from modssc.transductive.methods.gnn.graphsage import GraphSAGEMethod  # noqa: E402
-from modssc.transductive.methods.gnn.node2vec import Node2VecMethod, Node2VecSpec  # noqa: E402
 from modssc.transductive.methods.gnn.planetoid import PlanetoidMethod, PlanetoidSpec  # noqa: E402
 from modssc.transductive.methods.gnn.sgc import SGCMethod, SGCSpec  # noqa: E402
 
@@ -222,33 +220,6 @@ def make_toy_dataset(n_nodes: int = 30, n_classes: int = 3, seed: int = 0) -> Du
             )
         ),
         __import__(
-            "modssc.transductive.methods.gnn.node2vec", fromlist=["Node2VecMethod", "Node2VecSpec"]
-        ).Node2VecMethod(
-            spec=__import__(
-                "modssc.transductive.methods.gnn.node2vec", fromlist=["Node2VecSpec"]
-            ).Node2VecSpec(
-                embedding_dim=16,
-                num_walks=2,
-                walk_length=10,
-                window_size=2,
-                embed_epochs=1,
-                classifier_max_epochs=5,
-                classifier_patience=2,
-                batch_size=128,
-            )
-        ),
-        __import__(
-            "modssc.transductive.methods.gnn.dgi", fromlist=["DGIMethod", "DGISpec"]
-        ).DGIMethod(
-            spec=__import__("modssc.transductive.methods.gnn.dgi", fromlist=["DGISpec"]).DGISpec(
-                embedding_dim=16,
-                hidden_dim=16,
-                unsup_epochs=5,
-                classifier_max_epochs=5,
-                classifier_patience=2,
-            )
-        ),
-        __import__(
             "modssc.transductive.methods.gnn.planetoid",
             fromlist=["PlanetoidMethod", "PlanetoidSpec"],
         ).PlanetoidMethod(
@@ -291,70 +262,6 @@ def test_gnn_methods_fit_predict(method):
     row_sums = proba.sum(axis=1)
     assert np.all(np.isfinite(row_sums))
     assert np.allclose(row_sums, 1.0, atol=1e-4)
-
-
-def test_node2vec_biased_walks():
-    """Test node2vec with p != 1 and q != 1 to trigger biased walk logic."""
-    data = make_toy_dataset(n_nodes=20, n_classes=2)
-
-    spec = Node2VecSpec(
-        embedding_dim=8,
-        num_walks=2,
-        walk_length=5,
-        window_size=2,
-        p=0.5,
-        q=2.0,
-        embed_epochs=1,
-        classifier_max_epochs=1,
-        batch_size=32,
-    )
-    method = Node2VecMethod(spec=spec)
-    method.fit(data, device="cpu", seed=42)
-    proba = method.predict_proba(data)
-    assert proba.shape == (20, 2)
-
-
-def test_node2vec_not_fitted():
-    """Test RuntimeError when calling predict_proba before fit."""
-    method = Node2VecMethod()
-    data = make_toy_dataset()
-    with pytest.raises(RuntimeError, match="not fitted yet"):
-        method.predict_proba(data)
-
-
-def test_node2vec_mismatched_nodes():
-    """Test ValueError when predicting on a graph with different number of nodes."""
-    data_train = make_toy_dataset(n_nodes=20)
-    method = Node2VecMethod(spec=Node2VecSpec(embed_epochs=1, classifier_max_epochs=1))
-    method.fit(data_train, device="cpu")
-
-    data_test = make_toy_dataset(n_nodes=25)
-    with pytest.raises(ValueError, match="node2vec was fitted on n=20 nodes, got n=25"):
-        method.predict_proba(data_test)
-
-
-def test_node2vec_no_edges():
-    """Test ValueError when graph has no edges (no walks generated)."""
-    n_nodes = 10
-    X = np.zeros((n_nodes, 4), dtype=np.float32)
-    y = np.zeros(n_nodes, dtype=np.int64)
-
-    edge_index = np.empty((2, 0), dtype=np.int64)
-    edge_weight = np.empty((0,), dtype=np.float32)
-
-    masks = {"train_mask": np.zeros(n_nodes, dtype=bool), "val_mask": np.zeros(n_nodes, dtype=bool)}
-
-    data = DummyNodeDataset(
-        X=X,
-        y=y,
-        graph=DummyGraph(edge_index=edge_index, edge_weight=edge_weight),
-        masks=masks,
-        meta={},
-    )
-
-    method = Node2VecMethod(spec=Node2VecSpec(embed_epochs=1))
-    with pytest.raises(ValueError, match="no training pairs could be generated"):
-        method.fit(data, device="cpu")
 
 
 def test_grand_early_stopping():
@@ -529,23 +436,6 @@ def test_sgc_mismatched_nodes():
         method.predict_proba(data_test)
 
 
-def test_dgi_not_fitted():
-    method = DGIMethod()
-    data = make_toy_dataset()
-    with pytest.raises(RuntimeError, match="not fitted yet"):
-        method.predict_proba(data)
-
-
-def test_dgi_mismatched_nodes():
-    data_train = make_toy_dataset(n_nodes=20)
-    method = DGIMethod(spec=DGISpec(unsup_epochs=1, classifier_max_epochs=1))
-    method.fit(data_train, device="cpu")
-
-    data_test = make_toy_dataset(n_nodes=25)
-    with pytest.raises(ValueError, match="DGI was fitted on n=20 nodes, got n=25"):
-        method.predict_proba(data_test)
-
-
 def test_gat_not_fitted():
     method = GATMethod()
     data = make_toy_dataset()
@@ -592,106 +482,6 @@ def test_graphsage_not_fitted():
         method.predict_proba(data)
 
 
-def test_node2vec_undirected_false():
-    """Test node2vec with undirected=False."""
-    data = make_toy_dataset(n_nodes=20, n_classes=2)
-    spec = Node2VecSpec(
-        embedding_dim=8,
-        num_walks=2,
-        walk_length=5,
-        window_size=2,
-        undirected=False,
-        embed_epochs=1,
-        classifier_max_epochs=1,
-    )
-    method = Node2VecMethod(spec=spec)
-    method.fit(data, device="cpu")
-    proba = method.predict_proba(data)
-    assert proba.shape == (20, 2)
-
-
-def test_node2vec_sink_node():
-    """Test node2vec with a sink node (dead end) in a directed graph."""
-
-    edge_index = np.array([[0], [1]], dtype=np.int64)
-    edge_weight = np.ones(1, dtype=np.float32)
-    graph = DummyGraph(edge_index=edge_index, edge_weight=edge_weight)
-
-    x = np.random.randn(2, 16).astype(np.float32)
-    y = np.array([0, 1], dtype=np.int64)
-    train_mask = np.array([True, True], dtype=bool)
-    masks = {"train_mask": train_mask}
-
-    data = DummyNodeDataset(X=x, y=y, graph=graph, masks=masks, meta={})
-
-    spec = Node2VecSpec(
-        embedding_dim=8,
-        num_walks=2,
-        walk_length=5,
-        window_size=2,
-        undirected=False,
-        embed_epochs=1,
-        classifier_max_epochs=1,
-    )
-    method = Node2VecMethod(spec=spec)
-    method.fit(data, device="cpu")
-
-    proba = method.predict_proba(data)
-    assert proba.shape == (2, 2)
-
-
-def test_node2vec_triangle_biased():
-    """Test node2vec with a triangle to trigger 'x in neigh_sets[prev]' branch."""
-
-    edge_index = np.array([[0, 1, 1, 2, 2, 0], [1, 0, 2, 1, 0, 2]], dtype=np.int64)
-    edge_weight = np.ones(6, dtype=np.float32)
-    graph = DummyGraph(edge_index=edge_index, edge_weight=edge_weight)
-
-    x = np.random.randn(3, 16).astype(np.float32)
-    y = np.array([0, 1, 0], dtype=np.int64)
-    train_mask = np.array([True, True, True], dtype=bool)
-    masks = {"train_mask": train_mask}
-
-    data = DummyNodeDataset(X=x, y=y, graph=graph, masks=masks, meta={})
-
-    spec = Node2VecSpec(
-        embedding_dim=8,
-        num_walks=10,
-        walk_length=5,
-        window_size=2,
-        p=0.5,
-        q=2.0,
-        embed_epochs=1,
-        classifier_max_epochs=1,
-    )
-    method = Node2VecMethod(spec=spec)
-    method.fit(data, device="cpu")
-    proba = method.predict_proba(data)
-    assert proba.shape == (3, 2)
-
-
-def test_node2vec_invalid_edges():
-    X = np.eye(3)
-    y = np.array([0, 1, 0])
-    adj = np.array([[0, 1], [1, 1]])
-    graph = DummyGraph(adj, None)
-    dataset = DummyNodeDataset(
-        X=X,
-        y=y,
-        graph=graph,
-        masks={
-            "train_mask": np.array([True, False, False]),
-            "val_mask": np.array([False, True, False]),
-            "test_mask": np.array([False, False, True]),
-        },
-        meta={},
-    )
-
-    spec = Node2VecSpec(p=1.0, q=1.0, walk_length=5, window_size=2, num_walks=2, embedding_dim=4)
-    model = Node2VecMethod(spec)
-    model.fit(dataset)
-
-
 def test_grand_early_stopping_patience():
     X = np.random.randn(10, 4).astype(np.float32)
     y = np.array([0, 1] * 5)
@@ -725,8 +515,7 @@ def test_common_error_handling():
     dataset = DummyNodeDataset(
         X=X, y=y, graph=graph, masks={"val_mask": np.zeros(3, dtype=bool)}, meta={}
     )
-    spec = Node2VecSpec(p=1.0, q=1.0, walk_length=5, window_size=2, num_walks=2, embedding_dim=4)
-    model = Node2VecMethod(spec)
+    model = GCNMethod()
     with pytest.raises(ValueError, match="train_mask"):
         model.fit(dataset)
 

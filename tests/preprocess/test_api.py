@@ -736,7 +736,14 @@ def test_final_keep_keys_missing_output_and_edge_index():
     assert "graph.edge_index" in keep
 
 
-def test_build_purge_keep_sets_includes_implicit_consumes():
+@pytest.mark.parametrize(
+    "step_id, expected",
+    [
+        ("graph.node2vec", {"raw.X", "raw.y"}),
+        ("graph.dgi", {"raw.X"}),
+    ],
+)
+def test_build_purge_keep_sets_includes_implicit_consumes(step_id, expected):
     steps = (
         ResolvedStep(
             step_id="step0",
@@ -751,11 +758,11 @@ def test_build_purge_keep_sets_includes_implicit_consumes():
             ),
         ),
         ResolvedStep(
-            step_id="graph.node2vec",
+            step_id=step_id,
             params={},
             index=1,
             spec=StepSpec(
-                step_id="graph.node2vec",
+                step_id=step_id,
                 import_path="x",
                 kind="transform",
                 consumes=(),
@@ -766,8 +773,8 @@ def test_build_purge_keep_sets_includes_implicit_consumes():
     keep_sets = _build_purge_keep_sets(
         steps, output_key="features.X", initial_keys={"raw.X", "raw.y"}
     )
-    assert "raw.X" in keep_sets[0]
-    assert "raw.y" in keep_sets[0]
+    for key in expected:
+        assert key in keep_sets[0]
 
 
 def test_purge_store_filters_keys():
