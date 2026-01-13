@@ -616,15 +616,15 @@ def test_dgi_requires_numeric_features():
 
 
 def test_dgi_edge_index_transpose_and_empty():
-    import modssc.preprocess.steps.graph.dgi as dgi_mod
+    from modssc.preprocess.steps.graph.dgi import _as_edge_index
 
     edge_index = np.array([[0, 1], [1, 2], [2, 0]])
-    out = dgi_mod._as_edge_index(edge_index, n_nodes=3)
+    out = _as_edge_index(edge_index, n_nodes=3)
     assert out.shape == (2, 3)
     assert np.array_equal(out, edge_index.T)
 
     empty = np.zeros((2, 0), dtype=np.int64)
-    out_empty = dgi_mod._as_edge_index(empty, n_nodes=3)
+    out_empty = _as_edge_index(empty, n_nodes=3)
     assert out_empty.shape == (2, 0)
 
 
