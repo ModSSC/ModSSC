@@ -7,32 +7,6 @@ Start here for a quick tour of ModSSC, its core capabilities, and the recommende
 ModSSC is a modular framework for semi-supervised classification across heterogeneous modalities (audio, text, vision, tabular, graph) with research-focused abstractions and reproducible pipelines. <sup class="cite"><a href="#source-1">[1]</a></sup>
 
 
-### Quick examples
-The CLI examples below use the `modssc` entry points declared in `pyproject.toml`, and the Python examples call the data loader, sampling, and preprocess APIs from `src/modssc/`. <sup class="cite"><a href="#source-2">[2]</a><a href="#source-3">[3]</a><a href="#source-4">[4]</a><a href="#source-5">[5]</a><a href="#source-6">[6]</a></sup>
-
-CLI: <sup class="cite"><a href="#source-2">[2]</a><a href="#source-3">[3]</a></sup>
-
-
-```bash
-modssc datasets list
-modssc sampling --help
-```
-
-Python: <sup class="cite"><a href="#source-4">[4]</a><a href="#source-5">[5]</a><a href="#source-6">[6]</a></sup>
-
-
-```python
-from modssc.data_loader import load_dataset
-from modssc.sampling import SamplingPlan, HoldoutSplitSpec, LabelingSpec, sample
-from modssc.preprocess import PreprocessPlan, StepConfig, preprocess
-
-ds = load_dataset("toy", download=True)
-plan = SamplingPlan(split=HoldoutSplitSpec(test_fraction=0.0, val_fraction=0.2))
-res, _ = sample(ds, plan=plan, seed=0, dataset_fingerprint=str(ds.meta["dataset_fingerprint"]))
-pre_plan = PreprocessPlan(steps=(StepConfig(step_id="core.ensure_2d"), StepConfig(step_id="core.to_numpy")))
-_ = preprocess(ds, pre_plan, seed=0, fit_indices=res.train_idx)
-```
-
 ## Key features
 - Dataset catalog with curated keys for tabular, text, vision, audio, and graph datasets. <sup class="cite"><a href="#source-7">[7]</a></sup>
 
