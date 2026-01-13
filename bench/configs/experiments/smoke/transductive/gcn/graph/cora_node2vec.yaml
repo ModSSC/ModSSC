@@ -1,7 +1,7 @@
 run:
-  name: best_audio_transductive_dgi_speechcommands
-  seed: 4
-  output_dir: runs/transductive/dgi/audio/speechcommands
+  name: smoke_graph_transductive_gcn_cora_node2vec
+  seed: 5
+  output_dir: runs/transductive/gcn/graph/cora_node2vec
   fail_fast: true
   log_level: detailed
 
@@ -9,10 +9,12 @@ limits:
   profile: auto
 
 dataset:
-  id: speechcommands
+  id: cora
   download: true
+  options:
+    max_nodes: 500
 sampling:
-  seed: 4
+  seed: 5
   plan:
     split:
       kind: holdout
@@ -32,37 +34,40 @@ sampling:
       use_official_graph_masks: true
       allow_override_official: false
 preprocess:
-  seed: 4
+  seed: 5
   fit_on: train_labeled
   cache: true
   plan:
     output_key: features.X
     steps:
     - id: labels.encode
-    - id: audio.wav2vec2
-      params:
-        batch_size: 8
-    - id: core.pca
-      params:
-        n_components: 128
+    - id: core.ensure_2d
     - id: core.to_numpy
+    - id: graph.node2vec
+      params:
+        embedding_dim: 16
+        num_walks: 2
+        walk_length: 10
+        window_size: 2
+        num_negative: 2
+        batch_size: 256
+        embed_epochs: 1
+        embed_lr: 0.01
+        p: 1.0
+        q: 1.0
+        undirected: true
+        device: cpu
 method:
   kind: transductive
-  id: dgi
+  id: gcn
   device:
     device: "auto"
     dtype: float32
   params:
-    embedding_dim: 512
-    hidden_dim: 512
-    dropout: 0.0
-    unsup_epochs: 100
-    unsup_lr: 0.001
-    classifier_lr: 0.1
-    classifier_weight_decay: 0.0
-    classifier_max_epochs: 200
-    classifier_patience: 50
-    add_self_loops: true
+    hidden_dim: 8
+    dropout: 0.2
+    max_epochs: 2
+    patience: 1
 evaluation:
   split_for_model_selection: val
   report_splits:
@@ -71,20 +76,3 @@ evaluation:
   metrics:
   - accuracy
   - macro_f1
-graph:
-  enabled: true
-  seed: 4
-  cache: true
-  spec:
-    scheme: knn
-    metric: cosine
-    k: 15
-    symmetrize: mutual
-    weights:
-      kind: heat
-      sigma: 1.0
-    normalize: rw
-    self_loops: true
-    backend: numpy
-    chunk_size: 1024
-    feature_field: features.X

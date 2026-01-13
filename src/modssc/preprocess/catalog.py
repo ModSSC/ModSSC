@@ -260,6 +260,16 @@ BUILTIN_STEPS: tuple[StepSpec, ...] = (
         consumes=("graph.edge_index",),
         produces=("features.X",),
     ),
+    StepSpec(
+        step_id="graph.dgi",
+        import_path="modssc.preprocess.steps.graph.dgi:GraphDGIStep",
+        kind="featurizer",
+        description="Learn DGI embeddings from graph edges and write features.X.",
+        required_extra="transductive-torch",
+        modalities=("graph",),
+        consumes=("graph.edge_index", "features.X", "raw.X"),
+        produces=("features.X",),
+    ),
     # Labels
     StepSpec(
         step_id="labels.encode",

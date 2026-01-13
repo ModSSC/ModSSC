@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on "Keep a Changelog", and this project adheres to Semantic Versioning.
 
+## 0.1.1
+- Bump version metadata and docs.
+- Allow docs/release workflows to run on numeric tags.
+
 ## 0.1.0
 - Contains all desired transductive methods and marks a stable benchmark release.
 

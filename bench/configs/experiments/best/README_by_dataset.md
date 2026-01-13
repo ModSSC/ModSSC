@@ -33,7 +33,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/tabul
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/tabular/adult.yaml > log/inductive/vat/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/tabular/adult.yaml > log/transductive/appnp/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/tabular/adult.yaml > log/transductive/chebnet/tabular/adult.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/tabular/adult.yaml > log/transductive/dgi/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/tabular/adult.yaml > log/transductive/dynamic_label_propagation/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/tabular/adult.yaml > log/transductive/gat/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/tabular/adult.yaml > log/transductive/gcn/tabular/adult.log 2>&1
@@ -49,7 +48,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/tabular/adult.yaml > log/transductive/laplace_learning/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/tabular/adult.yaml > log/transductive/lazy_random_walk/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/tabular/adult.yaml > log/transductive/n_gcn/tabular/adult.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/tabular/adult.yaml > log/transductive/node2vec/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/tabular/adult.yaml > log/transductive/p_laplace_learning/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/tabular/adult.yaml > log/transductive/planetoid/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/tabular/adult.yaml > log/transductive/poisson_learning/tabular/adult.log 2>&1
@@ -91,7 +89,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/text/
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/text/ag_news.yaml > log/inductive/vat/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/text/ag_news.yaml > log/transductive/appnp/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/text/ag_news.yaml > log/transductive/chebnet/text/ag_news.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/text/ag_news.yaml > log/transductive/dgi/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/text/ag_news.yaml > log/transductive/dynamic_label_propagation/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/text/ag_news.yaml > log/transductive/gat/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/text/ag_news.yaml > log/transductive/gcn/text/ag_news.log 2>&1
@@ -107,7 +104,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/text/ag_news.yaml > log/transductive/laplace_learning/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/text/ag_news.yaml > log/transductive/lazy_random_walk/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/text/ag_news.yaml > log/transductive/n_gcn/text/ag_news.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/text/ag_news.yaml > log/transductive/node2vec/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/text/ag_news.yaml > log/transductive/p_laplace_learning/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/text/ag_news.yaml > log/transductive/planetoid/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/text/ag_news.yaml > log/transductive/poisson_learning/text/ag_news.log 2>&1
@@ -149,7 +145,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/text/
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/text/amazon_polarity.yaml > log/inductive/vat/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/text/amazon_polarity.yaml > log/transductive/appnp/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/text/amazon_polarity.yaml > log/transductive/chebnet/text/amazon_polarity.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/text/amazon_polarity.yaml > log/transductive/dgi/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/text/amazon_polarity.yaml > log/transductive/dynamic_label_propagation/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/text/amazon_polarity.yaml > log/transductive/gat/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/text/amazon_polarity.yaml > log/transductive/gcn/text/amazon_polarity.log 2>&1
@@ -165,7 +160,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/text/amazon_polarity.yaml > log/transductive/laplace_learning/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/text/amazon_polarity.yaml > log/transductive/lazy_random_walk/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/text/amazon_polarity.yaml > log/transductive/n_gcn/text/amazon_polarity.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/text/amazon_polarity.yaml > log/transductive/node2vec/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/text/amazon_polarity.yaml > log/transductive/p_laplace_learning/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/text/amazon_polarity.yaml > log/transductive/planetoid/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/text/amazon_polarity.yaml > log/transductive/poisson_learning/text/amazon_polarity.log 2>&1
@@ -207,7 +201,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/text/
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/text/amazon_reviews_multi_en.yaml > log/inductive/vat/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/text/amazon_reviews_multi_en.yaml > log/transductive/appnp/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/text/amazon_reviews_multi_en.yaml > log/transductive/chebnet/text/amazon_reviews_multi_en.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/text/amazon_reviews_multi_en.yaml > log/transductive/dgi/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/text/amazon_reviews_multi_en.yaml > log/transductive/dynamic_label_propagation/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/text/amazon_reviews_multi_en.yaml > log/transductive/gat/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/text/amazon_reviews_multi_en.yaml > log/transductive/gcn/text/amazon_reviews_multi_en.log 2>&1
@@ -223,7 +216,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/text/amazon_reviews_multi_en.yaml > log/transductive/laplace_learning/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/text/amazon_reviews_multi_en.yaml > log/transductive/lazy_random_walk/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/text/amazon_reviews_multi_en.yaml > log/transductive/n_gcn/text/amazon_reviews_multi_en.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/text/amazon_reviews_multi_en.yaml > log/transductive/node2vec/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/text/amazon_reviews_multi_en.yaml > log/transductive/p_laplace_learning/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/text/amazon_reviews_multi_en.yaml > log/transductive/planetoid/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/text/amazon_reviews_multi_en.yaml > log/transductive/poisson_learning/text/amazon_reviews_multi_en.log 2>&1
@@ -265,7 +257,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/tabul
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/tabular/breast_cancer.yaml > log/inductive/vat/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/tabular/breast_cancer.yaml > log/transductive/appnp/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/tabular/breast_cancer.yaml > log/transductive/chebnet/tabular/breast_cancer.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/tabular/breast_cancer.yaml > log/transductive/dgi/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/tabular/breast_cancer.yaml > log/transductive/dynamic_label_propagation/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/tabular/breast_cancer.yaml > log/transductive/gat/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/tabular/breast_cancer.yaml > log/transductive/gcn/tabular/breast_cancer.log 2>&1
@@ -281,7 +272,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/tabular/breast_cancer.yaml > log/transductive/laplace_learning/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/tabular/breast_cancer.yaml > log/transductive/lazy_random_walk/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/tabular/breast_cancer.yaml > log/transductive/n_gcn/tabular/breast_cancer.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/tabular/breast_cancer.yaml > log/transductive/node2vec/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/tabular/breast_cancer.yaml > log/transductive/p_laplace_learning/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/tabular/breast_cancer.yaml > log/transductive/planetoid/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/tabular/breast_cancer.yaml > log/transductive/poisson_learning/tabular/breast_cancer.log 2>&1
@@ -323,7 +313,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/visio
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/vision/cifar10.yaml > log/inductive/vat/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/vision/cifar10.yaml > log/transductive/appnp/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/vision/cifar10.yaml > log/transductive/chebnet/vision/cifar10.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/vision/cifar10.yaml > log/transductive/dgi/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/vision/cifar10.yaml > log/transductive/dynamic_label_propagation/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/vision/cifar10.yaml > log/transductive/gat/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/vision/cifar10.yaml > log/transductive/gcn/vision/cifar10.log 2>&1
@@ -339,7 +328,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/vision/cifar10.yaml > log/transductive/laplace_learning/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/vision/cifar10.yaml > log/transductive/lazy_random_walk/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/vision/cifar10.yaml > log/transductive/n_gcn/vision/cifar10.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/vision/cifar10.yaml > log/transductive/node2vec/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/vision/cifar10.yaml > log/transductive/p_laplace_learning/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/vision/cifar10.yaml > log/transductive/planetoid/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/vision/cifar10.yaml > log/transductive/poisson_learning/vision/cifar10.log 2>&1
@@ -381,7 +369,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/visio
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/vision/cifar100.yaml > log/inductive/vat/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/vision/cifar100.yaml > log/transductive/appnp/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/vision/cifar100.yaml > log/transductive/chebnet/vision/cifar100.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/vision/cifar100.yaml > log/transductive/dgi/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/vision/cifar100.yaml > log/transductive/dynamic_label_propagation/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/vision/cifar100.yaml > log/transductive/gat/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/vision/cifar100.yaml > log/transductive/gcn/vision/cifar100.log 2>&1
@@ -397,7 +384,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/vision/cifar100.yaml > log/transductive/laplace_learning/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/vision/cifar100.yaml > log/transductive/lazy_random_walk/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/vision/cifar100.yaml > log/transductive/n_gcn/vision/cifar100.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/vision/cifar100.yaml > log/transductive/node2vec/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/vision/cifar100.yaml > log/transductive/p_laplace_learning/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/vision/cifar100.yaml > log/transductive/planetoid/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/vision/cifar100.yaml > log/transductive/poisson_learning/vision/cifar100.log 2>&1
@@ -439,7 +425,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/graph
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/graph/citeseer.yaml > log/inductive/vat/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/graph/citeseer.yaml > log/transductive/appnp/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/graph/citeseer.yaml > log/transductive/chebnet/graph/citeseer.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/graph/citeseer.yaml > log/transductive/dgi/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/graph/citeseer.yaml > log/transductive/dynamic_label_propagation/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/graph/citeseer.yaml > log/transductive/gat/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/graph/citeseer.yaml > log/transductive/gcn/graph/citeseer.log 2>&1
@@ -455,7 +440,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/graph/citeseer.yaml > log/transductive/laplace_learning/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/graph/citeseer.yaml > log/transductive/lazy_random_walk/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/graph/citeseer.yaml > log/transductive/n_gcn/graph/citeseer.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/graph/citeseer.yaml > log/transductive/node2vec/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/graph/citeseer.yaml > log/transductive/p_laplace_learning/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/graph/citeseer.yaml > log/transductive/planetoid/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/graph/citeseer.yaml > log/transductive/poisson_learning/graph/citeseer.log 2>&1
@@ -497,7 +481,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/graph
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/graph/cora.yaml > log/inductive/vat/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/graph/cora.yaml > log/transductive/appnp/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/graph/cora.yaml > log/transductive/chebnet/graph/cora.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/graph/cora.yaml > log/transductive/dgi/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/graph/cora.yaml > log/transductive/dynamic_label_propagation/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/graph/cora.yaml > log/transductive/gat/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/graph/cora.yaml > log/transductive/gcn/graph/cora.log 2>&1
@@ -513,7 +496,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/graph/cora.yaml > log/transductive/laplace_learning/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/graph/cora.yaml > log/transductive/lazy_random_walk/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/graph/cora.yaml > log/transductive/n_gcn/graph/cora.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/graph/cora.yaml > log/transductive/node2vec/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/graph/cora.yaml > log/transductive/p_laplace_learning/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/graph/cora.yaml > log/transductive/planetoid/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/graph/cora.yaml > log/transductive/poisson_learning/graph/cora.log 2>&1
@@ -555,7 +537,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/text/
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/text/dbpedia_14.yaml > log/inductive/vat/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/text/dbpedia_14.yaml > log/transductive/appnp/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/text/dbpedia_14.yaml > log/transductive/chebnet/text/dbpedia_14.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/text/dbpedia_14.yaml > log/transductive/dgi/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/text/dbpedia_14.yaml > log/transductive/dynamic_label_propagation/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/text/dbpedia_14.yaml > log/transductive/gat/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/text/dbpedia_14.yaml > log/transductive/gcn/text/dbpedia_14.log 2>&1
@@ -571,7 +552,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/text/dbpedia_14.yaml > log/transductive/laplace_learning/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/text/dbpedia_14.yaml > log/transductive/lazy_random_walk/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/text/dbpedia_14.yaml > log/transductive/n_gcn/text/dbpedia_14.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/text/dbpedia_14.yaml > log/transductive/node2vec/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/text/dbpedia_14.yaml > log/transductive/p_laplace_learning/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/text/dbpedia_14.yaml > log/transductive/planetoid/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/text/dbpedia_14.yaml > log/transductive/poisson_learning/text/dbpedia_14.log 2>&1
@@ -613,7 +593,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/text/
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/text/imdb.yaml > log/inductive/vat/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/text/imdb.yaml > log/transductive/appnp/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/text/imdb.yaml > log/transductive/chebnet/text/imdb.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/text/imdb.yaml > log/transductive/dgi/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/text/imdb.yaml > log/transductive/dynamic_label_propagation/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/text/imdb.yaml > log/transductive/gat/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/text/imdb.yaml > log/transductive/gcn/text/imdb.log 2>&1
@@ -629,7 +608,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/text/imdb.yaml > log/transductive/laplace_learning/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/text/imdb.yaml > log/transductive/lazy_random_walk/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/text/imdb.yaml > log/transductive/n_gcn/text/imdb.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/text/imdb.yaml > log/transductive/node2vec/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/text/imdb.yaml > log/transductive/p_laplace_learning/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/text/imdb.yaml > log/transductive/planetoid/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/text/imdb.yaml > log/transductive/poisson_learning/text/imdb.log 2>&1
@@ -671,7 +649,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/tabul
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/tabular/iris.yaml > log/inductive/vat/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/tabular/iris.yaml > log/transductive/appnp/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/tabular/iris.yaml > log/transductive/chebnet/tabular/iris.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/tabular/iris.yaml > log/transductive/dgi/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/tabular/iris.yaml > log/transductive/dynamic_label_propagation/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/tabular/iris.yaml > log/transductive/gat/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/tabular/iris.yaml > log/transductive/gcn/tabular/iris.log 2>&1
@@ -687,7 +664,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/tabular/iris.yaml > log/transductive/laplace_learning/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/tabular/iris.yaml > log/transductive/lazy_random_walk/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/tabular/iris.yaml > log/transductive/n_gcn/tabular/iris.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/tabular/iris.yaml > log/transductive/node2vec/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/tabular/iris.yaml > log/transductive/p_laplace_learning/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/tabular/iris.yaml > log/transductive/planetoid/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/tabular/iris.yaml > log/transductive/poisson_learning/tabular/iris.log 2>&1
@@ -729,7 +705,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/visio
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/vision/mnist.yaml > log/inductive/vat/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/vision/mnist.yaml > log/transductive/appnp/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/vision/mnist.yaml > log/transductive/chebnet/vision/mnist.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/vision/mnist.yaml > log/transductive/dgi/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/vision/mnist.yaml > log/transductive/dynamic_label_propagation/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/vision/mnist.yaml > log/transductive/gat/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/vision/mnist.yaml > log/transductive/gcn/vision/mnist.log 2>&1
@@ -745,7 +720,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/vision/mnist.yaml > log/transductive/laplace_learning/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/vision/mnist.yaml > log/transductive/lazy_random_walk/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/vision/mnist.yaml > log/transductive/n_gcn/vision/mnist.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/vision/mnist.yaml > log/transductive/node2vec/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/vision/mnist.yaml > log/transductive/p_laplace_learning/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/vision/mnist.yaml > log/transductive/planetoid/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/vision/mnist.yaml > log/transductive/poisson_learning/vision/mnist.log 2>&1
@@ -787,7 +761,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/graph
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/graph/pubmed.yaml > log/inductive/vat/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/graph/pubmed.yaml > log/transductive/appnp/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/graph/pubmed.yaml > log/transductive/chebnet/graph/pubmed.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/graph/pubmed.yaml > log/transductive/dgi/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/graph/pubmed.yaml > log/transductive/dynamic_label_propagation/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/graph/pubmed.yaml > log/transductive/gat/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/graph/pubmed.yaml > log/transductive/gcn/graph/pubmed.log 2>&1
@@ -803,7 +776,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/graph/pubmed.yaml > log/transductive/laplace_learning/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/graph/pubmed.yaml > log/transductive/lazy_random_walk/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/graph/pubmed.yaml > log/transductive/n_gcn/graph/pubmed.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/graph/pubmed.yaml > log/transductive/node2vec/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/graph/pubmed.yaml > log/transductive/p_laplace_learning/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/graph/pubmed.yaml > log/transductive/planetoid/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/graph/pubmed.yaml > log/transductive/poisson_learning/graph/pubmed.log 2>&1
@@ -845,7 +817,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/audio
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/audio/speechcommands.yaml > log/inductive/vat/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/audio/speechcommands.yaml > log/transductive/appnp/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/audio/speechcommands.yaml > log/transductive/chebnet/audio/speechcommands.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/audio/speechcommands.yaml > log/transductive/dgi/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/audio/speechcommands.yaml > log/transductive/dynamic_label_propagation/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/audio/speechcommands.yaml > log/transductive/gat/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/audio/speechcommands.yaml > log/transductive/gcn/audio/speechcommands.log 2>&1
@@ -861,7 +832,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/audio/speechcommands.yaml > log/transductive/laplace_learning/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/audio/speechcommands.yaml > log/transductive/lazy_random_walk/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/audio/speechcommands.yaml > log/transductive/n_gcn/audio/speechcommands.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/audio/speechcommands.yaml > log/transductive/node2vec/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/audio/speechcommands.yaml > log/transductive/p_laplace_learning/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/audio/speechcommands.yaml > log/transductive/planetoid/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/audio/speechcommands.yaml > log/transductive/poisson_learning/audio/speechcommands.log 2>&1
@@ -903,7 +873,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/visio
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/vision/stl10.yaml > log/inductive/vat/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/vision/stl10.yaml > log/transductive/appnp/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/vision/stl10.yaml > log/transductive/chebnet/vision/stl10.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/vision/stl10.yaml > log/transductive/dgi/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/vision/stl10.yaml > log/transductive/dynamic_label_propagation/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/vision/stl10.yaml > log/transductive/gat/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/vision/stl10.yaml > log/transductive/gcn/vision/stl10.log 2>&1
@@ -919,7 +888,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/vision/stl10.yaml > log/transductive/laplace_learning/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/vision/stl10.yaml > log/transductive/lazy_random_walk/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/vision/stl10.yaml > log/transductive/n_gcn/vision/stl10.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/vision/stl10.yaml > log/transductive/node2vec/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/vision/stl10.yaml > log/transductive/p_laplace_learning/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/vision/stl10.yaml > log/transductive/planetoid/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/vision/stl10.yaml > log/transductive/poisson_learning/vision/stl10.log 2>&1
@@ -961,7 +929,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/visio
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/vision/svhn.yaml > log/inductive/vat/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/vision/svhn.yaml > log/transductive/appnp/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/vision/svhn.yaml > log/transductive/chebnet/vision/svhn.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/vision/svhn.yaml > log/transductive/dgi/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/vision/svhn.yaml > log/transductive/dynamic_label_propagation/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/vision/svhn.yaml > log/transductive/gat/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/vision/svhn.yaml > log/transductive/gcn/vision/svhn.log 2>&1
@@ -977,7 +944,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/vision/svhn.yaml > log/transductive/laplace_learning/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/vision/svhn.yaml > log/transductive/lazy_random_walk/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/vision/svhn.yaml > log/transductive/n_gcn/vision/svhn.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/vision/svhn.yaml > log/transductive/node2vec/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/vision/svhn.yaml > log/transductive/p_laplace_learning/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/vision/svhn.yaml > log/transductive/planetoid/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/vision/svhn.yaml > log/transductive/poisson_learning/vision/svhn.log 2>&1
@@ -1019,7 +985,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/tabul
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/tabular/toy.yaml > log/inductive/vat/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/tabular/toy.yaml > log/transductive/appnp/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/tabular/toy.yaml > log/transductive/chebnet/tabular/toy.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/tabular/toy.yaml > log/transductive/dgi/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/tabular/toy.yaml > log/transductive/dynamic_label_propagation/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/tabular/toy.yaml > log/transductive/gat/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/tabular/toy.yaml > log/transductive/gcn/tabular/toy.log 2>&1
@@ -1035,7 +1000,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/tabular/toy.yaml > log/transductive/laplace_learning/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/tabular/toy.yaml > log/transductive/lazy_random_walk/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/tabular/toy.yaml > log/transductive/n_gcn/tabular/toy.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/tabular/toy.yaml > log/transductive/node2vec/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/tabular/toy.yaml > log/transductive/p_laplace_learning/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/tabular/toy.yaml > log/transductive/planetoid/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/tabular/toy.yaml > log/transductive/poisson_learning/tabular/toy.log 2>&1
@@ -1077,7 +1041,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/text/
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/text/yelp_polarity.yaml > log/inductive/vat/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/text/yelp_polarity.yaml > log/transductive/appnp/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/text/yelp_polarity.yaml > log/transductive/chebnet/text/yelp_polarity.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/text/yelp_polarity.yaml > log/transductive/dgi/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/text/yelp_polarity.yaml > log/transductive/dynamic_label_propagation/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/text/yelp_polarity.yaml > log/transductive/gat/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/text/yelp_polarity.yaml > log/transductive/gcn/text/yelp_polarity.log 2>&1
@@ -1093,7 +1056,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/text/yelp_polarity.yaml > log/transductive/laplace_learning/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/text/yelp_polarity.yaml > log/transductive/lazy_random_walk/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/text/yelp_polarity.yaml > log/transductive/n_gcn/text/yelp_polarity.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/text/yelp_polarity.yaml > log/transductive/node2vec/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/text/yelp_polarity.yaml > log/transductive/p_laplace_learning/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/text/yelp_polarity.yaml > log/transductive/planetoid/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/text/yelp_polarity.yaml > log/transductive/poisson_learning/text/yelp_polarity.log 2>&1
@@ -1135,7 +1097,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/text/
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/text/yelp_review_full.yaml > log/inductive/vat/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/text/yelp_review_full.yaml > log/transductive/appnp/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/text/yelp_review_full.yaml > log/transductive/chebnet/text/yelp_review_full.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/text/yelp_review_full.yaml > log/transductive/dgi/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/text/yelp_review_full.yaml > log/transductive/dynamic_label_propagation/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/text/yelp_review_full.yaml > log/transductive/gat/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/text/yelp_review_full.yaml > log/transductive/gcn/text/yelp_review_full.log 2>&1
@@ -1151,7 +1112,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/text/yelp_review_full.yaml > log/transductive/laplace_learning/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/text/yelp_review_full.yaml > log/transductive/lazy_random_walk/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/text/yelp_review_full.yaml > log/transductive/n_gcn/text/yelp_review_full.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/text/yelp_review_full.yaml > log/transductive/node2vec/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/text/yelp_review_full.yaml > log/transductive/p_laplace_learning/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/text/yelp_review_full.yaml > log/transductive/planetoid/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/text/yelp_review_full.yaml > log/transductive/poisson_learning/text/yelp_review_full.log 2>&1
@@ -1193,7 +1153,6 @@ python -m bench.main --config bench/configs/experiments/best/inductive/uda/audio
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/audio/yesno.yaml > log/inductive/vat/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/audio/yesno.yaml > log/transductive/appnp/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/chebnet/audio/yesno.yaml > log/transductive/chebnet/audio/yesno.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/dgi/audio/yesno.yaml > log/transductive/dgi/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/dynamic_label_propagation/audio/yesno.yaml > log/transductive/dynamic_label_propagation/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gat/audio/yesno.yaml > log/transductive/gat/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/gcn/audio/yesno.yaml > log/transductive/gcn/audio/yesno.log 2>&1
@@ -1209,7 +1168,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/label_
 python -m bench.main --config bench/configs/experiments/best/transductive/laplace_learning/audio/yesno.yaml > log/transductive/laplace_learning/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/lazy_random_walk/audio/yesno.yaml > log/transductive/lazy_random_walk/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/n_gcn/audio/yesno.yaml > log/transductive/n_gcn/audio/yesno.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/node2vec/audio/yesno.yaml > log/transductive/node2vec/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/p_laplace_learning/audio/yesno.yaml > log/transductive/p_laplace_learning/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/planetoid/audio/yesno.yaml > log/transductive/planetoid/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/audio/yesno.yaml > log/transductive/poisson_learning/audio/yesno.log 2>&1

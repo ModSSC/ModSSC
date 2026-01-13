@@ -333,17 +333,6 @@ python -m bench.main --config bench/configs/experiments/smoke/transductive/chebn
 python -m bench.main --config bench/configs/experiments/smoke/transductive/chebnet/vision/mnist.yaml > log/transductive/chebnet/vision/mnist.log 2>&1
 ```
 
-## transductive/dgi
-
-```
-mkdir -p log/transductive/dgi/audio log/transductive/dgi/graph log/transductive/dgi/tabular log/transductive/dgi/text log/transductive/dgi/vision
-python -m bench.main --config bench/configs/experiments/smoke/transductive/dgi/audio/speechcommands.yaml > log/transductive/dgi/audio/speechcommands.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/transductive/dgi/graph/cora.yaml > log/transductive/dgi/graph/cora.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/transductive/dgi/tabular/iris.yaml > log/transductive/dgi/tabular/iris.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/transductive/dgi/text/imdb.yaml > log/transductive/dgi/text/imdb.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/transductive/dgi/vision/mnist.yaml > log/transductive/dgi/vision/mnist.log 2>&1
-```
-
 ## transductive/dynamic_label_propagation
 
 ```
@@ -509,17 +498,6 @@ python -m bench.main --config bench/configs/experiments/smoke/transductive/n_gcn
 python -m bench.main --config bench/configs/experiments/smoke/transductive/n_gcn/tabular/iris.yaml > log/transductive/n_gcn/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/transductive/n_gcn/text/imdb.yaml > log/transductive/n_gcn/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/transductive/n_gcn/vision/mnist.yaml > log/transductive/n_gcn/vision/mnist.log 2>&1
-```
-
-## transductive/node2vec
-
-```
-mkdir -p log/transductive/node2vec/audio log/transductive/node2vec/graph log/transductive/node2vec/tabular log/transductive/node2vec/text log/transductive/node2vec/vision
-python -m bench.main --config bench/configs/experiments/smoke/transductive/node2vec/audio/speechcommands.yaml > log/transductive/node2vec/audio/speechcommands.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/transductive/node2vec/graph/cora.yaml > log/transductive/node2vec/graph/cora.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/transductive/node2vec/tabular/iris.yaml > log/transductive/node2vec/tabular/iris.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/transductive/node2vec/text/imdb.yaml > log/transductive/node2vec/text/imdb.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/transductive/node2vec/vision/mnist.yaml > log/transductive/node2vec/vision/mnist.log 2>&1
 ```
 
 ## transductive/p_laplace_learning

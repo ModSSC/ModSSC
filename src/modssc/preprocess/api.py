@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 _IMPLICIT_CONSUMES: dict[str, tuple[str, ...]] = {
     "graph.node2vec": ("raw.X", "raw.y"),
+    "graph.dgi": ("raw.X",),
 }
 
 

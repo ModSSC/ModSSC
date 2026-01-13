@@ -7,13 +7,17 @@ from typing import Any
 
 import numpy as np
 
+# Re-use the node2vec walk machinery (Planetoid uses a related context objective).
+from modssc.graph.featurization.node2vec import (
+    _build_adjacency,
+    _random_walks_node2vec,
+    _sample_negatives,
+    _walk_pairs,
+)
 from modssc.transductive.base import MethodInfo, TransductiveMethod
 from modssc.transductive.optional import optional_import
 
 from .common import normalize_device_name, prepare_data_cached, torch
-
-# Re-use the node2vec walk machinery (Planetoid uses a related context objective).
-from .node2vec import _build_adjacency, _random_walks_node2vec, _sample_negatives, _walk_pairs
 
 logger = logging.getLogger(__name__)
 
