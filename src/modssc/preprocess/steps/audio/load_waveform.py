@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
@@ -11,6 +12,9 @@ from modssc.preprocess.errors import PreprocessValidationError
 from modssc.preprocess.numpy_adapter import to_numpy
 from modssc.preprocess.optional import require
 from modssc.preprocess.store import ArtifactStore
+
+
+logger = logging.getLogger(__name__)
 
 
 def _is_path_like(value: Any) -> bool:
@@ -64,7 +68,38 @@ class LoadWaveformStep:
         torchaudio = require(
             module="torchaudio", extra="preprocess-audio", purpose="audio.load_waveform"
         )
-        waveform, sr = torchaudio.load(str(path))
+        try:
+            waveform, sr = torchaudio.load(str(path))
+        except RuntimeError as e:
+            if "libtorchcodec" in str(e):
+                logger.warning(
+                    f"FALLBACK: Torchaudio failed with libtorchcodec error for {path}. "
+                    "Falling back to SciPy. Reproducibility vs Torchaudio not guaranteed."
+                )
+                import scipy.io.wavfile
+                import torch
+
+                try:
+                    sr, data = scipy.io.wavfile.read(str(path))
+                    if data.dtype == np.int16:
+                        data = data.astype(np.float32) / 32768.0
+                    elif data.dtype == np.int32:
+                        data = data.astype(np.float32) / 2147483648.0
+                    elif data.dtype == np.uint8:
+                        data = (data.astype(np.float32) - 128.0) / 128.0
+                    else:
+                        data = data.astype(np.float32)
+
+                    if data.ndim == 1:
+                        data = data[None, :]
+                    else:
+                        data = data.T
+                    waveform = torch.from_numpy(data)
+                except Exception as ex:
+                    raise RuntimeError(f"Failed to load audio with scipy fallback: {ex}") from ex
+            else:
+                raise e
+
         if self.target_sample_rate is not None and int(sr) != int(self.target_sample_rate):
             waveform = torchaudio.functional.resample(
                 waveform, int(sr), int(self.target_sample_rate)

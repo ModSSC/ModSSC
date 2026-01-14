@@ -43,14 +43,10 @@ preprocess:
     - id: labels.encode
     - id: vision.ensure_num_channels
       params:
-        num_channels: 3
+        num_channels: 1
     - id: vision.channels_order
       params:
         order: NCHW
-    - id: vision.resize
-      params:
-        height: 224
-        width: 224
     - id: vision.normalize
       params:
         mean:
@@ -90,13 +86,9 @@ method:
   params:
     max_epochs: 3
   model:
-    classifier_id: image_pretrained
+    classifier_id: image_cnn
     classifier_backend: torch
     classifier_params:
-      model_name: resnet18
-      weights: DEFAULT
-      freeze_backbone: true
-      input_layout: channels_first
       lr: 0.0001
       weight_decay: 0.0001
       batch_size: 32

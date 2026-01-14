@@ -20,6 +20,7 @@ from modssc.inductive.methods.utils import (
     ensure_cpu_device,
     ensure_numpy_data,
     ensure_torch_data,
+    flatten_if_numpy,
     predict_scores,
 )
 from modssc.inductive.optional import optional_import
@@ -71,6 +72,8 @@ class S4VMMethod(InductiveMethod):
 
             X_l = np.asarray(ds.X_l)
             X_u = np.asarray(ds.X_u)
+            X_l = flatten_if_numpy(X_l)
+            X_u = flatten_if_numpy(X_u)
             y_l = np.asarray(y_l)
             logger.info(
                 "S4VM sizes: n_labeled=%s n_unlabeled=%s",
@@ -163,6 +166,8 @@ class S4VMMethod(InductiveMethod):
 
             model = build_classifier(self.spec, seed=seed + i + 1)
             X_train = torch.cat([X_l, X_u], dim=0)
+            # Ensure y_u is on the same device as y_l before cat
+            y_u = y_u.to(y_l.device)
             y_train = torch.cat([y_l, y_u], dim=0)
             model.fit(X_train, y_train)
             pred_l = model.predict(X_l)
@@ -182,6 +187,10 @@ class S4VMMethod(InductiveMethod):
         backend = self._backend or detect_backend(X)
         if self._backend is not None and backend != self._backend:
             raise InductiveValidationError("predict_proba input backend mismatch.")
+        
+        if backend == "numpy":
+            X = flatten_if_numpy(X)
+
         scores = predict_scores(self._clf, X, backend=backend)
         if backend == "numpy":
             row_sum = scores.sum(axis=1, keepdims=True)
@@ -198,4 +207,6 @@ class S4VMMethod(InductiveMethod):
         backend = self._backend or detect_backend(X)
         if self._backend is not None and backend != self._backend:
             raise InductiveValidationError("predict input backend mismatch.")
+        if backend == "numpy":
+            X = flatten_if_numpy(X)
         return self._clf.predict(X)

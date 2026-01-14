@@ -18,6 +18,7 @@ from modssc.inductive.methods.utils import (
     ensure_1d_labels_torch,
     ensure_classifier_backend,
     ensure_cpu_device,
+    flatten_if_numpy,
     predict_scores,
     select_top_per_class,
     select_top_per_class_torch,
@@ -53,8 +54,8 @@ def _view_payload_numpy(value: Any, *, name: str) -> tuple[np.ndarray, np.ndarra
         raise InductiveValidationError(
             f"views[{name!r}] X_l/X_u must be numpy arrays. Use preprocess core.to_numpy."
         )
-    if X_l.ndim != 2 or X_u.ndim != 2:
-        raise InductiveValidationError(f"views[{name!r}] X_l/X_u must be 2D arrays.")
+    if X_l.ndim < 2 or X_u.ndim < 2:
+        raise InductiveValidationError(f"views[{name!r}] X_l/X_u must be at least 2D arrays.")
     return X_l, X_u
 
 
@@ -74,8 +75,8 @@ def _view_predict_payload_numpy(value: Any, *, name: str) -> np.ndarray:
         X = value
     if not isinstance(X, np.ndarray):
         raise InductiveValidationError(f"views[{name!r}] must be a numpy array for prediction.")
-    if X.ndim != 2:
-        raise InductiveValidationError(f"views[{name!r}] must be 2D for prediction.")
+    if X.ndim < 2:
+        raise InductiveValidationError(f"views[{name!r}] must be at least 2D for prediction.")
     return X
 
 
@@ -97,8 +98,8 @@ def _view_payload_torch(value: Any, *, name: str):
         raise InductiveValidationError(
             f"views[{name!r}] X_l/X_u must be torch tensors. Use preprocess core.to_torch."
         )
-    if X_l.ndim != 2 or X_u.ndim != 2:
-        raise InductiveValidationError(f"views[{name!r}] X_l/X_u must be 2D tensors.")
+    if X_l.ndim < 2 or X_u.ndim < 2:
+        raise InductiveValidationError(f"views[{name!r}] X_l/X_u must be at least 2D tensors.")
     if X_l.device != X_u.device:
         raise InductiveValidationError(f"views[{name!r}] X_l/X_u must share device.")
     return X_l, X_u
@@ -121,8 +122,8 @@ def _view_predict_payload_torch(value: Any, *, name: str):
         X = value
     if not isinstance(X, torch.Tensor):
         raise InductiveValidationError(f"views[{name!r}] must be a torch tensor for prediction.")
-    if X.ndim != 2:
-        raise InductiveValidationError(f"views[{name!r}] must be 2D for prediction.")
+    if X.ndim < 2:
+        raise InductiveValidationError(f"views[{name!r}] must be at least 2D for prediction.")
     return X
 
 
@@ -191,6 +192,11 @@ class CoTrainingMethod(InductiveMethod):
         if backend == "numpy":
             v1_l, v1_u = _view_payload_numpy(data.views[keys[0]], name=keys[0])
             v2_l, v2_u = _view_payload_numpy(data.views[keys[1]], name=keys[1])
+            # Ensure flattening for standard classifiers
+            v1_l = flatten_if_numpy(v1_l)
+            v1_u = flatten_if_numpy(v1_u)
+            v2_l = flatten_if_numpy(v2_l)
+            v2_u = flatten_if_numpy(v2_u)
         else:
             v1_l, v1_u = _view_payload_torch(data.views[keys[0]], name=keys[0])
             v2_l, v2_u = _view_payload_torch(data.views[keys[1]], name=keys[1])
@@ -344,6 +350,8 @@ class CoTrainingMethod(InductiveMethod):
         if backend == "numpy":
             X1 = _view_predict_payload_numpy(v1, name=self._view_keys[0])
             X2 = _view_predict_payload_numpy(v2, name=self._view_keys[1])
+            X1 = flatten_if_numpy(X1)
+            X2 = flatten_if_numpy(X2)
         else:
             X1 = _view_predict_payload_torch(v1, name=self._view_keys[0])
             X2 = _view_predict_payload_torch(v2, name=self._view_keys[1])

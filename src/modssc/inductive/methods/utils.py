@@ -32,6 +32,16 @@ def ensure_numpy_data(data: Any) -> NumpyDataset:
     return to_numpy_dataset(data)
 
 
+def flatten_if_numpy(x: Any) -> np.ndarray:
+    """Flatten data to (N, D) if >2D, required for sklearn-like classifiers."""
+    if not isinstance(x, np.ndarray):
+        return x
+    if x.ndim > 2:
+        return x.reshape(x.shape[0], -1)
+    return x
+
+
+
 def _torch():
     return optional_import("torch", extra="inductive-torch")
 

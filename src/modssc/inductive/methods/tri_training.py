@@ -19,10 +19,12 @@ from modssc.inductive.methods.utils import (
     ensure_cpu_device,
     ensure_numpy_data,
     ensure_torch_data,
+    flatten_if_numpy,
     predict_scores,
 )
 from modssc.inductive.optional import optional_import
 from modssc.inductive.types import DeviceSpec
+
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +83,10 @@ class TriTrainingMethod(InductiveMethod):
 
             if X_l.shape[0] == 0:
                 raise InductiveValidationError("X_l must be non-empty.")
+
+            # Flatten features if >2D for standard classifiers
+            X_l = flatten_if_numpy(X_l)
+            X_u = flatten_if_numpy(X_u)
 
             rng = np.random.default_rng(int(seed))
             n_l = int(X_l.shape[0])
@@ -268,20 +274,86 @@ class TriTrainingMethod(InductiveMethod):
         backend = self._backend or detect_backend(X)
         if self._backend is not None and backend != self._backend:
             raise InductiveValidationError("predict_proba input backend mismatch.")
-        scores = [predict_scores(clf, X, backend=backend) for clf in self._clfs]
-        n_classes = {int(s.shape[1]) for s in scores}
-        if len(n_classes) != 1:
-            raise InductiveValidationError("TriTraining classifiers disagree on class count.")
+
         if backend == "numpy":
-            avg = np.mean(np.stack(scores, axis=0), axis=0)
+            X = flatten_if_numpy(X)
+        
+        scores_list = [predict_scores(clf, X, backend=backend) for clf in self._clfs]
+
+        # Robustly align scores if shapes differ
+        shapes = [s.shape[1] for s in scores_list]
+        max_classes = max(shapes)
+        distinct_shapes = set(shapes)
+        
+        if len(distinct_shapes) > 1:
+            # Check if we can align using classes_ attribute
+            has_classes = [hasattr(clf, "classes_") for clf in self._clfs]
+            if not all(has_classes):
+                raise InductiveValidationError(
+                    f"TriTraining classifiers disagree on class counts {shapes}, "
+                    "and not all classifiers expose the 'classes_' attribute to allow alignment. "
+                    "Cannot safely merge predictions."
+                )
+
+            # Align based on classes_
+            all_classes_set = set()
+            for clf in self._clfs:
+                all_classes_set.update(clf.classes_.tolist())
+            
+            sorted_classes = sorted(list(all_classes_set))
+            global_map = {c: i for i, c in enumerate(sorted_classes)}
+            final_n_classes = len(sorted_classes)
+            
+            aligned_scores = []
+            if backend == "numpy":
+                for clf, s in zip(self._clfs, scores_list):
+                   target = np.zeros((s.shape[0], final_n_classes), dtype=s.dtype)
+                   # Map local columns to global columns
+                   for local_idx, cls_label in enumerate(clf.classes_):
+                       if cls_label in global_map:
+                            global_idx = global_map[cls_label]
+                            target[:, global_idx] = s[:, local_idx]
+                   aligned_scores.append(target)
+                
+                avg = np.mean(np.stack(aligned_scores, axis=0), axis=0)
+            else:
+                 torch = optional_import("torch", extra="inductive-torch")
+                 for clf, s in zip(self._clfs, scores_list):
+                   target = torch.zeros((s.shape[0], final_n_classes), dtype=s.dtype, device=s.device)
+                   for local_idx, cls_label in enumerate(clf.classes_):
+                       # Assuming classes_ is numpy or list even for torch backend wrappers
+                       # Convert to python generic for safety
+                       val = cls_label.item() if hasattr(cls_label, "item") else cls_label
+                       if val in global_map:
+                            global_idx = global_map[val]
+                            target[:, global_idx] = s[:, local_idx]
+                   aligned_scores.append(target)
+                 
+                 avg = torch.mean(torch.stack(aligned_scores, dim=0), dim=0)
+
+            # Normalize row sums
+            if backend == "numpy":
+                row_sum = avg.sum(axis=1, keepdims=True)
+                row_sum[row_sum == 0.0] = 1.0
+                return (avg / row_sum).astype(np.float32, copy=False)
+            else:
+                row_sum = avg.sum(dim=1, keepdim=True)
+                row_sum = torch.where(row_sum == 0, torch.ones_like(row_sum), row_sum)
+                return avg / row_sum
+
+        # Fast path if shapes match
+        if backend == "numpy":
+            avg = np.mean(np.stack(scores_list, axis=0), axis=0)
             row_sum = avg.sum(axis=1, keepdims=True)
             row_sum[row_sum == 0.0] = 1.0
             return (avg / row_sum).astype(np.float32, copy=False)
-        torch = optional_import("torch", extra="inductive-torch")
-        avg = torch.mean(torch.stack(scores, dim=0), dim=0)
-        row_sum = avg.sum(dim=1, keepdim=True)
-        row_sum = torch.where(row_sum == 0, torch.ones_like(row_sum), row_sum)
-        return avg / row_sum
+        else:
+            torch = optional_import("torch", extra="inductive-torch")
+            avg = torch.mean(torch.stack(scores_list, dim=0), dim=0)
+            row_sum = avg.sum(dim=1, keepdim=True)
+            row_sum = torch.where(row_sum == 0, torch.ones_like(row_sum), row_sum)
+            return avg / row_sum
+
 
     def predict(self, X: Any) -> np.ndarray:
         proba = self.predict_proba(X)
