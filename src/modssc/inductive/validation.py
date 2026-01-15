@@ -24,8 +24,11 @@ def _as_numpy(a: Any) -> np.ndarray:
 
 def _require_2d(x: Any, *, name: str) -> np.ndarray:
     arr = _as_numpy(x)
-    if arr.ndim != 2:
-        raise InductiveValidationError(f"{name} must be 2D (n, d), got shape {arr.shape}")
+    # Relax validation to allow any dimension >= 2 (e.g. images N,C,H,W)
+    if arr.ndim < 2:
+        raise InductiveValidationError(
+            f"{name} must be at least 2D (n, ...), got shape {arr.shape}"
+        )
     return arr
 
 

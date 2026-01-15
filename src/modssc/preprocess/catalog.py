@@ -199,6 +199,16 @@ BUILTIN_STEPS: tuple[StepSpec, ...] = (
         produces=("raw.X",),
     ),
     StepSpec(
+        step_id="vision.squeeze",
+        import_path="modssc.preprocess.steps.vision.squeeze:SqueezeStep",
+        kind="transform",
+        description="Squeeze raw.X dimension to handle single channel image arrays.",
+        required_extra=None,
+        modalities=("vision",),
+        consumes=("raw.X",),
+        produces=("raw.X",),
+    ),
+    StepSpec(
         step_id="vision.openclip",
         import_path="modssc.preprocess.steps.vision.openclip:OpenClipStep",
         kind="featurizer",

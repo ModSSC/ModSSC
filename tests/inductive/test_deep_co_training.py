@@ -263,6 +263,33 @@ def test_deep_co_training_fgsm_adversarial_errors() -> None:
         )
 
 
+def test_deep_co_training_fgsm_adversarial_grad_none(monkeypatch) -> None:
+    model = _LinearLogits()
+    x_l = torch.randn((2, 2), requires_grad=True)
+    y_l = torch.tensor([0, 1], dtype=torch.int64)
+    x_u = torch.randn((2, 2), requires_grad=True)
+
+    # Force autograd.grad to return [None]
+    def _grad(*args, **kwargs):
+        return (None,)
+
+    monkeypatch.setattr(torch.autograd, "grad", _grad)
+
+    adv = dct._fgsm_adversarial(
+        model,
+        x_l,
+        y_l,
+        x_u,
+        epsilon=0.1,
+        freeze_bn=False,
+        clip_min=None,
+        clip_max=None,
+    )
+    # If grad is None, we expect 0.0 update, so adv should equal x_all
+    x_all = torch.cat([x_l, x_u], dim=0)
+    assert torch.allclose(adv, x_all)
+
+
 def test_deep_co_training_check_models_errors() -> None:
     method = dct.DeepCoTrainingMethod()
     model = _LinearLogits()

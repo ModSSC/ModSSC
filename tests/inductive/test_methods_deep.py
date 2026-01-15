@@ -823,7 +823,10 @@ def test_defixmatch_predict_proba_requires_tensor():
 @pytest.mark.parametrize(
     ("view_factory", "match"),
     [
-        (lambda d: torch.zeros((int(d.X_l.shape[0]),), dtype=d.X_l.dtype), "X_l_s must be 2D"),
+        (
+            lambda d: torch.zeros((int(d.X_l.shape[0]),), dtype=d.X_l.dtype),
+            "X_l_s must be at least 2D",
+        ),
         (
             lambda d: torch.zeros(
                 (int(d.X_l.shape[0]) - 1, int(d.X_l.shape[1])), dtype=d.X_l.dtype
@@ -1498,6 +1501,7 @@ def test_vat_vat_loss_error_paths():
             num_iters=0,
             freeze_bn=True,
             detach_target=True,
+            generator=torch.Generator(),
         )
 
     bad_model = _BadLogits1D()
@@ -1510,6 +1514,7 @@ def test_vat_vat_loss_error_paths():
             num_iters=1,
             freeze_bn=True,
             detach_target=True,
+            generator=torch.Generator(),
         )
     with pytest.raises(InductiveValidationError):
         method._vat_loss(
@@ -1520,6 +1525,7 @@ def test_vat_vat_loss_error_paths():
             num_iters=1,
             freeze_bn=True,
             detach_target=False,
+            generator=torch.Generator(),
         )
 
 
@@ -1536,6 +1542,7 @@ def test_vat_vat_loss_bad_logits_d():
             num_iters=1,
             freeze_bn=True,
             detach_target=True,
+            generator=torch.Generator(),
         )
 
 
@@ -1552,6 +1559,31 @@ def test_vat_vat_loss_bad_logits_adv():
             num_iters=1,
             freeze_bn=True,
             detach_target=True,
+            generator=torch.Generator(),
+        )
+
+
+def test_vat_vat_loss_grad_none(monkeypatch):
+    data = make_torch_ssl_dataset()
+    method = VATMethod()
+    model = _LinearLogits()
+
+    # Mock autograd to return None for gradient
+    def _grad(*args, **kwargs):
+        return (None,)
+
+    monkeypatch.setattr(torch.autograd, "grad", _grad)
+
+    with pytest.raises(InductiveValidationError, match="VAT gradient computation failed"):
+        method._vat_loss(
+            model,
+            data.X_u,
+            xi=1e-6,
+            eps=1.0,
+            num_iters=1,
+            freeze_bn=True,
+            detach_target=True,
+            generator=torch.Generator(),
         )
 
 

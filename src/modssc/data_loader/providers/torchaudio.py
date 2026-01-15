@@ -137,7 +137,8 @@ def _labels_from_paths(paths: Sequence[Path], *, dataset_class: str) -> list[Any
         return [p.parent.name for p in paths]
     if cls == "YESNO":
         # label is encoded in filename, ex: 1_0_1_0_0_1_0_1.wav
-        return [p.stem for p in paths]
+        # Use simple binary classification based on the first item.
+        return ["yes" if p.stem.startswith("1") else "no" for p in paths]
     # reasonable fallback
     return [p.parent.name for p in paths]
 

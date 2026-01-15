@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 The format is based on "Keep a Changelog", and this project adheres to Semantic Versioning.
 
+## 0.1.2
+- Fix misc bugs
+
 ## 0.1.1
 - Bump version metadata and docs.
 - Allow docs/release workflows to run on numeric tags.

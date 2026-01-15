@@ -167,13 +167,13 @@ def generate_views(
         X_train = _as_numpy(ds.train.X)
         X_test = _as_numpy(ds.test.X) if ds.test is not None else None
 
-        if X_train.ndim != 2:
+        if X_train.ndim < 2:
             raise ViewsValidationError(
-                f"View {view.name!r}: expected train.X to be 2D, got shape={X_train.shape}"
+                f"View {view.name!r}: expected train.X to be at least 2D, got shape={X_train.shape}"
             )
-        if X_test is not None and X_test.ndim != 2:
+        if X_test is not None and X_test.ndim < 2:
             raise ViewsValidationError(
-                f"View {view.name!r}: expected test.X to be 2D, got shape={X_test.shape}"
+                f"View {view.name!r}: expected test.X to be at least 2D, got shape={X_test.shape}"
             )
 
         n_features = int(X_train.shape[1])

@@ -159,6 +159,14 @@ def test_predict_scores_dispatch():
         utils.predict_scores(_NumpyScores(), X, backend="bad")
 
 
+def test_flatten_if_numpy_3d():
+    X_3d = np.zeros((2, 3, 4))
+    flat = utils.flatten_if_numpy(X_3d)
+    assert flat.ndim == 2
+    assert flat.shape == (2, 12)
+    assert utils.flatten_if_numpy([[1, 2]]) == [[1, 2]]  # No-op for list
+
+
 def test_select_confident_and_top_per_class():
     scores = np.array([[0.2, 0.8], [0.9, 0.1], [0.6, 0.4]], dtype=np.float32)
     idx = utils.select_confident(scores, threshold=0.7, max_new=1)

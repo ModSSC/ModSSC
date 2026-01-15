@@ -130,7 +130,7 @@ class MeanTeacherMethod(InductiveMethod):
         if int(X_l.shape[0]) == 0:
             raise InductiveValidationError("X_l must be non-empty.")
         if int(X_u_w.shape[0]) == 0 or int(X_u_s.shape[0]) == 0:
-            raise InductiveValidationError("X_u_w and X_u_s must be non-empty.")
+            raise InductiveValidationError("MeanTeacher requires unlabeled data. X_u is empty.")
 
         ensure_float_tensor(X_l, name="X_l")
         ensure_float_tensor(X_u_w, name="X_u_w")

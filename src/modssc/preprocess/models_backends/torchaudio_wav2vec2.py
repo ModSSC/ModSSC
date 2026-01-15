@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,8 @@ from modssc.device import resolve_device_name
 from modssc.preprocess.errors import OptionalDependencyError
 from modssc.preprocess.numpy_adapter import to_numpy
 from modssc.preprocess.optional import require
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -36,6 +39,36 @@ class Wav2Vec2Encoder:
         self.device = resolve_device_name(self.device, torch=torch)
         self._model = model.to(self.device or "cpu")
 
+    def _load_safe(self, path: str) -> np.ndarray:
+        try:
+            t_wav, _ = self._torchaudio.load(path)
+            return t_wav.numpy()
+        except RuntimeError as e:
+            if "libtorchcodec" in str(e):
+                logger.warning(
+                    f"FALLBACK: Torchaudio failed with libtorchcodec error for {path}. "
+                    "Falling back to SciPy. Reproducibility vs Torchaudio not guaranteed."
+                )
+                import scipy.io.wavfile
+
+                try:
+                    sr, data = scipy.io.wavfile.read(path)
+                except Exception as ex:
+                    raise RuntimeError(f"Failed to load audio with scipy fallback: {ex}") from ex
+
+                if data.dtype == np.int16:
+                    data = data.astype(np.float32) / 32768.0
+                elif data.dtype == np.int32:
+                    data = data.astype(np.float32) / 2147483648.0
+                elif data.dtype == np.uint8:
+                    data = (data.astype(np.float32) - 128.0) / 128.0
+                else:
+                    data = data.astype(np.float32)
+
+                data = data[None, :] if data.ndim == 1 else data.T
+                return data
+            raise e
+
     def encode(
         self, X: Any, *, batch_size: int = 8, rng: np.random.Generator | None = None
     ) -> np.ndarray:
@@ -46,8 +79,7 @@ class Wav2Vec2Encoder:
         outs: list[np.ndarray] = []
         for wav in samples:
             if isinstance(wav, (str, Path)):
-                t_wav, _ = self._torchaudio.load(str(wav))
-                arr = t_wav.numpy()
+                arr = self._load_safe(str(wav))
             else:
                 arr = to_numpy(wav).astype(np.float32, copy=False)
 

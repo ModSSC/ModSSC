@@ -135,8 +135,8 @@ class DeFixMatchMethod(InductiveMethod):
         ensure_float_tensor(X_u_s, name="X_u_s")
         ensure_float_tensor(X_l_s, name="X_l_s")
 
-        if int(X_l_s.ndim) != 2:
-            raise InductiveValidationError("X_l_s must be 2D (n, d).")
+        if int(X_l_s.ndim) < 2:
+            raise InductiveValidationError("X_l_s must be at least 2D (n, d).")
         if int(X_l_s.shape[0]) != int(X_l.shape[0]):
             raise InductiveValidationError("X_l_s must have the same number of rows as X_l.")
         if int(X_l_s.shape[1]) != int(X_l.shape[1]):

@@ -86,7 +86,12 @@ def _fgsm_adversarial(
         targets = logits.detach().argmax(dim=1)
 
     loss = torch.nn.functional.cross_entropy(logits, targets)
-    grad = torch.autograd.grad(loss, x_adv, retain_graph=False, create_graph=False)[0]
+    grads = torch.autograd.grad(
+        loss, x_adv, retain_graph=False, create_graph=False, allow_unused=True
+    )
+    grad = grads[0]
+    if grad is None:
+        grad = torch.zeros_like(x_adv)
     adv = x_adv + float(epsilon) * grad.sign()
 
     if clip_min is not None and clip_max is not None:

@@ -60,7 +60,6 @@ class _ImageCNN(torch.nn.Module):
     ) -> None:
         super().__init__()
         torch = _torch()
-        self._torch = torch
         layers: list[Any] = []
         current = int(in_channels)
         for out_ch in conv_channels:
@@ -89,7 +88,7 @@ class _ImageCNN(torch.nn.Module):
         self.head = torch.nn.Sequential(*head)
 
     def forward(self, x: Any):
-        torch = self._torch
+        torch = _torch()
         x = self.conv(x)
         x = self.pool(x)
         x = torch.flatten(x, 1)

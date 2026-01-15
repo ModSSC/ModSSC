@@ -195,7 +195,11 @@ class MetaPseudoLabelsMethod(InductiveMethod):
         if int(X_l.shape[0]) == 0:
             raise InductiveValidationError("X_l must be non-empty.")
         if int(X_u_w.shape[0]) == 0 or int(X_u_s.shape[0]) == 0:
-            raise InductiveValidationError("X_u_w and X_u_s must be non-empty.")
+            raise InductiveValidationError(
+                "MetaPseudoLabels requires unlabeled data (X_u). Provided X_u is empty. "
+                "Check your data loader or splits configuration."
+            )
+
         if int(X_u_w.shape[0]) != int(X_u_s.shape[0]):
             raise InductiveValidationError("X_u_w and X_u_s must have the same number of rows.")
 
@@ -205,7 +209,7 @@ class MetaPseudoLabelsMethod(InductiveMethod):
         ensure_float_tensor(X_l_s, name="X_l_s")
 
         if int(X_l_s.ndim) != 2:
-            raise InductiveValidationError("X_l_s must be 2D (n, d).")
+            raise InductiveValidationError("X_l_s must be 2D.")
         if int(X_l_s.shape[0]) != int(X_l.shape[0]):
             raise InductiveValidationError("X_l_s must have the same number of rows as X_l.")
         if int(X_l_s.shape[1]) != int(X_l.shape[1]):

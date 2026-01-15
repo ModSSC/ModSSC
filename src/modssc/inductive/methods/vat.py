@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from time import perf_counter
 from typing import Any
 
+from modssc.device import resolve_device_name
 from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
@@ -89,6 +90,7 @@ class VATMethod(InductiveMethod):
         model: Any,
         x_u: Any,
         *,
+        generator: Any,
         xi: float,
         eps: float,
         num_iters: int,
@@ -112,7 +114,7 @@ class VATMethod(InductiveMethod):
                 raise InductiveValidationError("Model logits must be 2D (batch, classes).")
             probs = torch.softmax(logits_u, dim=1)
 
-        d = torch.randn_like(x_u)
+        d = torch.randn(x_u.shape, device=x_u.device, dtype=x_u.dtype, generator=generator)
         for _ in range(int(num_iters)):
             d = _l2_normalize(d) * float(xi)
             d = d.detach()
@@ -123,7 +125,22 @@ class VATMethod(InductiveMethod):
                 raise InductiveValidationError("Model logits must be 2D (batch, classes).")
             log_probs_d = torch.nn.functional.log_softmax(logits_d, dim=1)
             kl = _kl_divergence(probs, log_probs_d)
-            grad = torch.autograd.grad(kl, d, retain_graph=False, create_graph=False)[0]
+
+            # Use allow_unused=True to handle models where input gradient is blocked (e.g. frozen backbones)
+            grads = torch.autograd.grad(
+                kl, d, retain_graph=False, create_graph=False, allow_unused=True
+            )
+            if grads[0] is None:
+                msg = (
+                    "VAT gradient computation failed (grad is None). "
+                    "This implies the computation graph from the loss to the input 'd' is broken. "
+                    "Common causes: frozen backbones blocking gradients, discrete embeddings, "
+                    "or non-differentiable operations."
+                )
+                raise InductiveValidationError(msg)
+
+            grad = grads[0]
+
             d = grad.detach()
 
         r_adv = _l2_normalize(d) * float(eps)
@@ -218,8 +235,12 @@ class VATMethod(InductiveMethod):
         else:
             warmup_steps = int(max(1, round(float(self.spec.unsup_warm_up) * total_steps)))
 
+        spec_device = device.device if hasattr(device, "device") else device
+        target_device = resolve_device_name(str(spec_device), torch=torch)
+
         gen_l = torch.Generator().manual_seed(int(seed))
         gen_u = torch.Generator().manual_seed(int(seed) + 1)
+        gen_vat = torch.Generator(device=target_device).manual_seed(int(seed) + 42)
 
         step_idx = 0
         model.train()
@@ -252,6 +273,7 @@ class VATMethod(InductiveMethod):
                 vat_loss = self._vat_loss(
                     model,
                     x_u,
+                    generator=gen_vat,
                     xi=float(self.spec.xi),
                     eps=float(self.spec.eps),
                     num_iters=int(self.spec.num_iters),

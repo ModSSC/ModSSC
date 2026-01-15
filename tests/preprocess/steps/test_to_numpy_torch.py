@@ -97,3 +97,19 @@ def test_core_to_torch_transform(monkeypatch: pytest.MonkeyPatch) -> None:
     val = out["features.X"]
     assert val["device"] == "device:cpu"
     assert val["dtype"] == fake_torch.float32
+
+
+def test_core_to_torch_transform_custom_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_torch = FakeTorch()
+    monkeypatch.setattr(core_to_torch, "require", lambda **_: fake_torch)
+
+    store = ArtifactStore()
+    store.set("my_custom_key", [[1.0, 2.0], [3.0, 4.0]])
+
+    step = core_to_torch.ToTorchStep(device="cpu", dtype="float32", input_key="my_custom_key")
+    out = step.transform(store, rng=np.random.default_rng(0))
+
+    val = out["features.X"]
+    assert val["device"] == "device:cpu"
+    assert val["dtype"] == fake_torch.float32
+    np.testing.assert_array_equal(val["value"], [[1.0, 2.0], [3.0, 4.0]])

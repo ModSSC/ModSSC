@@ -45,8 +45,10 @@ def _require_views(views: Mapping[str, Any] | None) -> Mapping[str, Any] | None:
 
 
 def _check_2d(t, *, name: str) -> None:
-    if int(t.ndim) != 2:
-        raise InductiveValidationError(f"{name} must be 2D (n, d), got shape {tuple(t.shape)}")
+    if int(t.ndim) < 2:
+        raise InductiveValidationError(
+            f"{name} must be at least 2D (n, ...), got shape {tuple(t.shape)}"
+        )
 
 
 def _check_y(t, *, n: int) -> None:

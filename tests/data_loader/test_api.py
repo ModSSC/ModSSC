@@ -281,3 +281,25 @@ def test_download_and_store_rechecks_cache_after_lock(monkeypatch, tmp_path) -> 
     assert calls["is_cached"] >= 2
     assert calls["cache_lock"] == 1
     assert calls["load_processed"] == 1
+
+
+def test_dataset_info_uri():
+    uri = "hf:foo/bar"
+    info = api.dataset_info(uri)
+    assert info.provider == "hf"
+    assert info.key == uri
+    assert info.required_extra is not None
+
+
+def test_load_dataset_invalid_id_raises_unknown(tmp_path):
+    from modssc.data_loader.errors import UnknownDatasetError
+
+    with pytest.raises(UnknownDatasetError):
+        api.load_dataset("invalid_id_obviously_not_a_uri", cache_dir=tmp_path)
+
+
+def test_dataset_info_raises_unknown() -> None:
+    from modssc.data_loader.errors import UnknownDatasetError
+
+    with pytest.raises(UnknownDatasetError):
+        api.dataset_info("invalid_dataset_id_and_not_a_uri")

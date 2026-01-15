@@ -241,6 +241,12 @@ class TorchImagePretrainedClassifier(BaseSupervisedClassifier):
         if expected is not None and int(X4.shape[1]) != int(expected):
             if self.auto_channel_repeat and int(X4.shape[1]) == 1 and int(expected) == 3:
                 X4 = X4.repeat(1, 3, 1, 1)
+            elif self.auto_channel_repeat and int(X4.shape[1]) == 2 and int(expected) == 3:
+                raise SupervisedValidationError(
+                    "Ambiguous 2-channel input for 3-channel model. "
+                    "Automatic zero-padding is disabled for scientific rigor. "
+                    "Please check if data is Grayscale+Alpha or similar and preprocess explicitly."
+                )
             else:
                 raise SupervisedValidationError(
                     f"Model expects {expected} channels, got {int(X4.shape[1])}."
@@ -308,8 +314,9 @@ class TorchImagePretrainedClassifier(BaseSupervisedClassifier):
 
         torch.manual_seed(int(self.seed or 0))
 
-        model = _load_model(self.model_name, self.weights).to(X.device)
+        model = _load_model(self.model_name, self.weights)
         head = _replace_classifier(model, int(classes.numel()), torch)
+        model = model.to(X.device)
         self._expected_in_channels = _infer_in_channels(model, torch)
         self._model = model
         self._head = head

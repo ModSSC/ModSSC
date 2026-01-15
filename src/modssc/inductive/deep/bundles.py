@@ -206,7 +206,15 @@ def _build_image_cnn_bundle(
 
     torch.manual_seed(int(seed))
     in_channels, _h, _w = _infer_image_shape(sample, input_shape=input_shape)
-    model = image_cnn_backend._ImageCNN(
+
+    class _InductiveImageCNN(image_cnn_backend._ImageCNN):
+        def forward(self, x: Any):
+            x = self.conv(x)
+            x = self.pool(x)
+            x = torch.flatten(x, 1)
+            return self.head(x), x
+
+    model = _InductiveImageCNN(
         in_channels=in_channels,
         conv_channels=conv_channels,
         kernel_size=kernel_size,
@@ -528,11 +536,10 @@ def _build_audio_pretrained_bundle(
 
         def forward(self, X: Any):
             X2 = _prepare_audio_input(X, torch).to(dtype=torch.float32)
-            if self.freeze_backbone:
-                with torch.no_grad():
-                    feats = audio_pretrained_backend._extract_features(self.backbone, X2, torch)
-            else:
-                feats = audio_pretrained_backend._extract_features(self.backbone, X2, torch)
+            # We must NOT use torch.no_grad() even if backbone is frozen, purely to allow
+            # input gradients (e.g. for VAT) to flow through the backbone.
+            # Freezing is handled by requires_grad=False on parameters.
+            feats = audio_pretrained_backend._extract_features(self.backbone, X2, torch)
             logits = self.head(feats)
             if return_features:
                 return {"logits": logits, "feat": feats}
