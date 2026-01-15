@@ -43,4 +43,6 @@ def test_core_ensure_float32(ctx, rng):
         def to(self, dtype):
             return "converted"
 
-    pass
+    mock_tensor = MockTensor()
+    out = op.apply(mock_tensor, rng=rng, ctx=ctx)
+    assert out == "converted"
