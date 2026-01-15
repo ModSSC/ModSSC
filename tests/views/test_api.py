@@ -256,7 +256,7 @@ def test_generate_views_train_dim_error() -> None:
         meta={},
     )
     plan = ViewsPlan(views=(ViewSpec(name="v1"), ViewSpec(name="v2")))
-    with pytest.raises(ViewsValidationError, match="expected train.X to be 2D"):
+    with pytest.raises(ViewsValidationError, match="expected train.X to be at least 2D"):
         generate_views(ds, plan=plan, seed=0, cache=False)
 
 
@@ -270,5 +270,5 @@ def test_generate_views_test_dim_error() -> None:
     test = Split(X=np.array([1.0, 2.0]), y=np.array([0, 1]), edges=None, masks=None)
     ds = LoadedDataset(train=train, test=test, meta={})
     plan = ViewsPlan(views=(ViewSpec(name="v1"), ViewSpec(name="v2")))
-    with pytest.raises(ViewsValidationError, match="expected test.X to be 2D"):
+    with pytest.raises(ViewsValidationError, match="expected test.X to be at least 2D"):
         generate_views(ds, plan=plan, seed=0, cache=False)

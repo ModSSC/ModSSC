@@ -1,7 +1,7 @@
 import contextlib
 import json
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
@@ -12,6 +12,10 @@ from modssc.graph.cache import (
     GraphCacheError,
     ViewsCache,
     _safe_write_json,
+)
+from modssc.graph.construction.backends.sklearn_backend import (
+    epsilon_edges_sklearn,
+    knn_edges_sklearn,
 )
 
 
@@ -535,3 +539,155 @@ def test_views_cache_no_overwrite(tmp_path):
     vc.save(fingerprint="no_overwrite", views=views, manifest={}, overwrite=False)
 
     assert (d / "old_file.txt").exists()
+
+
+def _require_sklearn() -> None:
+    try:
+        import sklearn  # noqa: F401
+    except Exception as exc:
+        pytest.skip(f"sklearn unavailable: {exc}")
+
+
+def test_knn_edges_sklearn_include_self():
+    with patch("modssc.graph.construction.backends.sklearn_backend.optional_import") as mock_import:
+        mock_sklearn = MagicMock()
+        mock_import.return_value = mock_sklearn
+
+        mock_nn = MagicMock()
+        mock_sklearn.NearestNeighbors.return_value = mock_nn
+
+        X = np.array([[0], [1], [2]])
+        dist = np.array([[0.0], [0.0], [0.0]])
+        idx = np.array([[0], [1], [2]])
+        mock_nn.kneighbors.return_value = (dist, idx)
+
+        edge_index, _ = knn_edges_sklearn(X, k=1, metric="euclidean", include_self=True)
+        assert edge_index.shape[1] == 3
+
+        edge_index, _ = knn_edges_sklearn(X, k=1, metric="euclidean", include_self=False)
+        assert edge_index.shape[1] == 0
+
+        dist = np.array([[1.0]])
+        idx = np.array([[1]])
+        mock_nn.kneighbors.return_value = (dist, idx)
+
+        X = np.array([[0]])
+        mock_nn.kneighbors.return_value = (dist, idx)
+
+        edge_index, _ = knn_edges_sklearn(X, k=1, metric="euclidean", include_self=False)
+        assert edge_index.shape[1] == 1
+        assert edge_index[0, 0] == 0
+        assert edge_index[1, 0] == 1
+
+
+def test_knn_edges_sklearn_empty_mocked():
+    with patch("modssc.graph.construction.backends.sklearn_backend.optional_import") as mock_import:
+        mock_import.return_value = MagicMock()
+        X = np.zeros((0, 2))
+        edge_index, dist = knn_edges_sklearn(X, k=1, metric="euclidean")
+        assert edge_index.shape == (2, 0)
+        assert dist.shape == (0,)
+
+
+def test_epsilon_edges_sklearn_mocked():
+    with patch("modssc.graph.construction.backends.sklearn_backend.optional_import") as mock_import:
+        mock_sklearn = MagicMock()
+        mock_nn = MagicMock()
+        mock_sklearn.NearestNeighbors.return_value = mock_nn
+        mock_nn.radius_neighbors.return_value = (
+            [np.array([0.0, 1.0]), np.array([0.0, 1.0])],
+            [np.array([0, 1]), np.array([1, 0])],
+        )
+        mock_import.return_value = mock_sklearn
+
+        X = np.array([[0, 0], [0, 1]], dtype=np.float32)
+        edge_index, dist = epsilon_edges_sklearn(
+            X, radius=1.0, metric="euclidean", include_self=False
+        )
+        assert edge_index.shape[1] == 2
+        assert dist.shape[0] == 2
+
+
+def test_epsilon_edges_sklearn_no_neighbors():
+    with patch("modssc.graph.construction.backends.sklearn_backend.optional_import") as mock_import:
+        mock_sklearn = MagicMock()
+        mock_nn = MagicMock()
+        mock_sklearn.NearestNeighbors.return_value = mock_nn
+        mock_nn.radius_neighbors.return_value = (
+            [np.array([]), np.array([])],
+            [np.array([], dtype=np.int64), np.array([], dtype=np.int64)],
+        )
+        mock_import.return_value = mock_sklearn
+
+        X = np.array([[0, 0], [0, 1]], dtype=np.float32)
+        edge_index, dist = epsilon_edges_sklearn(
+            X, radius=1.0, metric="euclidean", include_self=False
+        )
+        assert edge_index.shape == (2, 0)
+        assert dist.shape == (0,)
+
+
+def test_epsilon_edges_sklearn_self_masked():
+    with patch("modssc.graph.construction.backends.sklearn_backend.optional_import") as mock_import:
+        mock_sklearn = MagicMock()
+        mock_nn = MagicMock()
+        mock_sklearn.NearestNeighbors.return_value = mock_nn
+        mock_nn.radius_neighbors.return_value = (
+            [np.array([0.0]), np.array([0.0])],
+            [np.array([0]), np.array([1])],
+        )
+        mock_import.return_value = mock_sklearn
+
+        X = np.array([[0, 0], [0, 1]], dtype=np.float32)
+        edge_index, dist = epsilon_edges_sklearn(
+            X, radius=1.0, metric="euclidean", include_self=False
+        )
+        assert edge_index.shape[1] == 0
+        assert dist.shape[0] == 0
+
+
+def test_epsilon_edges_sklearn_include_self_mocked():
+    with patch("modssc.graph.construction.backends.sklearn_backend.optional_import") as mock_import:
+        mock_sklearn = MagicMock()
+        mock_nn = MagicMock()
+        mock_sklearn.NearestNeighbors.return_value = mock_nn
+        mock_nn.radius_neighbors.return_value = (
+            [np.array([0.0, 0.1]), np.array([0.0])],
+            [np.array([0, 1]), np.array([1])],
+        )
+        mock_import.return_value = mock_sklearn
+
+        X = np.array([[0, 0], [0, 1]], dtype=np.float32)
+        edge_index, dist = epsilon_edges_sklearn(
+            X, radius=1.0, metric="euclidean", include_self=True
+        )
+        assert edge_index.shape == (2, 3)
+        assert np.array_equal(edge_index, np.array([[0, 0, 1], [0, 1, 1]]))
+
+
+def test_epsilon_edges_sklearn_empty_mocked():
+    with patch("modssc.graph.construction.backends.sklearn_backend.optional_import") as mock_import:
+        mock_import.return_value = MagicMock()
+        X = np.zeros((0, 2))
+        edge_index, dist = epsilon_edges_sklearn(X, radius=1.0, metric="euclidean")
+        assert edge_index.shape == (2, 0)
+        assert dist.shape == (0,)
+
+
+def test_epsilon_edges_sklearn():
+    _require_sklearn()
+    X_empty = np.zeros((0, 2))
+    edge_index, dist = epsilon_edges_sklearn(X_empty, radius=1.0, metric="euclidean")
+    assert edge_index.shape == (2, 0)
+    assert dist.shape == (0,)
+
+    X = np.array([[0, 0], [0, 0.5], [0, 2]])
+
+    edge_index, dist = epsilon_edges_sklearn(X, radius=1.0, metric="euclidean", include_self=False)
+
+    assert edge_index.shape[1] == 2
+    assert np.allclose(dist, [0.5, 0.5])
+
+    edge_index, dist = epsilon_edges_sklearn(X, radius=1.0, metric="euclidean", include_self=True)
+
+    assert edge_index.shape[1] == 5

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-import logging
 
 import numpy as np
 
@@ -11,7 +11,6 @@ from modssc.device import resolve_device_name
 from modssc.preprocess.errors import OptionalDependencyError
 from modssc.preprocess.numpy_adapter import to_numpy
 from modssc.preprocess.optional import require
-
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +50,7 @@ class Wav2Vec2Encoder:
                     "Falling back to SciPy. Reproducibility vs Torchaudio not guaranteed."
                 )
                 import scipy.io.wavfile
+
                 try:
                     sr, data = scipy.io.wavfile.read(path)
                 except Exception as ex:
@@ -65,10 +65,7 @@ class Wav2Vec2Encoder:
                 else:
                     data = data.astype(np.float32)
 
-                if data.ndim == 1:
-                    data = data[None, :]
-                else:
-                    data = data.T
+                data = data[None, :] if data.ndim == 1 else data.T
                 return data
             raise e
 

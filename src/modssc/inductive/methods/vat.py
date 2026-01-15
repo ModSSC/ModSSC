@@ -125,9 +125,11 @@ class VATMethod(InductiveMethod):
                 raise InductiveValidationError("Model logits must be 2D (batch, classes).")
             log_probs_d = torch.nn.functional.log_softmax(logits_d, dim=1)
             kl = _kl_divergence(probs, log_probs_d)
-            
+
             # Use allow_unused=True to handle models where input gradient is blocked (e.g. frozen backbones)
-            grads = torch.autograd.grad(kl, d, retain_graph=False, create_graph=False, allow_unused=True)
+            grads = torch.autograd.grad(
+                kl, d, retain_graph=False, create_graph=False, allow_unused=True
+            )
             if grads[0] is None:
                 msg = (
                     "VAT gradient computation failed (grad is None). "
@@ -136,9 +138,9 @@ class VATMethod(InductiveMethod):
                     "or non-differentiable operations."
                 )
                 raise InductiveValidationError(msg)
-            
+
             grad = grads[0]
-            
+
             d = grad.detach()
 
         r_adv = _l2_normalize(d) * float(eps)

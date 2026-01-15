@@ -243,7 +243,7 @@ class TorchImagePretrainedClassifier(BaseSupervisedClassifier):
                 X4 = X4.repeat(1, 3, 1, 1)
             elif self.auto_channel_repeat and int(X4.shape[1]) == 2 and int(expected) == 3:
                 raise SupervisedValidationError(
-                    f"Ambiguous 2-channel input for 3-channel model. "
+                    "Ambiguous 2-channel input for 3-channel model. "
                     "Automatic zero-padding is disabled for scientific rigor. "
                     "Please check if data is Grayscale+Alpha or similar and preprocess explicitly."
                 )

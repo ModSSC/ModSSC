@@ -184,17 +184,18 @@ class S4VMMethod(InductiveMethod):
     def predict_proba(self, X: Any) -> np.ndarray:
         if self._clf is None:
             raise RuntimeError("S4VMMethod is not fitted yet. Call fit() first.")
-        backend = self._backend or detect_backend(X)
+        backend = detect_backend(X)
         if self._backend is not None and backend != self._backend:
             raise InductiveValidationError("predict_proba input backend mismatch.")
-        
+
         if backend == "numpy":
             X = flatten_if_numpy(X)
 
         scores = predict_scores(self._clf, X, backend=backend)
         if backend == "numpy":
             row_sum = scores.sum(axis=1, keepdims=True)
-            row_sum[row_sum == 0.0] = 1.0
+            if np.any(row_sum == 0.0):
+                row_sum[row_sum == 0.0] = 1.0
             return (scores / row_sum).astype(np.float32, copy=False)
         torch = optional_import("torch", extra="inductive-torch")
         row_sum = scores.sum(dim=1, keepdim=True)

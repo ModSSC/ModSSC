@@ -13,7 +13,6 @@ from modssc.preprocess.numpy_adapter import to_numpy
 from modssc.preprocess.optional import require
 from modssc.preprocess.store import ArtifactStore
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -90,10 +89,7 @@ class LoadWaveformStep:
                     else:
                         data = data.astype(np.float32)
 
-                    if data.ndim == 1:
-                        data = data[None, :]
-                    else:
-                        data = data.T
+                    data = data[None, :] if data.ndim == 1 else data.T
                     waveform = torch.from_numpy(data)
                 except Exception as ex:
                     raise RuntimeError(f"Failed to load audio with scipy fallback: {ex}") from ex

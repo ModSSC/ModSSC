@@ -17,12 +17,12 @@ class SqueezeStep:
     def transform(self, store: ArtifactStore, *, rng: np.random.Generator) -> dict[str, Any]:
         X = store.require("raw.X")
         arr = to_numpy(X)
-        
+
         # Handle (N, H, W, 1) -> (N, H, W)
         if arr.ndim == 4 and arr.shape[self.dim] == 1:
-             out = np.squeeze(arr, axis=self.dim)
-             if self.as_list:
-                 return {"raw.X": list(out)}
-             return {"raw.X": out}
-        
+            out = np.squeeze(arr, axis=self.dim)
+            if self.as_list:
+                return {"raw.X": list(out)}
+            return {"raw.X": out}
+
         return {"raw.X": X}

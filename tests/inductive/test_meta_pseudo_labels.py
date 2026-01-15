@@ -449,7 +449,7 @@ def test_meta_pseudo_labels_fit_empty_unlabeled_raises(monkeypatch):
         teacher_bundle=_make_bundle(_LinearNet()),
         student_bundle=_make_bundle(_LinearNet()),
     )
-    with pytest.raises(InductiveValidationError, match="must be non-empty"):
+    with pytest.raises(InductiveValidationError, match="Provided X_u is empty"):
         MetaPseudoLabelsMethod(spec).fit(empty_u, device=DeviceSpec(device="cpu"))
 
 

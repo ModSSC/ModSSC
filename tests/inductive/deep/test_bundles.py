@@ -149,6 +149,9 @@ def test_image_audio_text_helpers_and_bundles() -> None:
         ema=False,
     )
     assert isinstance(img_bundle, TorchModelBundle)
+    logits_img, feat_img = img_bundle.model(sample4)
+    assert logits_img.shape[0] == 2
+    assert feat_img.ndim == 2
 
     audio3 = torch.randn(2, 1, 8)
     assert bundles._infer_audio_channels(audio3, input_shape=None) == 1

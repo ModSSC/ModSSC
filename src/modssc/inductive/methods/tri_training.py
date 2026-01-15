@@ -25,7 +25,6 @@ from modssc.inductive.methods.utils import (
 from modssc.inductive.optional import optional_import
 from modssc.inductive.types import DeviceSpec
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -277,14 +276,13 @@ class TriTrainingMethod(InductiveMethod):
 
         if backend == "numpy":
             X = flatten_if_numpy(X)
-        
+
         scores_list = [predict_scores(clf, X, backend=backend) for clf in self._clfs]
 
         # Robustly align scores if shapes differ
         shapes = [s.shape[1] for s in scores_list]
-        max_classes = max(shapes)
         distinct_shapes = set(shapes)
-        
+
         if len(distinct_shapes) > 1:
             # Check if we can align using classes_ attribute
             has_classes = [hasattr(clf, "classes_") for clf in self._clfs]
@@ -299,37 +297,37 @@ class TriTrainingMethod(InductiveMethod):
             all_classes_set = set()
             for clf in self._clfs:
                 all_classes_set.update(clf.classes_.tolist())
-            
+
             sorted_classes = sorted(list(all_classes_set))
             global_map = {c: i for i, c in enumerate(sorted_classes)}
             final_n_classes = len(sorted_classes)
-            
+
             aligned_scores = []
             if backend == "numpy":
-                for clf, s in zip(self._clfs, scores_list):
-                   target = np.zeros((s.shape[0], final_n_classes), dtype=s.dtype)
-                   # Map local columns to global columns
-                   for local_idx, cls_label in enumerate(clf.classes_):
-                       if cls_label in global_map:
-                            global_idx = global_map[cls_label]
-                            target[:, global_idx] = s[:, local_idx]
-                   aligned_scores.append(target)
-                
+                for clf, s in zip(self._clfs, scores_list, strict=False):
+                    target = np.zeros((s.shape[0], final_n_classes), dtype=s.dtype)
+                    # Map local columns to global columns
+                    for local_idx, cls_label in enumerate(clf.classes_):
+                        global_idx = global_map[cls_label]
+                        target[:, global_idx] = s[:, local_idx]
+                    aligned_scores.append(target)
+
                 avg = np.mean(np.stack(aligned_scores, axis=0), axis=0)
             else:
-                 torch = optional_import("torch", extra="inductive-torch")
-                 for clf, s in zip(self._clfs, scores_list):
-                   target = torch.zeros((s.shape[0], final_n_classes), dtype=s.dtype, device=s.device)
-                   for local_idx, cls_label in enumerate(clf.classes_):
-                       # Assuming classes_ is numpy or list even for torch backend wrappers
-                       # Convert to python generic for safety
-                       val = cls_label.item() if hasattr(cls_label, "item") else cls_label
-                       if val in global_map:
-                            global_idx = global_map[val]
-                            target[:, global_idx] = s[:, local_idx]
-                   aligned_scores.append(target)
-                 
-                 avg = torch.mean(torch.stack(aligned_scores, dim=0), dim=0)
+                torch = optional_import("torch", extra="inductive-torch")
+                for clf, s in zip(self._clfs, scores_list, strict=False):
+                    target = torch.zeros(
+                        (s.shape[0], final_n_classes), dtype=s.dtype, device=s.device
+                    )
+                    for local_idx, cls_label in enumerate(clf.classes_):
+                        # Assuming classes_ is numpy or list even for torch backend wrappers
+                        # Convert to python generic for safety
+                        val = cls_label.item() if hasattr(cls_label, "item") else cls_label
+                        global_idx = global_map[val]
+                        target[:, global_idx] = s[:, local_idx]
+                    aligned_scores.append(target)
+
+                avg = torch.mean(torch.stack(aligned_scores, dim=0), dim=0)
 
             # Normalize row sums
             if backend == "numpy":
@@ -353,7 +351,6 @@ class TriTrainingMethod(InductiveMethod):
             row_sum = avg.sum(dim=1, keepdim=True)
             row_sum = torch.where(row_sum == 0, torch.ones_like(row_sum), row_sum)
             return avg / row_sum
-
 
     def predict(self, X: Any) -> np.ndarray:
         proba = self.predict_proba(X)

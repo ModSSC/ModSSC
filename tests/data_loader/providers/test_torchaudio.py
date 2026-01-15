@@ -125,7 +125,7 @@ def test_labels_speechcommands():
 def test_labels_yesno():
     paths = [Path("/data/1_0_1.wav"), Path("/data/0_1_0.wav")]
     labels = _labels_from_paths(paths, dataset_class="YESNO")
-    assert labels == ["1_0_1", "0_1_0"]
+    assert labels == ["yes", "no"]
 
 
 def test_labels_fallback():

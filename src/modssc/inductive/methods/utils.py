@@ -41,7 +41,6 @@ def flatten_if_numpy(x: Any) -> np.ndarray:
     return x
 
 
-
 def _torch():
     return optional_import("torch", extra="inductive-torch")
 
