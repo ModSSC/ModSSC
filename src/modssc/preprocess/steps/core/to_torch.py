@@ -43,10 +43,11 @@ class ToTorchStep:
 
     device: str = "cpu"
     dtype: str | None = "float32"
+    input_key: str = "features.X"
 
     def transform(self, store: ArtifactStore, *, rng: np.random.Generator) -> dict[str, Any]:
         torch = require(module="torch", extra="inductive-torch", purpose="core.to_torch")
-        x = store.require("features.X")
+        x = store.require(self.input_key)
         dev = _resolve_device(torch, self.device)
         dt = _resolve_dtype(torch, self.dtype)
         return {"features.X": torch.as_tensor(x, device=dev, dtype=dt)}

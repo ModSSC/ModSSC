@@ -46,6 +46,10 @@ preprocess:
     - id: vision.ensure_num_channels
       params:
         num_channels: 3
+    - id: vision.channels_order
+      params:
+        order: NHWC
+    - id: vision.squeeze
     - id: vision.openclip
       params:
         batch_size: 64

@@ -57,6 +57,7 @@ preprocess:
         - 58.395
         - 57.12
         - 57.375
+    - id: core.copy_raw
     - id: core.to_torch
       params:
         device: auto

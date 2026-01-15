@@ -206,7 +206,15 @@ def _build_image_cnn_bundle(
 
     torch.manual_seed(int(seed))
     in_channels, _h, _w = _infer_image_shape(sample, input_shape=input_shape)
-    model = image_cnn_backend._ImageCNN(
+
+    class _InductiveImageCNN(image_cnn_backend._ImageCNN):
+        def forward(self, x: Any):
+            x = self.conv(x)
+            x = self.pool(x)
+            x = torch.flatten(x, 1)
+            return self.head(x), x
+
+    model = _InductiveImageCNN(
         in_channels=in_channels,
         conv_channels=conv_channels,
         kernel_size=kernel_size,
