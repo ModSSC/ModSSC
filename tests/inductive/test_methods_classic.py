@@ -15,10 +15,6 @@ from modssc.inductive.methods.co_training import (
     _view_predict_payload_numpy,
     _view_predict_payload_torch,
 )
-from modssc.inductive.methods.democratic_co_learning import (
-    DemocraticCoLearningMethod,
-    DemocraticCoLearningSpec,
-)
 from modssc.inductive.methods.pseudo_label import PseudoLabelMethod, PseudoLabelSpec
 from modssc.inductive.methods.s4vm import S4VMMethod, S4VMSpec
 from modssc.inductive.methods.self_training import SelfTrainingMethod, SelfTrainingSpec
@@ -516,8 +512,8 @@ def test_co_training_predict_torch_classes():
 
 def test_democratic_co_learning_numpy_fit_predict():
     data = make_numpy_dataset()
-    spec = DemocraticCoLearningSpec(max_iter=1, n_learners=3)
-    method = DemocraticCoLearningMethod(spec)
+    spec = dcl.DemocraticCoLearningSpec(max_iter=1, n_learners=3)
+    method = dcl.DemocraticCoLearningMethod(spec)
     method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
 
     proba = method.predict_proba(data.X_l)
@@ -526,14 +522,14 @@ def test_democratic_co_learning_numpy_fit_predict():
     assert pred.shape[0] == data.X_l.shape[0]
 
     data_none = DummyDataset(X_l=data.X_l, y_l=data.y_l, X_u=None)
-    method2 = DemocraticCoLearningMethod(spec)
+    method2 = dcl.DemocraticCoLearningMethod(spec)
     method2.fit(data_none, device=DeviceSpec(device="cpu"), seed=0)
 
 
 def test_democratic_co_learning_torch_fit_predict():
     data = make_torch_dataset()
-    spec = DemocraticCoLearningSpec(max_iter=1, n_learners=3, classifier_backend="torch")
-    method = DemocraticCoLearningMethod(spec)
+    spec = dcl.DemocraticCoLearningSpec(max_iter=1, n_learners=3, classifier_backend="torch")
+    method = dcl.DemocraticCoLearningMethod(spec)
     method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
 
     proba = method.predict_proba(data.X_l)
@@ -1367,10 +1363,10 @@ def test_democratic_helper_validation_errors():
 
 
 def test_democratic_classifier_spec_resolution_errors():
-    spec = DemocraticCoLearningSpec(classifier_specs=(dcl.BaseClassifierSpec(),) * 2)
+    spec = dcl.DemocraticCoLearningSpec(classifier_specs=(dcl.BaseClassifierSpec(),) * 2)
     with pytest.raises(InductiveValidationError, match="at least 3 learners"):
         dcl._resolve_classifier_specs(spec)
-    spec2 = DemocraticCoLearningSpec(n_learners=2)
+    spec2 = dcl.DemocraticCoLearningSpec(n_learners=2)
     with pytest.raises(InductiveValidationError, match="n_learners must be"):
         dcl._resolve_classifier_specs(spec2)
 
@@ -1381,7 +1377,7 @@ def test_democratic_classifier_spec_resolution_valid():
         dcl.BaseClassifierSpec(),
         dcl.BaseClassifierSpec(),
     )
-    spec = DemocraticCoLearningSpec(classifier_specs=specs)
+    spec = dcl.DemocraticCoLearningSpec(classifier_specs=specs)
     out = dcl._resolve_classifier_specs(spec)
     assert len(out) == 3
 
@@ -1491,7 +1487,7 @@ def test_democratic_combine_scores_torch_all_ineligible():
 
 
 def test_democratic_fit_requires_data():
-    method = DemocraticCoLearningMethod()
+    method = dcl.DemocraticCoLearningMethod()
     with pytest.raises(InductiveValidationError, match="data must not be None"):
         method.fit(None, device=DeviceSpec(device="cpu"), seed=0)
 
@@ -1503,7 +1499,7 @@ def test_democratic_fit_numpy_empty_labeled(monkeypatch):
         X_u=None,
     )
     monkeypatch.setattr(dcl, "ensure_numpy_data", lambda _data: bad)
-    method = DemocraticCoLearningMethod(DemocraticCoLearningSpec(n_learners=3))
+    method = dcl.DemocraticCoLearningMethod(dcl.DemocraticCoLearningSpec(n_learners=3))
     with pytest.raises(InductiveValidationError, match="X_l must be non-empty"):
         method.fit(bad, device=DeviceSpec(device="cpu"), seed=0)
 
@@ -1515,8 +1511,8 @@ def test_democratic_fit_torch_empty_labeled(monkeypatch):
         X_u=torch.zeros((2, 2)),
     )
     monkeypatch.setattr(dcl, "ensure_torch_data", lambda _data, device: bad)
-    method = DemocraticCoLearningMethod(
-        DemocraticCoLearningSpec(n_learners=3, classifier_backend="torch")
+    method = dcl.DemocraticCoLearningMethod(
+        dcl.DemocraticCoLearningSpec(n_learners=3, classifier_backend="torch")
     )
     with pytest.raises(InductiveValidationError, match="X_l must be non-empty"):
         method.fit(bad, device=DeviceSpec(device="cpu"), seed=0)
@@ -1528,8 +1524,8 @@ def test_democratic_fit_torch_without_unlabeled():
         y_l=torch.tensor([0, 1], dtype=torch.int64),
         X_u=None,
     )
-    method = DemocraticCoLearningMethod(
-        DemocraticCoLearningSpec(max_iter=1, n_learners=3, classifier_backend="torch")
+    method = dcl.DemocraticCoLearningMethod(
+        dcl.DemocraticCoLearningSpec(max_iter=1, n_learners=3, classifier_backend="torch")
     )
     method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
     assert method._backend == "torch"
@@ -1550,7 +1546,7 @@ def test_democratic_fit_numpy_updates_labels(monkeypatch):
         return clf
 
     monkeypatch.setattr(dcl, "build_classifier", _build)
-    method = DemocraticCoLearningMethod(DemocraticCoLearningSpec(max_iter=1, n_learners=3))
+    method = dcl.DemocraticCoLearningMethod(dcl.DemocraticCoLearningSpec(max_iter=1, n_learners=3))
     method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
     assert method._backend == "numpy"
 
@@ -1571,7 +1567,7 @@ def test_democratic_fit_numpy_no_label_updates(monkeypatch):
         return clf
 
     monkeypatch.setattr(dcl, "build_classifier", _build)
-    method = DemocraticCoLearningMethod(DemocraticCoLearningSpec(max_iter=1, n_learners=3))
+    method = dcl.DemocraticCoLearningMethod(dcl.DemocraticCoLearningSpec(max_iter=1, n_learners=3))
     method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
     assert method._backend == "numpy"
 
@@ -1595,8 +1591,8 @@ def test_democratic_fit_torch_updates_labels(monkeypatch):
         return clf
 
     monkeypatch.setattr(dcl, "build_classifier", _build)
-    method = DemocraticCoLearningMethod(
-        DemocraticCoLearningSpec(max_iter=1, n_learners=3, classifier_backend="torch")
+    method = dcl.DemocraticCoLearningMethod(
+        dcl.DemocraticCoLearningSpec(max_iter=1, n_learners=3, classifier_backend="torch")
     )
     method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
     assert method._backend == "torch"
@@ -1622,15 +1618,15 @@ def test_democratic_fit_torch_no_label_updates(monkeypatch):
         return clf
 
     monkeypatch.setattr(dcl, "build_classifier", _build)
-    method = DemocraticCoLearningMethod(
-        DemocraticCoLearningSpec(max_iter=1, n_learners=3, classifier_backend="torch")
+    method = dcl.DemocraticCoLearningMethod(
+        dcl.DemocraticCoLearningSpec(max_iter=1, n_learners=3, classifier_backend="torch")
     )
     method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
     assert method._backend == "torch"
 
 
 def test_democratic_predict_proba_error_paths():
-    method = DemocraticCoLearningMethod()
+    method = dcl.DemocraticCoLearningMethod()
     with pytest.raises(RuntimeError, match="not fitted"):
         method.predict_proba(np.zeros((1, 2), dtype=np.float32))
 
@@ -1640,19 +1636,19 @@ def test_democratic_predict_proba_error_paths():
     with pytest.raises(InductiveValidationError, match="backend mismatch"):
         method.predict_proba(torch.zeros((1, 2)))
 
-    method2 = DemocraticCoLearningMethod()
+    method2 = dcl.DemocraticCoLearningMethod()
     method2._clfs = [_FixedPredictor([0], [0])]
     with pytest.raises(RuntimeError, match="missing weights"):
         method2.predict_proba(np.zeros((1, 2), dtype=np.float32))
 
-    method3 = DemocraticCoLearningMethod()
+    method3 = dcl.DemocraticCoLearningMethod()
     method3._clfs = [_FixedPredictor([0], [0])]
     method3._weights = np.ones((1,), dtype=np.float64)
     method3._backend = "numpy"
     with pytest.raises(RuntimeError, match="missing classes"):
         method3.predict_proba(np.zeros((1, 2), dtype=np.float32))
 
-    method4 = DemocraticCoLearningMethod()
+    method4 = dcl.DemocraticCoLearningMethod()
     method4._clfs = [_TorchPredictor(torch.tensor([0]), torch.tensor([0]))]
     method4._weights = np.ones((1,), dtype=np.float64)
     method4._backend = "torch"
@@ -1661,7 +1657,7 @@ def test_democratic_predict_proba_error_paths():
 
 
 def test_democratic_predict_returns_idx_when_classes_missing(monkeypatch):
-    method = DemocraticCoLearningMethod()
+    method = dcl.DemocraticCoLearningMethod()
     method._backend = "numpy"
     monkeypatch.setattr(
         method,
@@ -1671,7 +1667,7 @@ def test_democratic_predict_returns_idx_when_classes_missing(monkeypatch):
     pred = method.predict(np.zeros((2, 2), dtype=np.float32))
     assert pred.shape == (2,)
 
-    method2 = DemocraticCoLearningMethod()
+    method2 = dcl.DemocraticCoLearningMethod()
     method2._backend = "torch"
     monkeypatch.setattr(method2, "predict_proba", lambda _x: torch.tensor([[0.2, 0.8], [0.9, 0.1]]))
     pred2 = method2.predict(torch.zeros((2, 2)))

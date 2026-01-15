@@ -398,46 +398,35 @@ def _check_proba_classifier(clf_cls, module, monkeypatch):
 
 def test_extra_trees_wrapper(monkeypatch: pytest.MonkeyPatch) -> None:
     import modssc.supervised.backends.sklearn.extra_trees as mod
-    from modssc.supervised.backends.sklearn.extra_trees import SklearnExtraTreesClassifier
 
-    _check_proba_classifier(SklearnExtraTreesClassifier, mod, monkeypatch)
+    _check_proba_classifier(mod.SklearnExtraTreesClassifier, mod, monkeypatch)
 
 
 def test_gradient_boosting_wrapper(monkeypatch: pytest.MonkeyPatch) -> None:
     import modssc.supervised.backends.sklearn.gradient_boosting as mod
-    from modssc.supervised.backends.sklearn.gradient_boosting import (
-        SklearnGradientBoostingClassifier,
-    )
 
-    _check_proba_classifier(SklearnGradientBoostingClassifier, mod, monkeypatch)
+    _check_proba_classifier(mod.SklearnGradientBoostingClassifier, mod, monkeypatch)
 
 
 def test_random_forest_wrapper(monkeypatch: pytest.MonkeyPatch) -> None:
     import modssc.supervised.backends.sklearn.random_forest as mod
-    from modssc.supervised.backends.sklearn.random_forest import SklearnRandomForestClassifier
 
-    _check_proba_classifier(SklearnRandomForestClassifier, mod, monkeypatch)
+    _check_proba_classifier(mod.SklearnRandomForestClassifier, mod, monkeypatch)
 
 
 def test_naive_bayes_wrappers(monkeypatch: pytest.MonkeyPatch) -> None:
     import modssc.supervised.backends.sklearn.naive_bayes as mod
-    from modssc.supervised.backends.sklearn.naive_bayes import (
-        SklearnBernoulliNBClassifier,
-        SklearnGaussianNBClassifier,
-        SklearnMultinomialNBClassifier,
-    )
 
     for cls in (
-        SklearnGaussianNBClassifier,
-        SklearnMultinomialNBClassifier,
-        SklearnBernoulliNBClassifier,
+        mod.SklearnGaussianNBClassifier,
+        mod.SklearnMultinomialNBClassifier,
+        mod.SklearnBernoulliNBClassifier,
     ):
         _check_proba_classifier(cls, mod, monkeypatch)
 
 
 def test_linear_svm_wrapper(monkeypatch: pytest.MonkeyPatch) -> None:
     import modssc.supervised.backends.sklearn.linear_svm as mod
-    from modssc.supervised.backends.sklearn.linear_svm import SklearnLinearSVMClassifier
 
     dummy_module = SimpleNamespace(LinearSVC=DummyLinearModel)
     monkeypatch.setattr(mod, "optional_import", lambda *a, **k: dummy_module)
@@ -445,7 +434,7 @@ def test_linear_svm_wrapper(monkeypatch: pytest.MonkeyPatch) -> None:
     X = np.random.default_rng(0).normal(size=(4, 2)).astype(np.float32)
     y = np.array([0, 1, 0, 1], dtype=np.int64)
 
-    clf = SklearnLinearSVMClassifier()
+    clf = mod.SklearnLinearSVMClassifier()
     assert not clf.supports_proba
 
     with pytest.raises(RuntimeError, match="Model is not fitted"):
@@ -463,7 +452,6 @@ def test_linear_svm_wrapper(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_linear_svm_wrapper_multiclass_scores(monkeypatch: pytest.MonkeyPatch) -> None:
     import modssc.supervised.backends.sklearn.linear_svm as mod
-    from modssc.supervised.backends.sklearn.linear_svm import SklearnLinearSVMClassifier
 
     dummy_module = SimpleNamespace(LinearSVC=DummyLinearModel2D)
     monkeypatch.setattr(mod, "optional_import", lambda *a, **k: dummy_module)
@@ -471,7 +459,7 @@ def test_linear_svm_wrapper_multiclass_scores(monkeypatch: pytest.MonkeyPatch) -
     X = np.random.default_rng(1).normal(size=(5, 2)).astype(np.float32)
     y = np.array([0, 1, 2, 1, 0], dtype=np.int64)
 
-    clf = SklearnLinearSVMClassifier()
+    clf = mod.SklearnLinearSVMClassifier()
     clf.fit(X, y)
 
     scores = clf.predict_scores(X[:2])
@@ -480,7 +468,6 @@ def test_linear_svm_wrapper_multiclass_scores(monkeypatch: pytest.MonkeyPatch) -
 
 def test_ridge_wrapper(monkeypatch: pytest.MonkeyPatch) -> None:
     import modssc.supervised.backends.sklearn.ridge as mod
-    from modssc.supervised.backends.sklearn.ridge import SklearnRidgeClassifier
 
     dummy_module = SimpleNamespace(RidgeClassifier=DummyLinearModel)
     monkeypatch.setattr(mod, "optional_import", lambda *a, **k: dummy_module)
@@ -488,7 +475,7 @@ def test_ridge_wrapper(monkeypatch: pytest.MonkeyPatch) -> None:
     X = np.random.default_rng(0).normal(size=(4, 2)).astype(np.float32)
     y = np.array([0, 1, 0, 1], dtype=np.int64)
 
-    clf = SklearnRidgeClassifier()
+    clf = mod.SklearnRidgeClassifier()
     assert not clf.supports_proba
 
     with pytest.raises(RuntimeError, match="Model is not fitted"):
@@ -506,7 +493,6 @@ def test_ridge_wrapper(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_ridge_wrapper_multiclass_scores(monkeypatch: pytest.MonkeyPatch) -> None:
     import modssc.supervised.backends.sklearn.ridge as mod
-    from modssc.supervised.backends.sklearn.ridge import SklearnRidgeClassifier
 
     dummy_module = SimpleNamespace(RidgeClassifier=DummyLinearModel2D)
     monkeypatch.setattr(mod, "optional_import", lambda *a, **k: dummy_module)
@@ -514,7 +500,7 @@ def test_ridge_wrapper_multiclass_scores(monkeypatch: pytest.MonkeyPatch) -> Non
     X = np.random.default_rng(1).normal(size=(5, 2)).astype(np.float32)
     y = np.array([0, 1, 2, 1, 0], dtype=np.int64)
 
-    clf = SklearnRidgeClassifier()
+    clf = mod.SklearnRidgeClassifier()
     clf.fit(X, y)
 
     scores = clf.predict_scores(X[:2])
