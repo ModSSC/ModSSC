@@ -83,9 +83,28 @@ def _views_for_split(
             raise ValueError("Requested test split but view has no test split")
         X = _select_rows(base.X, idx)
         if use_torch:
-            X = _to_torch_like(X, backend_ref)
+            X = _smart_to_torch(X, backend_ref.device)
         out[name] = {"X": X}
     return out
+
+
+def _smart_to_torch(x: Any, device: Any) -> Any:
+    """Converts numpy to torch, scaling uint8 to [0,1]."""
+    if x is None:
+        return None
+    if is_torch_tensor(x):
+        return x
+
+    import importlib
+
+    torch = importlib.import_module("torch")
+    x_np = np.asarray(x)
+
+    if x_np.dtype == np.uint8:
+        return torch.tensor(x_np, device=device, dtype=torch.float32).div_(255.0)
+
+    dtype = torch.float32 if x_np.dtype == np.float64 else None
+    return torch.as_tensor(x_np, device=device, dtype=dtype)
 
 
 def evaluate_inductive(
@@ -103,6 +122,30 @@ def evaluate_inductive(
     results: dict[str, dict[str, float]] = {}
     for split in report_splits:
         X, y = _split_data(pre, sampling, split=split)
+
+        # JIT Convert if method has device spec (indicates torch/deep method)
+        m_dev_spec = getattr(method, "device", None)
+        dest_dev = getattr(m_dev_spec, "device", None) or (
+            m_dev_spec if isinstance(m_dev_spec, str) else None
+        )
+
+        if dest_dev is not None:
+            X = _smart_to_torch(X, dest_dev)
+
+        # Fallback inspection for torch models if device attr missing
+        if dest_dev is None and hasattr(method, "_bundle") and method._bundle is not None:
+            try:
+                mdl = method._bundle.model
+                import torch
+
+                if isinstance(mdl, torch.nn.Module):
+                    p = next(mdl.parameters(), None)
+                    if p is not None:
+                        dest_dev = p.device
+                        X = _smart_to_torch(X, dest_dev)
+            except Exception as e:
+                _LOGGER.debug("Failed to infer device from model: %s", e)
+
         if method_id == "co_training":
             if views is None:
                 raise ValueError("co_training requires views for evaluation")

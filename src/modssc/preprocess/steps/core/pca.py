@@ -54,11 +54,28 @@ class PcaStep:
     def transform(self, store: ArtifactStore, *, rng: np.random.Generator) -> dict[str, Any]:
         if self.mean_ is None or self.components_ is None or self.impute_ is None:
             raise PreprocessValidationError("PcaStep.transform called before fit()")
-        X = np.array(store.require("features.X"), dtype=np.float64, copy=True)
-        finite = np.isfinite(X)
-        if not finite.all():
-            np.copyto(X, self.impute_, where=~finite)
-        if self.center:
-            X -= self.mean_
-        Z = X @ self.components_.T
-        return {"features.X": np.asarray(Z, dtype=np.float32)}
+
+        X_source = store.require("features.X")
+        n_samples = len(X_source)
+        # Output will be float32, based on the original return
+        Z = np.empty((n_samples, self.components_.shape[0]), dtype=np.float32)
+
+        # Process in chunks to save RAM
+        batch_size = 8192
+
+        for start in range(0, n_samples, batch_size):
+            end = min(start + batch_size, n_samples)
+            # Load chunk in float64 for precision during transform
+            X_chunk = np.array(X_source[start:end], dtype=np.float64, copy=True)
+
+            finite = np.isfinite(X_chunk)
+            if not finite.all():
+                np.copyto(X_chunk, self.impute_, where=~finite)
+
+            if self.center:
+                X_chunk -= self.mean_
+
+            # Project
+            Z[start:end] = (X_chunk @ self.components_.T).astype(np.float32)
+
+        return {"features.X": Z}

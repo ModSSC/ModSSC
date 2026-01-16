@@ -40,4 +40,5 @@ class ResizeStep:
         out = np.transpose(out_nhwc, (0, 3, 1, 2)) if layout == "NCHW" else out_nhwc
         if single:
             out = out[0]
-        return {"raw.X": out}
+        # Force uint8 to ensure efficient valid storage (Action 3)
+        return {"raw.X": out.astype(np.uint8)}

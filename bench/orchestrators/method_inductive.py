@@ -81,8 +81,8 @@ def _build_views(
         X_l = _select_rows(X_train, idx_l)
         X_u = _select_rows(X_train, idx_u)
         if use_torch:
-            X_l = _to_torch_like(X_l, ref)
-            X_u = _to_torch_like(X_u, ref)
+            X_l = _smart_to_torch(X_l, ref.device)
+            X_u = _smart_to_torch(X_u, ref.device)
         out[name] = {"X_l": X_l, "X_u": X_u}
     return out
 
@@ -160,7 +160,16 @@ def _inject_model_bundle(
             return factory(**dict(model_cfg.params))
         sample = sample_override if sample_override is not None else X_l
         if not is_torch_tensor(sample):
-            raise ValueError("Torch model bundle requires torch.Tensor inputs (use core.to_torch).")
+            # Lazy conversion for uint8 storage capability
+            import importlib
+
+            torch = importlib.import_module("torch")
+            # Assuming NCHW layout for vision if not specified otherwise, or relying on bundle to handle it.
+            # Convert to float32 for model compat
+            sample = torch.as_tensor(sample)
+            if sample.dtype == torch.uint8:
+                sample = sample.to(dtype=torch.float32).div(255.0)
+
         num_classes = _infer_num_classes(y_l)
         local_classifier_id = classifier_id or model_cfg.classifier_id
         local_classifier_backend = classifier_backend or model_cfg.classifier_backend
@@ -248,6 +257,25 @@ def _inject_model_bundle(
     raise ValueError("method.model is set but the method spec has no model_bundle field")
 
 
+def _smart_to_torch(x: Any, device: Any) -> Any:
+    """Converts numpy to torch, scaling uint8 to [0,1]."""
+    if x is None:
+        return None
+    if is_torch_tensor(x):
+        return x
+
+    import importlib
+
+    torch = importlib.import_module("torch")
+    x_np = np.asarray(x)
+
+    if x_np.dtype == np.uint8:
+        return torch.tensor(x_np, device=device, dtype=torch.float32).div_(255.0)
+
+    dtype = torch.float32 if x_np.dtype == np.float64 else None
+    return torch.as_tensor(x_np, device=device, dtype=dtype)
+
+
 def run(
     pre: PreprocessResult,
     sampling: SamplingResult,
@@ -285,10 +313,24 @@ def run(
     X_train = pre.dataset.train.X
     X_l = _select_rows(X_train, idx_l)
     X_u = _select_rows(X_train, idx_u)
+
+    # JIT Conversion to Torch if method requires it (inferred by missing to_torch in pre)
+    if not is_torch_tensor(X_l):
+        target_device = cfg.device.device
+        X_l = _smart_to_torch(X_l, target_device)
+        if X_u is not None:
+            X_u = _smart_to_torch(X_u, target_device)
+        if X_u_w is not None:
+            X_u_w = _smart_to_torch(X_u_w, target_device)
+        if X_u_s is not None:
+            X_u_s = _smart_to_torch(X_u_s, target_device)
+        if X_u_s_1 is not None:
+            X_u_s_1 = _smart_to_torch(X_u_s_1, target_device)
+
     y_l = _labels_for_backend(pre, X_l, idx_l)
 
     if X_u_s_1 is not None and is_torch_tensor(X_l) and not is_torch_tensor(X_u_s_1):
-        X_u_s_1 = _to_torch_like(X_u_s_1, ref=X_l)
+        X_u_s_1 = _smart_to_torch(X_u_s_1, X_l.device)
 
     views_payload = _build_views(views, idx_l=idx_l, idx_u=idx_u, ref=X_l) if views else None
     if X_u_s_1 is not None:

@@ -360,9 +360,12 @@ def run_experiment(config_path: Path) -> int:
             and _method_requires_torch(cfg.method.method_id)
             and "core.to_torch" not in preprocess_steps
         ):
-            raise BenchConfigError(
-                "Torch inductive methods require preprocess step 'core.to_torch'"
-            )
+            # Optimisation H100: on autorise l'absence de to_torch si on gère la conversion plus tard
+            # (validation désactivée pour permettre le pipeline uint8)
+            pass
+            # raise BenchConfigError(
+            #    "Torch inductive methods require preprocess step 'core.to_torch'"
+            # )
 
         artifacts["dataset"] = {
             "id": cfg.dataset.id,
