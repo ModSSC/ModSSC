@@ -574,7 +574,7 @@ def test_resolve_cache_device_cuda_unavailable():
 
 
 def test_resolve_cache_device_mps_unavailable(monkeypatch):
-    import modssc.preprocess.cache as cache_mod
+    cache_mod = sys.modules["modssc.preprocess.cache"]
 
     monkeypatch.setattr(cache_mod, "mps_is_available", lambda _: False)
     dummy = _DummyTorch(cuda_available=True)
@@ -590,7 +590,7 @@ def test_load_value_npy_raises_preprocess_cache_error_on_value_error(tmp_path):
 
 
 def test_load_value_torch_npy_mmap(tmp_path, monkeypatch):
-    import modssc.preprocess.cache as cache_mod
+    cache_mod = sys.modules["modssc.preprocess.cache"]
 
     # Enable mmap by setting threshold to 0
     monkeypatch.setattr(cache_mod, "MMAP_THRESHOLD_BYTES", 0)
