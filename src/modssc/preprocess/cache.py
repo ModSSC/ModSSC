@@ -182,7 +182,13 @@ def _load_value(path: Path, desc: dict[str, Any]) -> Any:
             raise PreprocessCacheError(f"Failed to load cached array: {fp}") from e
     if t == "torch_npy":
         torch = _require_torch()
-        arr = np.load(fp, allow_pickle=False)
+        
+        mmap_mode = None
+        with contextlib.suppress(OSError):
+            if fp.stat().st_size >= MMAP_THRESHOLD_BYTES:
+                mmap_mode = "r"
+        
+        arr = np.load(fp, allow_pickle=False, mmap_mode=mmap_mode)
         dtype_str = str(desc.get("dtype") or "")
         dtype_name = dtype_str.split(".", 1)[-1] if dtype_str else ""
         dtype = getattr(torch, dtype_name, None) if dtype_name else None
