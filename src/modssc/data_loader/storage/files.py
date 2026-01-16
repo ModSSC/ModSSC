@@ -141,7 +141,9 @@ class FileStorage:
         if fmt == "npy":
             mmap_mode = None
             # Default to 64MB threshold to match preprocess cache
-            threshold = int(os.environ.get("MODSSC_DATA_LOADER_MMAP_THRESHOLD", str(64 * 1024 * 1024)))
+            threshold = int(
+                os.environ.get("MODSSC_DATA_LOADER_MMAP_THRESHOLD", str(64 * 1024 * 1024))
+            )
             with contextlib.suppress(OSError):
                 if path.stat().st_size >= threshold:
                     mmap_mode = "r"
