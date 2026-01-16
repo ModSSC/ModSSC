@@ -574,8 +574,45 @@ def test_resolve_cache_device_cuda_unavailable():
 
 
 def test_resolve_cache_device_mps_unavailable(monkeypatch):
-    import modssc.preprocess.cache as cache_mod
+    cache_mod = sys.modules["modssc.preprocess.cache"]
 
     monkeypatch.setattr(cache_mod, "mps_is_available", lambda _: False)
     dummy = _DummyTorch(cuda_available=True)
     assert _resolve_cache_device(dummy, "mps:0") == "device:cpu"
+
+
+def test_load_value_npy_raises_preprocess_cache_error_on_value_error(tmp_path):
+    with (
+        patch("modssc.preprocess.cache.np.load", side_effect=ValueError("Corrupted")),
+        pytest.raises(PreprocessCacheError, match="Failed to load cached array"),
+    ):
+        _load_value(tmp_path, {"type": "npy", "path": "corrupted.npy"})
+
+
+def test_load_value_torch_npy_mmap(tmp_path, monkeypatch):
+    cache_mod = sys.modules["modssc.preprocess.cache"]
+
+    # Enable mmap by setting threshold to 0
+    monkeypatch.setattr(cache_mod, "MMAP_THRESHOLD_BYTES", 0)
+
+    fp = tmp_path / "data.npy"
+    np.save(fp, np.array([1.0, 2.0], dtype="float32"))
+
+    desc = {"type": "torch_npy", "path": "data.npy", "dtype": "torch.float32"}
+
+    # Mock torch
+    mock_torch = MagicMock()
+    # We need to simulate as_tensor returning something
+    mock_torch.as_tensor.return_value = "tensor"
+    # And getattr(torch, "float32")
+    mock_torch.float32 = "float32_dtype"
+
+    with (
+        patch("modssc.preprocess.cache.np.load", wraps=np.load) as mock_load,
+        patch("modssc.preprocess.cache._require_torch", return_value=mock_torch),
+        patch("modssc.preprocess.cache._resolve_cache_device", return_value="cpu"),
+    ):
+        val = _load_value(tmp_path, desc)
+
+    assert val == "tensor"
+    mock_load.assert_called_with(fp, allow_pickle=False, mmap_mode="r")

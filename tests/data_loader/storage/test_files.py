@@ -1,5 +1,5 @@
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
@@ -156,3 +156,21 @@ def test_storage_save_minimal(tmp_path):
 
 def test_jsonable_none():
     assert _jsonable(None) is None
+
+
+def test_load_array_unknown_format_explicit(tmp_path):
+    storage = FileStorage()
+    with pytest.raises(ValueError, match="Unknown array format: 'invalid_fmt'"):
+        storage._load_array(tmp_path, {"format": "invalid_fmt", "path": "test.npy"})
+
+
+def test_load_array_npy_mmap(tmp_path, monkeypatch):
+    storage = FileStorage()
+    path = tmp_path / "test.npy"
+    np.save(path, np.array([1, 2]))
+
+    monkeypatch.setenv("MODSSC_DATA_LOADER_MMAP_THRESHOLD", "0")
+
+    with patch("modssc.data_loader.storage.files.np.load", wraps=np.load) as mock_load:
+        storage._load_array(tmp_path, {"format": "npy", "path": "test.npy"})
+        mock_load.assert_called_with(path, allow_pickle=True, mmap_mode="r")

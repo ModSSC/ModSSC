@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import contextlib
 import gzip
 import json
+import os
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -137,7 +139,15 @@ class FileStorage:
             items = _read_jsonl_gz(path)
             return np.asarray(items, dtype=object)
         if fmt == "npy":
-            return np.load(path, allow_pickle=True)
+            mmap_mode = None
+            # Default to 64MB threshold to match preprocess cache
+            threshold = int(
+                os.environ.get("MODSSC_DATA_LOADER_MMAP_THRESHOLD", str(64 * 1024 * 1024))
+            )
+            with contextlib.suppress(OSError):
+                if path.stat().st_size >= threshold:
+                    mmap_mode = "r"
+            return np.load(path, allow_pickle=True, mmap_mode=mmap_mode)
         raise ValueError(f"Unknown array format: {fmt!r}")
 
 
