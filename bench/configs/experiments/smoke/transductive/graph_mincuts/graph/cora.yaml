@@ -4,10 +4,8 @@ run:
   output_dir: runs/transductive/graph_mincuts/graph/cora
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: cora
   download: true
@@ -15,7 +13,9 @@ dataset:
     class_filter:
     - 0
     - 1
-    max_nodes: 1000
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 5
   plan:
@@ -50,10 +50,12 @@ method:
   kind: transductive
   id: graph_mincuts
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
-    capacity_scale: 100.0
+    backend: scipy
+    capacity_scale: 1000.0
+    min_capacity: 1
 evaluation:
   split_for_model_selection: val
   report_splits:

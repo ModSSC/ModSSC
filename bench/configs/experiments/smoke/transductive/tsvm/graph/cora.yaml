@@ -1,23 +1,28 @@
 run:
-  name: smoke_graph_transductive_tsvm_cora
-  seed: 5
+  name: smoke_graph_tsvm_cora
+  seed: 6
   output_dir: runs/transductive/tsvm/graph/cora
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: cora
-  download: true
   options:
+    n_samples: 64
+    n_features: 4
+    n_classes: 2
+    official_test: true
+    test_size: 0.25
     class_filter:
     - 0
     - 1
-    max_nodes: 1000
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
+  download: true
 sampling:
-  seed: 5
+  seed: 6
   plan:
     split:
       kind: holdout
@@ -37,7 +42,7 @@ sampling:
       use_official_graph_masks: true
       allow_override_official: false
 preprocess:
-  seed: 5
+  seed: 6
   fit_on: train_labeled
   cache: true
   plan:
@@ -46,18 +51,39 @@ preprocess:
     - id: labels.encode
     - id: core.ensure_2d
     - id: core.to_numpy
+graph:
+  enabled: true
+  seed: 6
+  cache: true
+  spec:
+    scheme: knn
+    metric: cosine
+    k: 15
+    symmetrize: mutual
+    weights:
+      kind: heat
+      sigma: 1.0
+    normalize: rw
+    self_loops: true
+    backend: numpy
+    chunk_size: 1024
+    feature_field: features.X
 method:
   kind: transductive
   id: tsvm
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
-    max_iter: 2
-    epochs_per_iter: 2
-    batch_size: 128
+    max_iter: 10
+    epochs_per_iter: 5
+    batch_size: 256
+    lr: 0.1
+    C_l: 1.0
+    C_u_max: 1.0
+    l2: 1.0
+    balance: true
 evaluation:
-  split_for_model_selection: val
   report_splits:
   - val
   - test

@@ -23,6 +23,9 @@ def _suggest_step(name: str) -> str:
 
 def _require_tensor(x: Any, *, name: str):
     torch = _torch()
+    if isinstance(x, dict):
+        if any(isinstance(v, torch.Tensor) for v in x.values()):
+            return x
     if not isinstance(x, torch.Tensor):
         step = _suggest_step(name)
         raise InductiveValidationError(
@@ -45,6 +48,11 @@ def _require_views(views: Mapping[str, Any] | None) -> Mapping[str, Any] | None:
 
 
 def _check_2d(t, *, name: str) -> None:
+    if isinstance(t, dict):
+        if "x" in t:
+            t = t["x"]
+        else:
+            return
     if int(t.ndim) < 2:
         raise InductiveValidationError(
             f"{name} must be at least 2D (n, ...), got shape {tuple(t.shape)}"
@@ -59,6 +67,11 @@ def _check_y(t, *, n: int) -> None:
 
 
 def _check_feature_dim(t, *, n_features: int, name: str) -> None:
+    if isinstance(t, dict):
+        if "x" in t:
+            t = t["x"]
+        else:
+            return
     if int(t.shape[1]) != int(n_features):
         raise InductiveValidationError(f"{name} must have {n_features} features (got {t.shape[1]})")
 
@@ -66,16 +79,26 @@ def _check_feature_dim(t, *, n_features: int, name: str) -> None:
 def _check_same_device(tensors: list[Any]) -> None:
     torch = _torch()
     dev = None
-    for t in tensors:
-        if t is None:
-            continue
-        if not isinstance(t, torch.Tensor):
-            continue
+
+    def check_item(item):
+        nonlocal dev
+        if item is None:
+            return
+        if isinstance(item, dict):
+            for v in item.values():
+                check_item(v)
+            return
+
+        if not isinstance(item, torch.Tensor):
+            return
         if dev is None:
-            dev = t.device
-            continue
-        if t.device != dev:
+            dev = item.device
+            return
+        if item.device != dev:
             raise InductiveValidationError("All tensors must be on the same device")
+
+    for t in tensors:
+        check_item(t)
 
 
 @dataclass(frozen=True)
@@ -106,13 +129,24 @@ def to_torch_dataset(
     X_l = _require_tensor(data.X_l, name="X_l")
     y_l = _require_tensor(data.y_l, name="y_l")
     _check_2d(X_l, name="X_l")
-    _check_y(y_l, n=int(X_l.shape[0]))
+
+    def get_len(x):
+        if isinstance(x, dict) and "x" in x:
+            return x["x"].shape[0]
+        return x.shape[0]
+
+    def get_features(x):
+        if isinstance(x, dict) and "x" in x:
+            return x["x"].shape[1]
+        return x.shape[1]
+
+    _check_y(y_l, n=int(get_len(X_l)))
 
     X_u = _require_tensor(data.X_u, name="X_u") if data.X_u is not None else None
     X_u_w = _require_tensor(data.X_u_w, name="X_u_w") if data.X_u_w is not None else None
     X_u_s = _require_tensor(data.X_u_s, name="X_u_s") if data.X_u_s is not None else None
 
-    n_features = int(X_l.shape[1])
+    n_features = int(get_features(X_l))
     if X_u is not None:
         _check_2d(X_u, name="X_u")
         _check_feature_dim(X_u, n_features=n_features, name="X_u")
@@ -122,7 +156,7 @@ def to_torch_dataset(
     if X_u_s is not None:
         _check_2d(X_u_s, name="X_u_s")
         _check_feature_dim(X_u_s, n_features=n_features, name="X_u_s")
-    if X_u_w is not None and X_u_s is not None and int(X_u_w.shape[0]) != int(X_u_s.shape[0]):
+    if X_u_w is not None and X_u_s is not None and int(get_len(X_u_w)) != int(get_len(X_u_s)):
         raise InductiveValidationError("X_u_w and X_u_s must have the same number of rows")
 
     views = _require_views(data.views)

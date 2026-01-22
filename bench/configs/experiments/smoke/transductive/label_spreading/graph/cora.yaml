@@ -4,15 +4,15 @@ run:
   output_dir: runs/transductive/label_spreading/graph/cora
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: cora
   download: true
   options:
-    max_nodes: 2000
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 5
   plan:
@@ -47,12 +47,13 @@ method:
   kind: transductive
   id: label_spreading
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
-    alpha: 0.9
-    max_iter: 20
-    tol: 0.0001
+    alpha: 0.99
+    norm: sym
+    max_iter: 200
+    tol: 1.0e-06
     normalize_rows: true
 evaluation:
   split_for_model_selection: val

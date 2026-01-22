@@ -1,67 +1,78 @@
 run:
-  name: smoke_text_tsvm_imdb
+  name: smoke_text_inductive_tsvm_imdb
   seed: 2
   output_dir: runs/inductive/tsvm/text/imdb
-  fail_fast: true
-
   log_level: detailed
-
+  fail_fast: true
 limits:
   profile: auto
-
 dataset:
-  id: "imdb"
-  options:
-    text_column: "text"
-    label_column: "label"
-    prefer_test_split: true
+  id: imdb
   download: true
-
+  options:
+    text_column: text
+    label_column: label
+    prefer_test_split: true
+    class_filter:
+    - 0
+    - 1
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 2
   plan:
     split:
-      kind: "holdout"
+      kind: holdout
       test_fraction: 0.2
       val_fraction: 0.1
       stratify: true
       shuffle: true
     labeling:
-      mode: "fraction"
+      mode: fraction
       value: 0.2
-      strategy: "balanced"
+      strategy: balanced
       min_per_class: 1
     imbalance:
-      kind: "none"
+      kind: none
     policy:
       respect_official_test: true
       use_official_graph_masks: true
       allow_override_official: false
-
 preprocess:
   seed: 2
-  fit_on: "train_labeled"
+  fit_on: train_labeled
   cache: true
   plan:
-    output_key: "features.X"
+    output_key: features.X
     steps:
-      - id: "labels.encode"
-      - id: "text.ensure_strings"
-      - id: "embeddings.auto"
-      - id: "core.ensure_2d"
-      - id: "core.to_numpy"
-
+    - id: labels.encode
+    - id: text.ensure_strings
+    - id: text.vocab_tokenizer
+      params:
+        max_length: 256
+        vocab_size: 20000
+    - id: core.to_numpy
 method:
-  kind: "inductive"
-  id: "tsvm"
+  kind: inductive
+  id: tsvm
   device:
-    device: "auto"
-    dtype: "float32"
+    device: auto
+    dtype: float32
   params:
-    max_iter: 3
-    epochs_per_iter: 2
-    batch_size: 128
+    max_iter: 10
+    epochs_per_iter: 5
+    batch_size: 256
+    lr: 0.1
+    C_l: 1.0
+    C_u_max: 1.0
+    l2: 1.0
+    balance: true
 evaluation:
-  split_for_model_selection: "val"
-  report_splits: ["val", "test"]
-  metrics: ["accuracy", "macro_f1"]
+  split_for_model_selection: val
+  report_splits:
+  - val
+  - test
+  metrics:
+  - accuracy
+  - macro_f1

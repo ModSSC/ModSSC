@@ -4,15 +4,15 @@ run:
   output_dir: runs/transductive/p_laplace_learning/graph/cora
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: cora
   download: true
   options:
-    max_nodes: 2000
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 5
   plan:
@@ -47,14 +47,14 @@ method:
   kind: transductive
   id: p_laplace_learning
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     p: 3.0
-    max_iter: 10
+    max_iter: 50
     tol: 1.0e-06
-    cg_tol: 1.0e-04
-    cg_max_iter: 500
+    cg_tol: 1.0e-06
+    cg_max_iter: 2000
     eps: 1.0e-12
     symmetrize: true
     zero_diagonal: true

@@ -2,12 +2,10 @@ run:
   name: smoke_text_transductive_gcn_imdb
   seed: 2
   output_dir: runs/transductive/gcn/text/imdb
-  fail_fast: true
   log_level: detailed
-
+  fail_fast: true
 limits:
   profile: auto
-
 dataset:
   id: imdb
   download: true
@@ -15,8 +13,8 @@ dataset:
     text_column: text
     label_column: label
     prefer_test_split: true
-    max_train_samples: 1000
-    max_test_samples: 500
+    max_train_samples: 500
+    max_test_samples: 200
     seed: 0
 sampling:
   seed: 2
@@ -48,21 +46,26 @@ preprocess:
     - id: labels.encode
     - id: text.ensure_strings
     - id: text.sentence_transformer
+      params:
+        batch_size: 64
     - id: core.pca
       params:
-        n_components: 16
+        n_components: 128
     - id: core.to_numpy
 method:
   kind: transductive
   id: gcn
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     hidden_dim: 16
-    dropout: 0.2
-    max_epochs: 3
-    patience: 1
+    dropout: 0.5
+    lr: 0.01
+    weight_decay: 0.0005
+    max_epochs: 2
+    patience: 50
+    add_self_loops: true
 evaluation:
   split_for_model_selection: val
   report_splits:
@@ -75,11 +78,10 @@ graph:
   enabled: true
   seed: 2
   cache: true
-  cache_dir: cache/graphs
   spec:
     scheme: knn
     metric: cosine
-    k: 5
+    k: 15
     symmetrize: mutual
     weights:
       kind: heat
@@ -87,5 +89,5 @@ graph:
     normalize: rw
     self_loops: true
     backend: numpy
-    chunk_size: 256
+    chunk_size: 1024
     feature_field: features.X

@@ -46,9 +46,6 @@ preprocess:
     - id: audio.wav2vec2
       params:
         batch_size: 8
-    - id: core.pca
-      params:
-        n_components: 128
     - id: core.to_numpy
 method:
   kind: inductive

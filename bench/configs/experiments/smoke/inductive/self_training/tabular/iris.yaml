@@ -1,14 +1,18 @@
 run:
-  name: smoke_tabular_self_training_iris
+  name: smoke_tabular_inductive_self_training_iris
   seed: 1
   output_dir: runs/inductive/self_training/tabular/iris
-  fail_fast: true
   log_level: detailed
+  fail_fast: true
 limits:
   profile: auto
 dataset:
   id: iris
   download: true
+  options:
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 1
   plan:
@@ -51,8 +55,6 @@ method:
   params:
     classifier_id: mlp
     classifier_backend: torch
-    max_iter: 5
-    confidence_threshold: 0.8
     classifier_params:
       hidden_sizes:
       - 128
@@ -62,6 +64,9 @@ method:
       weight_decay: 0.0
       batch_size: 256
       max_epochs: 50
+    max_iter: 10
+    confidence_threshold: 0.95
+    min_new_labels: 1
 evaluation:
   split_for_model_selection: val
   report_splits:

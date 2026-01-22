@@ -4,15 +4,15 @@ run:
   output_dir: runs/transductive/grafn/graph/cora
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: cora
   download: true
   options:
-    max_nodes: 2000
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 5
   plan:
@@ -47,16 +47,16 @@ method:
   kind: transductive
   id: grafn
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     hidden_dims:
-    - 64
-    - 64
+    - 128
+    - 128
     lr: 0.01
-    weight_decay: 0.00001
-    max_epochs: 3
-    patience: 1
+    weight_decay: 1.0e-05
+    max_epochs: 2
+    patience: 50
     tau: 0.1
     thres: 0.9
     lam_consistency: 0.5

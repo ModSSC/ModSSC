@@ -49,6 +49,33 @@ def _labels_for_split(pre: PreprocessResult, ref: str, base: Any) -> Any:
 
 
 def _select_rows(X: Any, idx: np.ndarray) -> Any:
+    if isinstance(X, dict):
+        new_X = {}
+        # Special handling for Graph data
+        if "edge_index" in X:
+            try:
+                import torch
+                from torch_geometric.utils import subgraph
+            except ImportError:
+                pass
+            else:
+                # Align subset device with edge_index to avoid mismatch in subgraph
+                edge_index_in = X["edge_index"]
+                device = edge_index_in.device if hasattr(edge_index_in, "device") else "cpu"
+                
+                subset = torch.as_tensor(idx, dtype=torch.long, device=device)
+                
+                # relabel_nodes=True ensures indices map to 0..len(subset)-1
+                # which corresponds to the sliced feature matrices
+                edge_index, _ = subgraph(subset, edge_index_in, relabel_nodes=True)
+                new_X["edge_index"] = edge_index
+
+        for k, v in X.items():
+            if k == "edge_index":
+                continue
+            new_X[k] = _select_rows(v, idx)
+        return new_X
+
     if is_torch_tensor(X):
         import importlib
 
@@ -77,13 +104,23 @@ def _views_for_split(
     idx = np.asarray(sampling.indices[split], dtype=np.int64)
     split_ref = sampling.refs.get(split, "train")
     use_torch = is_torch_tensor(backend_ref)
+    device = None
+    if use_torch:
+        if hasattr(backend_ref, "device"):
+            device = backend_ref.device
+        elif isinstance(backend_ref, dict):
+            for v in backend_ref.values():
+                if is_torch_tensor(v) and hasattr(v, "device"):
+                    device = v.device
+                    break
+
     for name, ds in views.views.items():
         base = ds.train if split_ref == "train" else ds.test
         if base is None:
             raise ValueError("Requested test split but view has no test split")
         X = _select_rows(base.X, idx)
-        if use_torch:
-            X = _smart_to_torch(X, backend_ref.device)
+        if use_torch and device is not None:
+            X = _smart_to_torch(X, device)
         out[name] = {"X": X}
     return out
 
@@ -92,12 +129,18 @@ def _smart_to_torch(x: Any, device: Any) -> Any:
     """Converts numpy to torch, scaling uint8 to [0,1]."""
     if x is None:
         return None
-    if is_torch_tensor(x):
-        return x
+        
+    if isinstance(x, dict):
+        return {k: _smart_to_torch(v, device) for k, v in x.items()}
 
     import importlib
-
     torch = importlib.import_module("torch")
+
+    if is_torch_tensor(x):
+        if hasattr(x, 'to'):
+            return x.to(device)
+        return x
+
     x_np = np.asarray(x)
 
     if x_np.dtype == np.uint8:

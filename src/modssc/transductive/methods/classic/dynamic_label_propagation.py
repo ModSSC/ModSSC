@@ -257,14 +257,35 @@ def dynamic_label_propagation(
     y_t = torch.as_tensor(y, dtype=torch.long, device=dev)
     labeled_t = torch.as_tensor(labeled_mask, dtype=torch.bool, device=dev)
 
-    return dynamic_label_propagation_torch(
-        n_nodes=n_nodes,
-        edge_index=edge_index_t,
-        edge_weight=edge_weight_t,
-        y=y_t,
-        labeled_mask=labeled_t,
-        spec=spec,
-    )
+    try:
+        return dynamic_label_propagation_torch(
+            n_nodes=n_nodes,
+            edge_index=edge_index_t,
+            edge_weight=edge_weight_t,
+            y=y_t,
+            labeled_mask=labeled_t,
+            spec=spec,
+        )
+    except torch.cuda.OutOfMemoryError:
+        if dev.type == "cpu":
+            raise
+        logger.warning(
+            "DynamicLabelPropagation OOM on %s. Falling back to CPU.", dev
+        )
+        # Release GPU memory before falling back
+        del edge_index_t, edge_weight_t, y_t, labeled_t
+        torch.cuda.empty_cache()
+        
+        return dynamic_label_propagation(
+            n_nodes=n_nodes,
+            edge_index=edge_index,
+            edge_weight=edge_weight,
+            y=y,
+            labeled_mask=labeled_mask,
+            spec=spec,
+            backend="torch",
+            device="cpu",
+        )
 
 
 class DynamicLabelPropagationMethod(TransductiveMethod):

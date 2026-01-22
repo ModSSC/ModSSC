@@ -2,13 +2,17 @@ run:
   name: smoke_tabular_inductive_defixmatch_iris
   seed: 1
   output_dir: runs/inductive/defixmatch/tabular/iris
-  fail_fast: true
   log_level: detailed
+  fail_fast: true
 limits:
   profile: auto
 dataset:
   id: iris
   download: true
+  options:
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 1
   plan:
@@ -38,9 +42,6 @@ preprocess:
     steps:
     - id: labels.encode
     - id: core.ensure_2d
-    - id: core.pca
-      params:
-        n_components: 4
     - id: core.to_torch
       params:
         device: auto
@@ -57,7 +58,7 @@ augmentation:
         std: 0.01
   strong:
     steps:
-    - id: tabular.feature_dropout
+    - id: tabular.swap_noise
       params:
         p: 0.2
 method:
@@ -67,9 +68,14 @@ method:
     device: auto
     dtype: float32
   params:
-    max_epochs: 8
-    p_cutoff: 0.5
-    use_cat: true
+    lambda_u: 1.0
+    p_cutoff: 0.95
+    temperature: 0.5
+    hard_label: true
+    use_cat: false
+    batch_size: 128
+    max_epochs: 2
+    detach_target: true
   model:
     classifier_id: mlp
     classifier_backend: torch
@@ -81,7 +87,7 @@ method:
       lr: 0.001
       weight_decay: 0.0
       batch_size: 256
-      max_epochs: 50
+      max_epochs: 2
     ema: false
 evaluation:
   split_for_model_selection: val

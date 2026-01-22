@@ -4,15 +4,15 @@ run:
   output_dir: runs/transductive/gat/graph/cora
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: cora
   download: true
   options:
-    max_nodes: 2000
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 5
   plan:
@@ -47,14 +47,18 @@ method:
   kind: transductive
   id: gat
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
-    head_dim: 4
-    heads: 2
-    dropout: 0.2
-    max_epochs: 3
-    patience: 1
+    head_dim: 8
+    heads: 8
+    dropout: 0.6
+    negative_slope: 0.2
+    lr: 0.005
+    weight_decay: 0.0005
+    max_epochs: 2
+    patience: 100
+    add_self_loops: true
 evaluation:
   split_for_model_selection: val
   report_splits:

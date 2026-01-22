@@ -83,8 +83,8 @@ method:
     classifier_backend: torch
     classifier_params:
       model_name: resnet18
-      weights: DEFAULT
-      freeze_backbone: true
+      weights: null
+      freeze_backbone: false
       input_layout: channels_first
       lr: 0.0001
       weight_decay: 0.0001

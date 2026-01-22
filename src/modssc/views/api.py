@@ -164,8 +164,13 @@ def generate_views(
             )
             ds = res.dataset
 
-        X_train = _as_numpy(ds.train.X)
-        X_test = _as_numpy(ds.test.X) if ds.test is not None else None
+        def _get_feats(x):
+            if isinstance(x, dict) and "x" in x:
+                return _as_numpy(x["x"])
+            return _as_numpy(x)
+
+        X_train = _get_feats(ds.train.X)
+        X_test = _get_feats(ds.test.X) if ds.test is not None else None
 
         if X_train.ndim < 2:
             raise ViewsValidationError(
@@ -188,8 +193,18 @@ def generate_views(
         n_features_map[str(view.name)] = n_features
         columns[str(view.name)] = cols
 
-        X_train_v = X_train[:, cols]
-        X_test_v = X_test[:, cols] if X_test is not None else None
+        X_train_v_sub = X_train[:, cols]
+        X_test_v_sub = X_test[:, cols] if X_test is not None else None
+
+        def _reconstruct(orig, feats):
+            if isinstance(orig, dict) and "x" in orig:
+                new_d = dict(orig)
+                new_d["x"] = feats
+                return new_d
+            return feats
+
+        X_train_v = _reconstruct(ds.train.X, X_train_v_sub)
+        X_test_v = _reconstruct(ds.test.X, X_test_v_sub) if ds.test is not None else None
 
         # 2) Preserve y/edges/masks (do NOT copy large arrays)
         train_split = Split(

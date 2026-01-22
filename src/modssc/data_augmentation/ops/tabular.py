@@ -65,3 +65,41 @@ class FeatureDropout(AugmentationOp):
         arr = np.asarray(x)
         mask = (rng.random(size=arr.shape) >= p).astype(arr.dtype, copy=False)
         return arr * mask
+
+
+@register_op("tabular.swap_noise")
+@dataclass
+class SwapNoise(AugmentationOp):
+    """Replace a subset of features with random noise (N(0, 1) approximation)."""
+
+    op_id: str = "tabular.swap_noise"
+    modality: Modality = "tabular"
+    p: float = 0.15
+
+    def apply(self, x: Any, *, rng: np.random.Generator, ctx: AugmentationContext) -> Any:
+        p = float(self.p)
+        if not (0.0 <= p <= 1.0):
+            raise ValueError("p must be in [0, 1]")
+        if p == 0.0:
+            return x
+
+        # We assume features are roughly standard normal (common in preprocessed tabular data)
+        # SOT: Replace x_ij with sampled value.
+        
+        if is_torch_tensor(x):
+            import importlib
+            torch = importlib.import_module("torch")
+            
+            mask_swap = (torch.rand(x.shape, device=x.device) < p)
+            noise = torch.randn(x.shape, device=x.device, dtype=x.dtype)
+            
+            # Where mask_swap is True, use noise, else x
+            return torch.where(mask_swap, noise, x)
+
+        arr = np.asarray(x)
+        mask_swap = (rng.random(size=arr.shape) < p)
+        noise = rng.normal(0.0, 1.0, size=arr.shape).astype(arr.dtype)
+        
+        out = arr.copy()
+        out[mask_swap] = noise[mask_swap]
+        return out

@@ -4,15 +4,15 @@ run:
   output_dir: runs/transductive/planetoid/graph/cora
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: cora
   download: true
   options:
-    max_nodes: 2000
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 5
   plan:
@@ -47,17 +47,23 @@ method:
   kind: transductive
   id: planetoid
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
-    embedding_dim: 16
-    num_walks: 2
-    walk_length: 5
-    window_size: 2
-    num_negative: 2
-    batch_size: 256
-    sup_batch_size: 64
+    embedding_dim: 128
+    num_walks: 10
+    walk_length: 40
+    window_size: 5
+    p: 1.0
+    q: 1.0
+    num_negative: 5
+    batch_size: 1024
+    sup_batch_size: 256
     epochs: 1
+    lr: 0.01
+    weight_decay: 0.0
+    lambda_sup: 1.0
+    undirected: true
 evaluation:
   split_for_model_selection: val
   report_splits:

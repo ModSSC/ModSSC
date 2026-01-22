@@ -2,17 +2,16 @@ run:
   name: smoke_tabular_transductive_tsvm_breast_cancer
   seed: 1
   output_dir: runs/transductive/tsvm/tabular/breast_cancer
-  fail_fast: true
   log_level: detailed
-
+  fail_fast: true
 limits:
   profile: auto
-
 dataset:
   id: breast_cancer
   download: true
   options:
-    max_samples: 500
+    max_train_samples: 500
+    max_test_samples: 200
     seed: 0
 sampling:
   seed: 1
@@ -45,18 +44,23 @@ preprocess:
     - id: core.ensure_2d
     - id: core.pca
       params:
-        n_components: 4
+        n_components: 30
     - id: core.to_numpy
 method:
   kind: transductive
   id: tsvm
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
-    max_iter: 2
-    epochs_per_iter: 2
-    batch_size: 128
+    max_iter: 10
+    epochs_per_iter: 5
+    batch_size: 256
+    lr: 0.1
+    C_l: 1.0
+    C_u_max: 1.0
+    l2: 1.0
+    balance: true
 evaluation:
   split_for_model_selection: val
   report_splits:
@@ -69,11 +73,10 @@ graph:
   enabled: true
   seed: 1
   cache: true
-  cache_dir: cache/graphs
   spec:
     scheme: knn
     metric: cosine
-    k: 5
+    k: 15
     symmetrize: mutual
     weights:
       kind: heat
@@ -81,5 +84,5 @@ graph:
     normalize: rw
     self_loops: true
     backend: numpy
-    chunk_size: 256
+    chunk_size: 1024
     feature_field: features.X

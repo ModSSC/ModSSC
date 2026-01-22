@@ -2,17 +2,16 @@ run:
   name: smoke_tabular_inductive_s4vm_breast_cancer
   seed: 1
   output_dir: runs/inductive/s4vm/tabular/breast_cancer
-  fail_fast: true
   log_level: detailed
-
+  fail_fast: true
 limits:
   profile: auto
-
 dataset:
   id: breast_cancer
   download: true
   options:
-    max_samples: 500
+    max_train_samples: 500
+    max_test_samples: 200
     seed: 0
 sampling:
   seed: 1
@@ -43,24 +42,19 @@ preprocess:
     steps:
     - id: labels.encode
     - id: core.ensure_2d
-    - id: core.pca
-      params:
-        n_components: 4
     - id: core.to_torch
       params:
-        device: "auto"
+        device: auto
         dtype: float32
 method:
   kind: inductive
   id: s4vm
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     classifier_id: mlp
     classifier_backend: torch
-    k_candidates: 3
-    flip_rate: 0.1
     classifier_params:
       hidden_sizes:
       - 128
@@ -70,6 +64,8 @@ method:
       weight_decay: 0.0
       batch_size: 256
       max_epochs: 50
+    k_candidates: 6
+    flip_rate: 0.05
 evaluation:
   split_for_model_selection: val
   report_splits:

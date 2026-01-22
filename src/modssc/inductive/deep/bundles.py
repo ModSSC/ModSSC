@@ -502,9 +502,13 @@ def _prepare_audio_input(x: Any, torch):
         return x
     if x.ndim == 3:
         if int(x.shape[1]) != 1:
-            raise InductiveValidationError("audio_pretrained expects mono waveforms (C=1).")
+            raise InductiveValidationError("audio_pretrained expects mono (C=1).")
         return x[:, 0, :]
-    raise InductiveValidationError("audio_pretrained requires 1D, 2D, or 3D inputs.")
+    if x.ndim == 4:
+        if int(x.shape[1]) == 1:
+             # Treat as (N, H, W) e.g. spectrogram
+             return x[:, 0, :, :]
+    raise InductiveValidationError("audio_pretrained requires 1D, 2D, or 3D inputs (or 4D with C=1).")
 
 
 def _build_audio_pretrained_bundle(
@@ -580,6 +584,155 @@ def _build_audio_pretrained_bundle(
     return TorchModelBundle(model=wrapper, optimizer=optimizer, ema_model=ema_model)
 
 
+def _build_lstm_bundle(
+    sample: Any,
+    *,
+    num_classes: int,
+    params: Mapping[str, Any],
+    seed: int,
+    ema: bool,
+) -> TorchModelBundle:
+    torch = _torch()
+    sample = _take_sample(sample)
+
+    vocab_size = int(params.get("vocab_size", 0))
+    if vocab_size <= 0:
+        # Try to guess from sample if integer
+        if not sample.is_floating_point():
+            vocab_size = int(sample.max().item()) + 1
+        else:
+            vocab_size = 20000  # Fallback default
+
+    embed_dim = int(params.get("embed_dim", 128))
+    hidden_dim = int(params.get("hidden_dim", 128))
+    num_layers = int(params.get("num_layers", 1))
+    dropout = float(params.get("dropout", 0.0))
+    lr = float(params.get("lr", 1e-3))
+    weight_decay = float(params.get("weight_decay", 0.0))
+    bidirectional = bool(params.get("bidirectional", True))
+
+    class _LSTMClassifier(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.embedding = torch.nn.Embedding(vocab_size, embed_dim)
+            self.lstm = torch.nn.LSTM(
+                embed_dim,
+                hidden_dim,
+                num_layers=num_layers,
+                batch_first=True,
+                dropout=dropout if num_layers > 1 else 0,
+                bidirectional=bidirectional,
+            )
+            d_out = hidden_dim * 2 if bidirectional else hidden_dim
+            self.fc = torch.nn.Linear(d_out, num_classes)
+
+        def forward(self, x):
+            x = x.to(dtype=torch.long)  # Ensure indices
+            emb = self.embedding(x)
+            self.lstm.flatten_parameters()
+            _, (h_n, _) = self.lstm(emb)
+
+            if bidirectional:
+                # Concat fwd and bwd from last layer
+                # h_n shape: (layers*2, N, H)
+                # Take last two
+                idx_fwd = -2
+                idx_bwd = -1
+                h = torch.cat([h_n[idx_fwd], h_n[idx_bwd]], dim=1)
+            else:
+                h = h_n[-1]
+
+            return self.fc(h)
+
+    torch.manual_seed(int(seed))
+    model = _LSTMClassifier().to(sample.device)
+    optimizer = torch.optim.AdamW(
+        model.parameters(), lr=lr, weight_decay=weight_decay
+    )
+    ema_model = _maybe_ema(model, enabled=ema)
+    return TorchModelBundle(model=model, optimizer=optimizer, ema_model=ema_model)
+
+
+def _build_graphsage_bundle(
+    sample: Any,
+    *,
+    num_classes: int,
+    params: Mapping[str, Any],
+    seed: int,
+    ema: bool,
+) -> TorchModelBundle:
+    from modssc.supervised.optional import optional_import
+    
+    torch = _torch()
+    # Ensure PyG is available
+    optional_import("torch", extra="supervised-torch-geometric", feature="supervised:graphsage_inductive")
+    
+    try:
+        from torch_geometric.nn import SAGEConv
+    except ImportError as e:
+         raise ImportError("torch_geometric is required for graphsage_inductive") from e
+
+    hidden_channels = int(params.get("hidden_channels", 128))
+    num_layers = int(params.get("num_layers", 2))
+    dropout = float(params.get("dropout", 0.5))
+    lr = float(params.get("lr", 1e-2))
+    weight_decay = float(params.get("weight_decay", 5e-4))
+    
+    # Sample might be a Tensor (x) or a Dict. 
+    in_channels = -1
+    device = None
+    if isinstance(sample, dict) and "x" in sample:
+        in_channels = sample["x"].shape[-1]
+        device = sample["x"].device
+    elif hasattr(sample, "shape"):
+        in_channels = sample.shape[-1]
+        device = sample.device
+    else:
+        raise InductiveValidationError("GraphSAGE requires sample with shape (tensor) or dict with 'x'.")
+
+    class _GraphSAGEWrapper(torch.nn.Module):
+        def __init__(self, in_channels: int, hidden_channels: int, num_layers: int, out_channels: int, dropout: float):
+            super().__init__()
+            self.convs = torch.nn.ModuleList()
+            self.convs.append(SAGEConv(in_channels, hidden_channels))
+            for _ in range(num_layers - 2):
+                self.convs.append(SAGEConv(hidden_channels, hidden_channels))
+            self.convs.append(SAGEConv(hidden_channels, out_channels))
+            self.dropout = dropout
+
+        def forward(self, x: Any):
+            # x is expected to be a dict with 'x' and 'edge_index'
+            if isinstance(x, dict):
+                h = x['x']
+                edge_index = x['edge_index']
+            else:
+                raise ValueError(f"GraphSAGEWrapper expects a dict input with 'x' and 'edge_index', got {type(x)}.")
+
+            for i, conv in enumerate(self.convs[:-1]):
+                h = conv(h, edge_index)
+                h = h.relu()
+                h = torch.nn.functional.dropout(h, p=self.dropout, training=self.training)
+            
+            feat = h
+            logits = self.convs[-1](h, edge_index)
+            return {"logits": logits, "feat": feat}
+
+    torch.manual_seed(int(seed))
+    model = _GraphSAGEWrapper(
+        in_channels=int(in_channels),
+        hidden_channels=hidden_channels,
+        num_layers=num_layers,
+        out_channels=int(num_classes),
+        dropout=dropout,
+    ).to(device)
+
+    optimizer = torch.optim.AdamW(
+        model.parameters(), lr=float(lr), weight_decay=float(weight_decay)
+    )
+    ema_model = _maybe_ema(model, enabled=ema)
+    return TorchModelBundle(model=model, optimizer=optimizer, ema_model=ema_model)
+
+
 def build_torch_bundle_from_classifier(
     *,
     classifier_id: str,
@@ -602,8 +755,9 @@ def build_torch_bundle_from_classifier(
     return_features = bool(params.get("return_features", False))
     torch = _torch()
     sample = _take_sample(sample)
-    if not isinstance(sample, torch.Tensor):
-        raise InductiveValidationError("Torch model bundle requires torch.Tensor features.")
+    if not isinstance(sample, torch.Tensor) and not (isinstance(sample, dict) and "x" in sample):
+         # Allow dict only if it looks like graph data (has "x")
+        raise InductiveValidationError("Torch model bundle requires torch.Tensor features or Graph Dict.")
     if num_classes is None:
         raise InductiveValidationError("num_classes must be provided for torch bundles.")
     num_classes = int(num_classes)
@@ -679,6 +833,22 @@ def build_torch_bundle_from_classifier(
         )
     if key == "audio_pretrained":
         return _build_audio_pretrained_bundle(
+            sample,
+            num_classes=num_classes,
+            params=params,
+            seed=seed,
+            ema=ema,
+        )
+    if key == "lstm_scratch":
+        return _build_lstm_bundle(
+            sample,
+            num_classes=num_classes,
+            params=params,
+            seed=seed,
+            ema=ema,
+        )
+    if key == "graphsage_inductive":
+        return _build_graphsage_bundle(
             sample,
             num_classes=num_classes,
             params=params,

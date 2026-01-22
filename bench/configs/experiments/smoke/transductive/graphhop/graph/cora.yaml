@@ -4,15 +4,15 @@ run:
   output_dir: runs/transductive/graphhop/graph/cora
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: cora
   download: true
   options:
-    max_nodes: 2000
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 5
   plan:
@@ -47,15 +47,15 @@ method:
   kind: transductive
   id: graphhop
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     hops: 2
-    max_iter: 10
+    max_iter: 50
     lr: 0.01
     weight_decay: 0.0005
-    max_epochs: 3
-    patience: 1
+    max_epochs: 2
+    patience: 50
     min_delta: 0.01
     temperature: 0.1
     alpha: 1.0

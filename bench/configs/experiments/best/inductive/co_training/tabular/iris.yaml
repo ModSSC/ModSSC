@@ -40,9 +40,8 @@ preprocess:
     steps:
     - id: labels.encode
     - id: core.ensure_2d
-    - id: core.pca
-      params:
-        n_components: 30
+    - id: tabular.impute
+    - id: tabular.standard_scaler
     - id: core.to_torch
       params:
         device: "auto"
@@ -69,8 +68,7 @@ method:
     classifier_id: mlp
     classifier_backend: torch
     classifier_params:
-      hidden_sizes:
-      - 128
+      hidden_sizes: [256, 256]
       activation: relu
       dropout: 0.1
       lr: 0.001

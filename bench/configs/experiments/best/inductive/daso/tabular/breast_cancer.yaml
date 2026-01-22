@@ -40,9 +40,8 @@ preprocess:
     steps:
     - id: labels.encode
     - id: core.ensure_2d
-    - id: core.pca
-      params:
-        n_components: 30
+    - id: tabular.impute
+    - id: tabular.standard_scaler
     - id: core.to_torch
       params:
         device: "auto"
@@ -56,12 +55,12 @@ augmentation:
     steps:
     - id: tabular.gaussian_noise
       params:
-        std: 0.01
+        std: 0.005
   strong:
     steps:
-    - id: tabular.feature_dropout
+    - id: tabular.swap_noise
       params:
-        p: 0.2
+        p: 0.1
 method:
   kind: inductive
   id: daso
@@ -90,8 +89,7 @@ method:
     classifier_id: mlp
     classifier_backend: torch
     classifier_params:
-      hidden_sizes:
-      - 128
+      hidden_sizes: [256, 256]
       activation: relu
       dropout: 0.1
       lr: 0.001

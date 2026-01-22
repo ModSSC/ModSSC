@@ -49,9 +49,6 @@ preprocess:
     - id: vision.openclip
       params:
         batch_size: 64
-    - id: core.pca
-      params:
-        n_components: 128
     - id: core.to_numpy
 method:
   kind: inductive

@@ -4,10 +4,8 @@ run:
   output_dir: runs/inductive/tsvm/audio/speechcommands
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: speechcommands
   download: true
@@ -15,8 +13,8 @@ dataset:
     class_filter:
     - 'yes'
     - 'no'
-    max_train_samples: 2000
-    max_test_samples: 1000
+    max_train_samples: 500
+    max_test_samples: 200
     seed: 0
 sampling:
   seed: 4
@@ -47,20 +45,24 @@ preprocess:
     steps:
     - id: labels.encode
     - id: audio.wav2vec2
-    - id: core.pca
       params:
-        n_components: 16
+        batch_size: 8
     - id: core.to_numpy
 method:
   kind: inductive
   id: tsvm
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
-    max_iter: 2
-    epochs_per_iter: 2
-    batch_size: 128
+    max_iter: 10
+    epochs_per_iter: 5
+    batch_size: 256
+    lr: 0.1
+    C_l: 1.0
+    C_u_max: 1.0
+    l2: 1.0
+    balance: true
 evaluation:
   split_for_model_selection: val
   report_splits:

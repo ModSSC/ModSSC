@@ -2,15 +2,17 @@ run:
   name: smoke_tabular_transductive_n_gcn_iris
   seed: 1
   output_dir: runs/transductive/n_gcn/tabular/iris
-  fail_fast: true
   log_level: detailed
-
+  fail_fast: true
 limits:
   profile: auto
-
 dataset:
   id: iris
   download: true
+  options:
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 1
   plan:
@@ -42,25 +44,25 @@ preprocess:
     - id: core.ensure_2d
     - id: core.pca
       params:
-        n_components: 4
+        n_components: 30
     - id: core.to_numpy
 method:
   kind: transductive
   id: n_gcn
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     hidden_dim: 16
-    gcn_layers: 1
-    K: 3
-    r: 2
+    gcn_layers: 2
+    K: 6
+    r: 4
     classifier: fc
-    dropout: 0.2
+    dropout: 0.5
     lr: 0.01
-    weight_decay: 0.00001
-    max_epochs: 3
-    patience: 1
+    weight_decay: 1.0e-05
+    max_epochs: 2
+    patience: 50
     add_self_loops: true
     symmetrize: true
 evaluation:
@@ -75,11 +77,10 @@ graph:
   enabled: true
   seed: 1
   cache: true
-  cache_dir: cache/graphs
   spec:
     scheme: knn
     metric: cosine
-    k: 5
+    k: 15
     symmetrize: mutual
     weights:
       kind: heat
@@ -87,5 +88,5 @@ graph:
     normalize: rw
     self_loops: true
     backend: numpy
-    chunk_size: 256
+    chunk_size: 1024
     feature_field: features.X

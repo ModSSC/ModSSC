@@ -44,31 +44,23 @@ preprocess:
     steps:
     - id: labels.encode
     - id: text.ensure_strings
-    - id: text.sentence_transformer
+    - id: text.vocab_tokenizer
       params:
-        batch_size: 64
-    - id: core.pca
-      params:
-        n_components: 128
+        vocab_size: 20000
+        max_length: 256
     - id: core.to_torch
       params:
         device: "auto"
-        dtype: float32
+        dtype: int64
 augmentation:
   enabled: true
   seed: 2
   mode: fixed
-  modality: tabular
-  weak:
-    steps:
-    - id: tabular.gaussian_noise
-      params:
-        std: 0.01
-  strong:
-    steps:
-    - id: tabular.feature_dropout
-      params:
-        p: 0.2
+  modality: text
+  # We should use text augmentations here if we had them.
+  # For now, disable tabular augmentations or implement simple ones.
+  weak: []
+  strong: []
 method:
   kind: inductive
   id: mixmatch
@@ -85,16 +77,16 @@ method:
     batch_size: 128
     max_epochs: 50
   model:
-    classifier_id: mlp
+    classifier_id: lstm_scratch
     classifier_backend: torch
     classifier_params:
-      hidden_sizes:
-      - 128
-      activation: relu
-      dropout: 0.1
+      vocab_size: 20000
+      embedding_dim: 128
+      hidden_dim: 128
+      num_layers: 1
       lr: 0.001
       weight_decay: 0.0
-      batch_size: 256
+      batch_size: 128
       max_epochs: 50
     ema: false
 evaluation:

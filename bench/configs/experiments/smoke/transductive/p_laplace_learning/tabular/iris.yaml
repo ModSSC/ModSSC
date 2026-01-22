@@ -2,15 +2,17 @@ run:
   name: smoke_tabular_transductive_p_laplace_learning_iris
   seed: 1
   output_dir: runs/transductive/p_laplace_learning/tabular/iris
-  fail_fast: true
   log_level: detailed
-
+  fail_fast: true
 limits:
   profile: auto
-
 dataset:
   id: iris
   download: true
+  options:
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 1
   plan:
@@ -42,20 +44,20 @@ preprocess:
     - id: core.ensure_2d
     - id: core.pca
       params:
-        n_components: 4
+        n_components: 30
     - id: core.to_numpy
 method:
   kind: transductive
   id: p_laplace_learning
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     p: 3.0
-    max_iter: 10
+    max_iter: 50
     tol: 1.0e-06
-    cg_tol: 1.0e-04
-    cg_max_iter: 500
+    cg_tol: 1.0e-06
+    cg_max_iter: 2000
     eps: 1.0e-12
     symmetrize: true
     zero_diagonal: true
@@ -71,11 +73,10 @@ graph:
   enabled: true
   seed: 1
   cache: true
-  cache_dir: cache/graphs
   spec:
     scheme: knn
     metric: cosine
-    k: 5
+    k: 15
     symmetrize: mutual
     weights:
       kind: heat
@@ -83,5 +84,5 @@ graph:
     normalize: rw
     self_loops: true
     backend: numpy
-    chunk_size: 256
+    chunk_size: 1024
     feature_field: features.X

@@ -277,26 +277,55 @@ class UDAMethod(InductiveMethod):
 
     def predict_proba(self, X: Any) -> Any:
         if self._bundle is None:
-            raise RuntimeError("UDAMethod is not fitted yet. Call fit() first.")
+            raise RuntimeError("Model is not fitted yet. Call fit() first.")
         backend = self._backend or detect_backend(X)
         if backend != "torch":
-            raise InductiveValidationError("UDA predict_proba requires torch tensors.")
+            raise InductiveValidationError("predict_proba requires torch tensors.")
         torch = optional_import("torch", extra="inductive-torch")
-        if not isinstance(X, torch.Tensor):
-            raise InductiveValidationError("predict_proba requires torch.Tensor inputs.")
+        
+        # Support Dict or Tensor
+        if not isinstance(X, torch.Tensor) and not isinstance(X, dict):
+            raise InductiveValidationError("predict_proba requires torch.Tensor or dict inputs.")
 
         model = self._bundle.model
         was_training = model.training
         model.eval()
+        
+        # Batched inference
+        batch_size = int(self.spec.batch_size)
+        from .deep_utils import slice_data, extract_logits
+        
+        if isinstance(X, dict):
+            n_samples = int(X["x"].shape[0])
+        else:
+            n_samples = int(X.shape[0])
+
+        all_logits = []
         with torch.no_grad():
-            logits = extract_logits(model(X))
-            if int(logits.ndim) != 2:
-                raise InductiveValidationError("Model logits must be 2D (batch, classes).")
-            proba = torch.softmax(logits, dim=1)
+            for start in range(0, n_samples, batch_size):
+                end = min(start + batch_size, n_samples)
+                if isinstance(X, dict):
+                    idx = torch.arange(start, end, device=X["x"].device)
+                    batch_X = slice_data(X, idx)
+                else:
+                    batch_X = X[start:end]
+                
+                logits_batch = extract_logits(model(batch_X))
+                if int(logits_batch.ndim) != 2:
+                     raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+                all_logits.append(logits_batch)
+            
+            if not all_logits:
+                 # Handle empty case
+                 logits = torch.empty((0, 0), device=X["x"].device if isinstance(X, dict) else X.device)
+            else:
+                 logits = torch.cat(all_logits, dim=0)
+            
+            probs = torch.softmax(logits, dim=1)
+
         if was_training:
             model.train()
-        return proba
-
+        return probs
     def predict(self, X: Any) -> Any:
         proba = self.predict_proba(X)
         return proba.argmax(dim=1)
