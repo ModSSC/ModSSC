@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on "Keep a Changelog", and this project adheres to Semantic Versioning.
 
+## 0.2.0
+- Amelioration des performances des pipelines inductifs et des chemins critiques.
+- Couverture de tests renforcee pour securiser les nouvelles optimisations.
+
 ## 0.1.2
 - Fix misc bugs
 

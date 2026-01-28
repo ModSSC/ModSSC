@@ -511,15 +511,6 @@ class DeepCoTrainingMethod(InductiveMethod):
         # Batch inference to avoid OOM
         batch_size = int(self.spec.batch_size)
         n_samples = int(X["x"].shape[0]) if isinstance(X, dict) else int(X.shape[0])
-        if not isinstance(X, dict):
-
-            def slice_data_fn(d, idx):
-                return d[idx]
-
-            slice_data = slice_data_fn  # Simple slicing for tensors
-        else:
-            from .deep_utils import slice_data
-
         all_logits1 = []
         all_logits2 = []
 
@@ -529,8 +520,6 @@ class DeepCoTrainingMethod(InductiveMethod):
                 if isinstance(X, dict):
                     # Proper slicing for geometric data if needed, or just dict slicing
                     # Assuming deep_utils.slice_data is available and handles dicts/graphs
-                    from .deep_utils import slice_data
-
                     batch_idx = torch.arange(start, end, device=X["x"].device)
                     batch_X = slice_data(X, batch_idx)
                 else:

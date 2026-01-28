@@ -94,7 +94,6 @@ def _labels_for_backend(pre: PreprocessResult, X_l: Any, idx: np.ndarray) -> Any
         labels = pre.train_artifacts.get("labels.y")
 
     if is_torch_tensor(X_l):
-        device = "cpu"
         if isinstance(X_l, dict) and "x" in X_l:
             device = getattr(X_l["x"], "device", "cpu")
         else:

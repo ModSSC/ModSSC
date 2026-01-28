@@ -677,7 +677,6 @@ def _build_graphsage_bundle(
     weight_decay = float(params.get("weight_decay", 5e-4))
 
     # Sample might be a Tensor (x) or a Dict.
-    in_channels = -1
     device = None
     if isinstance(sample, dict) and "x" in sample:
         in_channels = sample["x"].shape[-1]

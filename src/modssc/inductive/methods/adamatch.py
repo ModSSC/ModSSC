@@ -225,7 +225,6 @@ class AdaMatchMethod(InductiveMethod):
                     else:
                         out[k] = v
             return out
-            return out
 
         model.train()
         for epoch in range(int(self.spec.max_epochs)):
