@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from modssc.data_augmentation.ops.tabular import FeatureDropout, GaussianNoise
+from modssc.data_augmentation.ops.tabular import FeatureDropout, GaussianNoise, SwapNoise
 from modssc.data_augmentation.types import AugmentationContext
 
 
@@ -47,3 +47,28 @@ def test_tabular_feature_dropout(ctx, rng):
 
     zeros = (out == 0).sum()
     assert 400 < zeros < 600
+
+
+def test_tabular_swap_noise_numpy(ctx, rng):
+    with pytest.raises(ValueError):
+        SwapNoise(p=-0.1).apply(np.zeros((2, 2)), rng=rng, ctx=ctx)
+    with pytest.raises(ValueError):
+        SwapNoise(p=1.1).apply(np.zeros((2, 2)), rng=rng, ctx=ctx)
+
+    arr = np.ones((4, 4), dtype=np.float32)
+    op = SwapNoise(p=0.0)
+    assert op.apply(arr, rng=rng, ctx=ctx) is arr
+
+    op = SwapNoise(p=1.0)
+    out = op.apply(arr, rng=rng, ctx=ctx)
+    assert out.shape == arr.shape
+    assert not np.allclose(out, arr)
+
+
+def test_tabular_swap_noise_torch(ctx, rng):
+    torch = pytest.importorskip("torch")
+    x = torch.zeros((3, 3), dtype=torch.float32)
+    op = SwapNoise(p=1.0)
+    out = op.apply(x, rng=rng, ctx=ctx)
+    assert out.shape == x.shape
+    assert not torch.allclose(out, x)

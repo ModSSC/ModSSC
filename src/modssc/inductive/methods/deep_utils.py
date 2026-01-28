@@ -63,14 +63,19 @@ def extract_features(output: Any):
 
 def ensure_float_tensor(x: Any, *, name: str) -> None:
     torch = _torch()
-    if isinstance(x, dict):
-        # Allow dicts if they contain Tensors (e.g. Graph data)
-        if any(isinstance(v, torch.Tensor) for v in x.values()):
-            # Optionally check dtype of 'x' key if present
-            if "x" in x and isinstance(x["x"], torch.Tensor):
-                if x["x"].dtype not in (torch.float32, torch.float64):
-                     raise InductiveValidationError(f"{name}['x'] must be float32 or float64.")
-            return
+    if isinstance(x, dict) and any(isinstance(v, torch.Tensor) for v in x.values()):
+        # Optionally check dtype of 'x' key if present
+        if (
+            "x" in x
+            and isinstance(x["x"], torch.Tensor)
+            and x["x"].dtype
+            not in (
+                torch.float32,
+                torch.float64,
+            )
+        ):
+            raise InductiveValidationError(f"{name}['x'] must be float32 or float64.")
+        return
     if not isinstance(x, torch.Tensor):
         raise InductiveValidationError(f"{name} must be a torch.Tensor.")
     if x.dtype not in (torch.float32, torch.float64):
@@ -131,26 +136,27 @@ def slice_data(X: Any, idx: Any) -> Any:
         # Handle features 'x'
         if "x" in X:
             batch_data["x"] = X["x"][idx]
-        
+
         # Handle graph 'edge_index'
         if "edge_index" in X:
             try:
                 from torch_geometric.utils import subgraph
+
                 # relabel_nodes=True ensures indices map to 0..len(idx)
                 edge_index, _ = subgraph(idx, X["edge_index"], relabel_nodes=True, num_nodes=n)
                 batch_data["edge_index"] = edge_index
             except ImportError:
-                 pass
-        
+                pass
+
         for k, v in X.items():
             if k in ("x", "edge_index"):
                 continue
             if isinstance(v, torch.Tensor) and v.shape[0] == n:
-                 batch_data[k] = v[idx]
+                batch_data[k] = v[idx]
             else:
-                 batch_data[k] = v
+                batch_data[k] = v
         return batch_data
-    
+
     return X[idx]
 
 
@@ -159,12 +165,13 @@ def cat_data(data_list: list[Any]) -> Any:
     if not data_list:
         return None
     sample = data_list[0]
-    
+
     if isinstance(sample, dict):
         # Check if it looks like graph data
         if "edge_index" in sample:
             try:
                 from torch_geometric.data import Batch, Data
+
                 # Convert dicts to Data objects for batching
                 # We need to ensure we only pass fields that Data supports or handle arbitrarily
                 # For simplicity, convert x and edge_index
@@ -173,20 +180,20 @@ def cat_data(data_list: list[Any]) -> Any:
                     # kwargs construction
                     kwargs = {k: v for k, v in d.items() if k not in ("batch", "ptr")}
                     objs.append(Data(**kwargs))
-                
+
                 batch = Batch.from_data_list(objs)
                 # Convert back to dict
-                return batch.to_dict() # or dict(batch) ? batch.to_dict() returns dict of tensors
+                return batch.to_dict()  # or dict(batch) ? batch.to_dict() returns dict of tensors
             except ImportError:
-                 pass
-        
+                pass
+
         # Fallback for non-graph dicts: cat tensors key-wise
         out = {}
         for k in sample:
             if isinstance(sample[k], torch.Tensor):
                 out[k] = torch.cat([d[k] for d in data_list], dim=0)
             else:
-                out[k] = sample[k] # duplicate/last wins?
+                out[k] = sample[k]  # duplicate/last wins?
         return out
 
     return torch.cat(data_list, dim=0)
@@ -201,7 +208,7 @@ def cycle_batches(
     steps: int,
 ) -> Iterator[tuple[Any, Any | None]]:
     torch = _torch()
-    
+
     if isinstance(X, dict) and "x" in X:
         n = int(X["x"].shape[0])
         device = X["x"].device
@@ -211,17 +218,17 @@ def cycle_batches(
 
     if n <= 0:
         raise InductiveValidationError("Batching requires non-empty tensors.")
-    
+
     if not isinstance(X, torch.Tensor) and not isinstance(X, dict):
         raise InductiveValidationError("Batching expects torch.Tensor inputs (or dict).")
 
     it = cycle_batch_indices(
         n, batch_size=batch_size, generator=generator, device=device, steps=steps
     )
-    
+
     for idx in it:
         batch_x = slice_data(X, idx)
         if y is not None:
-             yield batch_x, y[idx]
+            yield batch_x, y[idx]
         else:
-             yield batch_x, None
+            yield batch_x, None

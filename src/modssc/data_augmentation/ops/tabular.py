@@ -85,21 +85,22 @@ class SwapNoise(AugmentationOp):
 
         # We assume features are roughly standard normal (common in preprocessed tabular data)
         # SOT: Replace x_ij with sampled value.
-        
+
         if is_torch_tensor(x):
             import importlib
+
             torch = importlib.import_module("torch")
-            
-            mask_swap = (torch.rand(x.shape, device=x.device) < p)
+
+            mask_swap = torch.rand(x.shape, device=x.device) < p
             noise = torch.randn(x.shape, device=x.device, dtype=x.dtype)
-            
+
             # Where mask_swap is True, use noise, else x
             return torch.where(mask_swap, noise, x)
 
         arr = np.asarray(x)
-        mask_swap = (rng.random(size=arr.shape) < p)
+        mask_swap = rng.random(size=arr.shape) < p
         noise = rng.normal(0.0, 1.0, size=arr.shape).astype(arr.dtype)
-        
+
         out = arr.copy()
         out[mask_swap] = noise[mask_swap]
         return out

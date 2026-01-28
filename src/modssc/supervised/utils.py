@@ -1,10 +1,37 @@
 from __future__ import annotations
 
+import random
+from contextlib import suppress
 from typing import Any
 
 import numpy as np
 
 from modssc.supervised.errors import SupervisedValidationError
+from modssc.supervised.optional import optional_import
+
+
+def seed_everything(seed: int, *, deterministic: bool = True) -> None:
+    """Best-effort deterministic seeding across random, numpy, and torch (if available)."""
+    seed_i = int(seed)
+    random.seed(seed_i)
+    np.random.seed(seed_i)
+
+    try:
+        torch = optional_import("torch", extra="supervised-torch", feature="supervised:seed")
+    except Exception:
+        return
+
+    torch.manual_seed(seed_i)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed_i)
+
+    if deterministic:
+        if hasattr(torch, "use_deterministic_algorithms"):
+            with suppress(Exception):
+                torch.use_deterministic_algorithms(True)
+        if hasattr(torch.backends, "cudnn"):
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
 
 
 def as_numpy(x: Any) -> np.ndarray:

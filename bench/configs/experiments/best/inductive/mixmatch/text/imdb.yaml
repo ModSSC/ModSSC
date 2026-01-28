@@ -59,8 +59,10 @@ augmentation:
   modality: text
   # We should use text augmentations here if we had them.
   # For now, disable tabular augmentations or implement simple ones.
-  weak: []
-  strong: []
+  weak:
+    steps: []
+  strong:
+    steps: []
 method:
   kind: inductive
   id: mixmatch

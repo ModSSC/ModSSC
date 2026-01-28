@@ -20,6 +20,13 @@ Use preprocessing to standardize inputs, build embeddings, or convert raw data t
 
 For the full list of step IDs and pretrained model IDs, see [Catalogs and registries](../reference/catalogs.md).
 
+Common step IDs (examples):
+- `tabular.standard_scaler` (extra: `preprocess-sklearn`)
+- `tabular.impute` (extra: `preprocess-sklearn`)
+- `text.vocab_tokenizer`
+- `audio.log_mel_spectrogram` (extra: `preprocess-audio`)
+- `graph.sparse_adjacency`
+
 
 ## Copy-paste example
 Use the CLI when you want to run plan files from the terminal (`modssc preprocess` in [`src/modssc/cli/preprocess.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/cli/preprocess.py)), and use Python when you want to build and run plans in code (API in [`src/modssc/preprocess/api.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/preprocess/api.py)). <sup class="cite"><a href="#source-5">[5]</a><a href="#source-1">[1]</a></sup>

@@ -266,26 +266,11 @@ def dynamic_label_propagation(
             labeled_mask=labeled_t,
             spec=spec,
         )
-    except torch.cuda.OutOfMemoryError:
-        if dev.type == "cpu":
-            raise
-        logger.warning(
-            "DynamicLabelPropagation OOM on %s. Falling back to CPU.", dev
-        )
-        # Release GPU memory before falling back
-        del edge_index_t, edge_weight_t, y_t, labeled_t
-        torch.cuda.empty_cache()
-        
-        return dynamic_label_propagation(
-            n_nodes=n_nodes,
-            edge_index=edge_index,
-            edge_weight=edge_weight,
-            y=y,
-            labeled_mask=labeled_mask,
-            spec=spec,
-            backend="torch",
-            device="cpu",
-        )
+    except torch.cuda.OutOfMemoryError as exc:
+        raise RuntimeError(
+            f"DynamicLabelPropagation ran out of memory on device={dev}. "
+            "Retry with device='cpu' or reduce graph size."
+        ) from exc
 
 
 class DynamicLabelPropagationMethod(TransductiveMethod):

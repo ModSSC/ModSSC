@@ -3,11 +3,12 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
+from modssc.preprocess.errors import PreprocessValidationError
 from modssc.preprocess.steps.audio.load_waveform import LoadWaveformStep
 
 
 def test_transform_scipy_fallback():
-    step = LoadWaveformStep()
+    step = LoadWaveformStep(allow_fallback=True)
 
     # We patch the module where 'require' is defined
     with patch("modssc.preprocess.steps.audio.load_waveform.require") as mock_require:
@@ -63,4 +64,15 @@ def test_transform_scipy_fallback():
         mock_require2.return_value = mock_ta2
 
         with pytest.raises(RuntimeError, match="other error"):
+            step._load_path("fake.wav")
+
+
+def test_transform_scipy_fallback_requires_opt_in():
+    step = LoadWaveformStep(allow_fallback=False)
+    with patch("modssc.preprocess.steps.audio.load_waveform.require") as mock_require:
+        mock_torchaudio = MagicMock()
+        mock_torchaudio.load.side_effect = RuntimeError("libtorchcodec error")
+        mock_require.return_value = mock_torchaudio
+
+        with pytest.raises(PreprocessValidationError, match="allow_fallback"):
             step._load_path("fake.wav")

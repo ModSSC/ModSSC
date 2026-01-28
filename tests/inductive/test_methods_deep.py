@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import copy
+import sys
+import types
 
 import pytest
 import torch
@@ -62,6 +64,8 @@ DEEP_METHODS = [
     VATMethod,
     NoisyStudentMethod,
 ]
+
+DICT_METHODS = [method_cls for method_cls in DEEP_METHODS if method_cls is not ADSHMethod]
 
 
 DEEP_METHOD_MODULES = {
@@ -184,6 +188,17 @@ def _make_bundle_for(model, *, with_ema: bool = False) -> TorchModelBundle:
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
     ema_model = copy.deepcopy(model) if with_ema else None
     return TorchModelBundle(model=model, optimizer=optimizer, ema_model=ema_model)
+
+
+class _DictModel(torch.nn.Module):
+    def __init__(self, in_dim: int = 2, n_classes: int = 2) -> None:
+        super().__init__()
+        self.fc = torch.nn.Linear(in_dim, n_classes, bias=False)
+
+    def forward(self, x):
+        if isinstance(x, dict):
+            x = x["x"]
+        return self.fc(x)
 
 
 class _BadLogits1D(torch.nn.Module):
@@ -1828,6 +1843,26 @@ def test_deep_methods_predict_proba_eval_mode(method_cls):
     assert int(proba.shape[0]) == int(data.X_l.shape[0])
 
 
+@pytest.mark.parametrize("method_cls", DICT_METHODS)
+def test_deep_methods_predict_proba_dict_input(method_cls):
+    method = method_cls()
+    method._bundle = _make_bundle_for(_DictModel())
+    method._backend = "torch"
+    X = {"x": torch.zeros((3, 2), dtype=torch.float32)}
+    proba = method.predict_proba(X)
+    assert proba.shape[0] == 3
+
+
+@pytest.mark.parametrize("method_cls", DICT_METHODS)
+def test_deep_methods_predict_proba_empty_dict(method_cls):
+    method = method_cls()
+    method._bundle = _make_bundle_for(_DictModel())
+    method._backend = "torch"
+    X = {"x": torch.zeros((0, 2), dtype=torch.float32)}
+    proba = method.predict_proba(X)
+    assert proba.shape[0] == 0
+
+
 @pytest.mark.parametrize("method_cls", DEEP_METHODS)
 def test_deep_methods_empty_xl_hits_check(method_cls, monkeypatch):
     data = make_torch_ssl_dataset()
@@ -2578,3 +2613,167 @@ def test_adsh_y_lb_range_error(monkeypatch):
     monkeypatch.setattr("modssc.inductive.methods.adsh.cycle_batches", fake_cycle_batches)
     with pytest.raises(InductiveValidationError, match="y_l labels must be within"):
         ADSHMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def _install_fake_tg_utils(monkeypatch, *, with_subgraph: bool):
+    utils = types.ModuleType("torch_geometric.utils")
+    if with_subgraph:
+
+        def subgraph(idx, edge_index, relabel_nodes=True, num_nodes=None):
+            return edge_index, None
+
+        utils.subgraph = subgraph
+
+    tg = types.ModuleType("torch_geometric")
+    tg.utils = utils
+    monkeypatch.setitem(sys.modules, "torch_geometric", tg)
+    monkeypatch.setitem(sys.modules, "torch_geometric.utils", utils)
+
+
+def test_adamatch_fit_len_zero_no_shape(monkeypatch):
+    class _NoShape:
+        pass
+
+    data = DummyDataset(
+        X_l=_NoShape(),
+        y_l=torch.tensor([0, 1], dtype=torch.int64),
+        X_u_w=_NoShape(),
+        X_u_s=_NoShape(),
+    )
+    monkeypatch.setattr(adamatch, "detect_backend", lambda _x: "torch")
+    monkeypatch.setattr(adamatch, "ensure_torch_data", lambda d, device: d)
+    monkeypatch.setattr(adamatch, "ensure_float_tensor", lambda *_args, **_kwargs: None)
+    spec = _make_spec(AdaMatchMethod, _make_bundle_for(_DictModel()))
+    with pytest.raises(InductiveValidationError, match="X_l must be non-empty"):
+        AdaMatchMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_adamatch_fit_get_device_default(monkeypatch):
+    class _ShapeOnly:
+        def __init__(self):
+            self.shape = (2, 2)
+
+    data = DummyDataset(
+        X_l=_ShapeOnly(),
+        y_l=torch.tensor([0, 1], dtype=torch.int64),
+        X_u_w=_ShapeOnly(),
+        X_u_s=_ShapeOnly(),
+    )
+    monkeypatch.setattr(adamatch, "detect_backend", lambda _x: "torch")
+    monkeypatch.setattr(adamatch, "ensure_torch_data", lambda d, device: d)
+    monkeypatch.setattr(adamatch, "ensure_float_tensor", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(adamatch, "ensure_model_device", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        adamatch,
+        "cycle_batches",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("stop")),
+    )
+    spec = _make_spec(AdaMatchMethod, _make_bundle_for(_DictModel()))
+    with pytest.raises(RuntimeError, match="stop"):
+        AdaMatchMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_adamatch_fit_slice_dict_with_subgraph(monkeypatch):
+    X_l = {"x": torch.zeros((2, 2)), "edge_index": torch.tensor([[0], [1]])}
+    y_l = torch.tensor([0, 1], dtype=torch.int64)
+    X_u_w = {
+        "x": torch.zeros((2, 2)),
+        "edge_index": torch.tensor([[0], [1]]),
+        "mask": torch.tensor([1, 0]),
+        "meta": "keep",
+    }
+    X_u_s = {
+        "x": torch.zeros((2, 2)),
+        "edge_index": torch.tensor([[0], [1]]),
+        "mask": torch.tensor([0, 1]),
+        "meta": "keep",
+    }
+    data = DummyDataset(X_l=X_l, y_l=y_l, X_u_w=X_u_w, X_u_s=X_u_s)
+
+    monkeypatch.setattr(adamatch, "ensure_torch_data", lambda d, device: d)
+    monkeypatch.setattr(adamatch, "cycle_batches", lambda *_args, **_kwargs: iter([(X_l, y_l)]))
+    monkeypatch.setattr(
+        adamatch, "cycle_batch_indices", lambda *_args, **_kwargs: iter([torch.tensor([0])])
+    )
+    monkeypatch.setattr(
+        adamatch,
+        "extract_logits",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("stop")),
+    )
+    _install_fake_tg_utils(monkeypatch, with_subgraph=True)
+
+    spec = _make_spec(AdaMatchMethod, _make_bundle_for(_DictModel()))
+    with pytest.raises(RuntimeError, match="stop"):
+        AdaMatchMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_adamatch_fit_slice_dict_without_subgraph(monkeypatch):
+    X_l = {"x": torch.zeros((2, 2)), "edge_index": torch.tensor([[0], [1]])}
+    y_l = torch.tensor([0, 1], dtype=torch.int64)
+    X_u_w = {
+        "x": torch.zeros((2, 2)),
+        "edge_index": torch.tensor([[0], [1]]),
+        "mask": torch.tensor([1, 0]),
+        "meta": "keep",
+    }
+    X_u_s = {
+        "x": torch.zeros((2, 2)),
+        "edge_index": torch.tensor([[0], [1]]),
+        "mask": torch.tensor([0, 1]),
+        "meta": "keep",
+    }
+    data = DummyDataset(X_l=X_l, y_l=y_l, X_u_w=X_u_w, X_u_s=X_u_s)
+
+    monkeypatch.setattr(adamatch, "ensure_torch_data", lambda d, device: d)
+    monkeypatch.setattr(adamatch, "cycle_batches", lambda *_args, **_kwargs: iter([(X_l, y_l)]))
+    monkeypatch.setattr(
+        adamatch, "cycle_batch_indices", lambda *_args, **_kwargs: iter([torch.tensor([0])])
+    )
+    monkeypatch.setattr(
+        adamatch,
+        "extract_logits",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("stop")),
+    )
+    _install_fake_tg_utils(monkeypatch, with_subgraph=False)
+
+    spec = _make_spec(AdaMatchMethod, _make_bundle_for(_DictModel()))
+    with pytest.raises(RuntimeError, match="stop"):
+        AdaMatchMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_adamatch_fit_slice_dict_missing_x_and_edge_index(monkeypatch):
+    class _NoXDict(dict):
+        @property
+        def shape(self):
+            return self["feat"].shape
+
+    class _FeatModel(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.fc = torch.nn.Linear(2, 2, bias=False)
+
+        def forward(self, x):
+            if isinstance(x, dict):
+                x = x["feat"]
+            return self.fc(x)
+
+    X_l = torch.zeros((2, 2))
+    y_l = torch.tensor([0, 1], dtype=torch.int64)
+    X_u_w = _NoXDict({"feat": torch.zeros((2, 2))})
+    X_u_s = _NoXDict({"feat": torch.zeros((2, 2))})
+    data = DummyDataset(X_l=X_l, y_l=y_l, X_u_w=X_u_w, X_u_s=X_u_s)
+
+    monkeypatch.setattr(adamatch, "ensure_torch_data", lambda d, device: d)
+    monkeypatch.setattr(adamatch, "cycle_batches", lambda *_args, **_kwargs: iter([(X_l, y_l)]))
+    monkeypatch.setattr(
+        adamatch, "cycle_batch_indices", lambda *_args, **_kwargs: iter([torch.tensor([0])])
+    )
+    monkeypatch.setattr(
+        adamatch,
+        "extract_logits",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("stop")),
+    )
+
+    spec = _make_spec(AdaMatchMethod, _make_bundle_for(_FeatModel()), use_cat=False)
+    with pytest.raises(RuntimeError, match="stop"):
+        AdaMatchMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)

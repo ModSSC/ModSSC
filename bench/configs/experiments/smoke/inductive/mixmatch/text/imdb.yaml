@@ -58,8 +58,10 @@ augmentation:
   seed: 2
   mode: fixed
   modality: text
-  weak: []
-  strong: []
+  weak:
+    steps: []
+  strong:
+    steps: []
 method:
   kind: inductive
   id: mixmatch

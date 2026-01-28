@@ -5,10 +5,10 @@ from typing import Any
 
 import numpy as np
 
-from modssc.preprocess.errors import OptionalDependencyError
+from modssc.preprocess.errors import OptionalDependencyError, PreprocessValidationError
 from modssc.preprocess.optional import require
-from modssc.preprocess.store import ArtifactStore
 from modssc.preprocess.steps.base import get_X
+from modssc.preprocess.store import ArtifactStore
 
 
 @dataclass
@@ -35,31 +35,28 @@ class TabularStandardScalerStep:
         X = get_X(store)
         # Verify it is 2D, or rely on scalar to handle it?
         # Typically ensure_2d runs before this.
-        
+
         idx = np.asarray(fit_indices, dtype=np.int64)
         # Using numpy slicing. X could be a list if ensuring 2d didn't happen
         # But get_X usually returns the raw object.
         # It's safer to ensure array.
         X_arr = np.asarray(X)
-        if hasattr(X, "iloc"): 
-            # dataframe support
-             X_fit = X.iloc[idx].to_numpy()
-        else:
-             X_fit = X_arr[idx]
+        X_fit = X.iloc[idx].to_numpy() if hasattr(X, "iloc") else X_arr[idx]
 
         self._scaler = pre.StandardScaler(with_mean=self.with_mean, with_std=self.with_std)
         self._scaler.fit(X_fit)
 
     def transform(self, store: ArtifactStore, *, rng: np.random.Generator) -> dict[str, Any]:
         if self._scaler is None:
-             # Should not happen in a correct pipeline execution flow
-             pass
-             
+            raise PreprocessValidationError(
+                "TabularStandardScalerStep.transform called before fit()"
+            )
+
         X = get_X(store)
-        # We need to handle list/df to array conversion if needed, 
-        # but usually sklearn handles array-likes. 
+        # We need to handle list/df to array conversion if needed,
+        # but usually sklearn handles array-likes.
         # However, to be safe and consistent with return types:
         X_scaled = self._scaler.transform(X)
-        
+
         # Casting to float32 is usually good practice for DL pipelines
         return {"features.X": X_scaled.astype(np.float32)}

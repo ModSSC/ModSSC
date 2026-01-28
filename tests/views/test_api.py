@@ -128,6 +128,38 @@ def test_generate_views_with_preprocess_core_steps() -> None:
     assert res.views["view_a"].test is not None
 
 
+def test_generate_views_with_dict_features() -> None:
+    rng = np.random.default_rng(0)
+    X_tr = {
+        "x": rng.normal(size=(6, 4)).astype(np.float32),
+        "edge_index": np.array([[0, 1], [1, 2]]),
+    }
+    y_tr = rng.integers(0, 2, size=(6,), dtype=np.int64)
+    X_te = {
+        "x": rng.normal(size=(3, 4)).astype(np.float32),
+        "edge_index": np.array([[0, 1], [1, 2]]),
+    }
+    y_te = rng.integers(0, 2, size=(3,), dtype=np.int64)
+    ds = LoadedDataset(
+        train=Split(X=X_tr, y=y_tr, edges=None, masks=None),
+        test=Split(X=X_te, y=y_te, edges=None, masks=None),
+        meta={},
+    )
+    plan = ViewsPlan(
+        views=(
+            ViewSpec(name="v1", columns=ColumnSelectSpec(mode="indices", indices=(0, 2))),
+            ViewSpec(name="v2", columns=ColumnSelectSpec(mode="all")),
+        )
+    )
+    res = generate_views(ds, plan=plan, seed=0, cache=False)
+    view = res.views["v1"]
+    assert isinstance(view.train.X, dict)
+    assert view.train.X["x"].shape == (6, 2)
+    assert np.array_equal(view.train.X["edge_index"], X_tr["edge_index"])
+    assert view.test is not None
+    assert view.test.X["x"].shape == (3, 2)
+
+
 def test_as_numpy_handles_detach_cpu_numpy() -> None:
     class FakeTensor:
         def __init__(self, arr):

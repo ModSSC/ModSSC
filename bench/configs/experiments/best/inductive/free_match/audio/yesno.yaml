@@ -41,6 +41,7 @@ preprocess:
     - id: labels.encode
     - id: audio.load_waveform
       params:
+        allow_fallback: true
         target_sample_rate: 16000
         max_length: 16000
     - id: core.to_torch

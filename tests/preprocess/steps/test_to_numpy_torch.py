@@ -35,6 +35,7 @@ class FakeTorch:
     float64 = "float64"
     int64 = "int64"
     int32 = "int32"
+    long = "int64"
 
     def __init__(self, *, cuda_available: bool = False, mps_available: bool = False) -> None:
         self.cuda = _FakeCuda(cuda_available)
@@ -113,3 +114,26 @@ def test_core_to_torch_transform_custom_key(monkeypatch: pytest.MonkeyPatch) -> 
     assert val["device"] == "device:cpu"
     assert val["dtype"] == fake_torch.float32
     np.testing.assert_array_equal(val["value"], [[1.0, 2.0], [3.0, 4.0]])
+
+
+def test_core_to_torch_transform_dict(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_torch = FakeTorch()
+    monkeypatch.setattr(core_to_torch, "require", lambda **_: fake_torch)
+
+    store = ArtifactStore()
+    store.set(
+        "features.X",
+        {
+            "x": np.array([[1.0, 2.0], [3.0, 4.0]]),
+            "edge_index": np.array([[0, 1], [1, 0]]),
+            "meta": "keep",
+        },
+    )
+
+    step = core_to_torch.ToTorchStep(device="cpu", dtype="float32")
+    out = step.transform(store, rng=np.random.default_rng(0))
+
+    res = out["features.X"]
+    assert res["x"]["dtype"] == fake_torch.float32
+    assert res["edge_index"]["dtype"] == fake_torch.long
+    assert res["meta"] == "keep"

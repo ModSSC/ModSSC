@@ -55,6 +55,7 @@ class _TorchScoresWrongDevice:
 def test_detect_backend_and_classifier_backend():
     assert utils.detect_backend(np.zeros((2, 2))) == "numpy"
     assert utils.detect_backend(torch.zeros((2, 2))) == "torch"
+    assert utils.detect_backend({"x": torch.zeros((2, 2))}) == "torch"
     with pytest.raises(InductiveValidationError):
         utils.detect_backend([[1, 2]])
 

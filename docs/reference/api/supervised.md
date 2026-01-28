@@ -26,6 +26,13 @@ clf = create_classifier("knn", backend="numpy", params={"k": 3})
 
 Backends and metadata are defined in [`src/modssc/supervised/registry.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/supervised/registry.py). <sup class="cite"><a href="#source-2">[2]</a></sup>
 
+## Common classifier IDs
+- `lstm_scratch` (Torch LSTM for text sequences, extra: `supervised-torch`)
+- `audio_cnn_scratch` (Torch CNN for spectrograms, extra: `supervised-torch`)
+- `graphsage_inductive` (Torch Geometric GraphSAGE, extra: `supervised-torch-geometric`)
+
+Use `modssc supervised info <classifier_id>` or `classifier_info()` to inspect required extras.
+
 
 ## API reference
 

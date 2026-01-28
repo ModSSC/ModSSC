@@ -143,11 +143,11 @@ class AdaMatchMethod(InductiveMethod):
             return 0
 
         def _get_device(x):
-             if isinstance(x, dict) and "x" in x:
-                  return x["x"].device
-             if hasattr(x, "device"):
-                  return x.device
-             return getattr(x, "device", "cpu")
+            if isinstance(x, dict) and "x" in x:
+                return x["x"].device
+            if hasattr(x, "device"):
+                return x.device
+            return getattr(x, "device", "cpu")
 
         logger.info(
             "AdaMatch sizes: n_labeled=%s n_unlabeled=%s",
@@ -200,27 +200,30 @@ class AdaMatchMethod(InductiveMethod):
             if not isinstance(X, dict):
                 return X[idx]
             # Always return a dict if input is a dict
-            
+
             try:
                 from torch_geometric.utils import subgraph
             except ImportError:
-                 return {k: v[idx] if hasattr(v, "shape") and v.shape[0] == n_total else v for k,v in X.items()}
+                return {
+                    k: v[idx] if hasattr(v, "shape") and v.shape[0] == n_total else v
+                    for k, v in X.items()
+                }
 
             out = {}
             if "x" in X:
-                 out["x"] = X["x"][idx]
+                out["x"] = X["x"][idx]
             if "edge_index" in X:
-                 # Ensure idx is on same device as edge_index for subgraph
-                 # Re-label nodes maps selected indices to 0..batch_size-1
-                 idx_dev = idx.to(X["edge_index"].device)
-                 ei, _ = subgraph(idx_dev, X["edge_index"], relabel_nodes=True, num_nodes=n_total)
-                 out["edge_index"] = ei
-            for k,v in X.items():
-                 if k not in ("x", "edge_index"):
-                     if hasattr(v, "shape") and v.shape[0] == n_total:
-                         out[k] = v[idx]
-                     else:
-                         out[k] = v
+                # Ensure idx is on same device as edge_index for subgraph
+                # Re-label nodes maps selected indices to 0..batch_size-1
+                idx_dev = idx.to(X["edge_index"].device)
+                ei, _ = subgraph(idx_dev, X["edge_index"], relabel_nodes=True, num_nodes=n_total)
+                out["edge_index"] = ei
+            for k, v in X.items():
+                if k not in ("x", "edge_index"):
+                    if hasattr(v, "shape") and v.shape[0] == n_total:
+                        out[k] = v[idx]
+                    else:
+                        out[k] = v
             return out
             return out
 
@@ -330,7 +333,7 @@ class AdaMatchMethod(InductiveMethod):
         if backend != "torch":
             raise InductiveValidationError("predict_proba requires torch tensors.")
         torch = optional_import("torch", extra="inductive-torch")
-        
+
         # Support Dict or Tensor
         if not isinstance(X, torch.Tensor) and not isinstance(X, dict):
             raise InductiveValidationError("predict_proba requires torch.Tensor or dict inputs.")
@@ -338,15 +341,12 @@ class AdaMatchMethod(InductiveMethod):
         model = self._bundle.model
         was_training = model.training
         model.eval()
-        
+
         # Batched inference
         batch_size = int(self.spec.batch_size)
-        from .deep_utils import slice_data, extract_logits
-        
-        if isinstance(X, dict):
-            n_samples = int(X["x"].shape[0])
-        else:
-            n_samples = int(X.shape[0])
+        from .deep_utils import extract_logits, slice_data
+
+        n_samples = int(X["x"].shape[0]) if isinstance(X, dict) else int(X.shape[0])
 
         all_logits = []
         with torch.no_grad():
@@ -357,23 +357,26 @@ class AdaMatchMethod(InductiveMethod):
                     batch_X = slice_data(X, idx)
                 else:
                     batch_X = X[start:end]
-                
+
                 logits_batch = extract_logits(model(batch_X))
                 if int(logits_batch.ndim) != 2:
-                     raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+                    raise InductiveValidationError("Model logits must be 2D (batch, classes).")
                 all_logits.append(logits_batch)
-            
+
             if not all_logits:
-                 # Handle empty case
-                 logits = torch.empty((0, 0), device=X["x"].device if isinstance(X, dict) else X.device)
+                # Handle empty case
+                logits = torch.empty(
+                    (0, 0), device=X["x"].device if isinstance(X, dict) else X.device
+                )
             else:
-                 logits = torch.cat(all_logits, dim=0)
-            
+                logits = torch.cat(all_logits, dim=0)
+
             probs = torch.softmax(logits, dim=1)
 
         if was_training:
             model.train()
         return probs
+
     def predict(self, X: Any) -> Any:
         proba = self.predict_proba(X)
         return proba.argmax(dim=1)

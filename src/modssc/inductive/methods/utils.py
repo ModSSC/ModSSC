@@ -170,7 +170,7 @@ def _predict_scores_torch(model: Any, X: Any):
         raise InductiveValidationError("Torch classifier must return torch.Tensor scores.")
     if scores.ndim != 2:
         raise InductiveValidationError("predict_scores must return shape (n_samples, n_classes).")
-    x_device = X['x'].device if (isinstance(X, dict) and 'x' in X) else X.device
+    x_device = X["x"].device if (isinstance(X, dict) and "x" in X) else X.device
     if scores.device != x_device:
         raise InductiveValidationError("Torch classifier returned scores on a different device.")
     return scores

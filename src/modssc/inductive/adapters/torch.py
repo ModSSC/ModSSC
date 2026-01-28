@@ -23,9 +23,8 @@ def _suggest_step(name: str) -> str:
 
 def _require_tensor(x: Any, *, name: str):
     torch = _torch()
-    if isinstance(x, dict):
-        if any(isinstance(v, torch.Tensor) for v in x.values()):
-            return x
+    if isinstance(x, dict) and any(isinstance(v, torch.Tensor) for v in x.values()):
+        return x
     if not isinstance(x, torch.Tensor):
         step = _suggest_step(name)
         raise InductiveValidationError(

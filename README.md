@@ -9,7 +9,7 @@
 
 
 ModSSC is a modular framework for semi-supervised classification across heterogeneous
-modalities (text, vision, tabular, graph). It is designed for academic research with
+modalities (text, vision, tabular, graph, audio). It is designed for academic research with
 reproducible pipelines and extensible method registries.
 
 ## Resources

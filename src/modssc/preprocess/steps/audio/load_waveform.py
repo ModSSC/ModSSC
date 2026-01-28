@@ -65,6 +65,7 @@ class LoadWaveformStep:
     pad_value: float = 0.0
     mono: bool = True
     trim: str = "start"  # start, center, end
+    allow_fallback: bool = False
 
     def _load_path(self, path: Any) -> tuple[np.ndarray, int]:
         torchaudio = require(
@@ -74,6 +75,12 @@ class LoadWaveformStep:
             waveform, sr = torchaudio.load(str(path))
         except RuntimeError as e:
             if "libtorchcodec" in str(e):
+                if not self.allow_fallback:
+                    raise PreprocessValidationError(
+                        "Torchaudio failed to load audio due to a libtorchcodec error. "
+                        "Install a torchaudio build with codec support or set "
+                        "LoadWaveformStep.allow_fallback=True to use the SciPy fallback."
+                    ) from e
                 global _LIBTORCHCODEC_FALLBACK_WARNED
                 if not _LIBTORCHCODEC_FALLBACK_WARNED:
                     logger.warning(
@@ -87,7 +94,7 @@ class LoadWaveformStep:
                         f"FALLBACK: Torchaudio failed with libtorchcodec error for {path}. "
                         "Falling back to SciPy."
                     )
-                
+
                 import scipy.io.wavfile
                 import torch
 

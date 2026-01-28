@@ -62,9 +62,9 @@ def _select_rows(X: Any, idx: np.ndarray) -> Any:
                 # Align subset device with edge_index to avoid mismatch in subgraph
                 edge_index_in = X["edge_index"]
                 device = edge_index_in.device if hasattr(edge_index_in, "device") else "cpu"
-                
+
                 subset = torch.as_tensor(idx, dtype=torch.long, device=device)
-                
+
                 # relabel_nodes=True ensures indices map to 0..len(subset)-1
                 # which corresponds to the sliced feature matrices
                 edge_index, _ = subgraph(subset, edge_index_in, relabel_nodes=True)
@@ -129,15 +129,16 @@ def _smart_to_torch(x: Any, device: Any) -> Any:
     """Converts numpy to torch, scaling uint8 to [0,1]."""
     if x is None:
         return None
-        
+
     if isinstance(x, dict):
         return {k: _smart_to_torch(v, device) for k, v in x.items()}
 
     import importlib
+
     torch = importlib.import_module("torch")
 
     if is_torch_tensor(x):
-        if hasattr(x, 'to'):
+        if hasattr(x, "to"):
             return x.to(device)
         return x
 

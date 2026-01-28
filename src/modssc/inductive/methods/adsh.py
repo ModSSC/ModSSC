@@ -356,7 +356,7 @@ class ADSHMethod(InductiveMethod):
         model = self._bundle.model
         was_training = model.training
         model.eval()
-        
+
         batch_size = int(self.spec.batch_size)
         n_samples = int(X.shape[0])
         all_logits = []
@@ -366,14 +366,14 @@ class ADSHMethod(InductiveMethod):
                 end = min(start + batch_size, n_samples)
                 batch_X = X[start:end]
                 logits_batch = extract_logits(model(batch_X))
-                
+
                 if int(logits_batch.ndim) != 2:
                     raise InductiveValidationError("Model logits must be 2D (batch, classes).")
                 all_logits.append(logits_batch)
-            
+
             logits = torch.cat(all_logits, dim=0)
             proba = torch.softmax(logits, dim=1)
-        
+
         if was_training:
             model.train()
         return proba

@@ -36,7 +36,7 @@ def _indices_for(X: Any, idx: np.ndarray):
 def _select_rows(X: Any, idx: np.ndarray):
     if X is None:
         return None
-    
+
     if isinstance(X, dict):
         out = {}
         # Special handling for Graph
@@ -53,15 +53,16 @@ def _select_rows(X: Any, idx: np.ndarray):
                 out["edge_index"] = sub_ei
         except Exception:
             pass
-        
+
         for k, v in X.items():
-            if k == "edge_index": 
-                if "edge_index" not in out: # fallback
-                     out[k] = v
-                continue 
+            if k == "edge_index":
+                if "edge_index" not in out:  # fallback
+                    out[k] = v
+                continue
 
             if is_torch_tensor(v):
                 import importlib
+
                 torch = importlib.import_module("torch")
                 # Heuristic: if dimension 0 looks like it matches the index space
                 if v.ndim > 0 and v.shape[0] > idx.max():
@@ -129,10 +130,10 @@ def _build_views(
     ref: Any,
 ) -> dict[str, Any]:
     use_torch = is_torch_tensor(ref)
-    
+
     def _get_dev(obj):
-        if isinstance(obj, dict) and 'x' in obj: 
-             return obj['x'].device
+        if isinstance(obj, dict) and "x" in obj:
+            return obj["x"].device
         return getattr(obj, "device", None)
 
     device = _get_dev(ref) if use_torch else None
@@ -232,7 +233,7 @@ def _inject_model_bundle(
                 sample = torch.as_tensor(sample["x"])
             else:
                 sample = torch.as_tensor(sample)
-                
+
             if sample.dtype == torch.uint8:
                 sample = sample.to(dtype=torch.float32).div(255.0)
 
@@ -327,7 +328,7 @@ def _smart_to_torch(x: Any, device: Any) -> Any:
     """Converts numpy to torch, scaling uint8 to [0,1]."""
     if x is None:
         return None
-        
+
     if isinstance(x, dict):
         return {k: _smart_to_torch(v, device) for k, v in x.items()}
 
@@ -376,6 +377,7 @@ def run(
     # Check for multi-GPU availability
     try:
         import torch
+
         if torch.cuda.is_available():
             n_devices = torch.cuda.device_count()
             if n_devices > 1:
@@ -386,7 +388,9 @@ def run(
                         _LOGGER.info("  Device %d: %s", i, name)
                     except Exception:
                         pass
-                _LOGGER.info("Multi-GPU Use: NOTE - Unless specified, training defaults to 'cuda:0'.")
+                _LOGGER.info(
+                    "Multi-GPU Use: NOTE - Unless specified, training defaults to 'cuda:0'."
+                )
     except ImportError:
         pass
 

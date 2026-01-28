@@ -263,6 +263,45 @@ def test_deep_co_training_fgsm_adversarial_errors() -> None:
         )
 
 
+def test_deep_co_training_fgsm_adversarial_missing_x_dict() -> None:
+    class _DictLike(dict):
+        @property
+        def shape(self):
+            return (self["feat"].shape[0],)
+
+    model = _LinearLogits()
+    x_l = _DictLike({"feat": torch.zeros((2, 2))})
+    y_l = torch.tensor([0, 1], dtype=torch.int64)
+    with pytest.raises(InductiveValidationError, match="include key 'x'"):
+        dct._fgsm_adversarial(
+            model,
+            x_l,
+            y_l,
+            None,
+            epsilon=0.1,
+            freeze_bn=False,
+            clip_min=None,
+            clip_max=None,
+        )
+
+
+def test_deep_co_training_fgsm_adversarial_missing_x_in_unlabeled() -> None:
+    x_l = torch.randn((2, 2))
+    y_l = torch.tensor([0, 1], dtype=torch.int64)
+    x_u = {"feat": torch.zeros((2, 2))}
+    with pytest.raises(InductiveValidationError, match="x_u dict inputs must include key 'x'"):
+        dct._fgsm_adversarial(
+            _LinearLogits(),
+            x_l,
+            y_l,
+            x_u,
+            epsilon=0.1,
+            freeze_bn=False,
+            clip_min=None,
+            clip_max=None,
+        )
+
+
 def test_deep_co_training_fgsm_adversarial_grad_none(monkeypatch) -> None:
     model = _LinearLogits()
     x_l = torch.randn((2, 2), requires_grad=True)
@@ -563,3 +602,169 @@ def test_deep_co_training_fit_predict_roundtrip() -> None:
     assert int(pred.shape[0]) == int(data.X_l.shape[0])
     assert model1.training is True
     assert model2.training is True
+
+
+def test_deep_co_training_fgsm_adversarial_dict_clip():
+    class _DictLinear(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.fc = torch.nn.Linear(2, 2, bias=False)
+
+        def forward(self, x):
+            if isinstance(x, dict):
+                x = x["x"]
+            return self.fc(x)
+
+    model = _DictLinear()
+    x_l = {"x": torch.randn((2, 2))}
+    y_l = torch.tensor([0, 1], dtype=torch.int64)
+    x_u = {"x": torch.randn((1, 2))}
+    adv = dct._fgsm_adversarial(
+        model,
+        x_l,
+        y_l,
+        x_u,
+        epsilon=0.1,
+        freeze_bn=False,
+        clip_min=-0.1,
+        clip_max=0.1,
+    )
+    assert isinstance(adv, dict)
+    assert adv["x"].shape[0] == 3
+
+
+def test_deep_co_training_fgsm_adversarial_dict_empty_xu():
+    class _DictLinear(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.fc = torch.nn.Linear(2, 2, bias=False)
+
+        def forward(self, x):
+            if isinstance(x, dict):
+                x = x["x"]
+            return self.fc(x)
+
+    model = _DictLinear()
+    x_l = {"x": torch.randn((2, 2))}
+    y_l = torch.tensor([0, 1], dtype=torch.int64)
+    x_u = {"x": torch.zeros((0, 2))}
+    adv = dct._fgsm_adversarial(
+        model,
+        x_l,
+        y_l,
+        x_u,
+        epsilon=0.05,
+        freeze_bn=False,
+        clip_min=None,
+        clip_max=None,
+    )
+    assert isinstance(adv, dict)
+    assert adv["x"].shape[0] == 2
+
+
+def test_deep_co_training_fgsm_adversarial_empty_xu_dict_with_tensor_xl():
+    model = _LinearLogits()
+    x_l = torch.randn((2, 2))
+    y_l = torch.tensor([0, 1], dtype=torch.int64)
+    x_u = {"x": torch.zeros((0, 2))}
+    adv = dct._fgsm_adversarial(
+        model,
+        x_l,
+        y_l,
+        x_u,
+        epsilon=0.05,
+        freeze_bn=False,
+        clip_min=None,
+        clip_max=None,
+    )
+    assert adv.shape == (2, 2)
+
+
+def test_deep_co_training_fgsm_adversarial_empty_xu_tensor():
+    model = _LinearLogits()
+    x_l = torch.randn((2, 2))
+    y_l = torch.tensor([0, 1], dtype=torch.int64)
+    x_u = torch.zeros((0, 2))
+    adv = dct._fgsm_adversarial(
+        model,
+        x_l,
+        y_l,
+        x_u,
+        epsilon=0.05,
+        freeze_bn=False,
+        clip_min=None,
+        clip_max=None,
+    )
+    assert adv.shape == (2, 2)
+
+
+def test_deep_co_training_fgsm_adversarial_empty_xl_no_u(monkeypatch):
+    class _DictLinear(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.fc = torch.nn.Linear(2, 2, bias=False)
+
+        def forward(self, x):
+            if isinstance(x, dict):
+                x = x["x"]
+            return self.fc(x)
+
+    def _loss(*_args, **_kwargs):
+        return torch.tensor(0.0, requires_grad=True)
+
+    monkeypatch.setattr(torch.nn.functional, "cross_entropy", _loss)
+
+    model = _DictLinear()
+    x_l = {"x": torch.zeros((0, 2))}
+    y_l = torch.zeros((0,), dtype=torch.int64)
+    adv = dct._fgsm_adversarial(
+        model,
+        x_l,
+        y_l,
+        None,
+        epsilon=0.05,
+        freeze_bn=False,
+        clip_min=None,
+        clip_max=None,
+    )
+    assert isinstance(adv, dict)
+
+
+def test_deep_co_training_fit_dict_len_paths(monkeypatch):
+    X_l = {"x": torch.zeros((2, 2))}
+    X_u = {"x": torch.zeros((2, 2))}
+    y_l = torch.tensor([0, 1], dtype=torch.int64)
+    data = DummyDataset(X_l=X_l, y_l=y_l, X_u=X_u)
+
+    spec = _make_valid_spec(batch_size=1, max_epochs=1)
+    method = dct.DeepCoTrainingMethod(spec)
+
+    monkeypatch.setattr(dct, "ensure_torch_data", lambda _data, device: data)
+    monkeypatch.setattr(
+        dct,
+        "cycle_batch_indices",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("stop")),
+    )
+
+    with pytest.raises(RuntimeError, match="stop"):
+        method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_deep_co_training_predict_proba_dict_input():
+    class _DictLinear(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.fc = torch.nn.Linear(2, 2, bias=False)
+
+        def forward(self, x):
+            if isinstance(x, dict):
+                x = x["x"]
+            return self.fc(x)
+
+    method = dct.DeepCoTrainingMethod()
+    method._bundle1 = _make_bundle(_DictLinear())
+    method._bundle2 = _make_bundle(_DictLinear())
+    method._backend = "torch"
+    X = {"x": torch.zeros((2, 2), dtype=torch.float32)}
+    proba = method.predict_proba(X)
+    assert int(proba.shape[0]) == 2

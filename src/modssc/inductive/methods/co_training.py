@@ -148,7 +148,7 @@ def _view_predict_payload_torch(value: Any, *, name: str):
         X = value
     if not _is_valid_torch(X, torch):
         raise InductiveValidationError(f"views[{name!r}] must be a torch tensor for prediction.")
-    
+
     Xt = _get_torch_tensor(X)
     if Xt.ndim < 2:
         raise InductiveValidationError(f"views[{name!r}] must be at least 2D for prediction.")
@@ -164,18 +164,19 @@ def _index_torch(obj: Any, idx: Any) -> Any:
         if "edge_index" in obj:
             try:
                 from torch_geometric.utils import subgraph
-            except ImportError:
-                # If PyG is missing, we drop edge_index to prevent shape mismatch crashes, 
-                # effectively degrading to MLP.
-                del res["edge_index"]
+            except ImportError as exc:
+                raise InductiveValidationError(
+                    "PyG is required to slice edge_index for graph inputs. "
+                    "Install torch_geometric or remove graph preprocessing."
+                ) from exc
             else:
                 edge_index = obj["edge_index"]
                 num_nodes = obj["x"].shape[0]
-                
+
                 subset = idx
                 if isinstance(subset, slice):
                     subset = torch.arange(num_nodes, device=obj["x"].device)[subset]
-                
+
                 new_ei, _ = subgraph(subset, edge_index, relabel_nodes=True, num_nodes=num_nodes)
                 res["edge_index"] = new_ei
 
@@ -280,7 +281,9 @@ class CoTrainingMethod(InductiveMethod):
             d1 = _get_torch_device(v1_l)
             d2 = _get_torch_device(v2_l)
             if y_l.device != d1 or y_l.device != d2:
-                raise InductiveValidationError("y_l must be on the same device as the view tensors.")
+                raise InductiveValidationError(
+                    "y_l must be on the same device as the view tensors."
+                )
 
         l1 = v1_l.shape[0] if backend == "numpy" else _get_torch_len(v1_l)
         l2 = v2_l.shape[0] if backend == "numpy" else _get_torch_len(v2_l)
