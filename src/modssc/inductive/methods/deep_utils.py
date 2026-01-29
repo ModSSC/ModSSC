@@ -82,6 +82,92 @@ def ensure_float_tensor(x: Any, *, name: str) -> None:
         raise InductiveValidationError(f"{name} must be float32 or float64.")
 
 
+def get_torch_len(x: Any) -> int:
+    if isinstance(x, dict) and "x" in x:
+        return int(x["x"].shape[0])
+    return int(x.shape[0])
+
+
+def get_torch_device(x: Any) -> Any:
+    if isinstance(x, dict) and "x" in x:
+        return x["x"].device
+    return x.device
+
+
+def get_torch_feature_dim(x: Any) -> int:
+    if isinstance(x, dict) and "x" in x:
+        return int(x["x"].shape[1])
+    return int(x.shape[1])
+
+
+def get_torch_ndim(x: Any) -> int:
+    if isinstance(x, dict) and "x" in x:
+        return int(x["x"].ndim)
+    return int(x.ndim)
+
+
+def concat_data(items: list[Any]) -> Any:
+    """Concatenate tensors or graph dicts along the batch dimension.
+
+    For dict inputs with 'x' and 'edge_index', this builds a disjoint union graph
+    by offsetting edge indices for each block.
+    """
+    if not items:
+        return items
+    if not any(isinstance(x, dict) for x in items):
+        torch = _torch()
+        return torch.cat(items, dim=0)
+
+    torch = _torch()
+    graphs = []
+    for x in items:
+        if isinstance(x, dict):
+            graphs.append(x)
+        else:
+            graphs.append({"x": x})
+
+    xs = [torch.as_tensor(g["x"]) for g in graphs]
+    x_cat = torch.cat(xs, dim=0)
+    out: dict[str, Any] = {"x": x_cat}
+
+    if all(isinstance(g, dict) and "edge_index" in g for g in graphs):
+        edge_indices = []
+        edge_weights = []
+        offset = 0
+        for g in graphs:
+            ei = g["edge_index"]
+            if not isinstance(ei, torch.Tensor):
+                ei = torch.as_tensor(ei, device=x_cat.device, dtype=torch.long)
+            ei = ei + offset
+            edge_indices.append(ei)
+            if "edge_weight" in g:
+                ew = g["edge_weight"]
+                if not isinstance(ew, torch.Tensor):
+                    ew = torch.as_tensor(ew, device=x_cat.device)
+                edge_weights.append(ew)
+            offset += int(g["x"].shape[0])
+        out["edge_index"] = torch.cat(edge_indices, dim=1)
+        if edge_weights:
+            out["edge_weight"] = torch.cat(edge_weights, dim=0)
+
+    # Concatenate per-node tensors for shared keys.
+    shared_keys = set.intersection(*(set(g.keys()) for g in graphs)) if graphs else set()
+    for key in shared_keys:
+        if key in {"x", "edge_index", "edge_weight"}:
+            continue
+        vals = [g[key] for g in graphs]
+        if all(isinstance(v, torch.Tensor) for v in vals):
+            # If node-wise (matching each graph's node count), concatenate
+            if all(v.shape[0] == g["x"].shape[0] for v, g in zip(vals, graphs, strict=False)):
+                out[key] = torch.cat(vals, dim=0)
+            else:
+                out[key] = vals[0]
+        else:
+            out[key] = vals[0]
+
+    return out
+
+
 @contextmanager
 def freeze_batchnorm(model: Any, *, enabled: bool):
     if not enabled:
@@ -142,8 +228,20 @@ def slice_data(X: Any, idx: Any) -> Any:
             try:
                 from torch_geometric.utils import subgraph
 
+                subgraph_idx = idx
+                if isinstance(idx, slice):
+                    start, stop, step = idx.indices(n)
+                    device = (
+                        X["edge_index"].device
+                        if isinstance(X["edge_index"], torch.Tensor)
+                        else None
+                    )
+                    subgraph_idx = torch.arange(start, stop, step, device=device)
+
                 # relabel_nodes=True ensures indices map to 0..len(idx)
-                edge_index, _ = subgraph(idx, X["edge_index"], relabel_nodes=True, num_nodes=n)
+                edge_index, _ = subgraph(
+                    subgraph_idx, X["edge_index"], relabel_nodes=True, num_nodes=n
+                )
                 batch_data["edge_index"] = edge_index
             except ImportError:
                 pass

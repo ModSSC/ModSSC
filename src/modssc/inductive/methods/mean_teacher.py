@@ -16,7 +16,10 @@ from modssc.inductive.methods.deep_utils import (
     ensure_model_device,
     extract_logits,
     freeze_batchnorm,
+    get_torch_device,
+    get_torch_len,
     num_batches,
+    slice_data,
 )
 from modssc.inductive.methods.utils import (
     detect_backend,
@@ -123,13 +126,13 @@ class MeanTeacherMethod(InductiveMethod):
         X_u_s = ds.X_u_s
         logger.info(
             "Mean Teacher sizes: n_labeled=%s n_unlabeled=%s",
-            int(X_l.shape[0]),
-            int(X_u_w.shape[0]),
+            int(get_torch_len(X_l)),
+            int(get_torch_len(X_u_w)),
         )
 
-        if int(X_l.shape[0]) == 0:
+        if int(get_torch_len(X_l)) == 0:
             raise InductiveValidationError("X_l must be non-empty.")
-        if int(X_u_w.shape[0]) == 0 or int(X_u_s.shape[0]) == 0:
+        if int(get_torch_len(X_u_w)) == 0 or int(get_torch_len(X_u_s)) == 0:
             raise InductiveValidationError("MeanTeacher requires unlabeled data. X_u is empty.")
 
         ensure_float_tensor(X_l, name="X_l")
@@ -151,8 +154,8 @@ class MeanTeacherMethod(InductiveMethod):
         teacher = bundle.ema_model
         optimizer = bundle.optimizer
 
-        ensure_model_device(student, device=X_l.device)
-        ensure_model_device(teacher, device=X_l.device)
+        ensure_model_device(student, device=get_torch_device(X_l))
+        ensure_model_device(teacher, device=get_torch_device(X_l))
         self._check_teacher(student, teacher)
 
         if int(self.spec.batch_size) <= 0:
@@ -168,8 +171,8 @@ class MeanTeacherMethod(InductiveMethod):
 
         self._init_teacher(student, teacher)
 
-        steps_l = num_batches(int(X_l.shape[0]), int(self.spec.batch_size))
-        steps_u = num_batches(int(X_u_w.shape[0]), int(self.spec.batch_size))
+        steps_l = num_batches(int(get_torch_len(X_l)), int(self.spec.batch_size))
+        steps_u = num_batches(int(get_torch_len(X_u_w)), int(self.spec.batch_size))
         steps_per_epoch = max(int(steps_l), int(steps_u))
         total_steps = int(self.spec.max_epochs) * steps_per_epoch
         if float(self.spec.unsup_warm_up) <= 0:
@@ -192,10 +195,10 @@ class MeanTeacherMethod(InductiveMethod):
                 steps=steps_per_epoch,
             )
             iter_u_idx = cycle_batch_indices(
-                int(X_u_w.shape[0]),
+                int(get_torch_len(X_u_w)),
                 batch_size=int(self.spec.batch_size),
                 generator=gen_u,
-                device=X_u_w.device,
+                device=get_torch_device(X_u_w),
                 steps=steps_per_epoch,
             )
             for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
@@ -204,10 +207,10 @@ class MeanTeacherMethod(InductiveMethod):
                     raise InductiveValidationError("Model logits must be 2D (batch, classes).")
 
                 with torch.no_grad(), freeze_batchnorm(teacher, enabled=bool(self.spec.freeze_bn)):
-                    logits_uw = extract_logits(teacher(X_u_w[idx_u]))
+                    logits_uw = extract_logits(teacher(slice_data(X_u_w, idx_u)))
 
                 with freeze_batchnorm(student, enabled=bool(self.spec.freeze_bn)):
-                    logits_us = extract_logits(student(X_u_s[idx_u]))
+                    logits_us = extract_logits(student(slice_data(X_u_s, idx_u)))
 
                 if logits_uw.shape != logits_us.shape:
                     raise InductiveValidationError("Unlabeled logits shape mismatch.")

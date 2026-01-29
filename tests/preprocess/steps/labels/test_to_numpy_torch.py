@@ -97,3 +97,33 @@ def test_labels_to_torch_transform(monkeypatch: pytest.MonkeyPatch) -> None:
     val = out["labels.y"]
     assert val["device"] == "device:cpu"
     assert val["dtype"] == fake_torch.int64
+
+
+def test_labels_to_torch_transform_existing_tensor(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeTensor:
+        def __init__(self) -> None:
+            self.device = None
+            self.dtype = None
+
+        def to(self, device=None, dtype=None):
+            self.device = device
+            self.dtype = dtype
+            return self
+
+    class FakeTorchWithTensor(FakeTorch):
+        Tensor = FakeTensor
+
+    fake_torch = FakeTorchWithTensor()
+    monkeypatch.setattr(labels_to_torch, "require", lambda **_: fake_torch)
+
+    store = ArtifactStore()
+    existing = fake_torch.Tensor()
+    store.set("labels.y", existing)
+    store.set("raw.y", [0])
+
+    step = labels_to_torch.LabelsToTorchStep(device="cpu", dtype="int64")
+    out = step.transform(store, rng=np.random.default_rng(0))
+
+    assert out["labels.y"] is existing
+    assert existing.device == "device:cpu"
+    assert existing.dtype == fake_torch.int64

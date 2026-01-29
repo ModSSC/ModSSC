@@ -10,6 +10,7 @@ import numpy as np
 from modssc.evaluation import accuracy as accuracy_score
 from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.errors import InductiveValidationError
+from modssc.inductive.methods.deep_utils import concat_data, get_torch_len
 from modssc.inductive.methods.utils import (
     BaseClassifierSpec,
     build_classifier,
@@ -137,8 +138,8 @@ class S4VMMethod(InductiveMethod):
             raise InductiveValidationError("S4VM is defined for binary classification only.")
         logger.info(
             "S4VM sizes: n_labeled=%s n_unlabeled=%s",
-            int(X_l.shape[0]),
-            int(X_u.shape[0]),
+            int(get_torch_len(X_l)),
+            int(get_torch_len(X_u)),
         )
 
         baseline = build_classifier(self.spec, seed=seed)
@@ -165,7 +166,7 @@ class S4VMMethod(InductiveMethod):
                 y_u[order] = torch.where(y_u[order] == a, b, a)
 
             model = build_classifier(self.spec, seed=seed + i + 1)
-            X_train = torch.cat([X_l, X_u], dim=0)
+            X_train = concat_data([X_l, X_u])
             # Ensure y_u is on the same device as y_l before cat
             y_u = y_u.to(y_l.device)
             y_train = torch.cat([y_l, y_u], dim=0)

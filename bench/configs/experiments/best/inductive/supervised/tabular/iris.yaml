@@ -22,7 +22,7 @@ sampling:
       shuffle: true
     labeling:
       mode: fraction
-      value: 1.0
+      value: 0.2
       strategy: balanced
       min_per_class: 1
     imbalance:
@@ -67,7 +67,7 @@ method:
       weight_decay: 0.0
       batch_size: 256
       max_epochs: 50
-    max_iter: 10
+    max_iter: 0
     confidence_threshold: 0.95
     min_new_labels: 1
 evaluation:

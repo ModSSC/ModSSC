@@ -212,6 +212,20 @@ def test_ensure_float_tensor_dict_paths():
         deep_utils.ensure_float_tensor({"meta": "no-tensor"}, name="X")
 
 
+def test_get_torch_helpers_dict_and_tensor():
+    x = torch.zeros((3, 4))
+    assert deep_utils.get_torch_len(x) == 3
+    assert deep_utils.get_torch_device(x) == x.device
+    assert deep_utils.get_torch_feature_dim(x) == 4
+    assert deep_utils.get_torch_ndim(x) == 2
+
+    d = {"x": torch.zeros((2, 5))}
+    assert deep_utils.get_torch_len(d) == 2
+    assert deep_utils.get_torch_device(d) == d["x"].device
+    assert deep_utils.get_torch_feature_dim(d) == 5
+    assert deep_utils.get_torch_ndim(d) == 2
+
+
 def _install_fake_tg_utils(monkeypatch, *, raise_import: bool):
     import sys
     import types
@@ -288,6 +302,32 @@ def test_slice_data_dict_with_and_without_pyg(monkeypatch):
     assert "edge_index" not in out2
 
 
+def test_slice_data_dict_with_slice_idx(monkeypatch):
+    import sys
+    import types
+
+    edge_index = torch.tensor([[0, 1, 2], [1, 2, 3]], dtype=torch.long)
+    X = {"x": torch.arange(12, dtype=torch.float32).view(4, 3), "edge_index": edge_index}
+    idx = slice(1, 3)
+    expected_idx = torch.arange(1, 3, device=edge_index.device)
+
+    def subgraph(sub_idx, edge_idx, relabel_nodes=True, num_nodes=None):
+        assert torch.equal(sub_idx, expected_idx)
+        assert edge_idx is edge_index
+        return edge_idx, None
+
+    utils = types.ModuleType("torch_geometric.utils")
+    utils.subgraph = subgraph
+    tg = types.ModuleType("torch_geometric")
+    tg.utils = utils
+    monkeypatch.setitem(sys.modules, "torch_geometric", tg)
+    monkeypatch.setitem(sys.modules, "torch_geometric.utils", utils)
+
+    out = deep_utils.slice_data(X, idx)
+    assert out["x"].shape == (2, 3)
+    assert "edge_index" in out
+
+
 def test_slice_data_dict_without_x():
     X = {"mask": torch.zeros((0, 2)), "meta": "keep"}
     out = deep_utils.slice_data(X, torch.tensor([], dtype=torch.long))
@@ -314,6 +354,52 @@ def test_cat_data_dict_paths(monkeypatch):
     assert out2["edge_index"].shape[0] == d3["edge_index"].shape[0] * 2
     assert out2["edge_index"].shape[1] == d3["edge_index"].shape[1]
     assert out2["meta"] == "keep"
+
+
+def test_concat_data_paths():
+    assert deep_utils.concat_data([]) == []
+
+    out_tensor = deep_utils.concat_data([torch.zeros((1, 2)), torch.ones((1, 2))])
+    assert out_tensor.shape == (2, 2)
+
+    g1 = {
+        "x": torch.zeros((2, 2)),
+        "edge_index": torch.tensor([[0, 1], [1, 0]], dtype=torch.long),
+        "edge_weight": torch.tensor([0.5, 0.5]),
+        "mask": torch.tensor([1, 0], dtype=torch.bool),
+        "graph_feat": torch.tensor([1.0]),
+        "meta": "keep",
+    }
+    g2 = {
+        "x": torch.ones((1, 2)),
+        "edge_index": [[0], [0]],
+        "edge_weight": [1.0],
+        "mask": torch.tensor([0], dtype=torch.bool),
+        "graph_feat": torch.tensor([2.0]),
+        "meta": "keep2",
+    }
+    out_graph = deep_utils.concat_data([g1, g2])
+    assert out_graph["x"].shape == (3, 2)
+    assert out_graph["edge_index"].shape[1] == 3
+    assert out_graph["edge_weight"].shape[0] == 3
+    assert out_graph["mask"].shape[0] == 3
+    assert out_graph["graph_feat"].shape == g1["graph_feat"].shape
+    assert out_graph["meta"] == "keep"
+
+    out_mixed = deep_utils.concat_data([g1, torch.zeros((1, 2))])
+    assert out_mixed["x"].shape == (3, 2)
+
+    g3 = {
+        "x": torch.zeros((1, 2)),
+        "edge_index": torch.tensor([[0], [0]], dtype=torch.long),
+    }
+    g4 = {
+        "x": torch.ones((1, 2)),
+        "edge_index": torch.tensor([[0], [0]], dtype=torch.long),
+    }
+    out_no_weights = deep_utils.concat_data([g3, g4])
+    assert out_no_weights["x"].shape == (2, 2)
+    assert "edge_weight" not in out_no_weights
 
 
 def test_cycle_batches_with_dict():

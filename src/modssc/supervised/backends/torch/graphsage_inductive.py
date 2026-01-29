@@ -36,8 +36,9 @@ class TorchGraphSAGEClassifier(BaseSupervisedClassifier):
     def __init__(
         self,
         *,
-        hidden_channels: int = 128,
-        num_layers: int = 2,
+        hidden_channels: int | None = None,
+        hidden_sizes: list[int] | None = None,
+        num_layers: int | None = None,
         dropout: float = 0.5,
         lr: float = 1e-2,
         weight_decay: float = 5e-4,
@@ -48,8 +49,19 @@ class TorchGraphSAGEClassifier(BaseSupervisedClassifier):
         n_jobs: int | None = None,
     ):
         super().__init__(seed=seed, n_jobs=n_jobs)
-        self.hidden_channels = int(hidden_channels)
-        self.num_layers = int(num_layers)
+        resolved_hidden = hidden_channels
+        resolved_layers = num_layers
+        if hidden_sizes:
+            resolved_hidden = int(hidden_sizes[0])
+            if resolved_layers is None:
+                resolved_layers = max(2, int(len(hidden_sizes)) + 1)
+        if resolved_hidden is None:
+            resolved_hidden = 128
+        if resolved_layers is None:
+            resolved_layers = 2
+
+        self.hidden_channels = int(resolved_hidden)
+        self.num_layers = int(resolved_layers)
         self.dropout = float(dropout)
         self.lr = float(lr)
         self.weight_decay = float(weight_decay)

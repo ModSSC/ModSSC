@@ -11,6 +11,7 @@ from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.deep_utils import (
+    concat_data,
     cycle_batch_indices,
     cycle_batches,
     ensure_float_tensor,
@@ -18,7 +19,10 @@ from modssc.inductive.methods.deep_utils import (
     ensure_model_device,
     extract_features,
     extract_logits,
+    get_torch_device,
+    get_torch_len,
     num_batches,
+    slice_data,
 )
 from modssc.inductive.methods.utils import (
     detect_backend,
@@ -257,15 +261,15 @@ class DASOMethod(InductiveMethod):
         X_u_s = ds.X_u_s
         logger.info(
             "DASO sizes: n_labeled=%s n_unlabeled=%s",
-            int(X_l.shape[0]),
-            int(X_u_w.shape[0]),
+            int(get_torch_len(X_l)),
+            int(get_torch_len(X_u_w)),
         )
 
-        if int(X_l.shape[0]) == 0:
+        if int(get_torch_len(X_l)) == 0:
             raise InductiveValidationError("X_l must be non-empty.")
-        if int(X_u_w.shape[0]) == 0 or int(X_u_s.shape[0]) == 0:
+        if int(get_torch_len(X_u_w)) == 0 or int(get_torch_len(X_u_s)) == 0:
             raise InductiveValidationError("X_u_w and X_u_s must be non-empty.")
-        if int(X_u_w.shape[0]) != int(X_u_s.shape[0]):
+        if int(get_torch_len(X_u_w)) != int(get_torch_len(X_u_s)):
             raise InductiveValidationError("X_u_w and X_u_s must have the same number of rows.")
 
         ensure_float_tensor(X_l, name="X_l")
@@ -280,7 +284,7 @@ class DASOMethod(InductiveMethod):
         bundle = ensure_model_bundle(self.spec.model_bundle)
         model = bundle.model
         optimizer = bundle.optimizer
-        ensure_model_device(model, device=X_l.device)
+        ensure_model_device(model, device=get_torch_device(X_l))
 
         if int(self.spec.batch_size) <= 0:
             raise InductiveValidationError("batch_size must be >= 1.")
@@ -317,8 +321,8 @@ class DASOMethod(InductiveMethod):
             ema_model.eval()
         self._ema_model = ema_model
 
-        steps_l = num_batches(int(X_l.shape[0]), int(self.spec.batch_size))
-        steps_u = num_batches(int(X_u_w.shape[0]), int(self.spec.batch_size))
+        steps_l = num_batches(int(get_torch_len(X_l)), int(self.spec.batch_size))
+        steps_u = num_batches(int(get_torch_len(X_u_w)), int(self.spec.batch_size))
         steps_per_epoch = max(int(steps_l), int(steps_u))
 
         gen_l = torch.Generator().manual_seed(int(seed))
@@ -339,24 +343,24 @@ class DASOMethod(InductiveMethod):
                 steps=steps_per_epoch,
             )
             iter_u_idx = cycle_batch_indices(
-                int(X_u_w.shape[0]),
+                int(get_torch_len(X_u_w)),
                 batch_size=int(self.spec.batch_size),
                 generator=gen_u,
-                device=X_u_w.device,
+                device=get_torch_device(X_u_w),
                 steps=steps_per_epoch,
             )
             for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
-                x_uw = X_u_w[idx_u]
-                x_us = X_u_s[idx_u]
+                x_uw = slice_data(X_u_w, idx_u)
+                x_us = slice_data(X_u_s, idx_u)
 
                 if bool(self.spec.use_cat):
-                    inputs = torch.cat([x_lb, x_uw, x_us], dim=0)
+                    inputs = concat_data([x_lb, x_uw, x_us])
                     logits_all, feats_all = _forward_logits_features(bundle, inputs)
                     if int(logits_all.ndim) != 2:
                         raise InductiveValidationError("Model logits must be 2D (batch, classes).")
-                    num_lb = int(x_lb.shape[0])
-                    num_u = int(x_uw.shape[0])
-                    expected = num_lb + num_u + int(x_us.shape[0])
+                    num_lb = int(get_torch_len(x_lb))
+                    num_u = int(get_torch_len(x_uw))
+                    expected = num_lb + num_u + int(get_torch_len(x_us))
                     if int(logits_all.shape[0]) != expected:
                         raise InductiveValidationError(
                             "Concatenated logits batch size does not match inputs."
@@ -375,8 +379,12 @@ class DASOMethod(InductiveMethod):
                     else:
                         logits_uw, feats_uw = _forward_logits_features(bundle, x_uw)
                     logits_us, feats_us = _forward_logits_features(bundle, x_us)
-                    feats_uw = _flatten_features(feats_uw, name="feat_uw", batch=int(x_uw.shape[0]))
-                    feats_us = _flatten_features(feats_us, name="feat_us", batch=int(x_us.shape[0]))
+                    feats_uw = _flatten_features(
+                        feats_uw, name="feat_uw", batch=int(get_torch_len(x_uw))
+                    )
+                    feats_us = _flatten_features(
+                        feats_us, name="feat_us", batch=int(get_torch_len(x_us))
+                    )
 
                 if int(logits_l.ndim) != 2 or int(logits_uw.ndim) != 2 or int(logits_us.ndim) != 2:
                     raise InductiveValidationError("Model logits must be 2D (batch, classes).")
@@ -409,7 +417,7 @@ class DASOMethod(InductiveMethod):
                 with torch.no_grad():
                     feat_lb = _forward_features(bundle, x_lb, model_override=ema_model)
                     feat_lb = _flatten_features(
-                        feat_lb, name="feat_lb", batch=int(x_lb.shape[0])
+                        feat_lb, name="feat_lb", batch=int(get_torch_len(x_lb))
                     ).detach()
                     if int(feat_lb.shape[1]) != feat_dim:
                         raise InductiveValidationError("Prototype feature dimension mismatch.")

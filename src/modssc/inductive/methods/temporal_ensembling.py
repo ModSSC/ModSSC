@@ -16,7 +16,10 @@ from modssc.inductive.methods.deep_utils import (
     ensure_model_device,
     extract_logits,
     freeze_batchnorm,
+    get_torch_device,
+    get_torch_len,
     num_batches,
+    slice_data,
 )
 from modssc.inductive.methods.utils import (
     detect_backend,
@@ -100,15 +103,15 @@ class TemporalEnsemblingMethod(InductiveMethod):
         X_u_s = ds.X_u_s
         logger.info(
             "Temporal Ensembling sizes: n_labeled=%s n_unlabeled=%s",
-            int(X_l.shape[0]),
-            int(X_u_w.shape[0]),
+            int(get_torch_len(X_l)),
+            int(get_torch_len(X_u_w)),
         )
 
-        if int(X_l.shape[0]) == 0:
+        if int(get_torch_len(X_l)) == 0:
             raise InductiveValidationError("X_l must be non-empty.")
-        if int(X_u_w.shape[0]) == 0 or int(X_u_s.shape[0]) == 0:
+        if int(get_torch_len(X_u_w)) == 0 or int(get_torch_len(X_u_s)) == 0:
             raise InductiveValidationError("X_u_w and X_u_s must be non-empty.")
-        if int(X_u_w.shape[0]) != int(X_u_s.shape[0]):
+        if int(get_torch_len(X_u_w)) != int(get_torch_len(X_u_s)):
             raise InductiveValidationError("X_u_w and X_u_s must have the same number of rows.")
 
         ensure_float_tensor(X_l, name="X_l")
@@ -124,7 +127,7 @@ class TemporalEnsemblingMethod(InductiveMethod):
         bundle = ensure_model_bundle(self.spec.model_bundle)
         model = bundle.model
         optimizer = bundle.optimizer
-        ensure_model_device(model, device=X_l.device)
+        ensure_model_device(model, device=get_torch_device(X_l))
 
         if int(self.spec.batch_size) <= 0:
             raise InductiveValidationError("batch_size must be >= 1.")
@@ -137,8 +140,8 @@ class TemporalEnsemblingMethod(InductiveMethod):
         if not (0.0 <= float(self.spec.alpha) < 1.0):
             raise InductiveValidationError("alpha must be in [0, 1).")
 
-        steps_l = num_batches(int(X_l.shape[0]), int(self.spec.batch_size))
-        steps_u = num_batches(int(X_u_w.shape[0]), int(self.spec.batch_size))
+        steps_l = num_batches(int(get_torch_len(X_l)), int(self.spec.batch_size))
+        steps_u = num_batches(int(get_torch_len(X_u_w)), int(self.spec.batch_size))
         steps_per_epoch = max(int(steps_l), int(steps_u))
         total_steps = int(self.spec.max_epochs) * steps_per_epoch
         if float(self.spec.unsup_warm_up) <= 0:
@@ -170,15 +173,15 @@ class TemporalEnsemblingMethod(InductiveMethod):
                 steps=steps_per_epoch,
             )
             iter_u_idx = cycle_batch_indices(
-                int(X_u_w.shape[0]),
+                int(get_torch_len(X_u_w)),
                 batch_size=int(self.spec.batch_size),
                 generator=gen_u,
-                device=X_u_w.device,
+                device=get_torch_device(X_u_w),
                 steps=steps_per_epoch,
             )
             for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
-                x_uw = X_u_w[idx_u]
-                x_us = X_u_s[idx_u]
+                x_uw = slice_data(X_u_w, idx_u)
+                x_us = slice_data(X_u_s, idx_u)
                 logits_l = extract_logits(model(x_lb))
                 if int(logits_l.ndim) != 2:
                     raise InductiveValidationError("Model logits must be 2D (batch, classes).")
@@ -202,8 +205,8 @@ class TemporalEnsemblingMethod(InductiveMethod):
 
                 if ensemble_predictions is None:
                     ensemble_predictions = torch.zeros(
-                        (int(X_u_w.shape[0]), int(prob_u.shape[1])),
-                        device=X_u_w.device,
+                        (int(get_torch_len(X_u_w)), int(prob_u.shape[1])),
+                        device=get_torch_device(X_u_w),
                         dtype=prob_u.dtype,
                     )
                     epoch_predictions = torch.zeros_like(ensemble_predictions)

@@ -670,8 +670,13 @@ def _build_graphsage_bundle(
     except ImportError as e:
         raise ImportError("torch_geometric is required for graphsage_inductive") from e
 
+    hidden_sizes = params.get("hidden_sizes")
     hidden_channels = int(params.get("hidden_channels", 128))
     num_layers = int(params.get("num_layers", 2))
+    if hidden_sizes:
+        hidden_channels = int(hidden_sizes[0])
+        if "num_layers" not in params:
+            num_layers = max(2, int(len(hidden_sizes)) + 1)
     dropout = float(params.get("dropout", 0.5))
     lr = float(params.get("lr", 1e-2))
     weight_decay = float(params.get("weight_decay", 5e-4))

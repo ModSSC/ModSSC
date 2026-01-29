@@ -362,6 +362,18 @@ def _smart_to_torch(x: Any, device: Any) -> Any:
         return {k: _smart_to_torch(v, device) for k, v in x.items()}
 
     if is_torch_tensor(x):
+        try:
+            import importlib
+
+            torch = importlib.import_module("torch")
+            if isinstance(x, torch.Tensor) and device is not None and x.device != device:
+                return x.to(device)
+        except Exception:
+            _LOGGER.debug(
+                "Failed to move tensor to device %s in _smart_to_torch; returning original tensor.",
+                device,
+                exc_info=True,
+            )
         return x
 
     import importlib
@@ -447,11 +459,24 @@ def run(
             X_u_s = _smart_to_torch(X_u_s, target_device)
         if X_u_s_1 is not None:
             X_u_s_1 = _smart_to_torch(X_u_s_1, target_device)
+    else:
+        # If features are already torch, ensure augmented views are on the same device.
+        if isinstance(X_l, dict) and "x" in X_l:
+            target_device = getattr(X_l["x"], "device", "cpu")
+        else:
+            target_device = getattr(X_l, "device", "cpu")
+        X_u_w = _smart_to_torch(X_u_w, target_device)
+        X_u_s = _smart_to_torch(X_u_s, target_device)
+        X_u_s_1 = _smart_to_torch(X_u_s_1, target_device)
 
     y_l = _labels_for_backend(pre, X_l, idx_l)
 
     if X_u_s_1 is not None and is_torch_tensor(X_l) and not is_torch_tensor(X_u_s_1):
-        X_u_s_1 = _smart_to_torch(X_u_s_1, X_l.device)
+        if isinstance(X_l, dict) and "x" in X_l:
+            target_device = getattr(X_l["x"], "device", "cpu")
+        else:
+            target_device = getattr(X_l, "device", "cpu")
+        X_u_s_1 = _smart_to_torch(X_u_s_1, target_device)
 
     views_payload = _build_views(views, idx_l=idx_l, idx_u=idx_u, ref=X_l) if views else None
     if X_u_s_1 is not None:

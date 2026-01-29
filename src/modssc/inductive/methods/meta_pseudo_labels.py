@@ -14,7 +14,12 @@ from modssc.inductive.methods.deep_utils import (
     ensure_model_bundle,
     ensure_model_device,
     extract_logits,
+    get_torch_device,
+    get_torch_feature_dim,
+    get_torch_len,
+    get_torch_ndim,
     num_batches,
+    slice_data,
 )
 from modssc.inductive.methods.utils import (
     detect_backend,
@@ -188,19 +193,19 @@ class MetaPseudoLabelsMethod(InductiveMethod):
 
         logger.info(
             "Meta Pseudo Labels sizes: n_labeled=%s n_unlabeled=%s",
-            int(X_l.shape[0]),
-            int(X_u_w.shape[0]),
+            int(get_torch_len(X_l)),
+            int(get_torch_len(X_u_w)),
         )
 
-        if int(X_l.shape[0]) == 0:
+        if int(get_torch_len(X_l)) == 0:
             raise InductiveValidationError("X_l must be non-empty.")
-        if int(X_u_w.shape[0]) == 0 or int(X_u_s.shape[0]) == 0:
+        if int(get_torch_len(X_u_w)) == 0 or int(get_torch_len(X_u_s)) == 0:
             raise InductiveValidationError(
                 "MetaPseudoLabels requires unlabeled data (X_u). Provided X_u is empty. "
                 "Check your data loader or splits configuration."
             )
 
-        if int(X_u_w.shape[0]) != int(X_u_s.shape[0]):
+        if int(get_torch_len(X_u_w)) != int(get_torch_len(X_u_s)):
             raise InductiveValidationError("X_u_w and X_u_s must have the same number of rows.")
 
         ensure_float_tensor(X_l, name="X_l")
@@ -208,11 +213,11 @@ class MetaPseudoLabelsMethod(InductiveMethod):
         ensure_float_tensor(X_u_s, name="X_u_s")
         ensure_float_tensor(X_l_s, name="X_l_s")
 
-        if int(X_l_s.ndim) != 2:
+        if int(get_torch_ndim(X_l_s)) != 2:
             raise InductiveValidationError("X_l_s must be 2D.")
-        if int(X_l_s.shape[0]) != int(X_l.shape[0]):
+        if int(get_torch_len(X_l_s)) != int(get_torch_len(X_l)):
             raise InductiveValidationError("X_l_s must have the same number of rows as X_l.")
-        if int(X_l_s.shape[1]) != int(X_l.shape[1]):
+        if int(get_torch_feature_dim(X_l_s)) != int(get_torch_feature_dim(X_l)):
             raise InductiveValidationError("X_l_s must have the same feature dimension as X_l.")
 
         if y_l.dtype != torch.int64:
@@ -229,8 +234,8 @@ class MetaPseudoLabelsMethod(InductiveMethod):
         teacher_opt = teacher_bundle.optimizer
         student_opt = student_bundle.optimizer
 
-        ensure_model_device(teacher, device=X_l.device)
-        ensure_model_device(student, device=X_l.device)
+        ensure_model_device(teacher, device=get_torch_device(X_l))
+        ensure_model_device(student, device=get_torch_device(X_l))
         self._check_models(teacher, student)
 
         if bool(self.spec.init_teacher_from_student):
@@ -251,8 +256,8 @@ class MetaPseudoLabelsMethod(InductiveMethod):
         if float(self.spec.mpl_weight) < 0:
             raise InductiveValidationError("mpl_weight must be >= 0.")
 
-        steps_l = num_batches(int(X_l.shape[0]), int(self.spec.batch_size))
-        steps_u = num_batches(int(X_u_w.shape[0]), int(self.spec.batch_size))
+        steps_l = num_batches(int(get_torch_len(X_l)), int(self.spec.batch_size))
+        steps_u = num_batches(int(get_torch_len(X_u_w)), int(self.spec.batch_size))
         steps_per_epoch = max(int(steps_l), int(steps_u))
 
         gen_l = torch.Generator().manual_seed(int(seed))
@@ -264,25 +269,25 @@ class MetaPseudoLabelsMethod(InductiveMethod):
         student.train()
         for epoch in range(int(self.spec.max_epochs)):
             iter_l_idx = cycle_batch_indices(
-                int(X_l.shape[0]),
+                int(get_torch_len(X_l)),
                 batch_size=int(self.spec.batch_size),
                 generator=gen_l,
-                device=X_l.device,
+                device=get_torch_device(X_l),
                 steps=steps_per_epoch,
             )
             iter_u_idx = cycle_batch_indices(
-                int(X_u_w.shape[0]),
+                int(get_torch_len(X_u_w)),
                 batch_size=int(self.spec.batch_size),
                 generator=gen_u,
-                device=X_u_w.device,
+                device=get_torch_device(X_u_w),
                 steps=steps_per_epoch,
             )
             for step, (idx_l, idx_u) in enumerate(zip(iter_l_idx, iter_u_idx, strict=False)):
-                x_lb = X_l[idx_l]
+                x_lb = slice_data(X_l, idx_l)
                 y_lb = y_l[idx_l]
-                x_lb_s = X_l_s[idx_l]
-                x_uw = X_u_w[idx_u]
-                x_us = X_u_s[idx_u]
+                x_lb_s = slice_data(X_l_s, idx_l)
+                x_uw = slice_data(X_u_w, idx_u)
+                x_us = slice_data(X_u_s, idx_u)
 
                 logits_l = extract_logits(teacher(x_lb_s))
                 logits_uw = extract_logits(teacher(x_uw))
@@ -390,8 +395,8 @@ class MetaPseudoLabelsMethod(InductiveMethod):
                 "Meta Pseudo Labels predict_proba requires torch tensors."
             )
         torch = optional_import("torch", extra="inductive-torch")
-        if not isinstance(X, torch.Tensor):
-            raise InductiveValidationError("predict_proba requires torch.Tensor inputs.")
+        if not isinstance(X, torch.Tensor) and not (isinstance(X, dict) and "x" in X):
+            raise InductiveValidationError("predict_proba requires torch.Tensor or dict inputs.")
 
         student = self._student_bundle.model
         was_training = student.training

@@ -769,6 +769,33 @@ def test_build_graphsage_bundle_dict(monkeypatch):
     assert out["logits"].shape[0] == 3
 
 
+def test_build_graphsage_bundle_hidden_sizes(monkeypatch):
+    _install_fake_tg_nn(monkeypatch, with_sage=True)
+    sample = {"x": torch.randn(4, 5), "edge_index": torch.tensor([[0, 1], [1, 2]])}
+    bundle = bundles._build_graphsage_bundle(
+        sample,
+        num_classes=2,
+        params={"hidden_sizes": [8, 4], "dropout": 0.0},
+        seed=0,
+        ema=False,
+    )
+    assert len(bundle.model.convs) == 3
+    assert bundle.model.convs[0].lin.out_features == 8
+
+
+def test_build_graphsage_bundle_hidden_sizes_with_num_layers(monkeypatch):
+    _install_fake_tg_nn(monkeypatch, with_sage=True)
+    sample = {"x": torch.randn(4, 5), "edge_index": torch.tensor([[0, 1], [1, 2]])}
+    bundle = bundles._build_graphsage_bundle(
+        sample,
+        num_classes=2,
+        params={"hidden_sizes": [8, 4], "num_layers": 4, "dropout": 0.0},
+        seed=0,
+        ema=False,
+    )
+    assert len(bundle.model.convs) == 4
+
+
 def test_build_graphsage_bundle_errors(monkeypatch):
     _install_fake_tg_nn(monkeypatch, with_sage=False)
     with pytest.raises(ImportError, match="torch_geometric is required"):

@@ -11,6 +11,12 @@ import numpy as np
 
 from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.errors import InductiveValidationError
+from modssc.inductive.methods.deep_utils import (
+    concat_data,
+    get_torch_device,
+    get_torch_len,
+    slice_data,
+)
 from modssc.inductive.methods.utils import (
     BaseClassifierSpec,
     build_classifier,
@@ -349,22 +355,24 @@ class DemocraticCoLearningMethod(InductiveMethod):
 
         X_l = ds.X_l
         X_u = ds.X_u
-        if int(X_l.shape[0]) == 0:
+        if int(get_torch_len(X_l)) == 0:
             raise InductiveValidationError("X_l must be non-empty.")
 
         clfs = [build_classifier(spec, seed=seed + i) for i, spec in enumerate(specs)]
-        if X_u is None or int(X_u.numel()) == 0:  # type: ignore[union-attr]
+        if X_u is None or int(get_torch_len(X_u)) == 0:
             for clf in clfs:
                 clf.fit(X_l, y_l)
             self._finalize_torch(clfs, X_l, y_l)
             logger.info("Finished %s.fit in %.3fs", self.info.method_id, perf_counter() - start)
             return self
 
-        n_u = int(X_u.shape[0])
+        n_u = int(get_torch_len(X_u))
         X_l_i = [X_l for _ in clfs]
         y_l_i = [y_l for _ in clfs]
         e_i = [0.0 for _ in range(len(clfs))]
-        added_mask = [torch.zeros((n_u,), dtype=torch.bool, device=X_l.device) for _ in clfs]
+        added_mask = [
+            torch.zeros((n_u,), dtype=torch.bool, device=get_torch_device(X_l)) for _ in clfs
+        ]
 
         iter_count = 0
         while iter_count < int(self.spec.max_iter):
@@ -377,7 +385,7 @@ class DemocraticCoLearningMethod(InductiveMethod):
             preds_idx = _encode_predictions_torch(preds, classes_t)
             majority_idx, majority_ok = _weighted_majority_torch(
                 preds_idx,
-                torch.tensor(weights, device=X_l.device, dtype=torch.float32),
+                torch.tensor(weights, device=get_torch_device(X_l), dtype=torch.float32),
                 n_classes=int(classes_t.numel()),
             )
             majority_labels = classes_t[majority_idx]
@@ -407,7 +415,7 @@ class DemocraticCoLearningMethod(InductiveMethod):
                 n_new = n_i + int(idx.numel())
                 q_prime = float(n_new) * (1.0 - 2.0 * ((e_i[i] + e_prime) / float(n_new))) ** 2
                 if q_prime > q_i:
-                    X_l_i[i] = torch.cat([X_l_i[i], X_u[idx]], dim=0)
+                    X_l_i[i] = concat_data([X_l_i[i], slice_data(X_u, idx)])
                     y_l_i[i] = torch.cat([y_l_i[i], majority_labels[idx]], dim=0)
                     added_mask[i][idx] = True
                     e_i[i] += e_prime

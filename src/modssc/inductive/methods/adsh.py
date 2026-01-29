@@ -10,13 +10,17 @@ from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.deep_utils import (
+    concat_data,
     cycle_batch_indices,
     cycle_batches,
     ensure_float_tensor,
     ensure_model_bundle,
     ensure_model_device,
     extract_logits,
+    get_torch_device,
+    get_torch_len,
     num_batches,
+    slice_data,
 )
 from modssc.inductive.methods.utils import (
     detect_backend,
@@ -43,7 +47,7 @@ def _update_scores(
     torch = optional_import("torch", extra="inductive-torch")
     if score.ndim != 1:
         raise InductiveValidationError("ADSH score must be a 1D tensor.")
-    if score.device != X_u_w.device:
+    if score.device != get_torch_device(X_u_w):
         raise InductiveValidationError("ADSH score must be on the same device as X_u_w.")
 
     n_classes = int(score.shape[0])
@@ -51,8 +55,8 @@ def _update_scores(
     was_training = model.training
     model.eval()
     with torch.no_grad():
-        for start in range(0, int(X_u_w.shape[0]), int(batch_size)):
-            batch = X_u_w[start : start + int(batch_size)]
+        for start in range(0, int(get_torch_len(X_u_w)), int(batch_size)):
+            batch = slice_data(X_u_w, slice(start, start + int(batch_size)))
             logits = extract_logits(model(batch))
             if int(logits.ndim) != 2:
                 raise InductiveValidationError("Model logits must be 2D (batch, classes).")
@@ -184,15 +188,15 @@ class ADSHMethod(InductiveMethod):
         X_u_s = ds.X_u_s
         logger.info(
             "ADSH sizes: n_labeled=%s n_unlabeled=%s",
-            int(X_l.shape[0]),
-            int(X_u_w.shape[0]),
+            int(get_torch_len(X_l)),
+            int(get_torch_len(X_u_w)),
         )
 
-        if int(X_l.shape[0]) == 0:
+        if int(get_torch_len(X_l)) == 0:
             raise InductiveValidationError("X_l must be non-empty.")
-        if int(X_u_w.shape[0]) == 0 or int(X_u_s.shape[0]) == 0:
+        if int(get_torch_len(X_u_w)) == 0 or int(get_torch_len(X_u_s)) == 0:
             raise InductiveValidationError("X_u_w and X_u_s must be non-empty.")
-        if int(X_u_w.shape[0]) != int(X_u_s.shape[0]):
+        if int(get_torch_len(X_u_w)) != int(get_torch_len(X_u_s)):
             raise InductiveValidationError("X_u_w and X_u_s must have the same number of rows.")
 
         ensure_float_tensor(X_l, name="X_l")
@@ -207,7 +211,7 @@ class ADSHMethod(InductiveMethod):
         bundle = ensure_model_bundle(self.spec.model_bundle)
         model = bundle.model
         optimizer = bundle.optimizer
-        ensure_model_device(model, device=X_l.device)
+        ensure_model_device(model, device=get_torch_device(X_l))
 
         if int(self.spec.batch_size) <= 0:
             raise InductiveValidationError("batch_size must be >= 1.")
@@ -223,7 +227,7 @@ class ADSHMethod(InductiveMethod):
         was_training = model.training
         model.eval()
         with torch.no_grad():
-            init_logits = extract_logits(model(X_l[:1]))
+            init_logits = extract_logits(model(slice_data(X_l, slice(0, 1))))
         if was_training:
             model.train()
         if int(init_logits.ndim) != 2:
@@ -236,12 +240,12 @@ class ADSHMethod(InductiveMethod):
         score = torch.full(
             (n_classes,),
             float(self.spec.p_cutoff),
-            device=X_l.device,
+            device=get_torch_device(X_l),
             dtype=init_logits.dtype,
         )
 
-        steps_l = num_batches(int(X_l.shape[0]), int(self.spec.batch_size))
-        steps_u = num_batches(int(X_u_w.shape[0]), int(self.spec.batch_size))
+        steps_l = num_batches(int(get_torch_len(X_l)), int(self.spec.batch_size))
+        steps_u = num_batches(int(get_torch_len(X_u_w)), int(self.spec.batch_size))
         steps_per_epoch = max(int(steps_l), int(steps_u))
 
         gen_l = torch.Generator().manual_seed(int(seed))
@@ -267,24 +271,24 @@ class ADSHMethod(InductiveMethod):
                 steps=steps_per_epoch,
             )
             iter_u_idx = cycle_batch_indices(
-                int(X_u_w.shape[0]),
+                int(get_torch_len(X_u_w)),
                 batch_size=int(self.spec.batch_size),
                 generator=gen_u,
-                device=X_u_w.device,
+                device=get_torch_device(X_u_w),
                 steps=steps_per_epoch,
             )
             for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
-                x_uw = X_u_w[idx_u]
-                x_us = X_u_s[idx_u]
+                x_uw = slice_data(X_u_w, idx_u)
+                x_us = slice_data(X_u_s, idx_u)
 
                 if bool(self.spec.use_cat):
-                    inputs = torch.cat([x_lb, x_uw, x_us], dim=0)
+                    inputs = concat_data([x_lb, x_uw, x_us])
                     logits = extract_logits(model(inputs))
                     if int(logits.ndim) != 2:
                         raise InductiveValidationError("Model logits must be 2D (batch, classes).")
-                    num_lb = int(x_lb.shape[0])
-                    num_u = int(x_uw.shape[0])
-                    expected = num_lb + num_u + int(x_us.shape[0])
+                    num_lb = int(get_torch_len(x_lb))
+                    num_u = int(get_torch_len(x_uw))
+                    expected = num_lb + num_u + int(get_torch_len(x_us))
                     if int(logits.shape[0]) != expected:
                         raise InductiveValidationError(
                             "Concatenated logits batch size does not match inputs."
@@ -350,28 +354,35 @@ class ADSHMethod(InductiveMethod):
         if backend != "torch":
             raise InductiveValidationError("ADSH predict_proba requires torch tensors.")
         torch = optional_import("torch", extra="inductive-torch")
-        if not isinstance(X, torch.Tensor):
-            raise InductiveValidationError("predict_proba requires torch.Tensor inputs.")
+        if not isinstance(X, torch.Tensor) and not isinstance(X, dict):
+            raise InductiveValidationError("predict_proba requires torch.Tensor or dict inputs.")
 
         model = self._bundle.model
         was_training = model.training
         model.eval()
 
         batch_size = int(self.spec.batch_size)
-        n_samples = int(X.shape[0])
+        n_samples = int(get_torch_len(X))
         all_logits = []
 
         with torch.no_grad():
             for start in range(0, n_samples, batch_size):
                 end = min(start + batch_size, n_samples)
-                batch_X = X[start:end]
+                if isinstance(X, dict):
+                    idx = torch.arange(start, end, device=get_torch_device(X))
+                    batch_X = slice_data(X, idx)
+                else:
+                    batch_X = X[start:end]
                 logits_batch = extract_logits(model(batch_X))
 
                 if int(logits_batch.ndim) != 2:
                     raise InductiveValidationError("Model logits must be 2D (batch, classes).")
                 all_logits.append(logits_batch)
 
-            logits = torch.cat(all_logits, dim=0)
+            if not all_logits:
+                logits = torch.empty((0, 0), device=get_torch_device(X))
+            else:
+                logits = torch.cat(all_logits, dim=0)
             proba = torch.softmax(logits, dim=1)
 
         if was_training:

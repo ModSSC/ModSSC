@@ -9,6 +9,7 @@ from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.deep_utils import (
+    concat_data,
     cycle_batch_indices,
     cycle_batches,
     ensure_float_tensor,
@@ -247,13 +248,13 @@ class AdaMatchMethod(InductiveMethod):
                 x_us = _slice_dict(X_u_s, idx_u, int(_get_len(X_u_s)))
 
                 if bool(self.spec.use_cat):
-                    inputs = torch.cat([x_lb, x_uw, x_us], dim=0)
+                    inputs = concat_data([x_lb, x_uw, x_us])
                     logits = extract_logits(model(inputs))
                     if int(logits.ndim) != 2:
                         raise InductiveValidationError("Model logits must be 2D (batch, classes).")
-                    num_lb = int(x_lb.shape[0])
-                    num_u = int(x_uw.shape[0])
-                    expected = num_lb + num_u + int(x_us.shape[0])
+                    num_lb = int(_get_len(x_lb))
+                    num_u = int(_get_len(x_uw))
+                    expected = num_lb + num_u + int(_get_len(x_us))
                     if int(logits.shape[0]) != expected:
                         raise InductiveValidationError(
                             "Concatenated logits batch size does not match inputs."
