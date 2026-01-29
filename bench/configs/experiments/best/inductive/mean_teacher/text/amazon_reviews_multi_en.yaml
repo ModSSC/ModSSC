@@ -44,12 +44,10 @@ preprocess:
     steps:
     - id: labels.encode
     - id: text.ensure_strings
-    - id: text.sentence_transformer
+    - id: text.vocab_tokenizer
       params:
-        batch_size: 64
-    - id: core.pca
-      params:
-        n_components: 128
+        max_length: 256
+        vocab_size: 20000
     - id: core.to_torch
       params:
         device: "auto"
@@ -84,7 +82,7 @@ method:
     freeze_bn: true
     detach_target: true
   model:
-    classifier_id: mlp
+    classifier_id: lstm_scratch
     classifier_backend: torch
     classifier_params:
       hidden_sizes:

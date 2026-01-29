@@ -15,7 +15,6 @@ from modssc.inductive.methods.deep_utils import (
     ensure_float_tensor,
     ensure_model_bundle,
     ensure_model_device,
-    extract_logits,
     num_batches,
 )
 from modssc.inductive.methods.utils import (
@@ -296,21 +295,26 @@ class CoMatchMethod(InductiveMethod):
                 "CoMatch requires a second strong unlabeled view in views (e.g. views['X_u_s_1'])."
             )
 
+        def _len(x):
+            if isinstance(x, dict) and "x" in x:
+                return int(x["x"].shape[0])
+            if hasattr(x, "shape"):
+                return int(x.shape[0])
+            return 0
+
         logger.info(
             "CoMatch sizes: n_labeled=%s n_unlabeled=%s",
-            int(X_l.shape[0]),
-            int(X_u_w.shape[0]),
+            _len(X_l),
+            _len(X_u_w),
         )
 
-        if int(X_l.shape[0]) == 0:
+        if _len(X_l) == 0:
             raise InductiveValidationError("X_l must be non-empty.")
-        if int(X_u_w.shape[0]) == 0:
+        if _len(X_u_w) == 0:
             raise InductiveValidationError("X_u_w must be non-empty.")
-        if int(X_u_s0.shape[0]) == 0 or int(X_u_s1.shape[0]) == 0:
+        if _len(X_u_s0) == 0 or _len(X_u_s1) == 0:
             raise InductiveValidationError("X_u_s0/X_u_s1 must be non-empty.")
-        if int(X_u_w.shape[0]) != int(X_u_s0.shape[0]) or int(X_u_w.shape[0]) != int(
-            X_u_s1.shape[0]
-        ):
+        if _len(X_u_w) != _len(X_u_s0) or _len(X_u_w) != _len(X_u_s1):
             raise InductiveValidationError("Unlabeled views must have the same number of rows.")
 
         ensure_float_tensor(X_l, name="X_l")
@@ -318,9 +322,12 @@ class CoMatchMethod(InductiveMethod):
         ensure_float_tensor(X_u_s0, name="X_u_s0")
         ensure_float_tensor(X_u_s1, name="X_u_s1")
 
-        if int(X_u_s0.shape[1]) != int(X_u_w.shape[1]) or int(X_u_s1.shape[1]) != int(
-            X_u_w.shape[1]
-        ):
+        def _feats(x):
+            if isinstance(x, dict) and "x" in x:
+                return int(x["x"].shape[1])
+            return int(x.shape[1])
+
+        if _feats(X_u_s0) != _feats(X_u_w) or _feats(X_u_s1) != _feats(X_u_w):
             raise InductiveValidationError("Unlabeled views must share the same feature size.")
 
         if y_l.dtype != torch.int64:
@@ -331,7 +338,13 @@ class CoMatchMethod(InductiveMethod):
         bundle = ensure_model_bundle(self.spec.model_bundle)
         model = bundle.model
         optimizer = bundle.optimizer
-        ensure_model_device(model, device=X_l.device)
+
+        def _get_dev(x):
+            return (
+                x["x"].device if (isinstance(x, dict) and "x" in x) else getattr(x, "device", None)
+            )
+
+        ensure_model_device(model, device=_get_dev(X_l))
 
         if int(self.spec.batch_size) <= 0:
             raise InductiveValidationError("batch_size must be >= 1.")
@@ -367,12 +380,35 @@ class CoMatchMethod(InductiveMethod):
         self._da_count = 0
         self._da_target = None
 
-        steps_l = num_batches(int(X_l.shape[0]), int(self.spec.batch_size))
-        steps_u = num_batches(int(X_u_w.shape[0]), int(self.spec.batch_size))
+        steps_l = num_batches(_len(X_l), int(self.spec.batch_size))
+        steps_u = num_batches(_len(X_u_w), int(self.spec.batch_size))
         steps_per_epoch = max(int(steps_l), int(steps_u))
 
         gen_l = torch.Generator().manual_seed(int(seed))
         gen_u = torch.Generator().manual_seed(int(seed) + 1)
+
+        def _slice(data, idx):
+            if not isinstance(data, dict):
+                return data[idx]
+            out = {}
+            if "x" in data:
+                out["x"] = data["x"][idx]
+            if "edge_index" in data:
+                try:
+                    from torch_geometric.utils import subgraph
+
+                    out["edge_index"], _ = subgraph(
+                        idx, data["edge_index"], relabel_nodes=True, num_nodes=_len(data)
+                    )
+                except ImportError:
+                    pass
+            for k, v in data.items():
+                if k not in ("x", "edge_index"):
+                    if hasattr(v, "shape") and v.shape[0] == _len(data):
+                        out[k] = v[idx]
+                    else:
+                        out[k] = v
+            return out
 
         model.train()
         for epoch in range(int(self.spec.max_epochs)):
@@ -384,16 +420,16 @@ class CoMatchMethod(InductiveMethod):
                 steps=steps_per_epoch,
             )
             iter_u_idx = cycle_batch_indices(
-                int(X_u_w.shape[0]),
+                _len(X_u_w),
                 batch_size=int(self.spec.batch_size),
                 generator=gen_u,
-                device=X_u_w.device,
+                device=_get_dev(X_u_w),
                 steps=steps_per_epoch,
             )
             for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
-                x_uw = X_u_w[idx_u]
-                x_us0 = X_u_s0[idx_u]
-                x_us1 = X_u_s1[idx_u]
+                x_uw = _slice(X_u_w, idx_u)
+                x_us0 = _slice(X_u_s0, idx_u)
+                x_us1 = _slice(X_u_s1, idx_u)
 
                 if bool(self.spec.use_cat):
                     inputs = torch.cat([x_lb, x_uw, x_us0, x_us1], dim=0)
@@ -548,25 +584,54 @@ class CoMatchMethod(InductiveMethod):
 
     def predict_proba(self, X: Any) -> Any:
         if self._bundle is None:
-            raise RuntimeError("CoMatchMethod is not fitted yet. Call fit() first.")
+            raise RuntimeError("Model is not fitted yet. Call fit() first.")
         backend = self._backend or detect_backend(X)
         if backend != "torch":
-            raise InductiveValidationError("CoMatch predict_proba requires torch tensors.")
+            raise InductiveValidationError("predict_proba requires torch tensors.")
         torch = optional_import("torch", extra="inductive-torch")
-        if not isinstance(X, torch.Tensor):
-            raise InductiveValidationError("predict_proba requires torch.Tensor inputs.")
+
+        # Support Dict or Tensor
+        if not isinstance(X, torch.Tensor) and not isinstance(X, dict):
+            raise InductiveValidationError("predict_proba requires torch.Tensor or dict inputs.")
 
         model = self._bundle.model
         was_training = model.training
         model.eval()
+
+        # Batched inference
+        batch_size = int(self.spec.batch_size)
+        from .deep_utils import extract_logits, slice_data
+
+        n_samples = int(X["x"].shape[0]) if isinstance(X, dict) else int(X.shape[0])
+
+        all_logits = []
         with torch.no_grad():
-            logits = extract_logits(model(X))
-            if int(logits.ndim) != 2:
-                raise InductiveValidationError("Model logits must be 2D (batch, classes).")
-            proba = torch.softmax(logits, dim=1)
+            for start in range(0, n_samples, batch_size):
+                end = min(start + batch_size, n_samples)
+                if isinstance(X, dict):
+                    idx = torch.arange(start, end, device=X["x"].device)
+                    batch_X = slice_data(X, idx)
+                else:
+                    batch_X = X[start:end]
+
+                logits_batch = extract_logits(model(batch_X))
+                if int(logits_batch.ndim) != 2:
+                    raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+                all_logits.append(logits_batch)
+
+            if not all_logits:
+                # Handle empty case
+                logits = torch.empty(
+                    (0, 0), device=X["x"].device if isinstance(X, dict) else X.device
+                )
+            else:
+                logits = torch.cat(all_logits, dim=0)
+
+            probs = torch.softmax(logits, dim=1)
+
         if was_training:
             model.train()
-        return proba
+        return probs
 
     def predict(self, X: Any) -> Any:
         proba = self.predict_proba(X)

@@ -2,15 +2,17 @@ run:
   name: smoke_tabular_transductive_planetoid_iris
   seed: 1
   output_dir: runs/transductive/planetoid/tabular/iris
-  fail_fast: true
   log_level: detailed
-
+  fail_fast: true
 limits:
   profile: auto
-
 dataset:
   id: iris
   download: true
+  options:
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 1
   plan:
@@ -42,23 +44,29 @@ preprocess:
     - id: core.ensure_2d
     - id: core.pca
       params:
-        n_components: 4
+        n_components: 30
     - id: core.to_numpy
 method:
   kind: transductive
   id: planetoid
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
-    embedding_dim: 16
-    num_walks: 2
-    walk_length: 5
-    window_size: 2
-    num_negative: 2
-    batch_size: 256
-    sup_batch_size: 64
+    embedding_dim: 128
+    num_walks: 10
+    walk_length: 40
+    window_size: 5
+    p: 1.0
+    q: 1.0
+    num_negative: 5
+    batch_size: 1024
+    sup_batch_size: 256
     epochs: 1
+    lr: 0.01
+    weight_decay: 0.0
+    lambda_sup: 1.0
+    undirected: true
 evaluation:
   split_for_model_selection: val
   report_splits:
@@ -71,11 +79,10 @@ graph:
   enabled: true
   seed: 1
   cache: true
-  cache_dir: cache/graphs
   spec:
     scheme: knn
     metric: cosine
-    k: 5
+    k: 15
     symmetrize: mutual
     weights:
       kind: heat
@@ -83,5 +90,5 @@ graph:
     normalize: rw
     self_loops: true
     backend: numpy
-    chunk_size: 256
+    chunk_size: 1024
     feature_field: features.X

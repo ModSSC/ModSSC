@@ -9,7 +9,13 @@ import torch
 from modssc.inductive.adapters import to_numpy_dataset, to_torch_dataset
 from modssc.inductive.adapters.numpy import _require_numpy_views
 from modssc.inductive.adapters.numpy import _suggest_step as _numpy_suggest_step
-from modssc.inductive.adapters.torch import _check_same_device, _require_views
+from modssc.inductive.adapters.torch import (
+    _check_2d,
+    _check_feature_dim,
+    _check_same_device,
+    _require_tensor,
+    _require_views,
+)
 from modssc.inductive.adapters.torch import _suggest_step as _torch_suggest_step
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.types import DeviceSpec, InductiveDataset
@@ -261,3 +267,23 @@ def test_to_torch_dataset_tensor_requirements():
     _check_same_device([torch.zeros((1, 2)), "not-a-tensor"])
     with pytest.raises(InductiveValidationError):
         _require_views([("v1", torch.zeros((2, 2)))])
+
+
+def test_to_torch_dataset_dict_inputs():
+    X_l = {"x": torch.zeros((2, 3)), "meta": "keep"}
+    y_l = torch.tensor([0, 1], dtype=torch.int64)
+    X_u = {"x": torch.ones((2, 3))}
+    data = DummyDataset(X_l=X_l, y_l=y_l, X_u=X_u)
+    out = to_torch_dataset(data, device=DeviceSpec(device="auto"), require_same_device=True)
+    assert out.X_l["x"].shape == (2, 3)
+    assert out.X_u is not None
+
+
+def test_require_tensor_dict_without_tensor():
+    with pytest.raises(InductiveValidationError, match="core.to_torch"):
+        _require_tensor({"meta": "no-tensor"}, name="X_l")
+
+
+def test_check_2d_and_feature_dim_dict_without_x():
+    _check_2d({"foo": torch.zeros((2, 2))}, name="X_l")
+    _check_feature_dim({"foo": torch.zeros((2, 2))}, n_features=2, name="X_u")

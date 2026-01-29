@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+
 import numpy as np
 import pytest
 
@@ -623,3 +625,200 @@ def test_comatch_predict_errors():
     method._backend = "torch"
     with pytest.raises(InductiveValidationError, match="Model logits must be 2D"):
         method.predict_proba(torch.zeros((2, 2)))
+
+
+def test_comatch_predict_proba_dict_inputs():
+    class _DictNet(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.fc = torch.nn.Linear(2, 2, bias=False)
+
+        def forward(self, x):
+            if isinstance(x, dict):
+                x = x["x"]
+            return self.fc(x)
+
+    method = CoMatchMethod()
+    method._bundle = _make_bundle(_DictNet())
+    method._backend = "torch"
+    X = {"x": torch.zeros((2, 2), dtype=torch.float32)}
+    proba = method.predict_proba(X)
+    assert proba.shape[0] == 2
+
+
+def test_comatch_predict_proba_empty_dict():
+    class _DictNet(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.fc = torch.nn.Linear(2, 2, bias=False)
+
+        def forward(self, x):
+            if isinstance(x, dict):
+                x = x["x"]
+            return self.fc(x)
+
+    method = CoMatchMethod()
+    method._bundle = _make_bundle(_DictNet())
+    method._backend = "torch"
+    X = {"x": torch.zeros((0, 2), dtype=torch.float32)}
+    proba = method.predict_proba(X)
+    assert proba.shape[0] == 0
+
+
+def test_comatch_fit_len_zero_dict(monkeypatch):
+    x_l = {"foo": torch.zeros((1, 2))}
+    y_l = torch.tensor([0], dtype=torch.int64)
+    x_u_w = {"x": torch.zeros((1, 2))}
+    views = {
+        "X_u_s0": {"x": torch.zeros((1, 2))},
+        "X_u_s1": {"x": torch.zeros((1, 2))},
+    }
+    data = InductiveDataset(X_l=x_l, y_l=y_l, X_u_w=x_u_w, views=views)
+    monkeypatch.setattr(comatch, "ensure_torch_data", lambda d, device: d)
+    with pytest.raises(InductiveValidationError, match="X_l must be non-empty"):
+        CoMatchMethod().fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def _install_fake_tg_utils(monkeypatch, *, with_subgraph: bool):
+    import types
+
+    utils = types.ModuleType("torch_geometric.utils")
+    if with_subgraph:
+
+        def subgraph(idx, edge_index, relabel_nodes=True, num_nodes=None):
+            return edge_index, None
+
+        utils.subgraph = subgraph
+    tg = types.ModuleType("torch_geometric")
+    tg.utils = utils
+    monkeypatch.setitem(sys.modules, "torch_geometric", tg)
+    monkeypatch.setitem(sys.modules, "torch_geometric.utils", utils)
+
+
+def test_comatch_fit_slice_dict_with_subgraph(monkeypatch):
+    x_l = {"x": torch.zeros((2, 2)), "edge_index": torch.tensor([[0], [1]])}
+    y_l = torch.tensor([0, 1], dtype=torch.int64)
+    x_u_w = {
+        "x": torch.zeros((2, 2)),
+        "edge_index": torch.tensor([[0], [1]]),
+        "mask": torch.tensor([1, 0]),
+        "meta": "keep",
+    }
+    views = {
+        "X_u_s0": {
+            "x": torch.zeros((2, 2)),
+            "edge_index": torch.tensor([[0], [1]]),
+            "mask": torch.tensor([0, 1]),
+            "meta": "keep",
+        },
+        "X_u_s1": {
+            "x": torch.zeros((2, 2)),
+            "edge_index": torch.tensor([[0], [1]]),
+            "mask": torch.tensor([1, 1]),
+            "meta": "keep",
+        },
+    }
+    data = InductiveDataset(X_l=x_l, y_l=y_l, X_u_w=x_u_w, views=views)
+    monkeypatch.setattr(comatch, "ensure_torch_data", lambda d, device: d)
+    monkeypatch.setattr(comatch, "cycle_batches", lambda *_args, **_kwargs: iter([(x_l["x"], y_l)]))
+    monkeypatch.setattr(
+        comatch, "cycle_batch_indices", lambda *_args, **_kwargs: iter([torch.tensor([0])])
+    )
+    monkeypatch.setattr(
+        comatch,
+        "_extract_logits_and_features",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("stop")),
+    )
+    _install_fake_tg_utils(monkeypatch, with_subgraph=True)
+
+    spec = _make_base_spec(_CoMatchNet())
+    method = CoMatchMethod(spec)
+    with pytest.raises(RuntimeError, match="stop"):
+        method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_comatch_fit_slice_dict_without_subgraph(monkeypatch):
+    x_l = {"x": torch.zeros((2, 2)), "edge_index": torch.tensor([[0], [1]])}
+    y_l = torch.tensor([0, 1], dtype=torch.int64)
+    x_u_w = {
+        "x": torch.zeros((2, 2)),
+        "edge_index": torch.tensor([[0], [1]]),
+        "mask": torch.tensor([1, 0]),
+        "meta": "keep",
+    }
+    views = {
+        "X_u_s0": {
+            "x": torch.zeros((2, 2)),
+            "edge_index": torch.tensor([[0], [1]]),
+            "mask": torch.tensor([0, 1]),
+            "meta": "keep",
+        },
+        "X_u_s1": {
+            "x": torch.zeros((2, 2)),
+            "edge_index": torch.tensor([[0], [1]]),
+            "mask": torch.tensor([1, 1]),
+            "meta": "keep",
+        },
+    }
+    data = InductiveDataset(X_l=x_l, y_l=y_l, X_u_w=x_u_w, views=views)
+    monkeypatch.setattr(comatch, "ensure_torch_data", lambda d, device: d)
+    monkeypatch.setattr(comatch, "cycle_batches", lambda *_args, **_kwargs: iter([(x_l["x"], y_l)]))
+    monkeypatch.setattr(
+        comatch, "cycle_batch_indices", lambda *_args, **_kwargs: iter([torch.tensor([0])])
+    )
+    monkeypatch.setattr(
+        comatch,
+        "_extract_logits_and_features",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("stop")),
+    )
+    _install_fake_tg_utils(monkeypatch, with_subgraph=False)
+
+    spec = _make_base_spec(_CoMatchNet())
+    method = CoMatchMethod(spec)
+    with pytest.raises(RuntimeError, match="stop"):
+        method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+def test_comatch_fit_slice_dict_missing_x_and_edge_index(monkeypatch):
+    class _NoXDict(dict):
+        @property
+        def shape(self):
+            return self["feat"].shape
+
+    class _FeatModel(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.feat = torch.nn.Linear(2, 2, bias=False)
+            self.fc = torch.nn.Linear(2, 2, bias=False)
+
+        def forward(self, x):
+            if isinstance(x, dict):
+                x = x["feat"]
+            feat = self.feat(x)
+            logits = self.fc(feat)
+            return {"logits": logits, "feat": feat}
+
+    X_l = torch.zeros((2, 2))
+    y_l = torch.tensor([0, 1], dtype=torch.int64)
+    x_u_w = _NoXDict({"feat": torch.zeros((2, 2))})
+    views = {
+        "X_u_s0": _NoXDict({"feat": torch.zeros((2, 2))}),
+        "X_u_s1": _NoXDict({"feat": torch.zeros((2, 2))}),
+    }
+    data = InductiveDataset(X_l=X_l, y_l=y_l, X_u_w=x_u_w, views=views)
+
+    monkeypatch.setattr(comatch, "ensure_torch_data", lambda d, device: d)
+    monkeypatch.setattr(comatch, "cycle_batches", lambda *_args, **_kwargs: iter([(X_l, y_l)]))
+    monkeypatch.setattr(
+        comatch, "cycle_batch_indices", lambda *_args, **_kwargs: iter([torch.tensor([0])])
+    )
+    monkeypatch.setattr(
+        comatch,
+        "_extract_logits_and_features",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("stop")),
+    )
+
+    spec = _make_base_spec(_FeatModel(), use_cat=False)
+    method = CoMatchMethod(spec)
+    with pytest.raises(RuntimeError, match="stop"):
+        method.fit(data, device=DeviceSpec(device="cpu"), seed=0)

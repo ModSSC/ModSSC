@@ -49,6 +49,33 @@ def _labels_for_split(pre: PreprocessResult, ref: str, base: Any) -> Any:
 
 
 def _select_rows(X: Any, idx: np.ndarray) -> Any:
+    if isinstance(X, dict):
+        new_X = {}
+        # Special handling for Graph data
+        if "edge_index" in X:
+            try:
+                import torch
+                from torch_geometric.utils import subgraph
+            except ImportError:
+                pass
+            else:
+                # Align subset device with edge_index to avoid mismatch in subgraph
+                edge_index_in = X["edge_index"]
+                device = edge_index_in.device if hasattr(edge_index_in, "device") else "cpu"
+
+                subset = torch.as_tensor(idx, dtype=torch.long, device=device)
+
+                # relabel_nodes=True ensures indices map to 0..len(subset)-1
+                # which corresponds to the sliced feature matrices
+                edge_index, _ = subgraph(subset, edge_index_in, relabel_nodes=True)
+                new_X["edge_index"] = edge_index
+
+        for k, v in X.items():
+            if k == "edge_index":
+                continue
+            new_X[k] = _select_rows(v, idx)
+        return new_X
+
     if is_torch_tensor(X):
         import importlib
 
@@ -77,15 +104,51 @@ def _views_for_split(
     idx = np.asarray(sampling.indices[split], dtype=np.int64)
     split_ref = sampling.refs.get(split, "train")
     use_torch = is_torch_tensor(backend_ref)
+    device = None
+    if use_torch:
+        if hasattr(backend_ref, "device"):
+            device = backend_ref.device
+        elif isinstance(backend_ref, dict):
+            for v in backend_ref.values():
+                if is_torch_tensor(v) and hasattr(v, "device"):
+                    device = v.device
+                    break
+
     for name, ds in views.views.items():
         base = ds.train if split_ref == "train" else ds.test
         if base is None:
             raise ValueError("Requested test split but view has no test split")
         X = _select_rows(base.X, idx)
-        if use_torch:
-            X = _to_torch_like(X, backend_ref)
+        if use_torch and device is not None:
+            X = _smart_to_torch(X, device)
         out[name] = {"X": X}
     return out
+
+
+def _smart_to_torch(x: Any, device: Any) -> Any:
+    """Converts numpy to torch, scaling uint8 to [0,1]."""
+    if x is None:
+        return None
+
+    if isinstance(x, dict):
+        return {k: _smart_to_torch(v, device) for k, v in x.items()}
+
+    import importlib
+
+    torch = importlib.import_module("torch")
+
+    if is_torch_tensor(x):
+        if hasattr(x, "to"):
+            return x.to(device)
+        return x
+
+    x_np = np.asarray(x)
+
+    if x_np.dtype == np.uint8:
+        return torch.tensor(x_np, device=device, dtype=torch.float32).div_(255.0)
+
+    dtype = torch.float32 if x_np.dtype == np.float64 else None
+    return torch.as_tensor(x_np, device=device, dtype=dtype)
 
 
 def evaluate_inductive(
@@ -103,6 +166,30 @@ def evaluate_inductive(
     results: dict[str, dict[str, float]] = {}
     for split in report_splits:
         X, y = _split_data(pre, sampling, split=split)
+
+        # JIT Convert if method has device spec (indicates torch/deep method)
+        m_dev_spec = getattr(method, "device", None)
+        dest_dev = getattr(m_dev_spec, "device", None) or (
+            m_dev_spec if isinstance(m_dev_spec, str) else None
+        )
+
+        if dest_dev is not None:
+            X = _smart_to_torch(X, dest_dev)
+
+        # Fallback inspection for torch models if device attr missing
+        if dest_dev is None and hasattr(method, "_bundle") and method._bundle is not None:
+            try:
+                mdl = method._bundle.model
+                import torch
+
+                if isinstance(mdl, torch.nn.Module):
+                    p = next(mdl.parameters(), None)
+                    if p is not None:
+                        dest_dev = p.device
+                        X = _smart_to_torch(X, dest_dev)
+            except Exception as e:
+                _LOGGER.debug("Failed to infer device from model: %s", e)
+
         if method_id == "co_training":
             if views is None:
                 raise ValueError("co_training requires views for evaluation")

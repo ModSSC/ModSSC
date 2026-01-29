@@ -95,15 +95,27 @@ class Cutout(AugmentationOp):
 
     op_id: str = "vision.cutout"
     modality: Modality = "vision"
-    frac: float = 0.25
+    # Backward-compatible parameter. If provided, overrides length.
+    frac: float | None = None
+    n_holes: int = 1
+    length: int = 16
     fill: float = 0.0
 
     def apply(self, x: Any, *, rng: np.random.Generator, ctx: AugmentationContext) -> Any:  # noqa: ARG002
-        frac = float(self.frac)
-        if not (0.0 <= frac <= 1.0):
-            raise ValueError("frac must be in [0, 1]")
-        if frac == 0.0:
-            return x
+        frac = self.frac
+        n_holes = int(self.n_holes)
+        length = int(self.length)
+        if frac is not None:
+            if self.length != 16 or self.n_holes != 1:
+                raise ValueError("Use either frac or length/n_holes, not both.")
+            frac = float(frac)
+            if not (0.0 <= frac <= 1.0):
+                raise ValueError("frac must be in [0, 1]")
+            if frac == 0.0:
+                return x
+        else:
+            if length <= 0 or n_holes <= 0:
+                return x
 
         if is_torch_tensor(x):
             import importlib
@@ -111,32 +123,38 @@ class Cutout(AugmentationOp):
             torch = importlib.import_module("torch")
 
             H, W, layout = _torch_hw_layout(x)
-            size = max(1, int(round(frac * min(H, W))))
-            top = int(rng.integers(0, max(1, H - size + 1)))
-            left = int(rng.integers(0, max(1, W - size + 1)))
-
+            if frac is not None:
+                length = max(1, int(round(float(frac) * min(H, W))))
             out = x.clone()
             fill = torch.as_tensor(self.fill, device=x.device, dtype=x.dtype)
-            if layout == "hw":
-                out[top : top + size, left : left + size] = fill
-            elif layout == "hwc":
-                out[top : top + size, left : left + size, :] = fill
-            else:  # chw
-                out[:, top : top + size, left : left + size] = fill
+
+            for _ in range(n_holes):
+                top = int(rng.integers(0, max(1, H - length + 1)))
+                left = int(rng.integers(0, max(1, W - length + 1)))
+
+                if layout == "hw":
+                    out[top : top + length, left : left + length] = fill
+                elif layout == "hwc":
+                    out[top : top + length, left : left + length, :] = fill
+                else:  # chw
+                    out[:, top : top + length, left : left + length] = fill
             return out
 
         arr = np.asarray(x).copy()
         H, W, layout = _numpy_hw_layout(arr)
-        size = max(1, int(round(frac * min(H, W))))
-        top = int(rng.integers(0, max(1, H - size + 1)))
-        left = int(rng.integers(0, max(1, W - size + 1)))
+        if frac is not None:
+            length = max(1, int(round(float(frac) * min(H, W))))
 
-        if layout == "hw":
-            arr[top : top + size, left : left + size] = self.fill
-        elif layout == "hwc":
-            arr[top : top + size, left : left + size, :] = self.fill
-        else:  # chw
-            arr[:, top : top + size, left : left + size] = self.fill
+        for _ in range(n_holes):
+            top = int(rng.integers(0, max(1, H - length + 1)))
+            left = int(rng.integers(0, max(1, W - length + 1)))
+
+            if layout == "hw":
+                arr[top : top + length, left : left + length] = self.fill
+            elif layout == "hwc":
+                arr[top : top + length, left : left + length, :] = self.fill
+            else:  # chw
+                arr[:, top : top + length, left : left + length] = self.fill
         return arr
 
 
@@ -147,10 +165,18 @@ class RandomCropPad(AugmentationOp):
 
     op_id: str = "vision.random_crop_pad"
     modality: Modality = "vision"
-    pad: int = 4
+    # Backward-compatible parameter. If provided, overrides padding.
+    pad: int | None = None
+    padding: int = 4
 
     def apply(self, x: Any, *, rng: np.random.Generator, ctx: AugmentationContext) -> Any:  # noqa: ARG002
-        pad = int(self.pad)
+        pad_val = self.pad
+        if pad_val is not None:
+            if self.padding != 4:
+                raise ValueError("Use either pad or padding, not both.")
+            pad = int(pad_val)
+        else:
+            pad = int(self.padding)
         if pad < 0:
             raise ValueError("pad must be >= 0")
         if pad == 0:

@@ -50,7 +50,12 @@ def is_torch_tensor(x: Any) -> bool:
         torch = _torch()
     except OptionalDependencyError:
         return False
-    return isinstance(x, torch.Tensor)
+    if isinstance(x, torch.Tensor):
+        return True
+    if isinstance(x, dict):
+        # Allow dicts (e.g. PyG data objects) if they contain at least one tensor
+        return any(isinstance(v, torch.Tensor) for v in x.values())
+    return False
 
 
 def ensure_torch_data(data: Any, *, device: DeviceSpec) -> TorchDataset:
@@ -63,7 +68,7 @@ def detect_backend(x: Any) -> str:
     if is_torch_tensor(x):
         return "torch"
     raise InductiveValidationError(
-        "X_l must be a numpy.ndarray or torch.Tensor. Use preprocess core.to_numpy or core.to_torch."
+        "X_l must be a numpy.ndarray or torch.Tensor (or dict of Tensors). Use preprocess core.to_numpy or core.to_torch."
     )
 
 
@@ -148,7 +153,8 @@ def _predict_scores_numpy(model: Any, X: np.ndarray) -> np.ndarray:
 
 def _predict_scores_torch(model: Any, X: Any):
     torch = _torch()
-    if not isinstance(X, torch.Tensor):
+    is_dict = isinstance(X, dict) and "x" in X
+    if not isinstance(X, torch.Tensor) and not is_dict:
         raise InductiveValidationError(
             "Torch backend requires torch.Tensor inputs. Use preprocess core.to_torch."
         )
@@ -164,7 +170,8 @@ def _predict_scores_torch(model: Any, X: Any):
         raise InductiveValidationError("Torch classifier must return torch.Tensor scores.")
     if scores.ndim != 2:
         raise InductiveValidationError("predict_scores must return shape (n_samples, n_classes).")
-    if scores.device != X.device:
+    x_device = X["x"].device if (isinstance(X, dict) and "x" in X) else X.device
+    if scores.device != x_device:
         raise InductiveValidationError("Torch classifier returned scores on a different device.")
     return scores
 

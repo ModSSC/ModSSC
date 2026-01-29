@@ -39,15 +39,9 @@ preprocess:
     output_key: features.X
     steps:
     - id: labels.encode
-    - id: graph.node2vec
+    - id: graph.sparse_adjacency
       params:
-        embedding_dim: 128
-        num_walks: 10
-        walk_length: 40
-        window_size: 5
-        p: 1.0
-        q: 1.0
-        num_negative: 5
+        max_nodes: 20000
         batch_size: 1024
         embed_epochs: 5
         embed_lr: 0.01
@@ -87,7 +81,7 @@ method:
     detach_target: true
     score_warmup_epochs: 2
   model:
-    classifier_id: mlp
+    classifier_id: graphsage_inductive
     classifier_backend: torch
     classifier_params:
       hidden_sizes:

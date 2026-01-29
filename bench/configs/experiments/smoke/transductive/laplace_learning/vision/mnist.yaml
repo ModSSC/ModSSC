@@ -2,18 +2,16 @@ run:
   name: smoke_vision_transductive_laplace_learning_mnist
   seed: 3
   output_dir: runs/transductive/laplace_learning/vision/mnist
-  fail_fast: true
   log_level: detailed
-
+  fail_fast: true
 limits:
   profile: auto
-
 dataset:
   id: mnist
   download: true
   options:
-    max_train_samples: 2000
-    max_test_samples: 1000
+    max_train_samples: 500
+    max_test_samples: 200
     seed: 0
 sampling:
   seed: 3
@@ -51,15 +49,17 @@ preprocess:
         order: NHWC
     - id: vision.squeeze
     - id: vision.openclip
+      params:
+        batch_size: 64
     - id: core.pca
       params:
-        n_components: 16
+        n_components: 128
     - id: core.to_numpy
 method:
   kind: transductive
   id: laplace_learning
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params: {}
 evaluation:
@@ -74,11 +74,10 @@ graph:
   enabled: true
   seed: 3
   cache: true
-  cache_dir: cache/graphs
   spec:
     scheme: knn
     metric: cosine
-    k: 10
+    k: 15
     symmetrize: or
     weights:
       kind: heat
@@ -86,5 +85,5 @@ graph:
     normalize: rw
     self_loops: true
     backend: numpy
-    chunk_size: 256
+    chunk_size: 1024
     feature_field: features.X

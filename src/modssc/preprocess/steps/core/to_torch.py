@@ -50,4 +50,18 @@ class ToTorchStep:
         x = store.require(self.input_key)
         dev = _resolve_device(torch, self.device)
         dt = _resolve_dtype(torch, self.dtype)
+
+        if isinstance(x, dict):
+            # Recurse for dictionary values (e.g. for graph structures)
+            res = {}
+            for k, v in x.items():
+                if isinstance(v, (np.ndarray, list)):
+                    # Edge index is long, features are float usually.
+                    # Heuristic: if key is edge_index, use long
+                    local_dt = torch.long if (k == "edge_index" or "index" in k) else dt
+                    res[k] = torch.as_tensor(v, device=dev, dtype=local_dt)
+                else:
+                    res[k] = v
+            return {"features.X": res}
+
         return {"features.X": torch.as_tensor(x, device=dev, dtype=dt)}

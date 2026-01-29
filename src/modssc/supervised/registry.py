@@ -337,6 +337,48 @@ def ensure_bootstrap() -> None:
         notes="Uses scikit-learn BernoulliNB.",
     )
 
+    register_classifier(
+        key="lstm_scratch",
+        description="LSTM from scratch for text sequences (Tabula Rasa).",
+        preferred_backends=("torch",),
+    )
+    register_backend(
+        classifier_id="lstm_scratch",
+        backend="torch",
+        factory="modssc.supervised.backends.torch.lstm_scratch:TorchLSTMClassifier",
+        required_extra="supervised-torch",
+        supports_gpu=True,
+        notes="Custom LSTM implementation.",
+    )
+
+    register_classifier(
+        key="audio_cnn_scratch",
+        description="2D CNN for Spectrograms from scratch (Tabula Rasa).",
+        preferred_backends=("torch",),
+    )
+    register_backend(
+        classifier_id="audio_cnn_scratch",
+        backend="torch",
+        factory="modssc.supervised.backends.torch.audio_cnn_scratch:TorchAudioCNNClassifier",
+        required_extra="supervised-torch",
+        supports_gpu=True,
+        notes="Custom 2D CNN implementation.",
+    )
+
+    register_classifier(
+        key="graphsage_inductive",
+        description="GraphSAGE Inductive (Tabula Rasa).",
+        preferred_backends=("torch",),
+    )
+    register_backend(
+        classifier_id="graphsage_inductive",
+        backend="torch",
+        factory="modssc.supervised.backends.torch.graphsage_inductive:TorchGraphSAGEClassifier",
+        required_extra="supervised-torch-geometric",
+        supports_gpu=True,
+        notes="Custom GraphSAGE implementation.",
+    )
+
     _BOOTSTRAPPED = True
 
 

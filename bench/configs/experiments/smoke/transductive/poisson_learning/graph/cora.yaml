@@ -4,15 +4,15 @@ run:
   output_dir: runs/transductive/poisson_learning/graph/cora
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: cora
   download: true
   options:
-    max_nodes: 2000
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 5
   plan:
@@ -47,12 +47,15 @@ method:
   kind: transductive
   id: poisson_learning
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     backend: numpy
-    max_iter: 50
-    tol: 0.0001
+    laplacian_kind: sym
+    eps: 1.0e-06
+    center_sources: true
+    tol: 1.0e-06
+    max_iter: 2000
 evaluation:
   split_for_model_selection: val
   report_splits:

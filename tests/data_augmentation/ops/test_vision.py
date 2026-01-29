@@ -157,9 +157,41 @@ def test_vision_cutout(ctx, rng):
     assert out.sum() > 0
 
 
+def test_vision_cutout_conflicting_and_empty(ctx, rng):
+    with pytest.raises(ValueError, match="Use either frac"):
+        Cutout(frac=0.5, length=8).apply(np.zeros((10, 10)), rng=rng, ctx=ctx)
+    with pytest.raises(ValueError, match="Use either frac"):
+        Cutout(frac=0.5, n_holes=2).apply(np.zeros((10, 10)), rng=rng, ctx=ctx)
+
+    arr = np.zeros((4, 4))
+    op = Cutout(length=0, n_holes=1)
+    assert op.apply(arr, rng=rng, ctx=ctx) is arr
+
+    op = Cutout(length=2, n_holes=0)
+    assert op.apply(arr, rng=rng, ctx=ctx) is arr
+
+
+def test_vision_cutout_length_path_numpy(ctx, rng):
+    op = Cutout(length=2, n_holes=1, fill=1.0)
+    arr = np.zeros((6, 6))
+    out = op.apply(arr, rng=rng, ctx=ctx)
+    assert out.shape == arr.shape
+
+
+def test_vision_cutout_length_path_torch(ctx, rng):
+    torch = pytest.importorskip("torch")
+    op = Cutout(length=2, n_holes=1, fill=1.0)
+    x = torch.zeros((6, 6))
+    out = op.apply(x, rng=rng, ctx=ctx)
+    assert out.shape == x.shape
+
+
 def test_vision_random_crop_pad(ctx, rng):
     with pytest.raises(ValueError):
         RandomCropPad(pad=-1).apply(np.zeros((10, 10)), rng=rng, ctx=ctx)
+
+    with pytest.raises(ValueError, match="Use either pad or padding"):
+        RandomCropPad(pad=2, padding=3).apply(np.zeros((10, 10)), rng=rng, ctx=ctx)
 
     op = RandomCropPad(pad=0)
     arr = np.zeros((10, 10))
@@ -178,3 +210,8 @@ def test_vision_random_crop_pad(ctx, rng):
     arr = np.zeros((3, 10, 10))
     out = op.apply(arr, rng=rng, ctx=ctx)
     assert out.shape == (3, 10, 10)
+
+    op_padding = RandomCropPad(padding=2)
+    arr = np.zeros((10, 10))
+    out = op_padding.apply(arr, rng=rng, ctx=ctx)
+    assert out.shape == (10, 10)

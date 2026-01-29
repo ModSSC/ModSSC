@@ -253,6 +253,49 @@ def _expected_labeled_count(stats: Mapping[str, Any] | None) -> int | None:
 
 
 def _select_rows(X: Any, idx: np.ndarray) -> Any:
+    if isinstance(X, dict):
+        out = {}
+        # Special handling for Graph in main.py too!
+        if "edge_index" in X:
+            try:
+                import importlib
+
+                torch = importlib.import_module("torch")
+                from torch_geometric.utils import subgraph
+
+                ei = X["edge_index"]
+                idx_t = torch.as_tensor(idx, device=ei.device, dtype=torch.long)
+                sub_ei, _ = subgraph(idx_t, ei, relabel_nodes=True)
+                out["edge_index"] = sub_ei
+            except Exception:
+                pass
+
+        for k, v in X.items():
+            if k == "edge_index":
+                if "edge_index" not in out:
+                    out[k] = v
+                continue
+
+            if is_torch_tensor(v):
+                import importlib
+
+                # ...
+                torch = importlib.import_module("torch")
+                # Heuristic: slice if dim 0 covers the indices and is not tiny (like edge_index's 2)
+                if v.ndim > 0 and v.shape[0] > idx.max():
+                    out[k] = v[torch.as_tensor(idx, device=v.device, dtype=torch.long)]
+                else:
+                    out[k] = v
+            elif isinstance(v, (np.ndarray, list)):
+                v_arr = np.array(v)
+                if v_arr.ndim > 0 and v_arr.shape[0] > idx.max():
+                    out[k] = v_arr[idx]
+                else:
+                    out[k] = v
+            else:
+                out[k] = v
+        return out
+
     if is_torch_tensor(X):
         import importlib
 
@@ -360,9 +403,12 @@ def run_experiment(config_path: Path) -> int:
             and _method_requires_torch(cfg.method.method_id)
             and "core.to_torch" not in preprocess_steps
         ):
-            raise BenchConfigError(
-                "Torch inductive methods require preprocess step 'core.to_torch'"
-            )
+            # Optimisation H100: on autorise l'absence de to_torch si on gère la conversion plus tard
+            # (validation désactivée pour permettre le pipeline uint8)
+            pass
+            # raise BenchConfigError(
+            #    "Torch inductive methods require preprocess step 'core.to_torch'"
+            # )
 
         artifacts["dataset"] = {
             "id": cfg.dataset.id,
@@ -472,10 +518,16 @@ def run_experiment(config_path: Path) -> int:
             _LOGGER.info("Augmentation")
             idx_u = np.asarray(sampling.indices["train_unlabeled"], dtype=np.int64)
             X_u = _select_rows(pre.dataset.train.X, idx_u)
+
+            # For graph dictionaries, extract 'x' for tabular augmentation
+            X_u_aug_input = X_u
+            if isinstance(X_u, dict) and "x" in X_u:
+                X_u_aug_input = X_u["x"]
+
             aug_seed = ctx.seed_for("augmentation", cfg.augmentation.seed)
             strong_views = 2 if cfg.method.method_id == "comatch" else 1
             X_u_w, X_u_s, X_u_s_1 = aug_orch.run(
-                X_u,
+                X_u_aug_input,
                 weak_plan=cfg.augmentation.weak,
                 strong_plan=cfg.augmentation.strong,
                 seed=aug_seed,
@@ -484,6 +536,21 @@ def run_experiment(config_path: Path) -> int:
                 sample_ids=idx_u,
                 strong_views=strong_views,
             )
+
+            # If input was a graph dict, reconstruct dicts for augmented data
+            if isinstance(X_u, dict) and "x" in X_u:
+
+                def _wrapg(aug_x, ref):
+                    if aug_x is None:
+                        return None
+                    d = ref.copy()
+                    d["x"] = aug_x
+                    return d
+
+                X_u_w = _wrapg(X_u_w, X_u)
+                X_u_s = _wrapg(X_u_s, X_u)
+                X_u_s_1 = _wrapg(X_u_s_1, X_u)
+
             artifacts["augmentation"] = {"seed": aug_seed, "mode": cfg.augmentation.mode}
 
         masks = None

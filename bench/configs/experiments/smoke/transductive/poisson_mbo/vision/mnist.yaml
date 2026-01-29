@@ -2,18 +2,16 @@ run:
   name: smoke_vision_transductive_poisson_mbo_mnist
   seed: 3
   output_dir: runs/transductive/poisson_mbo/vision/mnist
-  fail_fast: true
   log_level: detailed
-
+  fail_fast: true
 limits:
   profile: auto
-
 dataset:
   id: mnist
   download: true
   options:
-    max_train_samples: 2000
-    max_test_samples: 1000
+    max_train_samples: 500
+    max_test_samples: 200
     seed: 0
 sampling:
   seed: 3
@@ -51,25 +49,27 @@ preprocess:
         order: NHWC
     - id: vision.squeeze
     - id: vision.openclip
+      params:
+        batch_size: 64
     - id: core.pca
       params:
-        n_components: 16
+        n_components: 128
     - id: core.to_numpy
 method:
   kind: transductive
   id: poisson_mbo
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
-    T: 20
-    Ninner: 5
-    Nouter: 3
+    T: 200
+    Ninner: 40
+    Nouter: 20
     mu: 1.0
     d_tau: 10.0
     smin: 0.5
     smax: 2.0
-    n_volume_iters: 10
+    n_volume_iters: 100
     b_strategy: uniform
     symmetrize: true
     zero_diagonal: true
@@ -85,11 +85,10 @@ graph:
   enabled: true
   seed: 3
   cache: true
-  cache_dir: cache/graphs
   spec:
     scheme: knn
     metric: cosine
-    k: 5
+    k: 15
     symmetrize: mutual
     weights:
       kind: heat
@@ -97,5 +96,5 @@ graph:
     normalize: rw
     self_loops: true
     backend: numpy
-    chunk_size: 256
+    chunk_size: 1024
     feature_field: features.X

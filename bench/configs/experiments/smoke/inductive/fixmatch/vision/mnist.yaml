@@ -2,16 +2,16 @@ run:
   name: smoke_vision_inductive_fixmatch_mnist
   seed: 3
   output_dir: runs/inductive/fixmatch/vision/mnist
-  fail_fast: true
   log_level: detailed
+  fail_fast: true
 limits:
   profile: auto
 dataset:
   id: mnist
   download: true
   options:
-    max_train_samples: 2000
-    max_test_samples: 1000
+    max_train_samples: 500
+    max_test_samples: 200
     seed: 0
 sampling:
   seed: 3
@@ -43,40 +43,36 @@ preprocess:
     - id: labels.encode
     - id: vision.ensure_num_channels
       params:
-        num_channels: 1
+        num_channels: 3
     - id: vision.channels_order
       params:
         order: NCHW
-    - id: vision.normalize
+    - id: vision.resize
       params:
-        mean:
-        - 123.675
-        - 116.28
-        - 103.53
-        std:
-        - 58.395
-        - 57.12
-        - 57.375
+        height: 224
+        width: 224
     - id: core.copy_raw
-    - id: core.to_torch
-      params:
-        device: auto
-        dtype: float32
 augmentation:
   enabled: true
   seed: 3
   mode: fixed
-  modality: tabular
+  modality: vision
   weak:
     steps:
-    - id: tabular.gaussian_noise
+    - id: vision.random_crop_pad
       params:
-        std: 0.01
+        padding: 4
+    - id: vision.random_horizontal_flip
   strong:
     steps:
-    - id: tabular.feature_dropout
+    - id: vision.random_crop_pad
       params:
-        p: 0.2
+        padding: 4
+    - id: vision.random_horizontal_flip
+    - id: vision.cutout
+      params:
+        n_holes: 1
+        length: 16
 method:
   kind: inductive
   id: fixmatch
@@ -84,17 +80,26 @@ method:
     device: auto
     dtype: float32
   params:
-    max_epochs: 8
-    p_cutoff: 0.5
-    use_cat: true
+    lambda_u: 1.0
+    p_cutoff: 0.95
+    temperature: 0.5
+    hard_label: true
+    use_cat: false
+    batch_size: 128
+    max_epochs: 2
+    detach_target: true
   model:
-    classifier_id: image_cnn
+    classifier_id: image_pretrained
     classifier_backend: torch
     classifier_params:
+      model_name: resnet18
+      weights: null
+      freeze_backbone: false
+      input_layout: channels_first
       lr: 0.0001
       weight_decay: 0.0001
       batch_size: 32
-      max_epochs: 5
+      max_epochs: 2
     ema: false
 evaluation:
   split_for_model_selection: val

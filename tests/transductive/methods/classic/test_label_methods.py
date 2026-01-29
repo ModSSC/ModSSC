@@ -1873,3 +1873,31 @@ def test_lazy_random_walk_torch_validation(spec, edge_index, edge_weight, y, lab
             labeled_mask=labeled_mask,
             spec=spec,
         )
+
+
+def test_dynamic_label_propagation_torch_oom(monkeypatch):
+    import importlib
+
+    import torch
+
+    dlp = importlib.import_module("modssc.transductive.methods.classic.dynamic_label_propagation")
+
+    def _oom(**_kwargs):
+        raise torch.cuda.OutOfMemoryError("oom")
+
+    monkeypatch.setattr(dlp, "dynamic_label_propagation_torch", _oom)
+
+    edge_index = np.array([[0, 1], [1, 0]], dtype=np.int64)
+    y = np.array([0, 1], dtype=np.int64)
+    labeled = np.array([True, False])
+
+    with pytest.raises(RuntimeError, match="out of memory"):
+        dlp.dynamic_label_propagation(
+            n_nodes=2,
+            edge_index=edge_index,
+            edge_weight=None,
+            y=y,
+            labeled_mask=labeled,
+            backend="torch",
+            device="cpu",
+        )

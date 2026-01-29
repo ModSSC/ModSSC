@@ -4,10 +4,8 @@ run:
   output_dir: runs/inductive/fixmatch/vision/cifar100
   log_level: detailed
   fail_fast: true
-
 limits:
   profile: auto
-
 dataset:
   id: cifar100
   download: true
@@ -49,41 +47,33 @@ preprocess:
       params:
         height: 224
         width: 224
-    - id: vision.normalize
-      params:
-        mean:
-        - 123.675
-        - 116.28
-        - 103.53
-        std:
-        - 58.395
-        - 57.12
-        - 57.375
     - id: core.copy_raw
-    - id: core.to_torch
-      params:
-        device: "auto"
-        dtype: float32
 augmentation:
   enabled: true
   seed: 3
   mode: fixed
-  modality: tabular
+  modality: vision
   weak:
     steps:
-    - id: tabular.gaussian_noise
+    - id: vision.random_crop_pad
       params:
-        std: 0.01
+        padding: 4
+    - id: vision.random_horizontal_flip
   strong:
     steps:
-    - id: tabular.feature_dropout
+    - id: vision.random_crop_pad
       params:
-        p: 0.2
+        padding: 4
+    - id: vision.random_horizontal_flip
+    - id: vision.cutout
+      params:
+        n_holes: 1
+        length: 16
 method:
   kind: inductive
   id: fixmatch
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     lambda_u: 1.0
@@ -99,8 +89,8 @@ method:
     classifier_backend: torch
     classifier_params:
       model_name: resnet18
-      weights: DEFAULT
-      freeze_backbone: true
+      weights: null
+      freeze_backbone: false
       input_layout: channels_first
       lr: 0.0001
       weight_decay: 0.0001

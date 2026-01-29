@@ -1,20 +1,24 @@
 run:
-  name: smoke_text_s4vm_imdb
+  name: smoke_text_inductive_s4vm_imdb
   seed: 2
   output_dir: runs/inductive/s4vm/text/imdb
-  fail_fast: true
   log_level: detailed
-
+  fail_fast: true
 limits:
   profile: auto
-
 dataset:
   id: imdb
+  download: true
   options:
     text_column: text
     label_column: label
     prefer_test_split: true
-  download: true
+    class_filter:
+    - 0
+    - 1
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 2
   plan:
@@ -44,23 +48,23 @@ preprocess:
     steps:
     - id: labels.encode
     - id: text.ensure_strings
-    - id: embeddings.auto
-    - id: core.ensure_2d
+    - id: text.vocab_tokenizer
+      params:
+        max_length: 256
+        vocab_size: 20000
     - id: core.to_torch
       params:
-        device: "auto"
+        device: auto
         dtype: float32
 method:
   kind: inductive
   id: s4vm
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
-    classifier_id: mlp
+    classifier_id: lstm_scratch
     classifier_backend: torch
-    k_candidates: 3
-    flip_rate: 0.1
     classifier_params:
       hidden_sizes:
       - 128
@@ -70,6 +74,8 @@ method:
       weight_decay: 0.0
       batch_size: 256
       max_epochs: 50
+    k_candidates: 6
+    flip_rate: 0.05
 evaluation:
   split_for_model_selection: val
   report_splits:

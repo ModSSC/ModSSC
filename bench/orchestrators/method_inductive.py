@@ -9,6 +9,7 @@ from typing import Any
 import numpy as np
 
 from modssc.data_augmentation.utils import is_torch_tensor
+from modssc.device import resolve_device_name
 from modssc.inductive.deep import build_torch_bundle_from_classifier
 from modssc.inductive.registry import get_method_class, get_method_info
 from modssc.inductive.types import DeviceSpec, InductiveDataset
@@ -27,14 +28,64 @@ def _indices_for(X: Any, idx: np.ndarray):
         import importlib
 
         torch = importlib.import_module("torch")
-        return torch.as_tensor(idx, device=X.device, dtype=torch.long)
+        device = X["x"].device if isinstance(X, dict) and "x" in X else getattr(X, "device", "cpu")
+        return torch.as_tensor(idx, device=device, dtype=torch.long)
     return idx
 
 
 def _select_rows(X: Any, idx: np.ndarray):
     if X is None:
         return None
-    return X[_indices_for(X, idx)]
+
+    if isinstance(X, dict):
+        out = {}
+        # Special handling for Graph
+        try:
+            import importlib
+
+            torch = importlib.import_module("torch")
+            from torch_geometric.utils import subgraph
+
+            if "edge_index" in X:
+                ei = X["edge_index"]
+                idx_t = torch.as_tensor(idx, device=ei.device, dtype=torch.long)
+                sub_ei, _ = subgraph(idx_t, ei, relabel_nodes=True)
+                out["edge_index"] = sub_ei
+        except Exception:
+            pass
+
+        for k, v in X.items():
+            if k == "edge_index":
+                if "edge_index" not in out:  # fallback
+                    out[k] = v
+                continue
+
+            if is_torch_tensor(v):
+                import importlib
+
+                torch = importlib.import_module("torch")
+                # Heuristic: if dimension 0 looks like it matches the index space
+                if v.ndim > 0 and v.shape[0] > idx.max():
+                    out[k] = v[torch.as_tensor(idx, device=v.device, dtype=torch.long)]
+                else:
+                    out[k] = v
+            elif isinstance(v, (np.ndarray, list)):
+                v_arr = np.array(v)
+                if v_arr.ndim > 0 and v_arr.shape[0] > idx.max():
+                    out[k] = v_arr[idx]
+                else:
+                    out[k] = v
+            else:
+                out[k] = v
+        return out
+
+    if is_torch_tensor(X):
+        import importlib
+
+        torch = importlib.import_module("torch")
+        return X[torch.as_tensor(idx, device=X.device, dtype=torch.long)]
+
+    return X[idx]
 
 
 def _labels_for_backend(pre: PreprocessResult, X_l: Any, idx: np.ndarray) -> Any:
@@ -43,19 +94,22 @@ def _labels_for_backend(pre: PreprocessResult, X_l: Any, idx: np.ndarray) -> Any
         labels = pre.train_artifacts.get("labels.y")
 
     if is_torch_tensor(X_l):
+        if isinstance(X_l, dict) and "x" in X_l:
+            device = getattr(X_l["x"], "device", "cpu")
+        else:
+            device = getattr(X_l, "device", "cpu")
+
         if labels is not None and is_torch_tensor(labels):
-            return labels[_indices_for(labels, idx)]
+            y_sub = labels[_indices_for(labels, idx)]
+            if hasattr(y_sub, "device") and y_sub.device != device:
+                return y_sub.to(device)
+            return y_sub
+
         import importlib
 
         torch = importlib.import_module("torch")
         y = np.asarray(pre.dataset.train.y)
-        return torch.as_tensor(y[idx], device=X_l.device, dtype=torch.int64)
-
-    if labels is not None and not is_torch_tensor(labels):
-        return np.asarray(labels)[idx]
-
-    y = np.asarray(pre.dataset.train.y)
-    return y[idx]
+        return torch.as_tensor(y[idx], device=device, dtype=torch.int64)
 
 
 def _to_torch_like(x: Any, ref: Any) -> Any:
@@ -75,14 +129,22 @@ def _build_views(
     ref: Any,
 ) -> dict[str, Any]:
     use_torch = is_torch_tensor(ref)
+
+    def _get_dev(obj):
+        if isinstance(obj, dict) and "x" in obj:
+            return obj["x"].device
+        return getattr(obj, "device", None)
+
+    device = _get_dev(ref) if use_torch else None
+
     out: dict[str, Any] = {}
     for name, ds in views.views.items():
         X_train = ds.train.X
         X_l = _select_rows(X_train, idx_l)
         X_u = _select_rows(X_train, idx_u)
         if use_torch:
-            X_l = _to_torch_like(X_l, ref)
-            X_u = _to_torch_like(X_u, ref)
+            X_l = _smart_to_torch(X_l, device)
+            X_u = _smart_to_torch(X_u, device)
         out[name] = {"X_l": X_l, "X_u": X_u}
     return out
 
@@ -160,7 +222,20 @@ def _inject_model_bundle(
             return factory(**dict(model_cfg.params))
         sample = sample_override if sample_override is not None else X_l
         if not is_torch_tensor(sample):
-            raise ValueError("Torch model bundle requires torch.Tensor inputs (use core.to_torch).")
+            # Lazy conversion for uint8 storage capability
+            import importlib
+
+            torch = importlib.import_module("torch")
+            # Assuming NCHW layout for vision if not specified otherwise, or relying on bundle to handle it.
+            # Convert to float32 for model compat
+            if isinstance(sample, dict) and "x" in sample:
+                sample = torch.as_tensor(sample["x"])
+            else:
+                sample = torch.as_tensor(sample)
+
+            if sample.dtype == torch.uint8:
+                sample = sample.to(dtype=torch.float32).div(255.0)
+
         num_classes = _infer_num_classes(y_l)
         local_classifier_id = classifier_id or model_cfg.classifier_id
         local_classifier_backend = classifier_backend or model_cfg.classifier_backend
@@ -248,6 +323,29 @@ def _inject_model_bundle(
     raise ValueError("method.model is set but the method spec has no model_bundle field")
 
 
+def _smart_to_torch(x: Any, device: Any) -> Any:
+    """Converts numpy to torch, scaling uint8 to [0,1]."""
+    if x is None:
+        return None
+
+    if isinstance(x, dict):
+        return {k: _smart_to_torch(v, device) for k, v in x.items()}
+
+    if is_torch_tensor(x):
+        return x
+
+    import importlib
+
+    torch = importlib.import_module("torch")
+    x_np = np.asarray(x)
+
+    if x_np.dtype == np.uint8:
+        return torch.tensor(x_np, device=device, dtype=torch.float32).div_(255.0)
+
+    dtype = torch.float32 if x_np.dtype == np.float64 else None
+    return torch.as_tensor(x_np, device=device, dtype=dtype)
+
+
 def run(
     pre: PreprocessResult,
     sampling: SamplingResult,
@@ -274,6 +372,27 @@ def run(
         cfg.device.dtype,
         model_ref,
     )
+
+    # Check for multi-GPU availability
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            n_devices = torch.cuda.device_count()
+            if n_devices > 1:
+                _LOGGER.info("Multi-GPU Environment: %d CUDA devices detected.", n_devices)
+                for i in range(n_devices):
+                    try:
+                        name = torch.cuda.get_device_name(i)
+                        _LOGGER.info("  Device %d: %s", i, name)
+                    except Exception:
+                        pass
+                _LOGGER.info(
+                    "Multi-GPU Use: NOTE - Unless specified, training defaults to 'cuda:0'."
+                )
+    except ImportError:
+        pass
+
     _LOGGER.debug("Inductive method params: %s", dict(cfg.params))
     method_cls = get_method_class(cfg.method_id)
     _ = get_method_info(cfg.method_id)
@@ -285,10 +404,24 @@ def run(
     X_train = pre.dataset.train.X
     X_l = _select_rows(X_train, idx_l)
     X_u = _select_rows(X_train, idx_u)
+
+    # JIT Conversion to Torch if method requires it (inferred by missing to_torch in pre)
+    if not is_torch_tensor(X_l):
+        target_device = resolve_device_name(cfg.device.device)
+        X_l = _smart_to_torch(X_l, target_device)
+        if X_u is not None:
+            X_u = _smart_to_torch(X_u, target_device)
+        if X_u_w is not None:
+            X_u_w = _smart_to_torch(X_u_w, target_device)
+        if X_u_s is not None:
+            X_u_s = _smart_to_torch(X_u_s, target_device)
+        if X_u_s_1 is not None:
+            X_u_s_1 = _smart_to_torch(X_u_s_1, target_device)
+
     y_l = _labels_for_backend(pre, X_l, idx_l)
 
     if X_u_s_1 is not None and is_torch_tensor(X_l) and not is_torch_tensor(X_u_s_1):
-        X_u_s_1 = _to_torch_like(X_u_s_1, ref=X_l)
+        X_u_s_1 = _smart_to_torch(X_u_s_1, X_l.device)
 
     views_payload = _build_views(views, idx_l=idx_l, idx_u=idx_u, ref=X_l) if views else None
     if X_u_s_1 is not None:
@@ -308,7 +441,10 @@ def run(
     }
     if X_u is not None:
         meta["idx_u"] = _indices_for(X_u, idx_u)
-        meta["ulb_size"] = int(X_train.shape[0])
+        if isinstance(X_train, dict) and "x" in X_train:
+            meta["ulb_size"] = int(X_train["x"].shape[0])
+        else:
+            meta["ulb_size"] = int(X_train.shape[0])
 
     data = InductiveDataset(
         X_l=X_l,

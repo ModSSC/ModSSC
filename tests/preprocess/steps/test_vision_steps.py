@@ -220,7 +220,10 @@ def test_resize_step():
     img_match = np.zeros((2, 4, 4, 3))
     store.set("raw.X", img_match)
     res = step.transform(store, rng=rng)
-    assert res["raw.X"] is img_match
+    # With strict uint8 policy, we expect a copy if input wasn't uint8
+    assert res["raw.X"].dtype == np.uint8
+    assert res["raw.X"].shape == img_match.shape
+    assert np.all(res["raw.X"] == img_match.astype(np.uint8))
 
     store.set("raw.X", np.zeros((10,)))
     res = step.transform(store, rng=rng)

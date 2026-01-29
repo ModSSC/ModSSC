@@ -10,11 +10,8 @@ dataset:
   id: speechcommands
   download: true
   options:
-    class_filter:
-    - 'yes'
-    - 'no'
-    max_train_samples: 2000
-    max_test_samples: 1000
+    max_train_samples: 500
+    max_test_samples: 200
     seed: 0
 sampling:
   seed: 4
@@ -46,8 +43,14 @@ preprocess:
     - id: labels.encode
     - id: audio.load_waveform
       params:
+        allow_fallback: true
         target_sample_rate: 16000
         max_length: 16000
+    - id: audio.log_mel_spectrogram
+      params:
+        n_mels: 64
+        n_fft: 1024
+        hop_length: 256
     - id: core.to_torch
       params:
         device: auto
@@ -74,19 +77,23 @@ method:
     device: auto
     dtype: float32
   params:
-    max_epochs: 8
-    p_cutoff: 0.5
-    use_cat: true
+    lambda_u: 1.0
+    p_cutoff: 0.95
+    use_cat: false
+    batch_size: 128
+    max_epochs: 2
+    detach_target: true
+    score_warmup_epochs: 2
   model:
     classifier_id: audio_pretrained
     classifier_backend: torch
     classifier_params:
       bundle: WAV2VEC2_BASE
-      freeze_backbone: true
+      freeze_backbone: false
       lr: 0.0001
       weight_decay: 0.0001
       batch_size: 8
-      max_epochs: 5
+      max_epochs: 2
     ema: false
 evaluation:
   split_for_model_selection: val

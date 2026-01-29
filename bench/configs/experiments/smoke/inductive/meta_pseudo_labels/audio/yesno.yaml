@@ -1,5 +1,5 @@
 run:
-  name: smoke_audio_meta_pseudo_labels_yesno
+  name: smoke_audio_inductive_meta_pseudo_labels_yesno
   seed: 4
   output_dir: runs/inductive/meta_pseudo_labels/audio/yesno
   fail_fast: true
@@ -9,6 +9,10 @@ limits:
 dataset:
   id: yesno
   download: true
+  options:
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 4
   plan:
@@ -39,8 +43,14 @@ preprocess:
     - id: labels.encode
     - id: audio.load_waveform
       params:
+        allow_fallback: true
         target_sample_rate: 16000
         max_length: 16000
+    - id: audio.log_mel_spectrogram
+      params:
+        n_mels: 64
+        n_fft: 1024
+        hop_length: 256
     - id: core.to_torch
       params:
         device: auto
@@ -68,22 +78,24 @@ method:
     dtype: float32
   params:
     uda_weight: 1.0
-    uda_threshold: 0.6
+    uda_threshold: 0.8
     uda_temperature: 0.4
     label_smoothing: 0.1
     mpl_ema: 0.99
     mpl_weight: 1.0
-    max_epochs: 5
+    batch_size: 128
+    max_epochs: 2
+    detach_target: true
   model:
     classifier_id: audio_pretrained
     classifier_backend: torch
     classifier_params:
       bundle: WAV2VEC2_BASE
-      freeze_backbone: true
+      freeze_backbone: false
       lr: 0.0001
       weight_decay: 0.0001
       batch_size: 8
-      max_epochs: 5
+      max_epochs: 2
     ema: false
 evaluation:
   split_for_model_selection: val

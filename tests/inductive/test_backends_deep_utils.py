@@ -197,6 +197,135 @@ def test_cycle_batch_indices_and_batches():
         list(deep_utils.cycle_batches(np.zeros((2, 2)), y, batch_size=2, generator=gen, steps=1))
 
 
+def test_ensure_float_tensor_dict_paths():
+    x_ok = {"x": torch.zeros((2, 2), dtype=torch.float32), "meta": "keep"}
+    deep_utils.ensure_float_tensor(x_ok, name="X")
+
+    x_no_x = {"feat": torch.zeros((1, 2), dtype=torch.float32)}
+    deep_utils.ensure_float_tensor(x_no_x, name="X")
+
+    x_bad = {"x": torch.zeros((2, 2), dtype=torch.int64)}
+    with pytest.raises(InductiveValidationError, match="float32 or float64"):
+        deep_utils.ensure_float_tensor(x_bad, name="X")
+
+    with pytest.raises(InductiveValidationError, match="must be a torch.Tensor"):
+        deep_utils.ensure_float_tensor({"meta": "no-tensor"}, name="X")
+
+
+def _install_fake_tg_utils(monkeypatch, *, raise_import: bool):
+    import sys
+    import types
+
+    utils = types.ModuleType("torch_geometric.utils")
+    if raise_import:
+
+        def subgraph(*_args, **_kwargs):
+            raise ImportError("no pyg")
+    else:
+
+        def subgraph(idx, edge_index, relabel_nodes=True, num_nodes=None):
+            return edge_index, None
+
+    utils.subgraph = subgraph
+
+    tg = types.ModuleType("torch_geometric")
+    tg.utils = utils
+    monkeypatch.setitem(sys.modules, "torch_geometric", tg)
+    monkeypatch.setitem(sys.modules, "torch_geometric.utils", utils)
+
+
+def _install_fake_tg_data(monkeypatch, *, with_batch: bool):
+    import sys
+    import types
+
+    data_mod = types.ModuleType("torch_geometric.data")
+    if with_batch:
+
+        class Data:
+            def __init__(self, **kwargs):
+                self._data = kwargs
+
+        class Batch:
+            def __init__(self, data_list):
+                self._data_list = data_list
+
+            @classmethod
+            def from_data_list(cls, data_list):
+                return cls(data_list)
+
+            def to_dict(self):
+                x = torch.cat([d._data["x"] for d in self._data_list], dim=0)
+                edge_index = torch.cat([d._data["edge_index"] for d in self._data_list], dim=1)
+                return {"x": x, "edge_index": edge_index}
+
+        data_mod.Data = Data
+        data_mod.Batch = Batch
+
+    tg = types.ModuleType("torch_geometric")
+    tg.data = data_mod
+    monkeypatch.setitem(sys.modules, "torch_geometric", tg)
+    monkeypatch.setitem(sys.modules, "torch_geometric.data", data_mod)
+
+
+def test_slice_data_dict_with_and_without_pyg(monkeypatch):
+    X = {
+        "x": torch.arange(6, dtype=torch.float32).view(3, 2),
+        "edge_index": torch.tensor([[0, 1], [1, 2]], dtype=torch.long),
+        "mask": torch.tensor([1, 0, 1]),
+        "meta": "keep",
+    }
+    idx = torch.tensor([0, 2], dtype=torch.long)
+
+    _install_fake_tg_utils(monkeypatch, raise_import=False)
+    out = deep_utils.slice_data(X, idx)
+    assert out["x"].shape == (2, 2)
+    assert "edge_index" in out
+    assert out["mask"].shape == (2,)
+    assert out["meta"] == "keep"
+
+    _install_fake_tg_utils(monkeypatch, raise_import=True)
+    out2 = deep_utils.slice_data(X, idx)
+    assert "edge_index" not in out2
+
+
+def test_slice_data_dict_without_x():
+    X = {"mask": torch.zeros((0, 2)), "meta": "keep"}
+    out = deep_utils.slice_data(X, torch.tensor([], dtype=torch.long))
+    assert out["mask"].shape == (0, 2)
+    assert out["meta"] == "keep"
+
+
+def test_cat_data_dict_paths(monkeypatch):
+    assert deep_utils.cat_data([]) is None
+
+    _install_fake_tg_data(monkeypatch, with_batch=True)
+    d1 = {"x": torch.zeros((1, 2)), "edge_index": torch.tensor([[0], [0]])}
+    d2 = {"x": torch.ones((1, 2)), "edge_index": torch.tensor([[0], [0]])}
+    out = deep_utils.cat_data([d1, d2])
+    assert out["x"].shape[0] == 2
+    assert out["edge_index"].shape[1] == 2
+
+    # ImportError path -> fallback concat
+    _install_fake_tg_data(monkeypatch, with_batch=False)
+    d3 = {"x": torch.zeros((1, 2)), "edge_index": torch.tensor([[0], [0]]), "meta": "keep"}
+    d4 = {"x": torch.ones((1, 2)), "edge_index": torch.tensor([[0], [0]]), "meta": "keep"}
+    out2 = deep_utils.cat_data([d3, d4])
+    assert out2["x"].shape[0] == 2
+    assert out2["edge_index"].shape[0] == d3["edge_index"].shape[0] * 2
+    assert out2["edge_index"].shape[1] == d3["edge_index"].shape[1]
+    assert out2["meta"] == "keep"
+
+
+def test_cycle_batches_with_dict():
+    gen = torch.Generator().manual_seed(0)
+    X = {"x": torch.arange(8, dtype=torch.float32).view(4, 2), "meta": "keep"}
+    y = torch.tensor([0, 1, 0, 1], dtype=torch.int64)
+    batches = list(deep_utils.cycle_batches(X, y, batch_size=2, generator=gen, steps=1))
+    batch_x, batch_y = batches[0]
+    assert batch_x["x"].shape == (2, 2)
+    assert batch_y.shape == (2,)
+
+
 def test_validate_torch_model_bundle_errors():
     with pytest.raises(InductiveValidationError):
         validate_torch_model_bundle("bad")  # type: ignore[arg-type]

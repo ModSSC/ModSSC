@@ -4,15 +4,15 @@ run:
   output_dir: runs/transductive/poisson_mbo/graph/cora
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: cora
   download: true
   options:
-    max_nodes: 2000
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 5
   plan:
@@ -47,17 +47,17 @@ method:
   kind: transductive
   id: poisson_mbo
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
-    T: 20
-    Ninner: 5
-    Nouter: 3
+    T: 200
+    Ninner: 40
+    Nouter: 20
     mu: 1.0
     d_tau: 10.0
     smin: 0.5
     smax: 2.0
-    n_volume_iters: 10
+    n_volume_iters: 100
     b_strategy: uniform
     symmetrize: true
     zero_diagonal: true

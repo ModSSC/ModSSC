@@ -106,6 +106,26 @@ BUILTIN_STEPS: tuple[StepSpec, ...] = (
         consumes=("raw.X",),
         produces=("features.X",),
     ),
+    StepSpec(
+        step_id="tabular.standard_scaler",
+        import_path="modssc.preprocess.steps.tabular.standard_scaler:TabularStandardScalerStep",
+        kind="fittable",
+        description="Standardize features by removing the mean and scaling to unit variance.",
+        required_extra="preprocess-sklearn",
+        modalities=("tabular",),
+        consumes=("features.X",),
+        produces=("features.X",),
+    ),
+    StepSpec(
+        step_id="tabular.impute",
+        import_path="modssc.preprocess.steps.tabular.impute:TabularImputeStep",
+        kind="fittable",
+        description="Impute missing values using mean/median/etc.",
+        required_extra="preprocess-sklearn",
+        modalities=("tabular",),
+        consumes=("features.X",),
+        produces=("features.X",),
+    ),
     # Text
     StepSpec(
         step_id="text.ensure_strings",
@@ -126,6 +146,16 @@ BUILTIN_STEPS: tuple[StepSpec, ...] = (
         modalities=("text",),
         consumes=("raw.X",),
         produces=("tokens.input_ids", "tokens.attention_mask"),
+    ),
+    StepSpec(
+        step_id="text.vocab_tokenizer",
+        import_path="modssc.preprocess.steps.text.vocab_tokenizer:VocabTokenizerStep",
+        kind="fittable",
+        description="Fit a vocabulary and tokenize text into integer sequences (Tabula Rasa).",
+        required_extra=None,
+        modalities=("text",),
+        consumes=("raw.X",),
+        produces=("features.X", "tokens.input_ids", "tokens.attention_mask"),
     ),
     StepSpec(
         step_id="text.tfidf",
@@ -239,6 +269,16 @@ BUILTIN_STEPS: tuple[StepSpec, ...] = (
         consumes=("raw.X",),
         produces=("features.X",),
     ),
+    StepSpec(
+        step_id="audio.log_mel_spectrogram",
+        import_path="modssc.preprocess.steps.audio.spectrogram:LogMelSpectrogramStep",
+        kind="transform",
+        description="Convert waveforms (features.X) to Log-Mel Spectrograms.",
+        required_extra="preprocess-audio",
+        modalities=("audio",),
+        consumes=("features.X",),
+        produces=("features.X",),
+    ),
     # Graph
     StepSpec(
         step_id="graph.attach_edge_weight",
@@ -268,6 +308,16 @@ BUILTIN_STEPS: tuple[StepSpec, ...] = (
         required_extra="transductive-torch",
         modalities=("graph",),
         consumes=("graph.edge_index",),
+        produces=("features.X",),
+    ),
+    StepSpec(
+        step_id="graph.sparse_adjacency",
+        import_path="modssc.preprocess.steps.graph.sparse_adjacency:SparseAdjacencyStep",
+        kind="transform",
+        description="Pack X and edge_index into a dict for Inductive GNNs.",
+        required_extra=None,
+        modalities=("graph",),
+        consumes=("graph.edge_index", "features.X"),
         produces=("features.X",),
     ),
     StepSpec(

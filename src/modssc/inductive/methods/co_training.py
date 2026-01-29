@@ -80,6 +80,28 @@ def _view_predict_payload_numpy(value: Any, *, name: str) -> np.ndarray:
     return X
 
 
+def _get_torch_tensor(obj: Any) -> Any:
+    if isinstance(obj, dict) and "x" in obj:
+        return obj["x"]
+    return obj
+
+
+def _is_valid_torch(obj: Any, torch: Any) -> bool:
+    return isinstance(obj, torch.Tensor) or (isinstance(obj, dict) and "x" in obj)
+
+
+def _get_torch_len(obj: Any) -> int:
+    if isinstance(obj, dict) and "x" in obj:
+        return int(obj["x"].shape[0])
+    return int(obj.shape[0])
+
+
+def _get_torch_device(obj: Any) -> Any:
+    if isinstance(obj, dict) and "x" in obj:
+        return obj["x"].device
+    return obj.device
+
+
 def _view_payload_torch(value: Any, *, name: str):
     torch = optional_import("torch", extra="inductive-torch")
     if isinstance(value, Mapping):
@@ -94,13 +116,17 @@ def _view_payload_torch(value: Any, *, name: str):
             f"views[{name!r}] must be a mapping with X_l/X_u or a tuple (X_l, X_u)."
         )
 
-    if not isinstance(X_l, torch.Tensor) or not isinstance(X_u, torch.Tensor):
+    if not _is_valid_torch(X_l, torch) or not _is_valid_torch(X_u, torch):
         raise InductiveValidationError(
             f"views[{name!r}] X_l/X_u must be torch tensors. Use preprocess core.to_torch."
         )
-    if X_l.ndim < 2 or X_u.ndim < 2:
+
+    tl = _get_torch_tensor(X_l)
+    tu = _get_torch_tensor(X_u)
+
+    if tl.ndim < 2 or tu.ndim < 2:
         raise InductiveValidationError(f"views[{name!r}] X_l/X_u must be at least 2D tensors.")
-    if X_l.device != X_u.device:
+    if tl.device != tu.device:
         raise InductiveValidationError(f"views[{name!r}] X_l/X_u must share device.")
     return X_l, X_u
 
@@ -120,11 +146,61 @@ def _view_predict_payload_torch(value: Any, *, name: str):
             )
     else:
         X = value
-    if not isinstance(X, torch.Tensor):
+    if not _is_valid_torch(X, torch):
         raise InductiveValidationError(f"views[{name!r}] must be a torch tensor for prediction.")
-    if X.ndim < 2:
+
+    Xt = _get_torch_tensor(X)
+    if Xt.ndim < 2:
         raise InductiveValidationError(f"views[{name!r}] must be at least 2D for prediction.")
     return X
+
+
+def _index_torch(obj: Any, idx: Any) -> Any:
+    if isinstance(obj, dict) and "x" in obj:
+        torch = optional_import("torch", extra="inductive-torch")
+        res = obj.copy()
+        res["x"] = obj["x"][idx]
+
+        if "edge_index" in obj:
+            try:
+                from torch_geometric.utils import subgraph
+            except ImportError as exc:
+                raise InductiveValidationError(
+                    "PyG is required to slice edge_index for graph inputs. "
+                    "Install torch_geometric or remove graph preprocessing."
+                ) from exc
+            else:
+                edge_index = obj["edge_index"]
+                num_nodes = obj["x"].shape[0]
+
+                subset = idx
+                if isinstance(subset, slice):
+                    subset = torch.arange(num_nodes, device=obj["x"].device)[subset]
+
+                new_ei, _ = subgraph(subset, edge_index, relabel_nodes=True, num_nodes=num_nodes)
+                res["edge_index"] = new_ei
+
+        return res
+    return obj[idx]
+
+
+def _cat_torch(objs: list[Any], dim: int = 0) -> Any:
+    torch = optional_import("torch", extra="inductive-torch")
+    if isinstance(objs[0], dict) and "x" in objs[0]:
+        res = objs[0].copy()
+        res["x"] = torch.cat([o["x"] for o in objs], dim=dim)
+
+        if "edge_index" in objs[0]:
+            edge_indices = []
+            offset = 0
+            for o in objs:
+                ei = o["edge_index"]
+                edge_indices.append(ei + offset)
+                offset += o["x"].shape[0]
+            res["edge_index"] = torch.cat(edge_indices, dim=1)
+
+        return res
+    return torch.cat(objs, dim=dim)
 
 
 class CoTrainingMethod(InductiveMethod):
@@ -173,7 +249,7 @@ class CoTrainingMethod(InductiveMethod):
             y_l = ensure_1d_labels(data.y_l, name="y_l")
         else:
             torch = optional_import("torch", extra="inductive-torch")
-            if not isinstance(data.X_l, torch.Tensor):
+            if not _is_valid_torch(data.X_l, torch):
                 raise InductiveValidationError(
                     "X_l must be a torch tensor. Use preprocess core.to_torch."
                 )
@@ -201,17 +277,27 @@ class CoTrainingMethod(InductiveMethod):
             v1_l, v1_u = _view_payload_torch(data.views[keys[0]], name=keys[0])
             v2_l, v2_u = _view_payload_torch(data.views[keys[1]], name=keys[1])
 
-        if backend == "torch" and (y_l.device != v1_l.device or y_l.device != v2_l.device):
-            raise InductiveValidationError("y_l must be on the same device as the view tensors.")
+        if backend == "torch":
+            d1 = _get_torch_device(v1_l)
+            d2 = _get_torch_device(v2_l)
+            if y_l.device != d1 or y_l.device != d2:
+                raise InductiveValidationError(
+                    "y_l must be on the same device as the view tensors."
+                )
 
-        if v1_l.shape[0] != y_l.shape[0] or v2_l.shape[0] != y_l.shape[0]:
+        l1 = v1_l.shape[0] if backend == "numpy" else _get_torch_len(v1_l)
+        l2 = v2_l.shape[0] if backend == "numpy" else _get_torch_len(v2_l)
+        u1 = v1_u.shape[0] if backend == "numpy" else _get_torch_len(v1_u)
+        u2 = v2_u.shape[0] if backend == "numpy" else _get_torch_len(v2_u)
+
+        if l1 != y_l.shape[0] or l2 != y_l.shape[0]:
             raise InductiveValidationError("View X_l must align with y_l length.")
-        if v1_u.shape[0] != v2_u.shape[0]:
+        if u1 != u2:
             raise InductiveValidationError("View X_u must have the same number of rows.")
         logger.info(
             "Co-training sizes: n_labeled=%s n_unlabeled=%s",
-            int(v1_l.shape[0]),
-            int(v1_u.shape[0]),
+            int(l1),
+            int(u1),
         )
 
         clf1 = build_classifier(self.spec, seed=seed)
@@ -230,7 +316,8 @@ class CoTrainingMethod(InductiveMethod):
             clf1.fit(X1_l, y1_l)
             clf2.fit(X2_l, y2_l)
 
-            if X1_u.shape[0] == 0:
+            u1_len = X1_u.shape[0] if backend == "numpy" else _get_torch_len(X1_u)
+            if u1_len == 0:
                 break
 
             scores1 = predict_scores(clf1, X1_u, backend=backend)
@@ -284,28 +371,30 @@ class CoTrainingMethod(InductiveMethod):
                 X2_u = X2_u[mask]
             else:
                 if idx1.numel():
-                    y_from_1 = clf1.predict(X1_u[idx1])
-                    X2_l = torch.cat([X2_l, X2_u[idx1]], dim=0)
+                    y_from_1 = clf1.predict(_index_torch(X1_u, idx1))
+                    X2_l = _cat_torch([X2_l, _index_torch(X2_u, idx1)], dim=0)
                     y2_l = torch.cat([y2_l, y_from_1], dim=0)
                 if idx2.numel():
-                    y_from_2 = clf2.predict(X2_u[idx2])
-                    X1_l = torch.cat([X1_l, X1_u[idx2]], dim=0)
+                    y_from_2 = clf2.predict(_index_torch(X2_u, idx2))
+                    X1_l = _cat_torch([X1_l, _index_torch(X1_u, idx2)], dim=0)
                     y1_l = torch.cat([y1_l, y_from_2], dim=0)
 
-                mask = torch.ones((int(X1_u.shape[0]),), dtype=torch.bool, device=X1_u.device)
+                d_u = _get_torch_device(X1_u)
+                l_u = _get_torch_len(X1_u)
+                mask = torch.ones((l_u,), dtype=torch.bool, device=d_u)
                 if idx1.numel():
                     mask[idx1] = False
                 if idx2.numel():
                     mask[idx2] = False
-                X1_u = X1_u[mask]
-                X2_u = X2_u[mask]
+                X1_u = _index_torch(X1_u, mask)
+                X2_u = _index_torch(X2_u, mask)
 
             logger.debug(
                 "Co-training iter=%s selected_view1=%s selected_view2=%s remaining=%s",
                 iter_count,
                 sel1,
                 sel2,
-                int(X1_u.shape[0]),
+                _get_torch_len(X1_u),
             )
             iter_count += 1
 

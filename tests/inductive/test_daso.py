@@ -654,3 +654,41 @@ def test_daso_predict_errors():
     method._backend = "torch"
     with pytest.raises(InductiveValidationError, match="Model logits must be 2D"):
         method.predict_proba(torch.zeros((2, 2)))
+
+
+def test_daso_predict_proba_dict_inputs():
+    class _DictNet(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.fc = torch.nn.Linear(2, 2, bias=False)
+
+        def forward(self, x):
+            if isinstance(x, dict):
+                x = x["x"]
+            return self.fc(x)
+
+    method = DASOMethod()
+    method._bundle = _make_bundle(_DictNet())
+    method._backend = "torch"
+    X = {"x": torch.zeros((2, 2), dtype=torch.float32)}
+    proba = method.predict_proba(X)
+    assert proba.shape[0] == 2
+
+
+def test_daso_predict_proba_empty_dict():
+    class _DictNet(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.fc = torch.nn.Linear(2, 2, bias=False)
+
+        def forward(self, x):
+            if isinstance(x, dict):
+                x = x["x"]
+            return self.fc(x)
+
+    method = DASOMethod()
+    method._bundle = _make_bundle(_DictNet())
+    method._backend = "torch"
+    X = {"x": torch.zeros((0, 2), dtype=torch.float32)}
+    proba = method.predict_proba(X)
+    assert proba.shape[0] == 0

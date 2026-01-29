@@ -257,14 +257,20 @@ def dynamic_label_propagation(
     y_t = torch.as_tensor(y, dtype=torch.long, device=dev)
     labeled_t = torch.as_tensor(labeled_mask, dtype=torch.bool, device=dev)
 
-    return dynamic_label_propagation_torch(
-        n_nodes=n_nodes,
-        edge_index=edge_index_t,
-        edge_weight=edge_weight_t,
-        y=y_t,
-        labeled_mask=labeled_t,
-        spec=spec,
-    )
+    try:
+        return dynamic_label_propagation_torch(
+            n_nodes=n_nodes,
+            edge_index=edge_index_t,
+            edge_weight=edge_weight_t,
+            y=y_t,
+            labeled_mask=labeled_t,
+            spec=spec,
+        )
+    except torch.cuda.OutOfMemoryError as exc:
+        raise RuntimeError(
+            f"DynamicLabelPropagation ran out of memory on device={dev}. "
+            "Retry with device='cpu' or reduce graph size."
+        ) from exc
 
 
 class DynamicLabelPropagationMethod(TransductiveMethod):

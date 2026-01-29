@@ -10,6 +10,9 @@ from .types import Backend
 
 def is_torch_tensor(x: Any) -> bool:
     """Heuristic check for torch tensors without importing torch eagerly."""
+    if isinstance(x, dict):
+        return False
+
     mod = type(x).__module__
     if not mod.startswith("torch"):
         return False

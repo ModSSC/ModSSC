@@ -94,7 +94,7 @@ def test_as_numpy_waveform_variants():
 
 
 def test_transform_scipy_fallback():
-    step = LoadWaveformStep()
+    step = LoadWaveformStep(allow_fallback=True)
 
     # We patch the module where 'require' is defined
     with patch("modssc.preprocess.steps.audio.load_waveform.require") as mock_require:

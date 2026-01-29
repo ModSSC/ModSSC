@@ -9,6 +9,7 @@ from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.deep_utils import (
+    cat_data,
     cycle_batch_indices,
     cycle_batches,
     ensure_float_tensor,
@@ -17,6 +18,7 @@ from modssc.inductive.methods.deep_utils import (
     extract_logits,
     freeze_batchnorm,
     num_batches,
+    slice_data,
 )
 from modssc.inductive.methods.utils import (
     detect_backend,
@@ -59,23 +61,56 @@ def _fgsm_adversarial(
     clip_max: float | None,
 ) -> Any:
     torch = optional_import("torch", extra="inductive-torch")
-    if x_u is None or int(x_u.shape[0]) == 0:
+    if isinstance(x_l, dict) and "x" not in x_l:
+        raise InductiveValidationError("x_l dict inputs must include key 'x'.")
+    if x_u is not None and isinstance(x_u, dict) and "x" not in x_u:
+        raise InductiveValidationError("x_u dict inputs must include key 'x'.")
+    if x_u is None:
+        n_l = int(x_l["x"].shape[0]) if isinstance(x_l, dict) and "x" in x_l else int(x_l.shape[0])
+        if n_l == 0:
+            # Logic for empty?
+            pass
+        x_all = x_l
+    elif isinstance(x_u, dict) and "x" in x_u and int(x_u["x"].shape[0]) == 0:
+        x_all = x_l
+        n_l = int(x_l["x"].shape[0]) if isinstance(x_l, dict) and "x" in x_l else int(x_l.shape[0])
+    elif not isinstance(x_u, dict) and int(x_u.shape[0]) == 0:
         x_all = x_l
         n_l = int(x_l.shape[0])
     else:
-        x_all = torch.cat([x_l, x_u], dim=0)
-        n_l = int(x_l.shape[0])
+        x_all = cat_data([x_l, x_u])
+        n_l = int(x_l["x"].shape[0]) if isinstance(x_l, dict) and "x" in x_l else int(x_l.shape[0])
 
-    x_adv = x_all.detach().clone().requires_grad_(True)
-    with freeze_batchnorm(model, enabled=bool(freeze_bn)):
-        logits = extract_logits(model(x_adv))
+    if isinstance(x_all, dict):
+        # Handle dictionary gradients manually
+        # This is a simplification: we only perturb 'x'
+        x_adv_dict = {k: v for k, v in x_all.items()}
+        x_adv_dict["x"] = x_adv_dict["x"].detach().clone().requires_grad_(True)
+        x_adv = x_adv_dict
+
+        with freeze_batchnorm(model, enabled=bool(freeze_bn)):
+            logits = extract_logits(model(x_adv))
+
+        # ... validation ...
+        # Assume x_adv['x'] is the tensor tracked
+        tracked_tensor = x_adv["x"]
+    else:
+        x_adv = x_all.detach().clone().requires_grad_(True)
+        tracked_tensor = x_adv
+
+        with freeze_batchnorm(model, enabled=bool(freeze_bn)):
+            logits = extract_logits(model(x_adv))
+
     if int(logits.ndim) != 2:
         raise InductiveValidationError("Model logits must be 2D (batch, classes).")
-    if int(logits.shape[0]) != int(x_adv.shape[0]):
+
+    # Check batch size against tracked tensor
+    if int(logits.shape[0]) != int(tracked_tensor.shape[0]):
         raise InductiveValidationError("Model logits batch size does not match inputs.")
 
     if n_l > 0:
-        if int(y_l.shape[0]) != n_l:
+        # ... logic for targets ...
+        if isinstance(y_l, torch.Tensor) and int(y_l.shape[0]) != n_l:
             raise InductiveValidationError("Labeled batch size mismatch.")
         targets = torch.empty((int(logits.shape[0]),), dtype=torch.int64, device=logits.device)
         targets[:n_l] = y_l
@@ -86,13 +121,27 @@ def _fgsm_adversarial(
         targets = logits.detach().argmax(dim=1)
 
     loss = torch.nn.functional.cross_entropy(logits, targets)
+
     grads = torch.autograd.grad(
-        loss, x_adv, retain_graph=False, create_graph=False, allow_unused=True
+        loss, tracked_tensor, retain_graph=False, create_graph=False, allow_unused=True
     )
     grad = grads[0]
     if grad is None:
-        grad = torch.zeros_like(x_adv)
-    adv = x_adv + float(epsilon) * grad.sign()
+        grad = torch.zeros_like(tracked_tensor)
+
+    if isinstance(x_all, dict):
+        adv_x = tracked_tensor + float(epsilon) * grad.sign()
+        if clip_min is not None:
+            adv_x = torch.clamp(adv_x, min=float(clip_min))
+        if clip_max is not None:
+            adv_x = torch.clamp(adv_x, max=float(clip_max))
+
+        # Return a new dict with perturbed x
+        out = {k: v for k, v in x_all.items()}
+        out["x"] = adv_x.detach()
+        return out
+
+    adv = tracked_tensor + float(epsilon) * grad.sign()
 
     if clip_min is not None and clip_max is not None:
         adv = torch.clamp(adv, min=float(clip_min), max=float(clip_max))
@@ -191,9 +240,17 @@ class DeepCoTrainingMethod(InductiveMethod):
             raise InductiveValidationError("Deep Co-Training requires X_u (unlabeled data).")
 
         X_l = ds.X_l
-        if int(X_l.shape[0]) == 0:
+        n_l, dev_l = (
+            (int(X_l["x"].shape[0]), X_l["x"].device)
+            if isinstance(X_l, dict) and "x" in X_l
+            else (int(X_l.shape[0]), X_l.device)
+        )
+
+        n_u = int(X_u["x"].shape[0]) if isinstance(X_u, dict) and "x" in X_u else int(X_u.shape[0])
+
+        if n_l == 0:
             raise InductiveValidationError("X_l must be non-empty.")
-        if int(X_u.shape[0]) == 0:
+        if n_u == 0:
             raise InductiveValidationError("X_u must be non-empty.")
 
         y_l = ds.y_l
@@ -205,8 +262,8 @@ class DeepCoTrainingMethod(InductiveMethod):
 
         logger.info(
             "Deep Co-Training sizes: n_labeled=%s n_unlabeled=%s",
-            int(X_l.shape[0]),
-            int(X_u.shape[0]),
+            n_l,
+            n_u,
         )
 
         ensure_float_tensor(X_l, name="X_l")
@@ -223,8 +280,8 @@ class DeepCoTrainingMethod(InductiveMethod):
         optimizer1 = bundle1.optimizer
         optimizer2 = bundle2.optimizer
 
-        ensure_model_device(model1, device=X_l.device)
-        ensure_model_device(model2, device=X_l.device)
+        ensure_model_device(model1, device=dev_l)
+        ensure_model_device(model2, device=dev_l)
         self._check_models(model1, model2)
 
         if int(self.spec.batch_size) <= 0:
@@ -244,8 +301,8 @@ class DeepCoTrainingMethod(InductiveMethod):
         ):
             raise InductiveValidationError("adv_clip_min must be <= adv_clip_max.")
 
-        steps_l = num_batches(int(X_l.shape[0]), int(self.spec.batch_size))
-        steps_u = num_batches(int(X_u.shape[0]), int(self.spec.batch_size))
+        steps_l = num_batches(n_l, int(self.spec.batch_size))
+        steps_u = num_batches(n_u, int(self.spec.batch_size))
         steps_per_epoch = max(int(steps_l), int(steps_u))
 
         gen_l1 = torch.Generator().manual_seed(int(seed))
@@ -269,18 +326,38 @@ class DeepCoTrainingMethod(InductiveMethod):
                 generator=gen_l2,
                 steps=steps_per_epoch,
             )
+
+            if isinstance(X_u, dict) and "x" in X_u:
+                n_u = int(X_u["x"].shape[0])
+                dev_u = X_u["x"].device
+            else:
+                n_u = int(X_u.shape[0])
+                dev_u = X_u.device
+
             iter_u_idx = cycle_batch_indices(
-                int(X_u.shape[0]),
+                n_u,
                 batch_size=int(self.spec.batch_size),
                 generator=gen_u,
-                device=X_u.device,
+                device=dev_u,
                 steps=steps_per_epoch,
             )
             for step, ((x_lb1, y_lb1), (x_lb2, y_lb2), idx_u) in enumerate(
                 zip(iter_l1, iter_l2, iter_u_idx, strict=False)
             ):
-                x_u = X_u[idx_u]
-                if int(x_lb1.shape[0]) != int(x_lb2.shape[0]):
+                x_u = slice_data(X_u, idx_u)
+
+                n_b1 = (
+                    int(x_lb1["x"].shape[0])
+                    if isinstance(x_lb1, dict) and "x" in x_lb1
+                    else int(x_lb1.shape[0])
+                )
+                n_b2 = (
+                    int(x_lb2["x"].shape[0])
+                    if isinstance(x_lb2, dict) and "x" in x_lb2
+                    else int(x_lb2.shape[0])
+                )
+
+                if n_b1 != n_b2:
                     raise InductiveValidationError("Labeled batch sizes must match.")
 
                 x1_adv = _fgsm_adversarial(
@@ -304,22 +381,42 @@ class DeepCoTrainingMethod(InductiveMethod):
                     clip_max=self.spec.adv_clip_max,
                 )
 
-                x1_all = torch.cat([x_lb1, x_u], dim=0)
-                x2_all = torch.cat([x_lb2, x_u], dim=0)
+                x1_all = cat_data([x_lb1, x_u])
+                x2_all = cat_data([x_lb2, x_u])
 
                 logits1_all = extract_logits(model1(x1_all))
                 logits2_all = extract_logits(model2(x2_all))
+
+                n1_all = (
+                    int(x1_all["x"].shape[0])
+                    if (isinstance(x1_all, dict) and "x" in x1_all)
+                    else int(x1_all.shape[0])
+                )
+                n2_all = (
+                    int(x2_all["x"].shape[0])
+                    if (isinstance(x2_all, dict) and "x" in x2_all)
+                    else int(x2_all.shape[0])
+                )
+
                 if int(logits1_all.ndim) != 2 or int(logits2_all.ndim) != 2:
                     raise InductiveValidationError("Model logits must be 2D (batch, classes).")
-                if int(logits1_all.shape[0]) != int(x1_all.shape[0]):
+                if int(logits1_all.shape[0]) != n1_all:
                     raise InductiveValidationError("Model1 logits batch size mismatch.")
-                if int(logits2_all.shape[0]) != int(x2_all.shape[0]):
+                if int(logits2_all.shape[0]) != n2_all:
                     raise InductiveValidationError("Model2 logits batch size mismatch.")
                 if int(logits1_all.shape[1]) != int(logits2_all.shape[1]):
                     raise InductiveValidationError("Models must agree on class count.")
 
-                n_l1 = int(x_lb1.shape[0])
-                n_l2 = int(x_lb2.shape[0])
+                n_l1 = (
+                    int(x_lb1["x"].shape[0])
+                    if (isinstance(x_lb1, dict) and "x" in x_lb1)
+                    else int(x_lb1.shape[0])
+                )
+                n_l2 = (
+                    int(x_lb2["x"].shape[0])
+                    if (isinstance(x_lb2, dict) and "x" in x_lb2)
+                    else int(x_lb2.shape[0])
+                )
                 logits1_l = logits1_all[:n_l1]
                 logits2_l = logits2_all[:n_l2]
                 logits1_u = logits1_all[n_l1:]
@@ -340,11 +437,23 @@ class DeepCoTrainingMethod(InductiveMethod):
 
                 logits2_adv = extract_logits(model2(x1_adv))
                 logits1_adv = extract_logits(model1(x2_adv))
+
+                n_adv1 = (
+                    int(x1_adv["x"].shape[0])
+                    if isinstance(x1_adv, dict) and "x" in x1_adv
+                    else int(x1_adv.shape[0])
+                )
+                n_adv2 = (
+                    int(x2_adv["x"].shape[0])
+                    if isinstance(x2_adv, dict) and "x" in x2_adv
+                    else int(x2_adv.shape[0])
+                )
+
                 if int(logits2_adv.ndim) != 2 or int(logits1_adv.ndim) != 2:
                     raise InductiveValidationError("Model logits must be 2D (batch, classes).")
-                if int(logits2_adv.shape[0]) != int(x1_adv.shape[0]):
+                if int(logits2_adv.shape[0]) != n_adv1:
                     raise InductiveValidationError("Model2 adversarial logits batch mismatch.")
-                if int(logits1_adv.shape[0]) != int(x2_adv.shape[0]):
+                if int(logits1_adv.shape[0]) != n_adv2:
                     raise InductiveValidationError("Model1 adversarial logits batch mismatch.")
                 if int(logits2_adv.shape[1]) != int(probs1_all.shape[1]):
                     raise InductiveValidationError("Model2 logits class mismatch.")
@@ -389,8 +498,8 @@ class DeepCoTrainingMethod(InductiveMethod):
         if backend != "torch":
             raise InductiveValidationError("DeepCoTraining predict_proba requires torch tensors.")
         torch = optional_import("torch", extra="inductive-torch")
-        if not isinstance(X, torch.Tensor):
-            raise InductiveValidationError("predict_proba requires torch.Tensor inputs.")
+        if not isinstance(X, torch.Tensor) and not (isinstance(X, dict) and "x" in X):
+            raise InductiveValidationError("predict_proba requires torch.Tensor inputs (or dict).")
 
         model1 = self._bundle1.model
         model2 = self._bundle2.model
@@ -398,15 +507,41 @@ class DeepCoTrainingMethod(InductiveMethod):
         was_training2 = model2.training
         model1.eval()
         model2.eval()
+
+        # Batch inference to avoid OOM
+        batch_size = int(self.spec.batch_size)
+        n_samples = int(X["x"].shape[0]) if isinstance(X, dict) else int(X.shape[0])
+        all_logits1 = []
+        all_logits2 = []
+
         with torch.no_grad():
-            logits1 = extract_logits(model1(X))
-            logits2 = extract_logits(model2(X))
-            if int(logits1.ndim) != 2 or int(logits2.ndim) != 2:
-                raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+            for start in range(0, n_samples, batch_size):
+                end = min(start + batch_size, n_samples)
+                if isinstance(X, dict):
+                    # Proper slicing for geometric data if needed, or just dict slicing
+                    # Assuming deep_utils.slice_data is available and handles dicts/graphs
+                    batch_idx = torch.arange(start, end, device=X["x"].device)
+                    batch_X = slice_data(X, batch_idx)
+                else:
+                    batch_X = X[start:end]
+
+                l1 = extract_logits(model1(batch_X))
+                l2 = extract_logits(model2(batch_X))
+
+                if int(l1.ndim) != 2 or int(l2.ndim) != 2:
+                    raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+
+                all_logits1.append(l1)
+                all_logits2.append(l2)
+
+            logits1 = torch.cat(all_logits1, dim=0)
+            logits2 = torch.cat(all_logits2, dim=0)
+
             if int(logits1.shape[1]) != int(logits2.shape[1]):
                 raise InductiveValidationError("Models must agree on class count.")
             probs = torch.softmax(logits1, dim=1) + torch.softmax(logits2, dim=1)
             probs = probs * 0.5
+
         if was_training1:
             model1.train()
         if was_training2:

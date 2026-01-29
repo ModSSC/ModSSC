@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import sys
+import types
+
 import pytest
 import torch
 
@@ -219,8 +222,8 @@ def test_parse_image_input_shape_and_prepare_audio_input() -> None:
     assert x3.ndim == 2
     with pytest.raises(InductiveValidationError, match="mono waveforms"):
         bundles._prepare_audio_input(torch.randn(2, 2, 8), torch)
-    with pytest.raises(InductiveValidationError, match="requires 1D, 2D, or 3D"):
-        bundles._prepare_audio_input(torch.randn(1, 1, 1, 1), torch)
+    x4 = bundles._prepare_audio_input(torch.randn(1, 1, 1, 1), torch)
+    assert x4.ndim == 3
 
 
 def test_build_image_pretrained_bundle_wrapper(monkeypatch) -> None:
@@ -637,6 +640,28 @@ def test_build_torch_bundle_from_classifier(monkeypatch) -> None:
         )
         is dummy
     )
+    monkeypatch.setattr(bundles, "_build_lstm_bundle", lambda *args, **kwargs: dummy)
+    assert (
+        bundles.build_torch_bundle_from_classifier(
+            classifier_id="lstm_scratch",
+            classifier_backend="torch",
+            classifier_params=None,
+            sample=torch.randint(0, 3, (2, 3)),
+            num_classes=2,
+        )
+        is dummy
+    )
+    monkeypatch.setattr(bundles, "_build_graphsage_bundle", lambda *args, **kwargs: dummy)
+    assert (
+        bundles.build_torch_bundle_from_classifier(
+            classifier_id="graphsage_inductive",
+            classifier_backend="torch",
+            classifier_params=None,
+            sample={"x": torch.randn(2, 3), "edge_index": torch.tensor([[0], [1]])},
+            num_classes=2,
+        )
+        is dummy
+    )
 
     with pytest.raises(InductiveValidationError, match="Unsupported torch classifier_id"):
         bundles.build_torch_bundle_from_classifier(
@@ -646,3 +671,135 @@ def test_build_torch_bundle_from_classifier(monkeypatch) -> None:
             sample=sample,
             num_classes=2,
         )
+
+
+def test_prepare_audio_input_variants():
+    x1 = torch.randn(8)
+    out1 = bundles._prepare_audio_input(x1, torch)
+    assert out1.shape == (1, 8)
+
+    x2 = torch.randn(2, 8)
+    out2 = bundles._prepare_audio_input(x2, torch)
+    assert out2.shape == (2, 8)
+
+    x3 = torch.randn(2, 1, 8)
+    out3 = bundles._prepare_audio_input(x3, torch)
+    assert out3.shape == (2, 8)
+
+    with pytest.raises(InductiveValidationError, match="mono waveforms"):
+        bundles._prepare_audio_input(torch.randn(2, 2, 8), torch)
+
+    x4 = torch.randn(2, 1, 4, 4)
+    out4 = bundles._prepare_audio_input(x4, torch)
+    assert out4.shape == (2, 4, 4)
+
+    with pytest.raises(InductiveValidationError, match="requires 1D, 2D, or 3D"):
+        bundles._prepare_audio_input(torch.randn(2, 2, 4, 4), torch)
+    with pytest.raises(InductiveValidationError, match="requires 1D, 2D, or 3D"):
+        bundles._prepare_audio_input(torch.randn(1, 1, 1, 1, 1), torch)
+
+
+def test_build_lstm_bundle_vocab_infer_and_bidirectional():
+    sample = torch.tensor([[6, 5, 4], [3, 2, 1]], dtype=torch.int64)
+    bundle = bundles._build_lstm_bundle(
+        sample,
+        num_classes=2,
+        params={"vocab_size": 0, "bidirectional": True},
+        seed=0,
+        ema=False,
+    )
+    out = bundle.model(sample)
+    assert out.shape == (2, 2)
+    assert bundle.model.embedding.num_embeddings == int(sample.max().item()) + 1
+
+    float_sample = torch.zeros((2, 3), dtype=torch.float32)
+    bundle2 = bundles._build_lstm_bundle(
+        float_sample,
+        num_classes=2,
+        params={"vocab_size": 0, "bidirectional": False},
+        seed=0,
+        ema=False,
+    )
+    out2 = bundle2.model(float_sample)
+    assert out2.shape == (2, 2)
+    assert bundle2.model.embedding.num_embeddings == 20000
+
+    bundle3 = bundles._build_lstm_bundle(
+        sample,
+        num_classes=2,
+        params={"vocab_size": 5, "bidirectional": True},
+        seed=0,
+        ema=False,
+    )
+    assert bundle3.model.embedding.num_embeddings == 5
+
+
+def _install_fake_tg_nn(monkeypatch, *, with_sage: bool):
+    nn_mod = types.ModuleType("torch_geometric.nn")
+    if with_sage:
+
+        class SAGEConv(torch.nn.Module):
+            def __init__(self, in_channels, out_channels):
+                super().__init__()
+                self.lin = torch.nn.Linear(in_channels, out_channels, bias=False)
+
+            def forward(self, x, edge_index):
+                return self.lin(x)
+
+        nn_mod.SAGEConv = SAGEConv
+
+    tg = types.ModuleType("torch_geometric")
+    tg.nn = nn_mod
+    monkeypatch.setitem(sys.modules, "torch_geometric", tg)
+    monkeypatch.setitem(sys.modules, "torch_geometric.nn", nn_mod)
+
+
+def test_build_graphsage_bundle_dict(monkeypatch):
+    _install_fake_tg_nn(monkeypatch, with_sage=True)
+    sample = {"x": torch.randn(3, 4), "edge_index": torch.tensor([[0, 1], [1, 2]])}
+    bundle = bundles._build_graphsage_bundle(
+        sample,
+        num_classes=2,
+        params={"hidden_channels": 4, "num_layers": 3, "dropout": 0.0},
+        seed=0,
+        ema=False,
+    )
+    out = bundle.model(sample)
+    assert set(out.keys()) == {"logits", "feat"}
+    assert out["logits"].shape[0] == 3
+
+
+def test_build_graphsage_bundle_errors(monkeypatch):
+    _install_fake_tg_nn(monkeypatch, with_sage=False)
+    with pytest.raises(ImportError, match="torch_geometric is required"):
+        bundles._build_graphsage_bundle(
+            torch.randn(2, 3),
+            num_classes=2,
+            params={},
+            seed=0,
+            ema=False,
+        )
+
+    _install_fake_tg_nn(monkeypatch, with_sage=True)
+    with pytest.raises(InductiveValidationError, match="requires sample"):
+        bundles._build_graphsage_bundle(
+            object(),
+            num_classes=2,
+            params={},
+            seed=0,
+            ema=False,
+        )
+
+
+def test_build_graphsage_bundle_tensor_input_and_forward_error(monkeypatch):
+    _install_fake_tg_nn(monkeypatch, with_sage=True)
+    sample = torch.randn(3, 4)
+    bundle = bundles._build_graphsage_bundle(
+        sample,
+        num_classes=2,
+        params={"hidden_channels": 4, "num_layers": 3, "dropout": 0.0},
+        seed=0,
+        ema=False,
+    )
+    with pytest.raises(ValueError, match="expects a dict input"):
+        bundle.model(sample)

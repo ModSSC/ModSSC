@@ -41,9 +41,6 @@ preprocess:
     - id: labels.encode
     - id: tabular.one_hot
     - id: core.ensure_2d
-    - id: core.pca
-      params:
-        n_components: 30
     - id: core.to_numpy
 method:
   kind: inductive

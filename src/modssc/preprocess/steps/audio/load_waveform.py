@@ -15,6 +15,9 @@ from modssc.preprocess.store import ArtifactStore
 
 logger = logging.getLogger(__name__)
 
+# Track if we have already warned about libtorchcodec fallback to avoid log spam
+_LIBTORCHCODEC_FALLBACK_WARNED = False
+
 
 def _is_path_like(value: Any) -> bool:
     return isinstance(value, (str, bytes, bytearray, Path))
@@ -62,6 +65,7 @@ class LoadWaveformStep:
     pad_value: float = 0.0
     mono: bool = True
     trim: str = "start"  # start, center, end
+    allow_fallback: bool = False
 
     def _load_path(self, path: Any) -> tuple[np.ndarray, int]:
         torchaudio = require(
@@ -71,10 +75,26 @@ class LoadWaveformStep:
             waveform, sr = torchaudio.load(str(path))
         except RuntimeError as e:
             if "libtorchcodec" in str(e):
-                logger.warning(
-                    f"FALLBACK: Torchaudio failed with libtorchcodec error for {path}. "
-                    "Falling back to SciPy. Reproducibility vs Torchaudio not guaranteed."
-                )
+                if not self.allow_fallback:
+                    raise PreprocessValidationError(
+                        "Torchaudio failed to load audio due to a libtorchcodec error. "
+                        "Install a torchaudio build with codec support or set "
+                        "LoadWaveformStep.allow_fallback=True to use the SciPy fallback."
+                    ) from e
+                global _LIBTORCHCODEC_FALLBACK_WARNED
+                if not _LIBTORCHCODEC_FALLBACK_WARNED:
+                    logger.warning(
+                        f"FALLBACK: Torchaudio failed with libtorchcodec error for {path}. "
+                        "Falling back to SciPy. Reproducibility vs Torchaudio not guaranteed. "
+                        "(Subsequent warnings suppressed)"
+                    )
+                    _LIBTORCHCODEC_FALLBACK_WARNED = True
+                else:
+                    logger.debug(
+                        f"FALLBACK: Torchaudio failed with libtorchcodec error for {path}. "
+                        "Falling back to SciPy."
+                    )
+
                 import scipy.io.wavfile
                 import torch
 

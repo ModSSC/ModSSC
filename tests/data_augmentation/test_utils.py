@@ -23,6 +23,7 @@ def test_is_torch_tensor() -> None:
     assert is_torch_tensor(MockTensor())
     assert not is_torch_tensor(np.array([1]))
     assert not is_torch_tensor([1])
+    assert not is_torch_tensor({"x": MockTensor()})
 
 
 def test_to_numpy() -> None:

@@ -4,10 +4,8 @@ run:
   output_dir: runs/inductive/s4vm/audio/speechcommands
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: speechcommands
   download: true
@@ -15,8 +13,8 @@ dataset:
     class_filter:
     - 'yes'
     - 'no'
-    max_train_samples: 2000
-    max_test_samples: 1000
+    max_train_samples: 500
+    max_test_samples: 200
     seed: 0
 sampling:
   seed: 4
@@ -48,30 +46,36 @@ preprocess:
     - id: labels.encode
     - id: audio.load_waveform
       params:
+        allow_fallback: true
         target_sample_rate: 16000
         max_length: 16000
+    - id: audio.log_mel_spectrogram
+      params:
+        n_mels: 64
+        n_fft: 1024
+        hop_length: 256
     - id: core.to_torch
       params:
-        device: "auto"
+        device: auto
         dtype: float32
 method:
   kind: inductive
   id: s4vm
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     classifier_id: audio_pretrained
     classifier_backend: torch
-    k_candidates: 3
-    flip_rate: 0.1
     classifier_params:
       bundle: WAV2VEC2_BASE
-      freeze_backbone: true
+      freeze_backbone: false
       lr: 0.0001
       weight_decay: 0.0001
       batch_size: 8
       max_epochs: 5
+    k_candidates: 6
+    flip_rate: 0.05
 evaluation:
   split_for_model_selection: val
   report_splits:

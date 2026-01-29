@@ -2,8 +2,8 @@ run:
   name: smoke_text_inductive_daso_imdb
   seed: 2
   output_dir: runs/inductive/daso/text/imdb
-  fail_fast: true
   log_level: detailed
+  fail_fast: true
 limits:
   profile: auto
 dataset:
@@ -13,8 +13,8 @@ dataset:
     text_column: text
     label_column: label
     prefer_test_split: true
-    max_train_samples: 1000
-    max_test_samples: 500
+    max_train_samples: 500
+    max_test_samples: 200
     seed: 0
 sampling:
   seed: 2
@@ -45,10 +45,10 @@ preprocess:
     steps:
     - id: labels.encode
     - id: text.ensure_strings
-    - id: text.sentence_transformer
-    - id: core.pca
+    - id: text.vocab_tokenizer
       params:
-        n_components: 16
+        max_length: 256
+        vocab_size: 20000
     - id: core.to_torch
       params:
         device: auto
@@ -75,11 +75,25 @@ method:
     device: auto
     dtype: float32
   params:
-    max_epochs: 8
-    p_cutoff: 0.5
-    use_cat: true
+    lambda_u: 1.0
+    lambda_align: 1.0
+    p_cutoff: 0.95
+    t_proto: 0.05
+    t_dist: 1.5
+    queue_size: 256
+    pretrain_steps: 5000
+    dist_update_period: 100
+    ema_decay: 0.999
+    use_ema: true
+    dist_aware: true
+    interp_alpha: 0.5
+    hard_label: true
+    use_cat: false
+    batch_size: 128
+    max_epochs: 2
+    detach_target: true
   model:
-    classifier_id: mlp
+    classifier_id: lstm_scratch
     classifier_backend: torch
     classifier_params:
       hidden_sizes:
@@ -89,7 +103,7 @@ method:
       lr: 0.001
       weight_decay: 0.0
       batch_size: 256
-      max_epochs: 50
+      max_epochs: 2
     ema: false
 evaluation:
   split_for_model_selection: val

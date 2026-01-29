@@ -4,15 +4,15 @@ run:
   output_dir: runs/transductive/n_gcn/graph/cora
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: cora
   download: true
   options:
-    max_nodes: 2000
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 5
   plan:
@@ -47,19 +47,19 @@ method:
   kind: transductive
   id: n_gcn
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     hidden_dim: 16
-    gcn_layers: 1
-    K: 3
-    r: 2
+    gcn_layers: 2
+    K: 6
+    r: 4
     classifier: fc
-    dropout: 0.2
+    dropout: 0.5
     lr: 0.01
-    weight_decay: 0.00001
-    max_epochs: 3
-    patience: 1
+    weight_decay: 1.0e-05
+    max_epochs: 2
+    patience: 50
     add_self_loops: true
     symmetrize: true
 evaluation:

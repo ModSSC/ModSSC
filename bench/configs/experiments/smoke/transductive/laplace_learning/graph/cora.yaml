@@ -4,15 +4,15 @@ run:
   output_dir: runs/transductive/laplace_learning/graph/cora
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: cora
   download: true
   options:
-    max_nodes: 2000
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 5
   plan:
@@ -47,7 +47,7 @@ method:
   kind: transductive
   id: laplace_learning
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params: {}
 evaluation:
@@ -58,16 +58,14 @@ evaluation:
   metrics:
   - accuracy
   - macro_f1
-
 graph:
   enabled: true
   seed: 5
   cache: true
-  cache_dir: cache/graphs
   spec:
     scheme: knn
     metric: cosine
-    k: 10
+    k: 15
     symmetrize: or
     weights:
       kind: heat
@@ -75,5 +73,5 @@ graph:
     normalize: rw
     self_loops: true
     backend: numpy
-    chunk_size: 256
+    chunk_size: 1024
     feature_field: features.X

@@ -10,7 +10,9 @@ dataset:
   id: cora
   download: true
   options:
-    max_nodes: 2000
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 5
   plan:
@@ -39,15 +41,14 @@ preprocess:
     output_key: features.X
     steps:
     - id: labels.encode
-    - id: graph.node2vec
+    - id: graph.sparse_adjacency
       params:
-        embedding_dim: 16
-        num_walks: 2
-        walk_length: 5
-        window_size: 2
-        num_negative: 2
-        batch_size: 256
-        embed_epochs: 1
+        max_nodes: 20000
+        batch_size: 1024
+        embed_epochs: 5
+        embed_lr: 0.01
+        undirected: true
+        device: auto
     - id: core.to_torch
       params:
         device: auto
@@ -75,14 +76,16 @@ method:
     dtype: float32
   params:
     uda_weight: 1.0
-    uda_threshold: 0.6
+    uda_threshold: 0.8
     uda_temperature: 0.4
     label_smoothing: 0.1
     mpl_ema: 0.99
     mpl_weight: 1.0
-    max_epochs: 5
+    batch_size: 128
+    max_epochs: 2
+    detach_target: true
   model:
-    classifier_id: mlp
+    classifier_id: graphsage_inductive
     classifier_backend: torch
     classifier_params:
       hidden_sizes:
@@ -92,7 +95,7 @@ method:
       lr: 0.001
       weight_decay: 0.0
       batch_size: 256
-      max_epochs: 50
+      max_epochs: 2
     ema: false
 evaluation:
   split_for_model_selection: val

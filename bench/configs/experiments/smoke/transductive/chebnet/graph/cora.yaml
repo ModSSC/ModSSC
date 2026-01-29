@@ -4,15 +4,15 @@ run:
   output_dir: runs/transductive/chebnet/graph/cora
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: cora
   download: true
   options:
-    max_nodes: 2000
+    max_train_samples: 500
+    max_test_samples: 200
+    seed: 0
 sampling:
   seed: 5
   plan:
@@ -47,13 +47,17 @@ method:
   kind: transductive
   id: chebnet
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
-    hidden_dim: 16
-    dropout: 0.2
-    max_epochs: 3
-    patience: 1
+    hidden_dim: 32
+    k: 2
+    dropout: 0.5
+    lr: 0.01
+    weight_decay: 0.0005
+    max_epochs: 2
+    patience: 50
+    add_self_loops: true
 evaluation:
   split_for_model_selection: val
   report_splits:
