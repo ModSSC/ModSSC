@@ -369,7 +369,11 @@ def _smart_to_torch(x: Any, device: Any) -> Any:
             if isinstance(x, torch.Tensor) and device is not None and x.device != device:
                 return x.to(device)
         except Exception:
-            pass
+            _LOGGER.debug(
+                "Failed to move tensor to device %s in _smart_to_torch; returning original tensor.",
+                device,
+                exc_info=True,
+            )
         return x
 
     import importlib

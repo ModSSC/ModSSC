@@ -228,8 +228,20 @@ def slice_data(X: Any, idx: Any) -> Any:
             try:
                 from torch_geometric.utils import subgraph
 
+                subgraph_idx = idx
+                if isinstance(idx, slice):
+                    start, stop, step = idx.indices(n)
+                    device = (
+                        X["edge_index"].device
+                        if isinstance(X["edge_index"], torch.Tensor)
+                        else None
+                    )
+                    subgraph_idx = torch.arange(start, stop, step, device=device)
+
                 # relabel_nodes=True ensures indices map to 0..len(idx)
-                edge_index, _ = subgraph(idx, X["edge_index"], relabel_nodes=True, num_nodes=n)
+                edge_index, _ = subgraph(
+                    subgraph_idx, X["edge_index"], relabel_nodes=True, num_nodes=n
+                )
                 batch_data["edge_index"] = edge_index
             except ImportError:
                 pass
