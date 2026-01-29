@@ -498,7 +498,8 @@ def run_experiment(config_path: Path) -> int:
             _LOGGER.info("Graph (dataset-provided)")
             if pre.dataset.train.edges is None:
                 raise BenchConfigError("Graph dataset is missing train.edges")
-            n_nodes = int(np.asarray(pre.dataset.train.y).shape[0])
+            # y can be a numpy array or a torch tensor on GPU; .shape works for both
+            n_nodes = int(pre.dataset.train.y.shape[0])
             graph = transductive_orch.graph_from_dataset(pre.dataset, n_nodes)
             artifacts["graph"] = {
                 "seed": None,
@@ -558,9 +559,9 @@ def run_experiment(config_path: Path) -> int:
         if cfg.method.kind == "transductive":
             if graph is None:
                 raise BenchConfigError("Transductive methods require a graph")
-            n_train = int(np.asarray(pre.dataset.train.y).shape[0])
+            n_train = int(pre.dataset.train.y.shape[0])
             n_test = (
-                int(np.asarray(pre.dataset.test.y).shape[0])
+                int(pre.dataset.test.y.shape[0])
                 if use_test and pre.dataset.test is not None
                 else None
             )

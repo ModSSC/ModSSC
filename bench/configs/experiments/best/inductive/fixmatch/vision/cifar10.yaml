@@ -37,6 +37,10 @@ preprocess:
     output_key: features.X
     steps:
     - id: labels.encode
+    - id: labels.to_torch
+      params:
+        device: "auto"
+        dtype: int64
     - id: vision.ensure_num_channels
       params:
         num_channels: 3

@@ -46,6 +46,10 @@ preprocess:
     output_key: features.X
     steps:
     - id: labels.encode
+    - id: labels.to_torch
+      params:
+        device: "auto"
+        dtype: int64
     - id: text.ensure_strings
     - id: text.vocab_tokenizer
       params:

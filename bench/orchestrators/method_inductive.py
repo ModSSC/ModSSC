@@ -89,27 +89,57 @@ def _select_rows(X: Any, idx: np.ndarray):
 
 
 def _labels_for_backend(pre: PreprocessResult, X_l: Any, idx: np.ndarray) -> Any:
-    labels = None
-    if pre.train_artifacts.has("labels.y"):
-        labels = pre.train_artifacts.get("labels.y")
+    labels = pre.train_artifacts.get("labels.y") if pre.train_artifacts.has("labels.y") else None
+    source = labels if labels is not None else pre.dataset.train.y
+    idx_max = int(idx.max()) if idx.size else -1
+
+    def _len0(obj: Any) -> int | None:
+        try:
+            return int(obj.shape[0])
+        except Exception:
+            return None
+
+    # If cached labels are shorter than needed, fall back to dataset labels.
+    if labels is not None and idx_max >= 0:
+        src_len = _len0(labels)
+        if src_len is not None and src_len <= idx_max:
+            source = pre.dataset.train.y
+
+    if is_torch_tensor(source):
+        y_sub = source
+        if y_sub is not None and getattr(y_sub, "ndim", 0) > 0 and y_sub.shape[0] > idx_max:
+            y_sub = y_sub[_indices_for(y_sub, idx)]
+        if is_torch_tensor(X_l):
+            if isinstance(X_l, dict) and "x" in X_l:
+                device = getattr(X_l["x"], "device", "cpu")
+            else:
+                device = getattr(X_l, "device", "cpu")
+            if hasattr(y_sub, "device") and y_sub.device != device:
+                y_sub = y_sub.to(device)
+        return y_sub
+
+    y_arr = np.asarray(source)
+    if y_arr.dtype == np.object_:
+        y_arr = np.array([-1 if v is None else v for v in y_arr.tolist()], dtype=np.int64)
+    else:
+        try:
+            y_arr = y_arr.astype(np.int64, copy=False)
+        except Exception:
+            y_arr = y_arr.astype(np.int64)
+
+    if y_arr.ndim > 0 and y_arr.shape[0] > idx_max:
+        y_arr = y_arr[idx]
 
     if is_torch_tensor(X_l):
+        import importlib
+
+        torch = importlib.import_module("torch")
         if isinstance(X_l, dict) and "x" in X_l:
             device = getattr(X_l["x"], "device", "cpu")
         else:
             device = getattr(X_l, "device", "cpu")
-
-        if labels is not None and is_torch_tensor(labels):
-            y_sub = labels[_indices_for(labels, idx)]
-            if hasattr(y_sub, "device") and y_sub.device != device:
-                return y_sub.to(device)
-            return y_sub
-
-        import importlib
-
-        torch = importlib.import_module("torch")
-        y = np.asarray(pre.dataset.train.y)
-        return torch.as_tensor(y[idx], device=device, dtype=torch.int64)
+        return torch.as_tensor(y_arr, device=device, dtype=torch.int64)
+    return y_arr
 
 
 def _to_torch_like(x: Any, ref: Any) -> Any:
