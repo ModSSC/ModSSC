@@ -671,12 +671,23 @@ def _build_graphsage_bundle(
         raise ImportError("torch_geometric is required for graphsage_inductive") from e
 
     hidden_sizes = params.get("hidden_sizes")
+    hidden_sizes = params.get("hidden_sizes")
     hidden_channels = int(params.get("hidden_channels", 128))
     num_layers = int(params.get("num_layers", 2))
-    if hidden_sizes:
-        hidden_channels = int(hidden_sizes[0])
-        if "num_layers" not in params:
-            num_layers = max(2, int(len(hidden_sizes)) + 1)
+    if hidden_sizes is not None:
+        if isinstance(hidden_sizes, int):
+            hidden_sizes = [int(hidden_sizes)]
+        elif isinstance(hidden_sizes, (list, tuple)):
+            hidden_sizes = [int(h) for h in hidden_sizes]
+        else:
+            raise InductiveValidationError("hidden_sizes must be an int or a sequence of ints.")
+        if any(h <= 0 for h in hidden_sizes):
+            raise InductiveValidationError("hidden_sizes must be positive.")
+        if "num_layers" in params and num_layers != len(hidden_sizes) + 1:
+            raise InductiveValidationError(
+                "num_layers must equal len(hidden_sizes) + 1 when hidden_sizes is provided."
+            )
+        num_layers = len(hidden_sizes) + 1
     dropout = float(params.get("dropout", 0.5))
     lr = float(params.get("lr", 1e-2))
     weight_decay = float(params.get("weight_decay", 5e-4))
@@ -695,20 +706,11 @@ def _build_graphsage_bundle(
         )
 
     class _GraphSAGEWrapper(torch.nn.Module):
-        def __init__(
-            self,
-            in_channels: int,
-            hidden_channels: int,
-            num_layers: int,
-            out_channels: int,
-            dropout: float,
-        ):
+        def __init__(self, layer_sizes: list[int], dropout: float):
             super().__init__()
             self.convs = torch.nn.ModuleList()
-            self.convs.append(SAGEConv(in_channels, hidden_channels))
-            for _ in range(num_layers - 2):
-                self.convs.append(SAGEConv(hidden_channels, hidden_channels))
-            self.convs.append(SAGEConv(hidden_channels, out_channels))
+            for in_channels, out_channels in zip(layer_sizes[:-1], layer_sizes[1:], strict=False):
+                self.convs.append(SAGEConv(in_channels, out_channels))
             self.dropout = dropout
 
         def forward(self, x: Any):
@@ -731,13 +733,11 @@ def _build_graphsage_bundle(
             return {"logits": logits, "feat": feat}
 
     torch.manual_seed(int(seed))
-    model = _GraphSAGEWrapper(
-        in_channels=int(in_channels),
-        hidden_channels=hidden_channels,
-        num_layers=num_layers,
-        out_channels=int(num_classes),
-        dropout=dropout,
-    ).to(device)
+    if hidden_sizes is not None:
+        layer_sizes = [int(in_channels), *hidden_sizes, int(num_classes)]
+    else:
+        layer_sizes = [int(in_channels)] + [hidden_channels] * (num_layers - 1) + [int(num_classes)]
+    model = _GraphSAGEWrapper(layer_sizes=layer_sizes, dropout=dropout).to(device)
 
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=float(lr), weight_decay=float(weight_decay)
