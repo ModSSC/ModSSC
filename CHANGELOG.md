@@ -4,9 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on "Keep a Changelog", and this project adheres to Semantic Versioning.
 
+## 0.2.2
+- Ajout du support de `activation` pour GraphSAGE inductif.
+- Ajout de `core.to_torch` dans les configs TriNet vision (best + smoke).
+- Mise a jour des tests GraphSAGE.
+
+## 0.2.1
+- Bump version metadata.
+
 ## 0.2.0
-- Amelioration des performances des pipelines inductifs et des chemins critiques.
-- Couverture de tests renforcee pour securiser les nouvelles optimisations.
+- Improved inductive pipeline performance and critical paths.
+- Strengthened test coverage to secure the new optimizations.
 
 ## 0.1.2
 - Fix misc bugs

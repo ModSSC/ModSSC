@@ -108,6 +108,23 @@ def test_graphsage_fit_requires_dict(monkeypatch):
         clf.fit(np.zeros((2, 2), dtype=np.float32), np.array([0, 1], dtype=np.int64))
 
 
+def test_graphsage_activation_param(monkeypatch):
+    _install_fake_pyg(monkeypatch)
+    X = {"x": np.random.randn(2, 3).astype(np.float32), "edge_index": np.array([[0], [1]])}
+    y = np.array([0, 1], dtype=np.int64)
+    clf = TorchGraphSAGEClassifier(max_epochs=1, batch_size=1, n_jobs=0, activation="gelu")
+    clf.fit(X, y)
+
+
+def test_graphsage_activation_unknown(monkeypatch):
+    _install_fake_pyg(monkeypatch)
+    X = {"x": np.random.randn(2, 3).astype(np.float32), "edge_index": np.array([[0], [1]])}
+    y = np.array([0, 1], dtype=np.int64)
+    clf = TorchGraphSAGEClassifier(max_epochs=1, batch_size=1, n_jobs=0, activation="nope")
+    with pytest.raises(ValueError, match="Unknown activation"):
+        clf.fit(X, y)
+
+
 def test_graphsage_predict_proba_invalid_input(monkeypatch):
     _install_fake_pyg(monkeypatch)
     X = {"x": np.random.randn(2, 3).astype(np.float32), "edge_index": np.array([[0], [1]])}

@@ -27,6 +27,17 @@ def _torch_geometric():
     return torch, torch_geometric
 
 
+def _resolve_activation(name: str, torch):
+    key = str(name).lower()
+    if key == "relu":
+        return torch.nn.ReLU()
+    if key == "gelu":
+        return torch.nn.GELU()
+    if key == "tanh":
+        return torch.nn.Tanh()
+    raise ValueError(f"Unknown activation: {name!r}")
+
+
 class TorchGraphSAGEClassifier(BaseSupervisedClassifier):
     """Inductive GraphSAGE classifier using neighbor sampling (Tabula Rasa context)."""
 
@@ -39,6 +50,7 @@ class TorchGraphSAGEClassifier(BaseSupervisedClassifier):
         hidden_channels: int | None = None,
         hidden_sizes: list[int] | None = None,
         num_layers: int | None = None,
+        activation: str = "relu",
         dropout: float = 0.5,
         lr: float = 1e-2,
         weight_decay: float = 5e-4,
@@ -62,6 +74,7 @@ class TorchGraphSAGEClassifier(BaseSupervisedClassifier):
 
         self.hidden_channels = int(resolved_hidden)
         self.num_layers = int(resolved_layers)
+        self.activation = str(activation)
         self.dropout = float(dropout)
         self.lr = float(lr)
         self.weight_decay = float(weight_decay)
@@ -155,8 +168,12 @@ class TorchGraphSAGEClassifier(BaseSupervisedClassifier):
 
         data = data.to(device)
 
+        activation = _resolve_activation(self.activation, torch)
+
         class GNN(torch.nn.Module):
-            def __init__(self, in_channels, hidden_channels, out_channels, num_layers, dropout):
+            def __init__(
+                self, in_channels, hidden_channels, out_channels, num_layers, dropout, activation
+            ):
                 super().__init__()
                 self.convs = torch.nn.ModuleList()
                 self.convs.append(SAGEConv(in_channels, hidden_channels))
@@ -165,12 +182,13 @@ class TorchGraphSAGEClassifier(BaseSupervisedClassifier):
                 self.convs.append(SAGEConv(hidden_channels, out_channels))
 
                 self.dropout = dropout
+                self.activation = activation
 
             def forward(self, x, edge_index):
                 for i, conv in enumerate(self.convs):
                     x = conv(x, edge_index)
                     if i < len(self.convs) - 1:
-                        x = x.relu()
+                        x = self.activation(x)
                         x = torch.nn.functional.dropout(x, p=self.dropout, training=self.training)
                 return x
 
@@ -180,6 +198,7 @@ class TorchGraphSAGEClassifier(BaseSupervisedClassifier):
             out_channels=num_classes,
             num_layers=self.num_layers,
             dropout=self.dropout,
+            activation=activation,
         ).to(device)
 
         optimizer = torch.optim.Adam(
