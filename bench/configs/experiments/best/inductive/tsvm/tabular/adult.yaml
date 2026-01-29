@@ -39,6 +39,10 @@ preprocess:
     output_key: features.X
     steps:
     - id: labels.encode
+    - id: labels.to_torch
+      params:
+        device: "auto"
+        dtype: int64
     - id: tabular.one_hot
     - id: core.ensure_2d
     - id: core.to_numpy
