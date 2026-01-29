@@ -11,6 +11,7 @@ from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.deep_utils import (
+    concat_data,
     cycle_batch_indices,
     cycle_batches,
     ensure_float_tensor,
@@ -18,7 +19,10 @@ from modssc.inductive.methods.deep_utils import (
     ensure_model_device,
     extract_logits,
     freeze_batchnorm,
+    get_torch_device,
+    get_torch_len,
     num_batches,
+    slice_data,
 )
 from modssc.inductive.methods.utils import (
     detect_backend,
@@ -108,7 +112,7 @@ class NoisyStudentMethod(InductiveMethod):
         if int(epochs) <= 0:
             return
         torch = optional_import("torch", extra="inductive-torch")
-        steps_l = num_batches(int(X_l.shape[0]), int(batch_size))
+        steps_l = num_batches(int(get_torch_len(X_l)), int(batch_size))
         gen_l = torch.Generator().manual_seed(int(seed))
         student.train()
         for epoch in range(int(epochs)):
@@ -172,20 +176,20 @@ class NoisyStudentMethod(InductiveMethod):
         X_us = ds.X_u_s if ds.X_u_s is not None else X_uw
         if X_uw is None or X_us is None:
             raise InductiveValidationError("Noisy Student requires unlabeled data (X_u or X_u_*).")
-        if int(X_uw.shape[0]) != int(X_us.shape[0]):
+        if int(get_torch_len(X_uw)) != int(get_torch_len(X_us)):
             raise InductiveValidationError("X_u_w and X_u_s must have the same number of rows.")
 
         X_l = ds.X_l
         y_l = ensure_1d_labels_torch(ds.y_l, name="y_l")
         logger.info(
             "Noisy Student sizes: n_labeled=%s n_unlabeled=%s",
-            int(X_l.shape[0]),
-            int(X_uw.shape[0]),
+            int(get_torch_len(X_l)),
+            int(get_torch_len(X_uw)),
         )
 
-        if int(X_l.shape[0]) == 0:
+        if int(get_torch_len(X_l)) == 0:
             raise InductiveValidationError("X_l must be non-empty.")
-        if int(X_uw.shape[0]) == 0:
+        if int(get_torch_len(X_uw)) == 0:
             raise InductiveValidationError("X_u must be non-empty.")
 
         ensure_float_tensor(X_l, name="X_l")
@@ -201,7 +205,7 @@ class NoisyStudentMethod(InductiveMethod):
         bundle = ensure_model_bundle(self.spec.model_bundle)
         student = bundle.model
         optimizer = bundle.optimizer
-        ensure_model_device(student, device=X_l.device)
+        ensure_model_device(student, device=get_torch_device(X_l))
 
         if int(self.spec.batch_size) <= 0:
             raise InductiveValidationError("batch_size must be >= 1.")
@@ -235,8 +239,8 @@ class NoisyStudentMethod(InductiveMethod):
             p.requires_grad_(False)
         teacher.eval()
 
-        steps_l = num_batches(int(X_l.shape[0]), int(self.spec.batch_size))
-        steps_u = num_batches(int(X_uw.shape[0]), int(self.spec.batch_size))
+        steps_l = num_batches(int(get_torch_len(X_l)), int(self.spec.batch_size))
+        steps_u = num_batches(int(get_torch_len(X_uw)), int(self.spec.batch_size))
         steps_per_epoch = max(int(steps_l), int(steps_u))
         total_steps = int(self.spec.max_epochs) * steps_per_epoch
         if float(self.spec.unsup_warm_up) <= 0:
@@ -258,23 +262,23 @@ class NoisyStudentMethod(InductiveMethod):
                 steps=steps_per_epoch,
             )
             iter_u_idx = cycle_batch_indices(
-                int(X_uw.shape[0]),
+                int(get_torch_len(X_uw)),
                 batch_size=int(self.spec.batch_size),
                 generator=gen_u,
-                device=X_uw.device,
+                device=get_torch_device(X_uw),
                 steps=steps_per_epoch,
             )
             for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
-                x_uw = X_uw[idx_u]
-                x_us = X_us[idx_u]
+                x_uw = slice_data(X_uw, idx_u)
+                x_us = slice_data(X_us, idx_u)
 
                 if bool(self.spec.use_cat) and not bool(self.spec.freeze_bn):
-                    inputs = torch.cat([x_lb, x_us], dim=0)
+                    inputs = concat_data([x_lb, x_us])
                     logits = extract_logits(student(inputs))
                     if int(logits.ndim) != 2:
                         raise InductiveValidationError("Model logits must be 2D (batch, classes).")
-                    num_lb = int(x_lb.shape[0])
-                    expected = num_lb + int(x_us.shape[0])
+                    num_lb = int(get_torch_len(x_lb))
+                    expected = num_lb + int(get_torch_len(x_us))
                     if int(logits.shape[0]) != expected:
                         raise InductiveValidationError(
                             "Concatenated logits batch size does not match inputs."
@@ -287,11 +291,11 @@ class NoisyStudentMethod(InductiveMethod):
                         logits_us = extract_logits(student(x_us))
                 if int(logits_l.ndim) != 2 or int(logits_us.ndim) != 2:
                     raise InductiveValidationError("Model logits must be 2D (batch, classes).")
-                if int(logits_l.shape[0]) != int(x_lb.shape[0]):
+                if int(logits_l.shape[0]) != int(get_torch_len(x_lb)):
                     raise InductiveValidationError(
                         "Labeled logits batch size does not match inputs."
                     )
-                if int(logits_us.shape[0]) != int(x_us.shape[0]):
+                if int(logits_us.shape[0]) != int(get_torch_len(x_us)):
                     raise InductiveValidationError(
                         "Unlabeled logits batch size does not match inputs."
                     )

@@ -10,6 +10,12 @@ import numpy as np
 
 from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.errors import InductiveValidationError
+from modssc.inductive.methods.deep_utils import (
+    concat_data,
+    get_torch_device,
+    get_torch_len,
+    slice_data,
+)
 from modssc.inductive.methods.utils import (
     BaseClassifierSpec,
     build_classifier,
@@ -353,7 +359,7 @@ class SelfTrainingMethod(InductiveMethod):
         y_l = ensure_1d_labels_torch(ds.y_l, name="y_l")
         torch = optional_import("torch", extra="inductive-torch")
 
-        if ds.X_u is None or ds.X_u.numel() == 0:  # type: ignore[union-attr]
+        if ds.X_u is None or int(get_torch_len(ds.X_u)) == 0:
             clf = build_classifier(self.spec, seed=seed)
             clf.fit(ds.X_l, y_l)
             self._clf = clf
@@ -363,13 +369,13 @@ class SelfTrainingMethod(InductiveMethod):
 
         X_l = ds.X_l
         X_u = ds.X_u
-        if int(X_l.shape[0]) == 0:
+        if int(get_torch_len(X_l)) == 0:
             raise InductiveValidationError("X_l must be non-empty.")
 
         group_u_t = _resolve_group_ids(
             ds.meta,
             group_key=self.spec.group_key,
-            n_expected=int(X_u.shape[0]),
+            n_expected=int(get_torch_len(X_u)),
             backend=backend,
             name="meta[group_u]",
             key_candidates=_GROUP_KEYS_U,
@@ -377,7 +383,7 @@ class SelfTrainingMethod(InductiveMethod):
         group_l_t = _resolve_group_ids(
             ds.meta,
             group_key=None,
-            n_expected=int(X_l.shape[0]),
+            n_expected=int(get_torch_len(X_l)),
             backend=backend,
             name="meta[group_l]",
             key_candidates=_GROUP_KEYS_L,
@@ -400,7 +406,7 @@ class SelfTrainingMethod(InductiveMethod):
 
         while iter_count < int(self.spec.max_iter):
             clf.fit(X_l, y_l)
-            if int(X_u_curr.shape[0]) == 0:
+            if int(get_torch_len(X_u_curr)) == 0:
                 break
 
             scores = predict_scores(clf, X_u_curr, backend=backend)
@@ -430,21 +436,25 @@ class SelfTrainingMethod(InductiveMethod):
                 int(direct_count),
                 int(group_added),
                 int(idx_np.size),
-                int(X_u_curr.shape[0]),
+                int(get_torch_len(X_u_curr)),
             )
             if int(idx_np.size) < int(self.spec.min_new_labels):
                 break
 
-            idx = torch.tensor(idx_np, dtype=torch.long, device=X_u_curr.device)
+            idx = torch.tensor(idx_np, dtype=torch.long, device=get_torch_device(X_u_curr))
             labels_np = labels_np.astype(y_l_np.dtype, copy=False)
-            labels = torch.tensor(labels_np, dtype=y_l.dtype, device=X_u_curr.device)
+            labels = torch.tensor(labels_np, dtype=y_l.dtype, device=get_torch_device(X_u_curr))
 
-            X_l = torch.cat([X_l, X_u_curr[idx]], dim=0)
+            X_l = concat_data([X_l, slice_data(X_u_curr, idx)])
             y_l = torch.cat([y_l, labels], dim=0)
 
-            mask = torch.ones((int(X_u_curr.shape[0]),), dtype=torch.bool, device=X_u_curr.device)
+            mask = torch.ones(
+                (int(get_torch_len(X_u_curr)),),
+                dtype=torch.bool,
+                device=get_torch_device(X_u_curr),
+            )
             mask[idx] = False
-            X_u_curr = X_u_curr[mask]
+            X_u_curr = slice_data(X_u_curr, mask)
             if group_u_curr is not None:
                 group_u_curr = group_u_curr[mask.detach().cpu().numpy()]
 

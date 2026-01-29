@@ -17,7 +17,10 @@ from modssc.inductive.methods.deep_utils import (
     ensure_model_device,
     extract_logits,
     freeze_batchnorm,
+    get_torch_device,
+    get_torch_len,
     num_batches,
+    slice_data,
 )
 from modssc.inductive.methods.utils import (
     detect_backend,
@@ -28,6 +31,22 @@ from modssc.inductive.optional import optional_import
 from modssc.inductive.types import DeviceSpec
 
 logger = logging.getLogger(__name__)
+
+
+def _get_x_tensor(x: Any) -> Any:
+    if isinstance(x, dict):
+        if "x" not in x:
+            raise InductiveValidationError("Graph inputs must include key 'x'.")
+        return x["x"]
+    return x
+
+
+def _add_to_x(x: Any, delta: Any) -> Any:
+    if isinstance(x, dict):
+        out = dict(x)
+        out["x"] = x["x"] + delta
+        return out
+    return x + delta
 
 
 def _l2_normalize(tensor: Any, *, eps: float = 1e-12) -> Any:
@@ -114,13 +133,14 @@ class VATMethod(InductiveMethod):
                 raise InductiveValidationError("Model logits must be 2D (batch, classes).")
             probs = torch.softmax(logits_u, dim=1)
 
-        d = torch.randn(x_u.shape, device=x_u.device, dtype=x_u.dtype, generator=generator)
+        x_base = _get_x_tensor(x_u)
+        d = torch.randn(x_base.shape, device=x_base.device, dtype=x_base.dtype, generator=generator)
         for _ in range(int(num_iters)):
             d = _l2_normalize(d) * float(xi)
             d = d.detach()
             d.requires_grad_(True)
             with freeze_batchnorm(model, enabled=bool(freeze_bn)):
-                logits_d = extract_logits(model(x_u + d))
+                logits_d = extract_logits(model(_add_to_x(x_u, d)))
             if int(logits_d.ndim) != 2:
                 raise InductiveValidationError("Model logits must be 2D (batch, classes).")
             log_probs_d = torch.nn.functional.log_softmax(logits_d, dim=1)
@@ -145,7 +165,7 @@ class VATMethod(InductiveMethod):
 
         r_adv = _l2_normalize(d) * float(eps)
         with freeze_batchnorm(model, enabled=bool(freeze_bn)):
-            logits_adv = extract_logits(model(x_u + r_adv))
+            logits_adv = extract_logits(model(_add_to_x(x_u, r_adv)))
         if int(logits_adv.ndim) != 2:
             raise InductiveValidationError("Model logits must be 2D (batch, classes).")
         log_probs_adv = torch.nn.functional.log_softmax(logits_adv, dim=1)
@@ -188,13 +208,13 @@ class VATMethod(InductiveMethod):
         y_l = ensure_1d_labels_torch(ds.y_l, name="y_l")
         logger.info(
             "VAT sizes: n_labeled=%s n_unlabeled=%s",
-            int(X_l.shape[0]),
-            int(X_u.shape[0]),
+            int(get_torch_len(X_l)),
+            int(get_torch_len(X_u)),
         )
 
-        if int(X_l.shape[0]) == 0:
+        if int(get_torch_len(X_l)) == 0:
             raise InductiveValidationError("X_l must be non-empty.")
-        if int(X_u.shape[0]) == 0:
+        if int(get_torch_len(X_u)) == 0:
             raise InductiveValidationError("X_u must be non-empty.")
 
         ensure_float_tensor(X_l, name="X_l")
@@ -209,7 +229,7 @@ class VATMethod(InductiveMethod):
         bundle = ensure_model_bundle(self.spec.model_bundle)
         model = bundle.model
         optimizer = bundle.optimizer
-        ensure_model_device(model, device=X_l.device)
+        ensure_model_device(model, device=get_torch_device(X_l))
 
         if int(self.spec.batch_size) <= 0:
             raise InductiveValidationError("batch_size must be >= 1.")
@@ -226,8 +246,8 @@ class VATMethod(InductiveMethod):
         if float(self.spec.unsup_warm_up) < 0:
             raise InductiveValidationError("unsup_warm_up must be >= 0.")
 
-        steps_l = num_batches(int(X_l.shape[0]), int(self.spec.batch_size))
-        steps_u = num_batches(int(X_u.shape[0]), int(self.spec.batch_size))
+        steps_l = num_batches(int(get_torch_len(X_l)), int(self.spec.batch_size))
+        steps_u = num_batches(int(get_torch_len(X_u)), int(self.spec.batch_size))
         steps_per_epoch = max(int(steps_l), int(steps_u))
         total_steps = int(self.spec.max_epochs) * steps_per_epoch
         if float(self.spec.unsup_warm_up) <= 0:
@@ -253,14 +273,14 @@ class VATMethod(InductiveMethod):
                 steps=steps_per_epoch,
             )
             iter_u_idx = cycle_batch_indices(
-                int(X_u.shape[0]),
+                int(get_torch_len(X_u)),
                 batch_size=int(self.spec.batch_size),
                 generator=gen_u,
-                device=X_u.device,
+                device=get_torch_device(X_u),
                 steps=steps_per_epoch,
             )
             for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
-                x_u = X_u[idx_u]
+                x_u = slice_data(X_u, idx_u)
 
                 logits_l = extract_logits(model(x_lb))
                 if int(logits_l.ndim) != 2:

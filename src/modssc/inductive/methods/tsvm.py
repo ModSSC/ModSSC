@@ -23,6 +23,12 @@ from modssc.inductive.types import DeviceSpec
 logger = logging.getLogger(__name__)
 
 
+def _get_torch_x(obj: Any) -> Any:
+    if isinstance(obj, dict) and "x" in obj:
+        return obj["x"]
+    return obj
+
+
 def _encode_binary(y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     y = np.asarray(y).reshape(-1)
     classes = np.unique(y)
@@ -222,8 +228,8 @@ class TSVMMethod(InductiveMethod):
         if ds.X_u is None:
             raise InductiveValidationError("TSVM requires X_u (unlabeled data).")
 
-        X_l = ds.X_l
-        X_u = ds.X_u
+        X_l = _get_torch_x(ds.X_l)
+        X_u = _get_torch_x(ds.X_u)
         if int(X_l.shape[0]) == 0:
             raise InductiveValidationError("X_l must be non-empty.")
         logger.info(
@@ -342,14 +348,15 @@ class TSVMMethod(InductiveMethod):
             proba = np.stack([1.0 - p1, p1], axis=1)
             return proba.astype(np.float32, copy=False)
         torch = optional_import("torch", extra="inductive-torch")
-        if not isinstance(X, torch.Tensor):
+        if not isinstance(X, torch.Tensor) and not isinstance(X, dict):
             raise InductiveValidationError(
-                "Torch backend requires torch.Tensor inputs. Use preprocess core.to_torch."
+                "Torch backend requires torch.Tensor or dict inputs. Use preprocess core.to_torch."
             )
+        X_t = _get_torch_x(X)
         w, b, classes = self._svm  # type: ignore[misc]
-        if X.dtype not in (torch.float32, torch.float64):
+        if X_t.dtype not in (torch.float32, torch.float64):
             raise InductiveValidationError("X must be float32 or float64 for TSVM.")
-        scores = X @ w + b
+        scores = X_t @ w + b
         p1 = torch.sigmoid(scores)
         proba = torch.stack([1.0 - p1, p1], dim=1)
         return proba

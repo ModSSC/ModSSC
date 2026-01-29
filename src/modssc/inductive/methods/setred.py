@@ -10,6 +10,12 @@ import numpy as np
 
 from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.errors import InductiveValidationError
+from modssc.inductive.methods.deep_utils import (
+    concat_data,
+    get_torch_device,
+    get_torch_len,
+    slice_data,
+)
 from modssc.inductive.methods.utils import (
     BaseClassifierSpec,
     build_classifier,
@@ -26,6 +32,12 @@ from modssc.inductive.optional import optional_import
 from modssc.inductive.types import DeviceSpec
 
 logger = logging.getLogger(__name__)
+
+
+def _get_torch_x(obj: Any) -> Any:
+    if isinstance(obj, dict) and "x" in obj:
+        return obj["x"]
+    return obj
 
 
 def _pairwise_distances_numpy(X: np.ndarray) -> np.ndarray:
@@ -353,7 +365,7 @@ class SetredMethod(InductiveMethod):
         y_l = ensure_1d_labels_torch(ds.y_l, name="y_l")
         torch = optional_import("torch", extra="inductive-torch")
 
-        if ds.X_u is None or ds.X_u.numel() == 0:  # type: ignore[union-attr]
+        if ds.X_u is None or int(get_torch_len(ds.X_u)) == 0:
             clf = build_classifier(self.spec, seed=seed)
             clf.fit(ds.X_l, y_l)
             self._clf = clf
@@ -363,12 +375,12 @@ class SetredMethod(InductiveMethod):
 
         X_l = ds.X_l
         X_u = ds.X_u
-        if int(X_l.shape[0]) == 0:
+        if int(get_torch_len(X_l)) == 0:
             raise InductiveValidationError("X_l must be non-empty.")
         logger.info(
             "Setred sizes: n_labeled=%s n_unlabeled=%s",
-            int(X_l.shape[0]),
-            int(X_u.shape[0]),
+            int(get_torch_len(X_l)),
+            int(get_torch_len(X_u)),
         )
 
         rng = np.random.default_rng(int(seed))
@@ -378,7 +390,7 @@ class SetredMethod(InductiveMethod):
         X_u_curr = X_u
         iter_count = 0
         while iter_count < int(self.spec.max_iter):
-            n_u = int(X_u_curr.shape[0])
+            n_u = int(get_torch_len(X_u_curr))
             if n_u == 0:
                 break
 
@@ -391,8 +403,8 @@ class SetredMethod(InductiveMethod):
                 pool_idx = rng.choice(n_u, size=pool_size, replace=False)
             else:
                 pool_idx = np.arange(n_u, dtype=np.int64)
-            pool_idx_t = torch.tensor(pool_idx, dtype=torch.long, device=X_u_curr.device)
-            X_pool = X_u_curr[pool_idx_t]
+            pool_idx_t = torch.tensor(pool_idx, dtype=torch.long, device=get_torch_device(X_u_curr))
+            X_pool = slice_data(X_u_curr, pool_idx_t)
 
             scores = predict_scores(clf, X_pool, backend=backend)
             pred = clf.predict(X_pool)
@@ -417,12 +429,14 @@ class SetredMethod(InductiveMethod):
                 logger.debug("Setred iter=%s no candidates selected; stopping.", iter_count)
                 break
 
-            sel_idx_t = torch.tensor(sel_idx, dtype=torch.long, device=X_u_curr.device)
-            X_l0 = X_pool[sel_idx_t]
+            sel_idx_t = torch.tensor(sel_idx, dtype=torch.long, device=get_torch_device(X_u_curr))
+            X_l0 = slice_data(X_pool, sel_idx_t)
             y_l0 = pred[sel_idx_t]
 
+            X_l_feat = _get_torch_x(X_l)
+            X_l0_feat = _get_torch_x(X_l0)
             X_all_np = np.concatenate(
-                [X_l.detach().cpu().numpy(), X_l0.detach().cpu().numpy()],
+                [X_l_feat.detach().cpu().numpy(), X_l0_feat.detach().cpu().numpy()],
                 axis=0,
             )
             y_all_np = np.concatenate(
@@ -433,7 +447,7 @@ class SetredMethod(InductiveMethod):
             class_probs = {
                 int(cls): float(cnt) / total for cls, cnt in zip(classes, counts, strict=True)
             }
-            idx_l0 = np.arange(int(X_l.shape[0]), int(X_all_np.shape[0]), dtype=np.int64)
+            idx_l0 = np.arange(int(get_torch_len(X_l)), int(X_all_np.shape[0]), dtype=np.int64)
             keep_mask_np = _filter_setred_numpy(
                 X_all_np,
                 y_all_np,
@@ -456,21 +470,25 @@ class SetredMethod(InductiveMethod):
             if kept < int(self.spec.min_new_labels):
                 break
 
-            keep_mask_t = torch.tensor(keep_mask_np, dtype=torch.bool, device=X_u_curr.device)
-            X_keep = X_l0[keep_mask_t]
+            keep_mask_t = torch.tensor(
+                keep_mask_np, dtype=torch.bool, device=get_torch_device(X_u_curr)
+            )
+            X_keep = slice_data(X_l0, keep_mask_t)
             y_keep = y_l0[keep_mask_t]
 
-            X_l = torch.cat([X_l, X_keep], dim=0)
+            X_l = concat_data([X_l, X_keep])
             y_l = torch.cat([y_l, y_keep], dim=0)
 
             accepted_pool_idx = sel_idx[keep_mask_np]
             accepted_u_idx = pool_idx[accepted_pool_idx]
-            keep_u = torch.ones((n_u,), dtype=torch.bool, device=X_u_curr.device)
+            keep_u = torch.ones((n_u,), dtype=torch.bool, device=get_torch_device(X_u_curr))
             if accepted_u_idx.size > 0:
-                keep_u[torch.tensor(accepted_u_idx, dtype=torch.long, device=X_u_curr.device)] = (
-                    False
-                )
-            X_u_curr = X_u_curr[keep_u]
+                keep_u[
+                    torch.tensor(
+                        accepted_u_idx, dtype=torch.long, device=get_torch_device(X_u_curr)
+                    )
+                ] = False
+            X_u_curr = slice_data(X_u_curr, keep_u)
 
             clf.fit(X_l, y_l)
             iter_count += 1

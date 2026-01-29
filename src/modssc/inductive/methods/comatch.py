@@ -10,6 +10,7 @@ from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.deep_utils import (
+    concat_data,
     cycle_batch_indices,
     cycle_batches,
     ensure_float_tensor,
@@ -432,13 +433,13 @@ class CoMatchMethod(InductiveMethod):
                 x_us1 = _slice(X_u_s1, idx_u)
 
                 if bool(self.spec.use_cat):
-                    inputs = torch.cat([x_lb, x_uw, x_us0, x_us1], dim=0)
+                    inputs = concat_data([x_lb, x_uw, x_us0, x_us1])
                     logits_all, feats_all = _extract_logits_and_features(model(inputs))
                     if int(logits_all.ndim) != 2 or int(feats_all.ndim) != 2:
                         raise InductiveValidationError("Model logits/feat must be 2D tensors.")
-                    num_lb = int(x_lb.shape[0])
-                    num_u = int(x_uw.shape[0])
-                    expected = num_lb + num_u + int(x_us0.shape[0]) + int(x_us1.shape[0])
+                    num_lb = int(_len(x_lb))
+                    num_u = int(_len(x_uw))
+                    expected = num_lb + num_u + int(_len(x_us0)) + int(_len(x_us1))
                     if int(logits_all.shape[0]) != expected or int(feats_all.shape[0]) != expected:
                         raise InductiveValidationError(
                             "Concatenated logits/feat batch size does not match inputs."

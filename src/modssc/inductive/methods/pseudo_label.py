@@ -9,6 +9,12 @@ import numpy as np
 
 from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.errors import InductiveValidationError
+from modssc.inductive.methods.deep_utils import (
+    concat_data,
+    get_torch_device,
+    get_torch_len,
+    slice_data,
+)
 from modssc.inductive.methods.utils import (
     BaseClassifierSpec,
     build_classifier,
@@ -133,7 +139,7 @@ class PseudoLabelMethod(InductiveMethod):
         ds = ensure_torch_data(data, device=device)
         y_l = ensure_1d_labels_torch(ds.y_l, name="y_l")
         torch = optional_import("torch", extra="inductive-torch")
-        if ds.X_u is None or ds.X_u.numel() == 0:  # type: ignore[union-attr]
+        if ds.X_u is None or int(get_torch_len(ds.X_u)) == 0:
             clf = build_classifier(self.spec, seed=seed)
             clf.fit(ds.X_l, y_l)
             self._clf = clf
@@ -143,12 +149,12 @@ class PseudoLabelMethod(InductiveMethod):
 
         X_l = ds.X_l
         X_u = ds.X_u
-        if int(X_l.shape[0]) == 0:
+        if int(get_torch_len(X_l)) == 0:
             raise InductiveValidationError("X_l must be non-empty.")
         logger.info(
             "Pseudo-label sizes: n_labeled=%s n_unlabeled=%s",
-            int(X_l.shape[0]),
-            int(X_u.shape[0]),
+            int(get_torch_len(X_l)),
+            int(get_torch_len(X_u)),
         )
 
         clf = build_classifier(self.spec, seed=seed)
@@ -158,7 +164,7 @@ class PseudoLabelMethod(InductiveMethod):
         while iter_count < int(self.spec.max_iter):
             clf.fit(X_l, y_l)
 
-            if int(X_u_curr.shape[0]) == 0:
+            if int(get_torch_len(X_u_curr)) == 0:
                 break
 
             scores = predict_scores(clf, X_u_curr, backend=backend)
@@ -171,18 +177,23 @@ class PseudoLabelMethod(InductiveMethod):
                 "Pseudo-label iter=%s accepted=%s remaining=%s",
                 iter_count,
                 int(idx.numel()),
-                int(X_u_curr.shape[0]),
+                int(get_torch_len(X_u_curr)),
             )
             if int(idx.numel()) < int(self.spec.min_new_labels):
                 break
 
-            y_u = clf.predict(X_u_curr[idx])
-            X_l = torch.cat([X_l, X_u_curr[idx]], dim=0)
+            x_u_sel = slice_data(X_u_curr, idx)
+            y_u = clf.predict(x_u_sel)
+            X_l = concat_data([X_l, x_u_sel])
             y_l = torch.cat([y_l, y_u], dim=0)
 
-            mask = torch.ones((int(X_u_curr.shape[0]),), dtype=torch.bool, device=X_u_curr.device)
+            mask = torch.ones(
+                (int(get_torch_len(X_u_curr)),),
+                dtype=torch.bool,
+                device=get_torch_device(X_u_curr),
+            )
             mask[idx] = False
-            X_u_curr = X_u_curr[mask]
+            X_u_curr = slice_data(X_u_curr, mask)
 
             iter_count += 1
 

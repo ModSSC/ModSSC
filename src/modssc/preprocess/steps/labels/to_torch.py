@@ -48,7 +48,10 @@ class LabelsToTorchStep:
 
     def transform(self, store: ArtifactStore, *, rng: np.random.Generator) -> dict[str, Any]:
         torch = require(module="torch", extra="inductive-torch", purpose="labels.to_torch")
-        y = store.require("raw.y")
+        y = store.get("labels.y", store.require("raw.y"))
         dev = _resolve_device(torch, self.device)
         dt = _resolve_dtype(torch, self.dtype)
+        tensor_type = getattr(torch, "Tensor", None)
+        if tensor_type is not None and isinstance(y, tensor_type):
+            return {"labels.y": y.to(device=dev, dtype=dt)}
         return {"labels.y": torch.as_tensor(y, device=dev, dtype=dt)}

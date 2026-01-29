@@ -10,6 +10,7 @@ from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.deep_utils import (
+    concat_data,
     cycle_batch_indices,
     cycle_batches,
     ensure_float_tensor,
@@ -18,7 +19,10 @@ from modssc.inductive.methods.deep_utils import (
     extract_features,
     extract_logits,
     freeze_batchnorm,
+    get_torch_device,
+    get_torch_len,
     num_batches,
+    slice_data,
 )
 from modssc.inductive.methods.utils import (
     detect_backend,
@@ -51,30 +55,38 @@ def _mixup(
     generator: Any,
 ):
     torch = optional_import("torch", extra="inductive-torch")
-    if not isinstance(X, torch.Tensor) or not isinstance(y, torch.Tensor):
+    if not isinstance(y, torch.Tensor):
+        raise InductiveValidationError("mixup expects torch.Tensor labels.")
+    is_dict = isinstance(X, dict)
+    base = X["x"] if is_dict and "x" in X else X
+    if not isinstance(base, torch.Tensor):
         raise InductiveValidationError("mixup expects torch.Tensor inputs.")
-    if int(X.shape[0]) != int(y.shape[0]):
+    if int(base.shape[0]) != int(y.shape[0]):
         raise InductiveValidationError("mixup X and y must have the same first dimension.")
-    batch = int(X.shape[0])
+    batch = int(base.shape[0])
     if batch == 0:
         raise InductiveValidationError("mixup requires non-empty batch.")
     if alpha <= 0:
-        lam = torch.ones((batch,), device=X.device, dtype=X.dtype)
+        lam = torch.ones((batch,), device=base.device, dtype=base.dtype)
     else:
         dist = torch.distributions.Beta(float(alpha), float(alpha))
-        lam = dist.sample((batch,)).to(device=X.device, dtype=X.dtype)
+        lam = dist.sample((batch,)).to(device=base.device, dtype=base.dtype)
         lam = torch.max(lam, 1.0 - lam)
 
     perm = torch.randperm(batch, generator=generator, device="cpu")
-    if X.device.type != "cpu":
-        perm = perm.to(device=X.device)
-    X2 = X[perm]
+    if base.device.type != "cpu":
+        perm = perm.to(device=base.device)
+    X2 = base[perm]
     y2 = y[perm]
 
-    view = [batch] + [1] * (int(X.dim()) - 1)
+    view = [batch] + [1] * (int(base.dim()) - 1)
     lam_x = lam.view(*view)
-    mixed_x = lam_x * X + (1.0 - lam_x) * X2
+    mixed_x = lam_x * base + (1.0 - lam_x) * X2
     mixed_y = lam.view(batch, 1) * y + (1.0 - lam.view(batch, 1)) * y2
+    if is_dict:
+        out = dict(X)
+        out["x"] = mixed_x
+        return out, mixed_y
     return mixed_x, mixed_y
 
 
@@ -166,15 +178,15 @@ class MixMatchMethod(InductiveMethod):
         X_u_s = ds.X_u_s
         logger.info(
             "MixMatch sizes: n_labeled=%s n_unlabeled=%s",
-            int(X_l.shape[0]),
-            int(X_u_w.shape[0]),
+            int(get_torch_len(X_l)),
+            int(get_torch_len(X_u_w)),
         )
 
-        if int(X_l.shape[0]) == 0:
+        if int(get_torch_len(X_l)) == 0:
             raise InductiveValidationError("X_l must be non-empty.")
-        if int(X_u_w.shape[0]) == 0 or int(X_u_s.shape[0]) == 0:
+        if int(get_torch_len(X_u_w)) == 0 or int(get_torch_len(X_u_s)) == 0:
             raise InductiveValidationError("X_u_w and X_u_s must be non-empty.")
-        if int(X_u_w.shape[0]) != int(X_u_s.shape[0]):
+        if int(get_torch_len(X_u_w)) != int(get_torch_len(X_u_s)):
             raise InductiveValidationError("X_u_w and X_u_s must have the same number of rows.")
 
         ensure_float_tensor(X_l, name="X_l")
@@ -189,7 +201,7 @@ class MixMatchMethod(InductiveMethod):
         bundle = ensure_model_bundle(self.spec.model_bundle)
         model = bundle.model
         optimizer = bundle.optimizer
-        ensure_model_device(model, device=X_l.device)
+        ensure_model_device(model, device=get_torch_device(X_l))
 
         if int(self.spec.batch_size) <= 0:
             raise InductiveValidationError("batch_size must be >= 1.")
@@ -204,8 +216,8 @@ class MixMatchMethod(InductiveMethod):
         if float(self.spec.unsup_warm_up) < 0:
             raise InductiveValidationError("unsup_warm_up must be >= 0.")
 
-        steps_l = num_batches(int(X_l.shape[0]), int(self.spec.batch_size))
-        steps_u = num_batches(int(X_u_w.shape[0]), int(self.spec.batch_size))
+        steps_l = num_batches(int(get_torch_len(X_l)), int(self.spec.batch_size))
+        steps_u = num_batches(int(get_torch_len(X_u_w)), int(self.spec.batch_size))
         steps_per_epoch = max(int(steps_l), int(steps_u))
         total_steps = int(self.spec.max_epochs) * steps_per_epoch
         if float(self.spec.unsup_warm_up) <= 0:
@@ -227,15 +239,15 @@ class MixMatchMethod(InductiveMethod):
                 steps=steps_per_epoch,
             )
             iter_u_idx = cycle_batch_indices(
-                int(X_u_w.shape[0]),
+                int(get_torch_len(X_u_w)),
                 batch_size=int(self.spec.batch_size),
                 generator=gen_u,
-                device=X_u_w.device,
+                device=get_torch_device(X_u_w),
                 steps=steps_per_epoch,
             )
             for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
-                x_uw = X_u_w[idx_u]
-                x_us = X_u_s[idx_u]
+                x_uw = slice_data(X_u_w, idx_u)
+                x_us = slice_data(X_u_s, idx_u)
 
                 with torch.no_grad(), freeze_batchnorm(model, enabled=bool(self.spec.freeze_bn)):
                     logits_uw = extract_logits(model(x_uw))
@@ -270,7 +282,7 @@ class MixMatchMethod(InductiveMethod):
                     )
                     logits_all = extract_logits(_forward_head(bundle, features=mixed_x))
                 else:
-                    inputs = torch.cat([x_lb, x_uw, x_us], dim=0)
+                    inputs = concat_data([x_lb, x_uw, x_us])
                     mixed_x, mixed_y = _mixup(
                         inputs, targets, alpha=float(self.spec.mixup_alpha), generator=gen_l
                     )
@@ -279,7 +291,7 @@ class MixMatchMethod(InductiveMethod):
                 if int(logits_all.ndim) != 2:
                     raise InductiveValidationError("Model logits must be 2D (batch, classes).")
 
-                num_lb = int(x_lb.shape[0])
+                num_lb = int(get_torch_len(x_lb))
                 logits_l = logits_all[:num_lb]
                 logits_u = logits_all[num_lb:]
 

@@ -18,7 +18,10 @@ from modssc.inductive.methods.deep_utils import (
     ensure_model_device,
     extract_logits,
     freeze_batchnorm,
+    get_torch_device,
+    get_torch_len,
     num_batches,
+    slice_data,
 )
 from modssc.inductive.methods.utils import (
     detect_backend,
@@ -254,8 +257,8 @@ class SimCLRv2Method(InductiveMethod):
 
         logger.info(
             "SimCLRv2 sizes: n_labeled=%s n_unlabeled=%s",
-            int(X_l.shape[0]),
-            int(X_uw.shape[0]) if X_uw is not None else 0,
+            int(get_torch_len(X_l)),
+            int(get_torch_len(X_uw)) if X_uw is not None else 0,
         )
 
         if int(self.spec.batch_size) <= 0:
@@ -286,18 +289,18 @@ class SimCLRv2Method(InductiveMethod):
                 raise InductiveValidationError(
                     "SimCLRv2 requires unlabeled data for pretrain/distill."
                 )
-            if int(X_uw.shape[0]) == 0:
+            if int(get_torch_len(X_uw)) == 0:
                 raise InductiveValidationError("X_u must be non-empty for pretrain/distill.")
             if X_us is None:
                 X_us = X_uw
-            if int(X_uw.shape[0]) != int(X_us.shape[0]):
+            if int(get_torch_len(X_uw)) != int(get_torch_len(X_us)):
                 raise InductiveValidationError("X_u_w and X_u_s must have the same number of rows.")
             ensure_float_tensor(X_uw, name="X_u_w")
             ensure_float_tensor(X_us, name="X_u_s")
 
         use_labeled = int(self.spec.finetune_epochs) > 0 or bool(self.spec.use_labeled_in_distill)
         if use_labeled:
-            if int(X_l.shape[0]) == 0:
+            if int(get_torch_len(X_l)) == 0:
                 raise InductiveValidationError("X_l must be non-empty for supervised stages.")
             ensure_float_tensor(X_l, name="X_l")
             y_l = ensure_1d_labels_torch(y_l, name="y_l")
@@ -315,7 +318,8 @@ class SimCLRv2Method(InductiveMethod):
                 self.spec.pretrain_bundle or self.spec.finetune_bundle
             )
             ensure_model_device(
-                pretrain_bundle.model, device=X_uw.device if X_uw is not None else X_l.device
+                pretrain_bundle.model,
+                device=get_torch_device(X_uw) if X_uw is not None else get_torch_device(X_l),
             )
 
         if int(self.spec.finetune_epochs) > 0 or int(self.spec.distill_epochs) > 0:
@@ -324,25 +328,25 @@ class SimCLRv2Method(InductiveMethod):
                     "finetune_bundle or pretrain_bundle must be provided."
                 )
             finetune_bundle = ensure_model_bundle(self.spec.finetune_bundle or pretrain_bundle)
-            ensure_model_device(finetune_bundle.model, device=X_l.device)
+            ensure_model_device(finetune_bundle.model, device=get_torch_device(X_l))
 
         if int(self.spec.pretrain_epochs) > 0 and pretrain_bundle is not None:
-            steps_u = num_batches(int(X_uw.shape[0]), int(self.spec.batch_size))
+            steps_u = num_batches(int(get_torch_len(X_uw)), int(self.spec.batch_size))
             gen_u = torch.Generator().manual_seed(int(seed))
             model = pretrain_bundle.model
             optimizer = pretrain_bundle.optimizer
             model.train()
             for epoch in range(int(self.spec.pretrain_epochs)):
                 iter_u = cycle_batch_indices(
-                    int(X_uw.shape[0]),
+                    int(get_torch_len(X_uw)),
                     batch_size=int(self.spec.batch_size),
                     generator=gen_u,
-                    device=X_uw.device,
+                    device=get_torch_device(X_uw),
                     steps=steps_u,
                 )
                 for step, idx_u in enumerate(iter_u):
-                    x_uw = X_uw[idx_u]
-                    x_us = X_us[idx_u]
+                    x_uw = slice_data(X_uw, idx_u)
+                    x_us = slice_data(X_us, idx_u)
                     z1 = _forward_projection(model, pretrain_bundle.meta, x_uw)
                     z2 = _forward_projection(model, pretrain_bundle.meta, x_us)
                     if int(z1.ndim) != 2 or int(z2.ndim) != 2:
@@ -383,7 +387,7 @@ class SimCLRv2Method(InductiveMethod):
                 ) from exc
 
         if int(self.spec.finetune_epochs) > 0 and finetune_bundle is not None:
-            steps_l = num_batches(int(X_l.shape[0]), int(self.spec.batch_size))
+            steps_l = num_batches(int(get_torch_len(X_l)), int(self.spec.batch_size))
             gen_l = torch.Generator().manual_seed(int(seed) + 1)
             model = finetune_bundle.model
             optimizer = finetune_bundle.optimizer
@@ -432,8 +436,8 @@ class SimCLRv2Method(InductiveMethod):
                 teacher_model = finetune_bundle.model
                 teacher_meta = finetune_bundle.meta
                 student_meta = student_bundle.meta
-                ensure_model_device(student_model, device=X_uw.device)
-                ensure_model_device(teacher_model, device=X_uw.device)
+                ensure_model_device(student_model, device=get_torch_device(X_uw))
+                ensure_model_device(teacher_model, device=get_torch_device(X_uw))
                 _check_distill_models(student_model, teacher_model)
 
             for p in teacher_model.parameters():
@@ -441,9 +445,9 @@ class SimCLRv2Method(InductiveMethod):
             teacher_model.eval()
             student_model.train()
 
-            steps_u = num_batches(int(X_uw.shape[0]), int(self.spec.batch_size))
+            steps_u = num_batches(int(get_torch_len(X_uw)), int(self.spec.batch_size))
             steps_l = (
-                num_batches(int(X_l.shape[0]), int(self.spec.batch_size))
+                num_batches(int(get_torch_len(X_l)), int(self.spec.batch_size))
                 if bool(self.spec.use_labeled_in_distill)
                 else 0
             )
@@ -453,10 +457,10 @@ class SimCLRv2Method(InductiveMethod):
 
             for epoch in range(int(self.spec.distill_epochs)):
                 iter_u = cycle_batch_indices(
-                    int(X_uw.shape[0]),
+                    int(get_torch_len(X_uw)),
                     batch_size=int(self.spec.batch_size),
                     generator=gen_u,
-                    device=X_uw.device,
+                    device=get_torch_device(X_uw),
                     steps=steps_per_epoch,
                 )
                 iter_l = (
@@ -472,8 +476,8 @@ class SimCLRv2Method(InductiveMethod):
                 )
                 for step in range(int(steps_per_epoch)):
                     idx_u = next(iter_u)
-                    x_uw = X_uw[idx_u]
-                    x_us = X_us[idx_u]
+                    x_uw = slice_data(X_uw, idx_u)
+                    x_us = slice_data(X_us, idx_u)
 
                     with (
                         torch.no_grad(),

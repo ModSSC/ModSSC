@@ -11,6 +11,7 @@ from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.deep_utils import (
+    concat_data,
     cycle_batches,
     ensure_float_tensor,
     ensure_model_bundle,
@@ -18,7 +19,10 @@ from modssc.inductive.methods.deep_utils import (
     extract_features,
     extract_logits,
     freeze_batchnorm,
+    get_torch_device,
+    get_torch_len,
     num_batches,
+    slice_data,
 )
 from modssc.inductive.methods.utils import (
     detect_backend,
@@ -90,13 +94,13 @@ def _output_smearing(labels: Any, *, n_classes: int, std: float, generator: Any)
 
 def _sample_pool(X_u: Any, *, n_pool: int, generator: Any) -> Any:
     torch = optional_import("torch", extra="inductive-torch")
-    n_u = int(X_u.shape[0])
+    n_u = int(get_torch_len(X_u))
     if int(n_pool) >= n_u:
         return X_u
     idx = torch.randperm(n_u, generator=generator, device="cpu")[: int(n_pool)]
-    if getattr(X_u.device, "type", "cpu") != "cpu":
-        idx = idx.to(device=X_u.device)
-    return X_u[idx]
+    if getattr(get_torch_device(X_u), "type", "cpu") != "cpu":
+        idx = idx.to(device=get_torch_device(X_u))
+    return slice_data(X_u, idx)
 
 
 def _dropout_filter(
@@ -112,11 +116,11 @@ def _dropout_filter(
     freeze_bn: bool,
 ) -> Any:
     torch = optional_import("torch", extra="inductive-torch")
-    n = int(X.shape[0])
+    n = int(get_torch_len(X))
     if n == 0 or int(passes) <= 1:
-        return torch.ones((n,), dtype=torch.bool, device=X.device)
+        return torch.ones((n,), dtype=torch.bool, device=get_torch_device(X))
     max_mismatches = int(math.floor(float(passes) * float(drop_fraction)))
-    counts = torch.zeros((n,), dtype=torch.int64, device=X.device)
+    counts = torch.zeros((n,), dtype=torch.int64, device=get_torch_device(X))
 
     shared_model = shared_bundle.model
     head_j_model = head_j.model
@@ -137,7 +141,7 @@ def _dropout_filter(
         for _ in range(int(passes)):
             for start in range(0, n, int(batch_size)):
                 end = min(start + int(batch_size), n)
-                x_batch = X[start:end]
+                x_batch = slice_data(X, slice(start, end))
                 feats = _forward_shared(shared_bundle, x_batch)
                 logits_j = _forward_head(head_j, feats)
                 logits_h = _forward_head(head_h, feats)
@@ -168,9 +172,9 @@ def _label_unlabeled(
     freeze_bn: bool,
 ) -> tuple[Any, Any]:
     torch = optional_import("torch", extra="inductive-torch")
-    n_pool = int(X_pool.shape[0])
+    n_pool = int(get_torch_len(X_pool))
     if n_pool == 0:
-        return X_pool, torch.empty((0,), device=X_pool.device, dtype=torch.int64)
+        return X_pool, torch.empty((0,), device=get_torch_device(X_pool), dtype=torch.int64)
 
     shared_model = shared_bundle.model
     head_j_model = head_j.model
@@ -188,7 +192,7 @@ def _label_unlabeled(
     with torch.no_grad():
         for start in range(0, n_pool, int(batch_size)):
             end = min(start + int(batch_size), n_pool)
-            x_batch = X_pool[start:end]
+            x_batch = slice_data(X_pool, slice(start, end))
             feats = _forward_shared(shared_bundle, x_batch)
             logits_j = _forward_head(head_j, feats)
             logits_h = _forward_head(head_h, feats)
@@ -215,11 +219,13 @@ def _label_unlabeled(
     head_h_model.train(was_h)
 
     if not idx_keep:
-        return X_pool[:0], torch.empty((0,), device=X_pool.device, dtype=torch.int64)
+        return slice_data(X_pool, slice(0, 0)), torch.empty(
+            (0,), device=get_torch_device(X_pool), dtype=torch.int64
+        )
 
     idx = torch.cat(idx_keep, dim=0)
     labels = torch.cat(labels_keep, dim=0)
-    X_pl = X_pool[idx]
+    X_pl = slice_data(X_pool, idx)
     if int(stability_passes) > 1:
         keep_mask = _dropout_filter(
             X_pl,
@@ -233,10 +239,10 @@ def _label_unlabeled(
             freeze_bn=bool(freeze_bn),
         )
         if bool(keep_mask.any()):
-            X_pl = X_pl[keep_mask]
+            X_pl = slice_data(X_pl, keep_mask)
             labels = labels[keep_mask]
         else:
-            X_pl = X_pl[:0]
+            X_pl = slice_data(X_pl, slice(0, 0))
             labels = labels[:0]
     return X_pl, labels
 
@@ -253,7 +259,7 @@ def _train_head(
     seed: int,
 ) -> None:
     torch = optional_import("torch", extra="inductive-torch")
-    n = int(X.shape[0])
+    n = int(get_torch_len(X))
     if n == 0:
         return
     steps = num_batches(n, int(batch_size))
@@ -278,7 +284,7 @@ def _train_head(
             shared_model.eval()
         head_model.train()
         for x_batch, y_batch in iter_batches:
-            freeze_bn = int(x_batch.shape[0]) < 2
+            freeze_bn = int(get_torch_len(x_batch)) < 2
             with (
                 freeze_batchnorm(shared_model, enabled=freeze_bn),
                 freeze_batchnorm(head_model, enabled=freeze_bn),
@@ -406,13 +412,13 @@ class TriNetMethod(InductiveMethod):
         X_u = ds.X_u
         logger.info(
             "TriNet sizes: n_labeled=%s n_unlabeled=%s",
-            int(X_l.shape[0]),
-            int(X_u.shape[0]),
+            int(get_torch_len(X_l)),
+            int(get_torch_len(X_u)),
         )
 
-        if int(X_l.shape[0]) == 0:
+        if int(get_torch_len(X_l)) == 0:
             raise InductiveValidationError("X_l must be non-empty.")
-        if int(X_u.shape[0]) == 0:
+        if int(get_torch_len(X_u)) == 0:
             raise InductiveValidationError("X_u must be non-empty.")
 
         ensure_float_tensor(X_l, name="X_l")
@@ -424,7 +430,7 @@ class TriNetMethod(InductiveMethod):
         shared_bundle, head_bundles = _validate_bundle_set(
             shared_bundle=self.spec.shared_bundle,
             head_bundles=self.spec.head_bundles,
-            device=X_l.device,
+            device=get_torch_device(X_l),
         )
 
         if int(self.spec.pool_base) <= 0:
@@ -481,7 +487,7 @@ class TriNetMethod(InductiveMethod):
 
         flag_os = True
         sigma = float(self.spec.sigma0)
-        n_u = int(X_u.shape[0])
+        n_u = int(get_torch_len(X_u))
 
         for t in range(1, int(self.spec.max_rounds) + 1):
             n_pool = min(int(self.spec.pool_base) * (2 ** int(t)), n_u)
@@ -537,7 +543,7 @@ class TriNetMethod(InductiveMethod):
                     batch_size=int(self.spec.batch_size),
                     freeze_bn=bool(self.spec.freeze_bn),
                 )
-                if int(self.spec.des_passes) > 1 and int(X_pl.shape[0]) > 0:
+                if int(self.spec.des_passes) > 1 and int(get_torch_len(X_pl)) > 0:
                     keep_mask = _dropout_filter(
                         X_pl,
                         y_pl,
@@ -550,15 +556,15 @@ class TriNetMethod(InductiveMethod):
                         freeze_bn=bool(self.spec.freeze_bn),
                     )
                     if bool(keep_mask.any()):
-                        X_pl = X_pl[keep_mask]
+                        X_pl = slice_data(X_pl, keep_mask)
                         y_pl = y_pl[keep_mask]
                     else:
-                        X_pl = X_pl[:0]
+                        X_pl = slice_data(X_pl, slice(0, 0))
                         y_pl = y_pl[:0]
 
-                if int(X_pl.shape[0]) > 0:
+                if int(get_torch_len(X_pl)) > 0:
                     y_pl_onehot = _one_hot(y_pl, n_classes=n_classes)
-                    X_hat = torch.cat([X_l, X_pl], dim=0)
+                    X_hat = concat_data([X_l, X_pl])
                     y_hat = torch.cat([y_l_onehot, y_pl_onehot], dim=0)
                 else:
                     X_hat = X_l
@@ -574,7 +580,7 @@ class TriNetMethod(InductiveMethod):
                     epochs=int(self.spec.train_epochs),
                     seed=int(seed) + 4000 + t * 10 + v,
                 )
-                pseudo_counts.append(int(X_pl.shape[0]))
+                pseudo_counts.append(int(get_torch_len(X_pl)))
 
             logger.debug(
                 "TriNet round=%s pool=%s sigma_t=%.3f pseudo=%s",
@@ -597,8 +603,8 @@ class TriNetMethod(InductiveMethod):
         if backend != "torch":
             raise InductiveValidationError("TriNet predict_proba requires torch tensors.")
         torch = optional_import("torch", extra="inductive-torch")
-        if not isinstance(X, torch.Tensor):
-            raise InductiveValidationError("predict_proba requires torch.Tensor inputs.")
+        if not isinstance(X, torch.Tensor) and not isinstance(X, dict):
+            raise InductiveValidationError("predict_proba requires torch.Tensor or dict inputs.")
 
         shared_model = self._shared_bundle.model
         head_models = [bundle.model for bundle in self._head_bundles]

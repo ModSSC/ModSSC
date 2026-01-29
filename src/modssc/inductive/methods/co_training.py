@@ -280,6 +280,15 @@ class CoTrainingMethod(InductiveMethod):
         if backend == "torch":
             d1 = _get_torch_device(v1_l)
             d2 = _get_torch_device(v2_l)
+            if d1 != d2:
+                raise InductiveValidationError("views must be on the same device.")
+            if y_l.device != d1:
+                try:
+                    y_l = y_l.to(d1)
+                except Exception as exc:
+                    raise InductiveValidationError(
+                        "y_l must be on the same device as the view tensors."
+                    ) from exc
             if y_l.device != d1 or y_l.device != d2:
                 raise InductiveValidationError(
                     "y_l must be on the same device as the view tensors."

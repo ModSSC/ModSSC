@@ -9,6 +9,12 @@ import numpy as np
 
 from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.errors import InductiveValidationError
+from modssc.inductive.methods.deep_utils import (
+    concat_data,
+    get_torch_device,
+    get_torch_len,
+    slice_data,
+)
 from modssc.inductive.methods.utils import (
     BaseClassifierSpec,
     build_classifier,
@@ -167,36 +173,39 @@ class TriTrainingMethod(InductiveMethod):
 
         X_l = ds.X_l
         X_u = ds.X_u
-        if int(X_l.shape[0]) == 0:
+        if int(get_torch_len(X_l)) == 0:
             raise InductiveValidationError("X_l must be non-empty.")
         logger.info(
             "Tri-training sizes: n_labeled=%s n_unlabeled=%s",
-            int(X_l.shape[0]),
-            int(X_u.shape[0]),
+            int(get_torch_len(X_l)),
+            int(get_torch_len(X_u)),
         )
 
-        n_l = int(X_l.shape[0])
+        n_l = int(get_torch_len(X_l))
         n_boot = max(1, int(round(float(self.spec.bootstrap_ratio) * n_l)))
-        gen = torch.Generator(device=X_l.device).manual_seed(int(seed))
+        gen = torch.Generator(device=get_torch_device(X_l)).manual_seed(int(seed))
 
         clfs = [build_classifier(self.spec, seed=seed + i) for i in range(3)]
         boot_idx = [
-            torch.randint(0, n_l, (n_boot,), generator=gen, device=X_l.device) for _ in range(3)
+            torch.randint(0, n_l, (n_boot,), generator=gen, device=get_torch_device(X_l))
+            for _ in range(3)
         ]
 
         added_idx = [set() for _ in range(3)]
         added_labels: list[dict[int, Any]] = [dict() for _ in range(3)]
 
         def _train(i: int) -> None:
-            X_train = X_l[boot_idx[i]]
+            X_train = slice_data(X_l, boot_idx[i])
             y_train = y_l[boot_idx[i]]
             if added_idx[i]:
-                idx = torch.tensor(sorted(added_idx[i]), dtype=torch.long, device=X_l.device)
-                X_train = torch.cat([X_train, X_u[idx]], dim=0)
+                idx = torch.tensor(
+                    sorted(added_idx[i]), dtype=torch.long, device=get_torch_device(X_l)
+                )
+                X_train = concat_data([X_train, slice_data(X_u, idx)])
                 y_extra = torch.tensor(
                     [added_labels[i][int(ii)] for ii in idx.tolist()],
                     dtype=y_l.dtype,
-                    device=X_l.device,
+                    device=get_torch_device(X_l),
                 )
                 y_train = torch.cat([y_train, y_extra], dim=0)
             clfs[i].fit(X_train, y_train)
@@ -230,7 +239,7 @@ class TriTrainingMethod(InductiveMethod):
                 idx = torch.tensor(
                     [int(ii) for ii in idx.tolist() if int(ii) not in added_idx[i]],
                     dtype=torch.long,
-                    device=X_l.device,
+                    device=get_torch_device(X_l),
                 )
                 if int(idx.numel()) == 0:
                     continue
