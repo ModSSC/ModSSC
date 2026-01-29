@@ -83,6 +83,24 @@ def test_graphsage_fit_predict_dict_cpu(monkeypatch):
     assert pred.shape[0] == 3
 
 
+def test_graphsage_init_hidden_sizes_sets_layers():
+    clf = TorchGraphSAGEClassifier(hidden_sizes=[32, 16])
+    assert clf.hidden_channels == 32
+    assert clf.num_layers == 3
+
+
+def test_graphsage_init_hidden_sizes_respects_num_layers():
+    clf = TorchGraphSAGEClassifier(hidden_sizes=[32, 16], num_layers=4)
+    assert clf.hidden_channels == 32
+    assert clf.num_layers == 4
+
+
+def test_graphsage_init_defaults_when_none():
+    clf = TorchGraphSAGEClassifier(hidden_channels=None, num_layers=None)
+    assert clf.hidden_channels == 128
+    assert clf.num_layers == 2
+
+
 def test_graphsage_fit_requires_dict(monkeypatch):
     _install_fake_pyg(monkeypatch)
     clf = TorchGraphSAGEClassifier(max_epochs=1, batch_size=1, n_jobs=0)

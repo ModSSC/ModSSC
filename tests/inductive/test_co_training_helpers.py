@@ -32,6 +32,13 @@ def test_get_torch_helpers_dict():
     assert ct._get_torch_device(x) == x["x"].device
 
 
+def test_same_device_branch_index_none():
+    dev = torch.device("cuda")
+    dev0 = torch.device("cuda:0")
+    assert dev != dev0
+    assert ct._same_device(dev, dev0)
+
+
 def test_index_torch_requires_pyg(monkeypatch):
     _install_fake_tg_utils(monkeypatch, with_subgraph=False)
     x = {

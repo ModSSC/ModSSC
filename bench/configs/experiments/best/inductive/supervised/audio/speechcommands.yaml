@@ -1,18 +1,18 @@
 run:
-  name: best_tabular_inductive_supervised_adult
-  seed: 1
-  output_dir: runs/inductive/supervised/tabular/adult
-  log_level: detailed
+  name: best_audio_inductive_supervised_speechcommands
+  seed: 4
+  output_dir: runs/inductive/supervised/audio/speechcommands
   fail_fast: true
+  log_level: detailed
 
 limits:
   profile: auto
 
 dataset:
-  id: adult
+  id: speechcommands
   download: true
 sampling:
-  seed: 1
+  seed: 4
   plan:
     split:
       kind: holdout
@@ -32,7 +32,7 @@ sampling:
       use_official_graph_masks: true
       allow_override_official: false
 preprocess:
-  seed: 1
+  seed: 4
   fit_on: train_labeled
   cache: true
   plan:
@@ -43,10 +43,11 @@ preprocess:
       params:
         device: "auto"
         dtype: int64
-    - id: tabular.one_hot
-    - id: core.ensure_2d
-    - id: tabular.impute
-    - id: tabular.standard_scaler
+    - id: audio.load_waveform
+      params:
+        allow_fallback: true
+        target_sample_rate: 16000
+        max_length: 16000
     - id: core.to_torch
       params:
         device: "auto"
@@ -58,16 +59,15 @@ method:
     device: "auto"
     dtype: float32
   params:
-    classifier_id: mlp
+    classifier_id: audio_pretrained
     classifier_backend: torch
     classifier_params:
-      hidden_sizes: [256, 256]
-      activation: relu
-      dropout: 0.1
-      lr: 0.001
-      weight_decay: 0.0
-      batch_size: 256
-      max_epochs: 50
+      bundle: WAV2VEC2_BASE
+      freeze_backbone: false
+      lr: 0.0001
+      weight_decay: 0.0001
+      batch_size: 8
+      max_epochs: 5
     max_iter: 0
     confidence_threshold: 0.95
     min_new_labels: 1

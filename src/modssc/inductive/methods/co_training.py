@@ -102,6 +102,13 @@ def _get_torch_device(obj: Any) -> Any:
     return obj.device
 
 
+def _same_device(a: Any, b: Any) -> bool:
+    return (a == b) or (
+        getattr(a, "type", None) == getattr(b, "type", None)
+        and (getattr(a, "index", None) is None or getattr(b, "index", None) is None)
+    )
+
+
 def _view_payload_torch(value: Any, *, name: str):
     torch = optional_import("torch", extra="inductive-torch")
     if isinstance(value, Mapping):
@@ -282,14 +289,14 @@ class CoTrainingMethod(InductiveMethod):
             d2 = _get_torch_device(v2_l)
             if d1 != d2:
                 raise InductiveValidationError("views must be on the same device.")
-            if y_l.device != d1:
+            if not _same_device(y_l.device, d1):
                 try:
                     y_l = y_l.to(d1)
                 except Exception as exc:
                     raise InductiveValidationError(
                         "y_l must be on the same device as the view tensors."
                     ) from exc
-            if y_l.device != d1 or y_l.device != d2:
+            if not _same_device(y_l.device, d1) or not _same_device(y_l.device, d2):
                 raise InductiveValidationError(
                     "y_l must be on the same device as the view tensors."
                 )

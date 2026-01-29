@@ -4,6 +4,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+import numpy as np
+
 from ..backends import torch_backend
 from ..base import InductiveDatasetLike
 from ..errors import InductiveValidationError
@@ -177,6 +179,32 @@ def to_torch_dataset(
                     f"Tensor device mismatch: expected {expected}, got {t.device}"
                 )
 
+    meta = data.meta
+    if isinstance(meta, Mapping):
+        meta = dict(meta)
+        torch = _torch()
+
+        def _device_of(obj: Any) -> Any | None:
+            if obj is None:
+                return None
+            if isinstance(obj, dict) and "x" in obj:
+                return obj["x"].device
+            return getattr(obj, "device", None)
+
+        idx_device = _device_of(X_u) or _device_of(X_u_w) or _device_of(X_u_s) or _device_of(X_l)
+        if idx_device is not None:
+            for key in ("idx_u", "unlabeled_idx", "unlabeled_indices"):
+                if key not in meta:
+                    continue
+                idx_val = meta[key]
+                if isinstance(idx_val, torch.Tensor):
+                    if idx_val.dtype != torch.int64 or idx_val.device != idx_device:
+                        meta[key] = idx_val.to(device=idx_device, dtype=torch.int64)
+                else:
+                    meta[key] = torch.as_tensor(
+                        np.asarray(idx_val), device=idx_device, dtype=torch.int64
+                    )
+
     return TorchDataset(
         X_l=X_l,
         y_l=y_l,
@@ -184,5 +212,5 @@ def to_torch_dataset(
         X_u_w=X_u_w,
         X_u_s=X_u_s,
         views=views,
-        meta=data.meta,
+        meta=meta,
     )

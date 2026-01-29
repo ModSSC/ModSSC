@@ -395,8 +395,8 @@ class MetaPseudoLabelsMethod(InductiveMethod):
                 "Meta Pseudo Labels predict_proba requires torch tensors."
             )
         torch = optional_import("torch", extra="inductive-torch")
-        if not isinstance(X, torch.Tensor):
-            raise InductiveValidationError("predict_proba requires torch.Tensor inputs.")
+        if not isinstance(X, torch.Tensor) and not (isinstance(X, dict) and "x" in X):
+            raise InductiveValidationError("predict_proba requires torch.Tensor or dict inputs.")
 
         student = self._student_bundle.model
         was_training = student.training

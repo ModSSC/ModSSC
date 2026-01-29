@@ -302,6 +302,32 @@ def test_slice_data_dict_with_and_without_pyg(monkeypatch):
     assert "edge_index" not in out2
 
 
+def test_slice_data_dict_with_slice_idx(monkeypatch):
+    import sys
+    import types
+
+    edge_index = torch.tensor([[0, 1, 2], [1, 2, 3]], dtype=torch.long)
+    X = {"x": torch.arange(12, dtype=torch.float32).view(4, 3), "edge_index": edge_index}
+    idx = slice(1, 3)
+    expected_idx = torch.arange(1, 3, device=edge_index.device)
+
+    def subgraph(sub_idx, edge_idx, relabel_nodes=True, num_nodes=None):
+        assert torch.equal(sub_idx, expected_idx)
+        assert edge_idx is edge_index
+        return edge_idx, None
+
+    utils = types.ModuleType("torch_geometric.utils")
+    utils.subgraph = subgraph
+    tg = types.ModuleType("torch_geometric")
+    tg.utils = utils
+    monkeypatch.setitem(sys.modules, "torch_geometric", tg)
+    monkeypatch.setitem(sys.modules, "torch_geometric.utils", utils)
+
+    out = deep_utils.slice_data(X, idx)
+    assert out["x"].shape == (2, 3)
+    assert "edge_index" in out
+
+
 def test_slice_data_dict_without_x():
     X = {"mask": torch.zeros((0, 2)), "meta": "keep"}
     out = deep_utils.slice_data(X, torch.tensor([], dtype=torch.long))

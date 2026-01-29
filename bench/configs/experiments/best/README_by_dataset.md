@@ -25,6 +25,7 @@ python -m bench.main --config bench/configs/experiments/best/inductive/self_trai
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/tabular/adult.yaml > log/inductive/setred/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/tabular/adult.yaml > log/inductive/simclr_v2/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/tabular/adult.yaml > log/inductive/softmatch/tabular/adult.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/tabular/adult.yaml > log/inductive/supervised/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/tabular/adult.yaml > log/inductive/temporal_ensembling/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/tabular/adult.yaml > log/inductive/tri_training/tabular/adult.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/tabular/adult.yaml > log/inductive/trinet/tabular/adult.log 2>&1
@@ -76,15 +77,14 @@ python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/
 python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/text/ag_news.yaml > log/inductive/noisy_student/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/text/ag_news.yaml > log/inductive/pi_model/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/text/ag_news.yaml > log/inductive/pseudo_label/text/ag_news.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/text/ag_news.yaml > log/inductive/s4vm/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/self_training/text/ag_news.yaml > log/inductive/self_training/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/text/ag_news.yaml > log/inductive/setred/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/text/ag_news.yaml > log/inductive/simclr_v2/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/text/ag_news.yaml > log/inductive/softmatch/text/ag_news.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/text/ag_news.yaml > log/inductive/supervised/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/text/ag_news.yaml > log/inductive/temporal_ensembling/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/text/ag_news.yaml > log/inductive/tri_training/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/text/ag_news.yaml > log/inductive/trinet/text/ag_news.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/text/ag_news.yaml > log/inductive/tsvm/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/text/ag_news.yaml > log/inductive/uda/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/text/ag_news.yaml > log/inductive/vat/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/text/ag_news.yaml > log/transductive/appnp/text/ag_news.log 2>&1
@@ -109,7 +109,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/planet
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/text/ag_news.yaml > log/transductive/poisson_learning/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_mbo/text/ag_news.yaml > log/transductive/poisson_mbo/text/ag_news.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/sgc/text/ag_news.yaml > log/transductive/sgc/text/ag_news.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/text/ag_news.yaml > log/transductive/tsvm/text/ag_news.log 2>&1
 ```
 
 ## amazon_polarity
@@ -137,6 +136,7 @@ python -m bench.main --config bench/configs/experiments/best/inductive/self_trai
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/text/amazon_polarity.yaml > log/inductive/setred/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/text/amazon_polarity.yaml > log/inductive/simclr_v2/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/text/amazon_polarity.yaml > log/inductive/softmatch/text/amazon_polarity.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/text/amazon_polarity.yaml > log/inductive/supervised/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/text/amazon_polarity.yaml > log/inductive/temporal_ensembling/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/text/amazon_polarity.yaml > log/inductive/tri_training/text/amazon_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/text/amazon_polarity.yaml > log/inductive/trinet/text/amazon_polarity.log 2>&1
@@ -188,15 +188,14 @@ python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/
 python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/text/amazon_reviews_multi_en.yaml > log/inductive/noisy_student/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/text/amazon_reviews_multi_en.yaml > log/inductive/pi_model/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/text/amazon_reviews_multi_en.yaml > log/inductive/pseudo_label/text/amazon_reviews_multi_en.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/text/amazon_reviews_multi_en.yaml > log/inductive/s4vm/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/self_training/text/amazon_reviews_multi_en.yaml > log/inductive/self_training/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/text/amazon_reviews_multi_en.yaml > log/inductive/setred/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/text/amazon_reviews_multi_en.yaml > log/inductive/simclr_v2/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/text/amazon_reviews_multi_en.yaml > log/inductive/softmatch/text/amazon_reviews_multi_en.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/text/amazon_reviews_multi_en.yaml > log/inductive/supervised/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/text/amazon_reviews_multi_en.yaml > log/inductive/temporal_ensembling/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/text/amazon_reviews_multi_en.yaml > log/inductive/tri_training/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/text/amazon_reviews_multi_en.yaml > log/inductive/trinet/text/amazon_reviews_multi_en.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/text/amazon_reviews_multi_en.yaml > log/inductive/tsvm/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/text/amazon_reviews_multi_en.yaml > log/inductive/uda/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/text/amazon_reviews_multi_en.yaml > log/inductive/vat/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/text/amazon_reviews_multi_en.yaml > log/transductive/appnp/text/amazon_reviews_multi_en.log 2>&1
@@ -221,7 +220,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/planet
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/text/amazon_reviews_multi_en.yaml > log/transductive/poisson_learning/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_mbo/text/amazon_reviews_multi_en.yaml > log/transductive/poisson_mbo/text/amazon_reviews_multi_en.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/sgc/text/amazon_reviews_multi_en.yaml > log/transductive/sgc/text/amazon_reviews_multi_en.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/text/amazon_reviews_multi_en.yaml > log/transductive/tsvm/text/amazon_reviews_multi_en.log 2>&1
 ```
 
 ## breast_cancer
@@ -249,6 +247,7 @@ python -m bench.main --config bench/configs/experiments/best/inductive/self_trai
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/tabular/breast_cancer.yaml > log/inductive/setred/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/tabular/breast_cancer.yaml > log/inductive/simclr_v2/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/tabular/breast_cancer.yaml > log/inductive/softmatch/tabular/breast_cancer.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/tabular/breast_cancer.yaml > log/inductive/supervised/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/tabular/breast_cancer.yaml > log/inductive/temporal_ensembling/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/tabular/breast_cancer.yaml > log/inductive/tri_training/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/tabular/breast_cancer.yaml > log/inductive/trinet/tabular/breast_cancer.log 2>&1
@@ -300,15 +299,14 @@ python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/
 python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/vision/cifar10.yaml > log/inductive/noisy_student/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/vision/cifar10.yaml > log/inductive/pi_model/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/vision/cifar10.yaml > log/inductive/pseudo_label/vision/cifar10.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/vision/cifar10.yaml > log/inductive/s4vm/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/self_training/vision/cifar10.yaml > log/inductive/self_training/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/vision/cifar10.yaml > log/inductive/setred/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/vision/cifar10.yaml > log/inductive/simclr_v2/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/vision/cifar10.yaml > log/inductive/softmatch/vision/cifar10.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/vision/cifar10.yaml > log/inductive/supervised/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/vision/cifar10.yaml > log/inductive/temporal_ensembling/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/vision/cifar10.yaml > log/inductive/tri_training/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/vision/cifar10.yaml > log/inductive/trinet/vision/cifar10.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/vision/cifar10.yaml > log/inductive/tsvm/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/vision/cifar10.yaml > log/inductive/uda/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/vision/cifar10.yaml > log/inductive/vat/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/vision/cifar10.yaml > log/transductive/appnp/vision/cifar10.log 2>&1
@@ -333,7 +331,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/planet
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/vision/cifar10.yaml > log/transductive/poisson_learning/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_mbo/vision/cifar10.yaml > log/transductive/poisson_mbo/vision/cifar10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/sgc/vision/cifar10.yaml > log/transductive/sgc/vision/cifar10.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/vision/cifar10.yaml > log/transductive/tsvm/vision/cifar10.log 2>&1
 ```
 
 ## cifar100
@@ -356,15 +353,14 @@ python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/
 python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/vision/cifar100.yaml > log/inductive/noisy_student/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/vision/cifar100.yaml > log/inductive/pi_model/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/vision/cifar100.yaml > log/inductive/pseudo_label/vision/cifar100.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/vision/cifar100.yaml > log/inductive/s4vm/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/self_training/vision/cifar100.yaml > log/inductive/self_training/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/vision/cifar100.yaml > log/inductive/setred/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/vision/cifar100.yaml > log/inductive/simclr_v2/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/vision/cifar100.yaml > log/inductive/softmatch/vision/cifar100.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/vision/cifar100.yaml > log/inductive/supervised/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/vision/cifar100.yaml > log/inductive/temporal_ensembling/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/vision/cifar100.yaml > log/inductive/tri_training/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/vision/cifar100.yaml > log/inductive/trinet/vision/cifar100.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/vision/cifar100.yaml > log/inductive/tsvm/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/vision/cifar100.yaml > log/inductive/uda/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/vision/cifar100.yaml > log/inductive/vat/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/vision/cifar100.yaml > log/transductive/appnp/vision/cifar100.log 2>&1
@@ -389,7 +385,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/planet
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/vision/cifar100.yaml > log/transductive/poisson_learning/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_mbo/vision/cifar100.yaml > log/transductive/poisson_mbo/vision/cifar100.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/sgc/vision/cifar100.yaml > log/transductive/sgc/vision/cifar100.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/vision/cifar100.yaml > log/transductive/tsvm/vision/cifar100.log 2>&1
 ```
 
 ## citeseer
@@ -412,15 +407,14 @@ python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/
 python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/graph/citeseer.yaml > log/inductive/noisy_student/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/graph/citeseer.yaml > log/inductive/pi_model/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/graph/citeseer.yaml > log/inductive/pseudo_label/graph/citeseer.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/graph/citeseer.yaml > log/inductive/s4vm/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/self_training/graph/citeseer.yaml > log/inductive/self_training/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/graph/citeseer.yaml > log/inductive/setred/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/graph/citeseer.yaml > log/inductive/simclr_v2/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/graph/citeseer.yaml > log/inductive/softmatch/graph/citeseer.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/graph/citeseer.yaml > log/inductive/supervised/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/graph/citeseer.yaml > log/inductive/temporal_ensembling/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/graph/citeseer.yaml > log/inductive/tri_training/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/graph/citeseer.yaml > log/inductive/trinet/graph/citeseer.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/graph/citeseer.yaml > log/inductive/tsvm/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/graph/citeseer.yaml > log/inductive/uda/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/graph/citeseer.yaml > log/inductive/vat/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/graph/citeseer.yaml > log/transductive/appnp/graph/citeseer.log 2>&1
@@ -445,7 +439,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/planet
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/graph/citeseer.yaml > log/transductive/poisson_learning/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_mbo/graph/citeseer.yaml > log/transductive/poisson_mbo/graph/citeseer.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/sgc/graph/citeseer.yaml > log/transductive/sgc/graph/citeseer.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/graph/citeseer.yaml > log/transductive/tsvm/graph/citeseer.log 2>&1
 ```
 
 ## cora
@@ -468,15 +461,14 @@ python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/
 python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/graph/cora.yaml > log/inductive/noisy_student/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/graph/cora.yaml > log/inductive/pi_model/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/graph/cora.yaml > log/inductive/pseudo_label/graph/cora.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/graph/cora.yaml > log/inductive/s4vm/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/self_training/graph/cora.yaml > log/inductive/self_training/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/graph/cora.yaml > log/inductive/setred/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/graph/cora.yaml > log/inductive/simclr_v2/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/graph/cora.yaml > log/inductive/softmatch/graph/cora.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/graph/cora.yaml > log/inductive/supervised/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/graph/cora.yaml > log/inductive/temporal_ensembling/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/graph/cora.yaml > log/inductive/tri_training/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/graph/cora.yaml > log/inductive/trinet/graph/cora.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/graph/cora.yaml > log/inductive/tsvm/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/graph/cora.yaml > log/inductive/uda/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/graph/cora.yaml > log/inductive/vat/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/graph/cora.yaml > log/transductive/appnp/graph/cora.log 2>&1
@@ -501,7 +493,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/planet
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/graph/cora.yaml > log/transductive/poisson_learning/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_mbo/graph/cora.yaml > log/transductive/poisson_mbo/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/sgc/graph/cora.yaml > log/transductive/sgc/graph/cora.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/graph/cora.yaml > log/transductive/tsvm/graph/cora.log 2>&1
 ```
 
 ## dbpedia_14
@@ -524,15 +515,14 @@ python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/
 python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/text/dbpedia_14.yaml > log/inductive/noisy_student/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/text/dbpedia_14.yaml > log/inductive/pi_model/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/text/dbpedia_14.yaml > log/inductive/pseudo_label/text/dbpedia_14.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/text/dbpedia_14.yaml > log/inductive/s4vm/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/self_training/text/dbpedia_14.yaml > log/inductive/self_training/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/text/dbpedia_14.yaml > log/inductive/setred/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/text/dbpedia_14.yaml > log/inductive/simclr_v2/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/text/dbpedia_14.yaml > log/inductive/softmatch/text/dbpedia_14.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/text/dbpedia_14.yaml > log/inductive/supervised/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/text/dbpedia_14.yaml > log/inductive/temporal_ensembling/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/text/dbpedia_14.yaml > log/inductive/tri_training/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/text/dbpedia_14.yaml > log/inductive/trinet/text/dbpedia_14.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/text/dbpedia_14.yaml > log/inductive/tsvm/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/text/dbpedia_14.yaml > log/inductive/uda/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/text/dbpedia_14.yaml > log/inductive/vat/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/text/dbpedia_14.yaml > log/transductive/appnp/text/dbpedia_14.log 2>&1
@@ -557,7 +547,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/planet
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/text/dbpedia_14.yaml > log/transductive/poisson_learning/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_mbo/text/dbpedia_14.yaml > log/transductive/poisson_mbo/text/dbpedia_14.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/sgc/text/dbpedia_14.yaml > log/transductive/sgc/text/dbpedia_14.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/text/dbpedia_14.yaml > log/transductive/tsvm/text/dbpedia_14.log 2>&1
 ```
 
 ## imdb
@@ -585,6 +574,7 @@ python -m bench.main --config bench/configs/experiments/best/inductive/self_trai
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/text/imdb.yaml > log/inductive/setred/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/text/imdb.yaml > log/inductive/simclr_v2/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/text/imdb.yaml > log/inductive/softmatch/text/imdb.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/text/imdb.yaml > log/inductive/supervised/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/text/imdb.yaml > log/inductive/temporal_ensembling/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/text/imdb.yaml > log/inductive/tri_training/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/text/imdb.yaml > log/inductive/trinet/text/imdb.log 2>&1
@@ -636,15 +626,14 @@ python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/
 python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/tabular/iris.yaml > log/inductive/noisy_student/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/tabular/iris.yaml > log/inductive/pi_model/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/tabular/iris.yaml > log/inductive/pseudo_label/tabular/iris.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/tabular/iris.yaml > log/inductive/s4vm/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/self_training/tabular/iris.yaml > log/inductive/self_training/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/tabular/iris.yaml > log/inductive/setred/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/tabular/iris.yaml > log/inductive/simclr_v2/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/tabular/iris.yaml > log/inductive/softmatch/tabular/iris.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/tabular/iris.yaml > log/inductive/supervised/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/tabular/iris.yaml > log/inductive/temporal_ensembling/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/tabular/iris.yaml > log/inductive/tri_training/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/tabular/iris.yaml > log/inductive/trinet/tabular/iris.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/tabular/iris.yaml > log/inductive/tsvm/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/tabular/iris.yaml > log/inductive/uda/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/tabular/iris.yaml > log/inductive/vat/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/tabular/iris.yaml > log/transductive/appnp/tabular/iris.log 2>&1
@@ -655,7 +644,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/gcn/ta
 python -m bench.main --config bench/configs/experiments/best/transductive/gcnii/tabular/iris.yaml > log/transductive/gcnii/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/grafn/tabular/iris.yaml > log/transductive/grafn/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/grand/tabular/iris.yaml > log/transductive/grand/tabular/iris.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/graph_mincuts/tabular/iris.yaml > log/transductive/graph_mincuts/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/graphhop/tabular/iris.yaml > log/transductive/graphhop/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/graphsage/tabular/iris.yaml > log/transductive/graphsage/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/h_gcn/tabular/iris.yaml > log/transductive/h_gcn/tabular/iris.log 2>&1
@@ -669,7 +657,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/planet
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/tabular/iris.yaml > log/transductive/poisson_learning/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_mbo/tabular/iris.yaml > log/transductive/poisson_mbo/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/sgc/tabular/iris.yaml > log/transductive/sgc/tabular/iris.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/tabular/iris.yaml > log/transductive/tsvm/tabular/iris.log 2>&1
 ```
 
 ## mnist
@@ -692,15 +679,14 @@ python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/
 python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/vision/mnist.yaml > log/inductive/noisy_student/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/vision/mnist.yaml > log/inductive/pi_model/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/vision/mnist.yaml > log/inductive/pseudo_label/vision/mnist.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/vision/mnist.yaml > log/inductive/s4vm/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/self_training/vision/mnist.yaml > log/inductive/self_training/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/vision/mnist.yaml > log/inductive/setred/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/vision/mnist.yaml > log/inductive/simclr_v2/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/vision/mnist.yaml > log/inductive/softmatch/vision/mnist.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/vision/mnist.yaml > log/inductive/supervised/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/vision/mnist.yaml > log/inductive/temporal_ensembling/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/vision/mnist.yaml > log/inductive/tri_training/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/vision/mnist.yaml > log/inductive/trinet/vision/mnist.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/vision/mnist.yaml > log/inductive/tsvm/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/vision/mnist.yaml > log/inductive/uda/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/vision/mnist.yaml > log/inductive/vat/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/vision/mnist.yaml > log/transductive/appnp/vision/mnist.log 2>&1
@@ -725,7 +711,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/planet
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/vision/mnist.yaml > log/transductive/poisson_learning/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_mbo/vision/mnist.yaml > log/transductive/poisson_mbo/vision/mnist.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/sgc/vision/mnist.yaml > log/transductive/sgc/vision/mnist.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/vision/mnist.yaml > log/transductive/tsvm/vision/mnist.log 2>&1
 ```
 
 ## pubmed
@@ -748,15 +733,14 @@ python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/
 python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/graph/pubmed.yaml > log/inductive/noisy_student/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/graph/pubmed.yaml > log/inductive/pi_model/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/graph/pubmed.yaml > log/inductive/pseudo_label/graph/pubmed.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/graph/pubmed.yaml > log/inductive/s4vm/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/self_training/graph/pubmed.yaml > log/inductive/self_training/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/graph/pubmed.yaml > log/inductive/setred/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/graph/pubmed.yaml > log/inductive/simclr_v2/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/graph/pubmed.yaml > log/inductive/softmatch/graph/pubmed.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/graph/pubmed.yaml > log/inductive/supervised/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/graph/pubmed.yaml > log/inductive/temporal_ensembling/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/graph/pubmed.yaml > log/inductive/tri_training/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/graph/pubmed.yaml > log/inductive/trinet/graph/pubmed.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/graph/pubmed.yaml > log/inductive/tsvm/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/graph/pubmed.yaml > log/inductive/uda/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/graph/pubmed.yaml > log/inductive/vat/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/graph/pubmed.yaml > log/transductive/appnp/graph/pubmed.log 2>&1
@@ -781,7 +765,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/planet
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/graph/pubmed.yaml > log/transductive/poisson_learning/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_mbo/graph/pubmed.yaml > log/transductive/poisson_mbo/graph/pubmed.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/sgc/graph/pubmed.yaml > log/transductive/sgc/graph/pubmed.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/graph/pubmed.yaml > log/transductive/tsvm/graph/pubmed.log 2>&1
 ```
 
 ## speechcommands
@@ -804,15 +787,14 @@ python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/
 python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/audio/speechcommands.yaml > log/inductive/noisy_student/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/audio/speechcommands.yaml > log/inductive/pi_model/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/audio/speechcommands.yaml > log/inductive/pseudo_label/audio/speechcommands.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/audio/speechcommands.yaml > log/inductive/s4vm/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/self_training/audio/speechcommands.yaml > log/inductive/self_training/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/audio/speechcommands.yaml > log/inductive/setred/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/audio/speechcommands.yaml > log/inductive/simclr_v2/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/audio/speechcommands.yaml > log/inductive/softmatch/audio/speechcommands.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/audio/speechcommands.yaml > log/inductive/supervised/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/audio/speechcommands.yaml > log/inductive/temporal_ensembling/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/audio/speechcommands.yaml > log/inductive/tri_training/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/audio/speechcommands.yaml > log/inductive/trinet/audio/speechcommands.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/audio/speechcommands.yaml > log/inductive/tsvm/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/audio/speechcommands.yaml > log/inductive/uda/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/audio/speechcommands.yaml > log/inductive/vat/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/audio/speechcommands.yaml > log/transductive/appnp/audio/speechcommands.log 2>&1
@@ -837,7 +819,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/planet
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/audio/speechcommands.yaml > log/transductive/poisson_learning/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_mbo/audio/speechcommands.yaml > log/transductive/poisson_mbo/audio/speechcommands.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/sgc/audio/speechcommands.yaml > log/transductive/sgc/audio/speechcommands.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/audio/speechcommands.yaml > log/transductive/tsvm/audio/speechcommands.log 2>&1
 ```
 
 ## stl10
@@ -860,15 +841,14 @@ python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/
 python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/vision/stl10.yaml > log/inductive/noisy_student/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/vision/stl10.yaml > log/inductive/pi_model/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/vision/stl10.yaml > log/inductive/pseudo_label/vision/stl10.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/vision/stl10.yaml > log/inductive/s4vm/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/self_training/vision/stl10.yaml > log/inductive/self_training/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/vision/stl10.yaml > log/inductive/setred/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/vision/stl10.yaml > log/inductive/simclr_v2/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/vision/stl10.yaml > log/inductive/softmatch/vision/stl10.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/vision/stl10.yaml > log/inductive/supervised/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/vision/stl10.yaml > log/inductive/temporal_ensembling/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/vision/stl10.yaml > log/inductive/tri_training/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/vision/stl10.yaml > log/inductive/trinet/vision/stl10.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/vision/stl10.yaml > log/inductive/tsvm/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/vision/stl10.yaml > log/inductive/uda/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/vision/stl10.yaml > log/inductive/vat/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/vision/stl10.yaml > log/transductive/appnp/vision/stl10.log 2>&1
@@ -893,7 +873,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/planet
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/vision/stl10.yaml > log/transductive/poisson_learning/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_mbo/vision/stl10.yaml > log/transductive/poisson_mbo/vision/stl10.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/sgc/vision/stl10.yaml > log/transductive/sgc/vision/stl10.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/vision/stl10.yaml > log/transductive/tsvm/vision/stl10.log 2>&1
 ```
 
 ## svhn
@@ -916,15 +895,14 @@ python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/
 python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/vision/svhn.yaml > log/inductive/noisy_student/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/vision/svhn.yaml > log/inductive/pi_model/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/vision/svhn.yaml > log/inductive/pseudo_label/vision/svhn.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/vision/svhn.yaml > log/inductive/s4vm/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/self_training/vision/svhn.yaml > log/inductive/self_training/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/vision/svhn.yaml > log/inductive/setred/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/vision/svhn.yaml > log/inductive/simclr_v2/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/vision/svhn.yaml > log/inductive/softmatch/vision/svhn.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/vision/svhn.yaml > log/inductive/supervised/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/vision/svhn.yaml > log/inductive/temporal_ensembling/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/vision/svhn.yaml > log/inductive/tri_training/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/vision/svhn.yaml > log/inductive/trinet/vision/svhn.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/vision/svhn.yaml > log/inductive/tsvm/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/vision/svhn.yaml > log/inductive/uda/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/vision/svhn.yaml > log/inductive/vat/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/vision/svhn.yaml > log/transductive/appnp/vision/svhn.log 2>&1
@@ -949,7 +927,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/planet
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/vision/svhn.yaml > log/transductive/poisson_learning/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_mbo/vision/svhn.yaml > log/transductive/poisson_mbo/vision/svhn.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/sgc/vision/svhn.yaml > log/transductive/sgc/vision/svhn.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/vision/svhn.yaml > log/transductive/tsvm/vision/svhn.log 2>&1
 ```
 
 ## toy
@@ -972,15 +949,14 @@ python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/
 python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/tabular/toy.yaml > log/inductive/noisy_student/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/tabular/toy.yaml > log/inductive/pi_model/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/tabular/toy.yaml > log/inductive/pseudo_label/tabular/toy.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/tabular/toy.yaml > log/inductive/s4vm/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/self_training/tabular/toy.yaml > log/inductive/self_training/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/tabular/toy.yaml > log/inductive/setred/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/tabular/toy.yaml > log/inductive/simclr_v2/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/tabular/toy.yaml > log/inductive/softmatch/tabular/toy.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/tabular/toy.yaml > log/inductive/supervised/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/tabular/toy.yaml > log/inductive/temporal_ensembling/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/tabular/toy.yaml > log/inductive/tri_training/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/tabular/toy.yaml > log/inductive/trinet/tabular/toy.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/tabular/toy.yaml > log/inductive/tsvm/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/tabular/toy.yaml > log/inductive/uda/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/tabular/toy.yaml > log/inductive/vat/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/tabular/toy.yaml > log/transductive/appnp/tabular/toy.log 2>&1
@@ -991,7 +967,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/gcn/ta
 python -m bench.main --config bench/configs/experiments/best/transductive/gcnii/tabular/toy.yaml > log/transductive/gcnii/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/grafn/tabular/toy.yaml > log/transductive/grafn/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/grand/tabular/toy.yaml > log/transductive/grand/tabular/toy.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/graph_mincuts/tabular/toy.yaml > log/transductive/graph_mincuts/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/graphhop/tabular/toy.yaml > log/transductive/graphhop/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/graphsage/tabular/toy.yaml > log/transductive/graphsage/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/h_gcn/tabular/toy.yaml > log/transductive/h_gcn/tabular/toy.log 2>&1
@@ -1005,7 +980,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/planet
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/tabular/toy.yaml > log/transductive/poisson_learning/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_mbo/tabular/toy.yaml > log/transductive/poisson_mbo/tabular/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/sgc/tabular/toy.yaml > log/transductive/sgc/tabular/toy.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/tabular/toy.yaml > log/transductive/tsvm/tabular/toy.log 2>&1
 ```
 
 ## yelp_polarity
@@ -1033,6 +1007,7 @@ python -m bench.main --config bench/configs/experiments/best/inductive/self_trai
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/text/yelp_polarity.yaml > log/inductive/setred/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/text/yelp_polarity.yaml > log/inductive/simclr_v2/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/text/yelp_polarity.yaml > log/inductive/softmatch/text/yelp_polarity.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/text/yelp_polarity.yaml > log/inductive/supervised/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/text/yelp_polarity.yaml > log/inductive/temporal_ensembling/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/text/yelp_polarity.yaml > log/inductive/tri_training/text/yelp_polarity.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/text/yelp_polarity.yaml > log/inductive/trinet/text/yelp_polarity.log 2>&1
@@ -1084,15 +1059,14 @@ python -m bench.main --config bench/configs/experiments/best/inductive/mixmatch/
 python -m bench.main --config bench/configs/experiments/best/inductive/noisy_student/text/yelp_review_full.yaml > log/inductive/noisy_student/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pi_model/text/yelp_review_full.yaml > log/inductive/pi_model/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/pseudo_label/text/yelp_review_full.yaml > log/inductive/pseudo_label/text/yelp_review_full.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/s4vm/text/yelp_review_full.yaml > log/inductive/s4vm/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/self_training/text/yelp_review_full.yaml > log/inductive/self_training/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/text/yelp_review_full.yaml > log/inductive/setred/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/text/yelp_review_full.yaml > log/inductive/simclr_v2/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/text/yelp_review_full.yaml > log/inductive/softmatch/text/yelp_review_full.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/text/yelp_review_full.yaml > log/inductive/supervised/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/text/yelp_review_full.yaml > log/inductive/temporal_ensembling/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/text/yelp_review_full.yaml > log/inductive/tri_training/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/text/yelp_review_full.yaml > log/inductive/trinet/text/yelp_review_full.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/inductive/tsvm/text/yelp_review_full.yaml > log/inductive/tsvm/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/uda/text/yelp_review_full.yaml > log/inductive/uda/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/vat/text/yelp_review_full.yaml > log/inductive/vat/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/appnp/text/yelp_review_full.yaml > log/transductive/appnp/text/yelp_review_full.log 2>&1
@@ -1117,7 +1091,6 @@ python -m bench.main --config bench/configs/experiments/best/transductive/planet
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_learning/text/yelp_review_full.yaml > log/transductive/poisson_learning/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/poisson_mbo/text/yelp_review_full.yaml > log/transductive/poisson_mbo/text/yelp_review_full.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/transductive/sgc/text/yelp_review_full.yaml > log/transductive/sgc/text/yelp_review_full.log 2>&1
-python -m bench.main --config bench/configs/experiments/best/transductive/tsvm/text/yelp_review_full.yaml > log/transductive/tsvm/text/yelp_review_full.log 2>&1
 ```
 
 ## yesno
@@ -1145,6 +1118,7 @@ python -m bench.main --config bench/configs/experiments/best/inductive/self_trai
 python -m bench.main --config bench/configs/experiments/best/inductive/setred/audio/yesno.yaml > log/inductive/setred/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/simclr_v2/audio/yesno.yaml > log/inductive/simclr_v2/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/softmatch/audio/yesno.yaml > log/inductive/softmatch/audio/yesno.log 2>&1
+python -m bench.main --config bench/configs/experiments/best/inductive/supervised/audio/yesno.yaml > log/inductive/supervised/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/temporal_ensembling/audio/yesno.yaml > log/inductive/temporal_ensembling/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/tri_training/audio/yesno.yaml > log/inductive/tri_training/audio/yesno.log 2>&1
 python -m bench.main --config bench/configs/experiments/best/inductive/trinet/audio/yesno.yaml > log/inductive/trinet/audio/yesno.log 2>&1

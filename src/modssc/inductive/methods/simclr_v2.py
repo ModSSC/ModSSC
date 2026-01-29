@@ -549,8 +549,8 @@ class SimCLRv2Method(InductiveMethod):
         if backend != "torch":
             raise InductiveValidationError("SimCLRv2 predict_proba requires torch tensors.")
         torch = optional_import("torch", extra="inductive-torch")
-        if not isinstance(X, torch.Tensor):
-            raise InductiveValidationError("predict_proba requires torch.Tensor inputs.")
+        if not isinstance(X, torch.Tensor) and not (isinstance(X, dict) and "x" in X):
+            raise InductiveValidationError("predict_proba requires torch.Tensor or dict inputs.")
 
         model = self._bundle.model
         was_training = model.training

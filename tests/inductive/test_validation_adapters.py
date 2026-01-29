@@ -279,6 +279,39 @@ def test_to_torch_dataset_dict_inputs():
     assert out.X_u is not None
 
 
+def test_to_torch_dataset_meta_idx_conversion():
+    X_l = {"x": torch.zeros((2, 3))}
+    y_l = torch.tensor([0, 1], dtype=torch.int64)
+    meta = {
+        "idx_u": torch.tensor([0, 1, 2], dtype=torch.int32),
+        "unlabeled_idx": [1, 2],
+    }
+    data = DummyDataset(X_l=X_l, y_l=y_l, X_u=None, meta=meta)
+    out = to_torch_dataset(data, device=DeviceSpec(device="auto"), require_same_device=False)
+    assert isinstance(out.meta["idx_u"], torch.Tensor)
+    assert out.meta["idx_u"].dtype == torch.int64
+    assert out.meta["idx_u"].device == X_l["x"].device
+    assert isinstance(out.meta["unlabeled_idx"], torch.Tensor)
+    assert out.meta["unlabeled_idx"].dtype == torch.int64
+    assert out.meta["unlabeled_idx"].device == X_l["x"].device
+
+
+def test_to_torch_dataset_meta_idx_no_device():
+    class _TensorDict(dict):
+        device = None
+
+        @property
+        def shape(self):
+            return (2, 3)
+
+    X_l = _TensorDict(t=torch.zeros((2, 3)))
+    y_l = torch.tensor([0, 1], dtype=torch.int64)
+    meta = {"idx_u": [0, 1]}
+    data = DummyDataset(X_l=X_l, y_l=y_l, X_u=None, meta=meta)
+    out = to_torch_dataset(data, device=DeviceSpec(device="auto"), require_same_device=False)
+    assert out.meta["idx_u"] == [0, 1]
+
+
 def test_require_tensor_dict_without_tensor():
     with pytest.raises(InductiveValidationError, match="core.to_torch"):
         _require_tensor({"meta": "no-tensor"}, name="X_l")

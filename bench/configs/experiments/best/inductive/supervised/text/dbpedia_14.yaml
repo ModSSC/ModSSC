@@ -1,7 +1,7 @@
 run:
-  name: best_tabular_inductive_supervised_adult
-  seed: 1
-  output_dir: runs/inductive/supervised/tabular/adult
+  name: best_text_inductive_supervised_dbpedia_14
+  seed: 2
+  output_dir: runs/inductive/supervised/text/dbpedia_14
   log_level: detailed
   fail_fast: true
 
@@ -9,10 +9,14 @@ limits:
   profile: auto
 
 dataset:
-  id: adult
+  id: dbpedia_14
   download: true
+  options:
+    text_column: content
+    label_column: label
+    prefer_test_split: true
 sampling:
-  seed: 1
+  seed: 2
   plan:
     split:
       kind: holdout
@@ -32,7 +36,7 @@ sampling:
       use_official_graph_masks: true
       allow_override_official: false
 preprocess:
-  seed: 1
+  seed: 2
   fit_on: train_labeled
   cache: true
   plan:
@@ -43,10 +47,11 @@ preprocess:
       params:
         device: "auto"
         dtype: int64
-    - id: tabular.one_hot
-    - id: core.ensure_2d
-    - id: tabular.impute
-    - id: tabular.standard_scaler
+    - id: text.ensure_strings
+    - id: text.vocab_tokenizer
+      params:
+        max_length: 256
+        vocab_size: 20000
     - id: core.to_torch
       params:
         device: "auto"
@@ -58,10 +63,11 @@ method:
     device: "auto"
     dtype: float32
   params:
-    classifier_id: mlp
+    classifier_id: lstm_scratch
     classifier_backend: torch
     classifier_params:
-      hidden_sizes: [256, 256]
+      hidden_sizes:
+      - 128
       activation: relu
       dropout: 0.1
       lr: 0.001

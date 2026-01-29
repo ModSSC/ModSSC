@@ -1,7 +1,7 @@
 run:
-  name: best_tabular_inductive_supervised_adult
-  seed: 1
-  output_dir: runs/inductive/supervised/tabular/adult
+  name: best_vision_inductive_supervised_stl10
+  seed: 3
+  output_dir: runs/inductive/supervised/vision/stl10
   log_level: detailed
   fail_fast: true
 
@@ -9,10 +9,10 @@ limits:
   profile: auto
 
 dataset:
-  id: adult
+  id: stl10
   download: true
 sampling:
-  seed: 1
+  seed: 3
   plan:
     split:
       kind: holdout
@@ -32,7 +32,7 @@ sampling:
       use_official_graph_masks: true
       allow_override_official: false
 preprocess:
-  seed: 1
+  seed: 3
   fit_on: train_labeled
   cache: true
   plan:
@@ -43,10 +43,27 @@ preprocess:
       params:
         device: "auto"
         dtype: int64
-    - id: tabular.one_hot
-    - id: core.ensure_2d
-    - id: tabular.impute
-    - id: tabular.standard_scaler
+    - id: vision.ensure_num_channels
+      params:
+        num_channels: 3
+    - id: vision.channels_order
+      params:
+        order: NCHW
+    - id: vision.resize
+      params:
+        height: 224
+        width: 224
+    - id: vision.normalize
+      params:
+        mean:
+        - 123.675
+        - 116.28
+        - 103.53
+        std:
+        - 58.395
+        - 57.12
+        - 57.375
+    - id: core.copy_raw
     - id: core.to_torch
       params:
         device: "auto"
@@ -58,16 +75,17 @@ method:
     device: "auto"
     dtype: float32
   params:
-    classifier_id: mlp
+    classifier_id: image_pretrained
     classifier_backend: torch
     classifier_params:
-      hidden_sizes: [256, 256]
-      activation: relu
-      dropout: 0.1
-      lr: 0.001
-      weight_decay: 0.0
-      batch_size: 256
-      max_epochs: 50
+      model_name: resnet18
+      weights: null
+      freeze_backbone: false
+      input_layout: channels_first
+      lr: 0.0001
+      weight_decay: 0.0001
+      batch_size: 32
+      max_epochs: 5
     max_iter: 0
     confidence_threshold: 0.95
     min_new_labels: 1
