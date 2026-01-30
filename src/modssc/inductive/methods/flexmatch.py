@@ -233,7 +233,7 @@ class FlexMatchMethod(InductiveMethod):
             raise InductiveValidationError("temperature must be > 0.")
 
         idx_u_all = self._get_idx_u(
-            data, device=get_torch_device(X_u_w), n_u=int(get_torch_len(X_u_w))
+            ds, device=get_torch_device(X_u_w), n_u=int(get_torch_len(X_u_w))
         )
 
         steps_l = num_batches(int(get_torch_len(X_l)), int(self.spec.batch_size))

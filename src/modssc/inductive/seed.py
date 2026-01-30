@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import random
 from contextlib import suppress
 
@@ -30,6 +31,8 @@ def seed_everything(seed: int, *, deterministic: bool = True) -> None:
         torch.cuda.manual_seed_all(seed_i)
 
     if deterministic:
+        if torch.cuda.is_available():
+            os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
         if hasattr(torch, "use_deterministic_algorithms"):
             with suppress(Exception):
                 torch.use_deterministic_algorithms(True)
