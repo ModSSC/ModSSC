@@ -671,7 +671,6 @@ def _build_graphsage_bundle(
         raise ImportError("torch_geometric is required for graphsage_inductive") from e
 
     hidden_sizes = params.get("hidden_sizes")
-    hidden_sizes = params.get("hidden_sizes")
     hidden_channels = int(params.get("hidden_channels", 128))
     num_layers = int(params.get("num_layers", 2))
     if hidden_sizes is not None:
