@@ -27,6 +27,27 @@ def _torch_geometric():
     return torch, torch_geometric
 
 
+def _resolve_activation(name: str, torch):
+    key = str(name).lower()
+    if key == "relu":
+        return torch.nn.ReLU()
+    if key == "gelu":
+        return torch.nn.GELU()
+    if key == "tanh":
+        return torch.nn.Tanh()
+    raise ValueError(f"Unknown activation: {name!r}")
+
+
+def _normalize_hidden_sizes(hidden_sizes: Any) -> tuple[int, ...] | None:
+    if hidden_sizes is None:
+        return None
+    if isinstance(hidden_sizes, int):
+        return (int(hidden_sizes),)
+    if isinstance(hidden_sizes, (list, tuple)):
+        return tuple(int(h) for h in hidden_sizes)
+    raise ValueError("hidden_sizes must be an int or a sequence of ints.")
+
+
 class TorchGraphSAGEClassifier(BaseSupervisedClassifier):
     """Inductive GraphSAGE classifier using neighbor sampling (Tabula Rasa context)."""
 
@@ -39,6 +60,7 @@ class TorchGraphSAGEClassifier(BaseSupervisedClassifier):
         hidden_channels: int | None = None,
         hidden_sizes: list[int] | None = None,
         num_layers: int | None = None,
+        activation: str = "relu",
         dropout: float = 0.5,
         lr: float = 1e-2,
         weight_decay: float = 5e-4,
@@ -51,17 +73,26 @@ class TorchGraphSAGEClassifier(BaseSupervisedClassifier):
         super().__init__(seed=seed, n_jobs=n_jobs)
         resolved_hidden = hidden_channels
         resolved_layers = num_layers
-        if hidden_sizes:
-            resolved_hidden = int(hidden_sizes[0])
-            if resolved_layers is None:
-                resolved_layers = max(2, int(len(hidden_sizes)) + 1)
+        resolved_hidden_sizes = _normalize_hidden_sizes(hidden_sizes)
+        if resolved_hidden_sizes:
+            for h in resolved_hidden_sizes:
+                if h <= 0:
+                    raise ValueError("hidden_sizes must be positive.")
+            if resolved_layers is not None and resolved_layers != len(resolved_hidden_sizes) + 1:
+                raise ValueError(
+                    "num_layers must equal len(hidden_sizes) + 1 when hidden_sizes is provided."
+                )
+            resolved_hidden = int(resolved_hidden_sizes[0])
+            resolved_layers = len(resolved_hidden_sizes) + 1
         if resolved_hidden is None:
             resolved_hidden = 128
         if resolved_layers is None:
             resolved_layers = 2
 
+        self.hidden_sizes = resolved_hidden_sizes
         self.hidden_channels = int(resolved_hidden)
         self.num_layers = int(resolved_layers)
+        self.activation = str(activation)
         self.dropout = float(dropout)
         self.lr = float(lr)
         self.weight_decay = float(weight_decay)
@@ -155,32 +186,38 @@ class TorchGraphSAGEClassifier(BaseSupervisedClassifier):
 
         data = data.to(device)
 
+        activation = _resolve_activation(self.activation, torch)
+
         class GNN(torch.nn.Module):
-            def __init__(self, in_channels, hidden_channels, out_channels, num_layers, dropout):
+            def __init__(self, layer_sizes, dropout, activation):
                 super().__init__()
                 self.convs = torch.nn.ModuleList()
-                self.convs.append(SAGEConv(in_channels, hidden_channels))
-                for _ in range(num_layers - 2):
-                    self.convs.append(SAGEConv(hidden_channels, hidden_channels))
-                self.convs.append(SAGEConv(hidden_channels, out_channels))
+                for in_channels, out_channels in zip(
+                    layer_sizes[:-1], layer_sizes[1:], strict=False
+                ):
+                    self.convs.append(SAGEConv(in_channels, out_channels))
 
                 self.dropout = dropout
+                self.activation = activation
 
             def forward(self, x, edge_index):
                 for i, conv in enumerate(self.convs):
                     x = conv(x, edge_index)
                     if i < len(self.convs) - 1:
-                        x = x.relu()
+                        x = self.activation(x)
                         x = torch.nn.functional.dropout(x, p=self.dropout, training=self.training)
                 return x
 
-        self._model = GNN(
-            in_channels=data.num_features,
-            hidden_channels=self.hidden_channels,
-            out_channels=num_classes,
-            num_layers=self.num_layers,
-            dropout=self.dropout,
-        ).to(device)
+        if self.hidden_sizes:
+            layer_sizes = [data.num_features, *self.hidden_sizes, num_classes]
+        else:
+            layer_sizes = (
+                [data.num_features] + [self.hidden_channels] * (self.num_layers - 1) + [num_classes]
+            )
+
+        self._model = GNN(layer_sizes=layer_sizes, dropout=self.dropout, activation=activation).to(
+            device
+        )
 
         optimizer = torch.optim.Adam(
             self._model.parameters(), lr=self.lr, weight_decay=self.weight_decay

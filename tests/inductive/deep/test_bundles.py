@@ -781,19 +781,20 @@ def test_build_graphsage_bundle_hidden_sizes(monkeypatch):
     )
     assert len(bundle.model.convs) == 3
     assert bundle.model.convs[0].lin.out_features == 8
+    assert bundle.model.convs[1].lin.out_features == 4
 
 
-def test_build_graphsage_bundle_hidden_sizes_with_num_layers(monkeypatch):
+def test_build_graphsage_bundle_hidden_sizes_int(monkeypatch):
     _install_fake_tg_nn(monkeypatch, with_sage=True)
-    sample = {"x": torch.randn(4, 5), "edge_index": torch.tensor([[0, 1], [1, 2]])}
+    sample = {"x": torch.randn(2, 3), "edge_index": torch.tensor([[0], [1]])}
     bundle = bundles._build_graphsage_bundle(
         sample,
         num_classes=2,
-        params={"hidden_sizes": [8, 4], "num_layers": 4, "dropout": 0.0},
+        params={"hidden_sizes": 8, "dropout": 0.0},
         seed=0,
         ema=False,
     )
-    assert len(bundle.model.convs) == 4
+    assert len(bundle.model.convs) == 2
 
 
 def test_build_graphsage_bundle_errors(monkeypatch):
@@ -808,6 +809,30 @@ def test_build_graphsage_bundle_errors(monkeypatch):
         )
 
     _install_fake_tg_nn(monkeypatch, with_sage=True)
+    with pytest.raises(InductiveValidationError, match="hidden_sizes must be an int"):
+        bundles._build_graphsage_bundle(
+            {"x": torch.randn(2, 3), "edge_index": torch.tensor([[0], [1]])},
+            num_classes=2,
+            params={"hidden_sizes": "bad"},
+            seed=0,
+            ema=False,
+        )
+    with pytest.raises(InductiveValidationError, match="hidden_sizes must be positive"):
+        bundles._build_graphsage_bundle(
+            {"x": torch.randn(2, 3), "edge_index": torch.tensor([[0], [1]])},
+            num_classes=2,
+            params={"hidden_sizes": [-1]},
+            seed=0,
+            ema=False,
+        )
+    with pytest.raises(InductiveValidationError, match="num_layers must equal"):
+        bundles._build_graphsage_bundle(
+            {"x": torch.randn(2, 3), "edge_index": torch.tensor([[0], [1]])},
+            num_classes=2,
+            params={"hidden_sizes": [8, 4], "num_layers": 2},
+            seed=0,
+            ema=False,
+        )
     with pytest.raises(InductiveValidationError, match="requires sample"):
         bundles._build_graphsage_bundle(
             object(),

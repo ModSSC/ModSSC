@@ -52,6 +52,10 @@ preprocess:
         height: 224
         width: 224
     - id: core.copy_raw
+    - id: core.to_torch
+      params:
+        device: "auto"
+        dtype: float32
 augmentation:
   enabled: true
   seed: 3
