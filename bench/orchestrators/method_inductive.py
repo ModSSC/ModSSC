@@ -23,8 +23,16 @@ from ..utils.import_tools import load_object
 _LOGGER = logging.getLogger(__name__)
 
 
+def _is_torch_container(x: Any) -> bool:
+    if is_torch_tensor(x):
+        return True
+    if isinstance(x, dict):
+        return any(is_torch_tensor(v) for v in x.values())
+    return False
+
+
 def _indices_for(X: Any, idx: np.ndarray):
-    if is_torch_tensor(X):
+    if _is_torch_container(X):
         import importlib
 
         torch = importlib.import_module("torch")
@@ -109,7 +117,7 @@ def _labels_for_backend(pre: PreprocessResult, X_l: Any, idx: np.ndarray) -> Any
         y_sub = source
         if y_sub is not None and getattr(y_sub, "ndim", 0) > 0 and y_sub.shape[0] > idx_max:
             y_sub = y_sub[_indices_for(y_sub, idx)]
-        if is_torch_tensor(X_l):
+        if _is_torch_container(X_l):
             if isinstance(X_l, dict) and "x" in X_l:
                 device = getattr(X_l["x"], "device", "cpu")
             else:
@@ -130,7 +138,7 @@ def _labels_for_backend(pre: PreprocessResult, X_l: Any, idx: np.ndarray) -> Any
     if y_arr.ndim > 0 and y_arr.shape[0] > idx_max:
         y_arr = y_arr[idx]
 
-    if is_torch_tensor(X_l):
+    if _is_torch_container(X_l):
         import importlib
 
         torch = importlib.import_module("torch")
@@ -158,7 +166,7 @@ def _build_views(
     idx_u: np.ndarray,
     ref: Any,
 ) -> dict[str, Any]:
-    use_torch = is_torch_tensor(ref)
+    use_torch = _is_torch_container(ref)
 
     def _get_dev(obj):
         if isinstance(obj, dict) and "x" in obj:
@@ -448,7 +456,7 @@ def run(
     X_u = _select_rows(X_train, idx_u)
 
     # JIT Conversion to Torch if method requires it (inferred by missing to_torch in pre)
-    if not is_torch_tensor(X_l):
+    if not _is_torch_container(X_l):
         target_device = resolve_device_name(cfg.device.device)
         X_l = _smart_to_torch(X_l, target_device)
         if X_u is not None:
@@ -471,7 +479,7 @@ def run(
 
     y_l = _labels_for_backend(pre, X_l, idx_l)
 
-    if X_u_s_1 is not None and is_torch_tensor(X_l) and not is_torch_tensor(X_u_s_1):
+    if X_u_s_1 is not None and _is_torch_container(X_l) and not is_torch_tensor(X_u_s_1):
         if isinstance(X_l, dict) and "x" in X_l:
             target_device = getattr(X_l["x"], "device", "cpu")
         else:
