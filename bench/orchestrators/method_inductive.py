@@ -23,12 +23,42 @@ from ..utils.import_tools import load_object
 _LOGGER = logging.getLogger(__name__)
 
 
+def _array_backend_flags(x: Any) -> tuple[bool, bool]:
+    """Return (has_torch_arrays, has_numpy_like_arrays) for nested containers."""
+    if is_torch_tensor(x):
+        return True, False
+    if isinstance(x, dict):
+        has_torch = False
+        has_numpy = False
+        for value in x.values():
+            child_torch, child_numpy = _array_backend_flags(value)
+            has_torch = has_torch or child_torch
+            has_numpy = has_numpy or child_numpy
+        return has_torch, has_numpy
+    if isinstance(x, (np.ndarray, list, tuple)):
+        return False, True
+    return False, False
+
+
 def _is_torch_container(x: Any) -> bool:
     if is_torch_tensor(x):
         return True
     if isinstance(x, dict):
-        return any(is_torch_tensor(v) for v in x.values())
+        has_torch, has_numpy = _array_backend_flags(x)
+        return has_torch and not has_numpy
     return False
+
+
+def _torch_container_device(x: Any) -> Any:
+    if is_torch_tensor(x):
+        return x.device
+    if isinstance(x, dict):
+        if "x" in x and is_torch_tensor(x["x"]):
+            return x["x"].device
+        for value in x.values():
+            if is_torch_tensor(value):
+                return value.device
+    return None
 
 
 def _indices_for(X: Any, idx: np.ndarray):
@@ -36,7 +66,7 @@ def _indices_for(X: Any, idx: np.ndarray):
         import importlib
 
         torch = importlib.import_module("torch")
-        device = X["x"].device if isinstance(X, dict) and "x" in X else getattr(X, "device", "cpu")
+        device = _torch_container_device(X) or "cpu"
         return torch.as_tensor(idx, device=device, dtype=torch.long)
     return idx
 
@@ -118,10 +148,7 @@ def _labels_for_backend(pre: PreprocessResult, X_l: Any, idx: np.ndarray) -> Any
         if y_sub is not None and getattr(y_sub, "ndim", 0) > 0 and y_sub.shape[0] > idx_max:
             y_sub = y_sub[_indices_for(y_sub, idx)]
         if _is_torch_container(X_l):
-            if isinstance(X_l, dict) and "x" in X_l:
-                device = getattr(X_l["x"], "device", "cpu")
-            else:
-                device = getattr(X_l, "device", "cpu")
+            device = _torch_container_device(X_l) or "cpu"
             if hasattr(y_sub, "device") and y_sub.device != device:
                 y_sub = y_sub.to(device)
         return y_sub
@@ -142,10 +169,7 @@ def _labels_for_backend(pre: PreprocessResult, X_l: Any, idx: np.ndarray) -> Any
         import importlib
 
         torch = importlib.import_module("torch")
-        if isinstance(X_l, dict) and "x" in X_l:
-            device = getattr(X_l["x"], "device", "cpu")
-        else:
-            device = getattr(X_l, "device", "cpu")
+        device = _torch_container_device(X_l) or "cpu"
         return torch.as_tensor(y_arr, device=device, dtype=torch.int64)
     return y_arr
 
@@ -168,12 +192,7 @@ def _build_views(
 ) -> dict[str, Any]:
     use_torch = _is_torch_container(ref)
 
-    def _get_dev(obj):
-        if isinstance(obj, dict) and "x" in obj:
-            return obj["x"].device
-        return getattr(obj, "device", None)
-
-    device = _get_dev(ref) if use_torch else None
+    device = _torch_container_device(ref) if use_torch else None
 
     out: dict[str, Any] = {}
     for name, ds in views.views.items():
@@ -469,10 +488,7 @@ def run(
             X_u_s_1 = _smart_to_torch(X_u_s_1, target_device)
     else:
         # If features are already torch, ensure augmented views are on the same device.
-        if isinstance(X_l, dict) and "x" in X_l:
-            target_device = getattr(X_l["x"], "device", "cpu")
-        else:
-            target_device = getattr(X_l, "device", "cpu")
+        target_device = _torch_container_device(X_l) or "cpu"
         X_u_w = _smart_to_torch(X_u_w, target_device)
         X_u_s = _smart_to_torch(X_u_s, target_device)
         X_u_s_1 = _smart_to_torch(X_u_s_1, target_device)
@@ -480,10 +496,7 @@ def run(
     y_l = _labels_for_backend(pre, X_l, idx_l)
 
     if X_u_s_1 is not None and _is_torch_container(X_l) and not is_torch_tensor(X_u_s_1):
-        if isinstance(X_l, dict) and "x" in X_l:
-            target_device = getattr(X_l["x"], "device", "cpu")
-        else:
-            target_device = getattr(X_l, "device", "cpu")
+        target_device = _torch_container_device(X_l) or "cpu"
         X_u_s_1 = _smart_to_torch(X_u_s_1, target_device)
 
     views_payload = _build_views(views, idx_l=idx_l, idx_u=idx_u, ref=X_l) if views else None
