@@ -495,7 +495,7 @@ class DemocraticCoLearningMethod(InductiveMethod):
             return (scores / row_sum).astype(np.float32, copy=False)
 
         torch = optional_import("torch", extra="inductive-torch")
-        weights_t = torch.tensor(self._weights, device=X.device, dtype=torch.float32)
+        weights_t = torch.tensor(self._weights, device=get_torch_device(X), dtype=torch.float32)
         if self._classes_t is None:
             raise RuntimeError("DemocraticCoLearningMethod missing classes; fit() was not called.")
         preds = [clf.predict(X) for clf in self._clfs]

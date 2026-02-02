@@ -89,8 +89,17 @@ def get_torch_len(x: Any) -> int:
 
 
 def get_torch_device(x: Any) -> Any:
-    if isinstance(x, dict) and "x" in x:
-        return x["x"].device
+    if isinstance(x, dict):
+        if "x" in x:
+            return x["x"].device
+        # Fallback: find first tensor-like object
+        for v in x.values():
+            if hasattr(v, "device"):
+                return v.device
+        # If no tensor found, maybe the dict itself has a device? Unlikely but possible in some custom classes
+        if hasattr(x, "device"):
+            return x.device
+        raise InductiveValidationError("Cannot infer device from dict input (no tensors found).")
     return x.device
 
 

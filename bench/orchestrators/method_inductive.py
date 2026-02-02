@@ -339,9 +339,14 @@ def _inject_model_bundle(
         if getattr(model_cfg, "factory", None):
             raise ValueError("TriNet does not support model.factory; use classifier config.")
         shared_bundle = _make_bundle(seed_offset=0)
-        if not is_torch_tensor(X_l):
+        if not is_torch_tensor(X_l) and not (isinstance(X_l, dict) and "x" in X_l):
             raise ValueError("TriNet requires torch.Tensor inputs (use core.to_torch).")
-        sample = X_l[:1] if getattr(X_l, "ndim", 0) > 0 and int(X_l.shape[0]) > 1 else X_l
+
+        if isinstance(X_l, dict):
+            sample = _select_rows(X_l, np.array([0]))
+        else:
+            sample = X_l[:1] if getattr(X_l, "ndim", 0) > 0 and int(X_l.shape[0]) > 1 else X_l
+
         output = shared_bundle.model(sample)
         head_sample = None
         if is_torch_tensor(output):
