@@ -602,12 +602,20 @@ def _build_lstm_bundle(
         vocab_size = int(sample.max().item()) + 1 if not sample.is_floating_point() else 20000
 
     embed_dim = int(params.get("embed_dim", 128))
-    hidden_dim = int(params.get("hidden_dim", 128))
+    # Support 'hidden_size' (common alias) and 'hidden_dim'
+    hidden_size_param = params.get("hidden_size")
+    if hidden_size_param is None:
+        hidden_size_param = params.get("hidden_sizes")  # In case user passed single-element list
+        if isinstance(hidden_size_param, (list, tuple)) and hidden_size_param:
+            hidden_size_param = hidden_size_param[0]
+
+    hidden_dim = int(params.get("hidden_dim", hidden_size_param if hidden_size_param is not None else 128))
     num_layers = int(params.get("num_layers", 1))
     dropout = float(params.get("dropout", 0.0))
     lr = float(params.get("lr", 1e-3))
     weight_decay = float(params.get("weight_decay", 0.0))
     bidirectional = bool(params.get("bidirectional", True))
+    return_features = bool(params.get("return_features", False))
 
     class _LSTMClassifier(torch.nn.Module):
         def __init__(self):
@@ -624,9 +632,18 @@ def _build_lstm_bundle(
             d_out = hidden_dim * 2 if bidirectional else hidden_dim
             self.fc = torch.nn.Linear(d_out, num_classes)
 
+        def get_input_embeddings(self, x):
+            x = x.to(dtype=torch.long)
+            return self.embedding(x)
+
         def forward(self, x):
-            x = x.to(dtype=torch.long)  # Ensure indices
-            emb = self.embedding(x)
+            # Support inputs_embeds for VAT/Adversarial training
+            if x.ndim == 3 and x.shape[-1] == embed_dim:
+                emb = x
+            else:
+                x = x.to(dtype=torch.long)  # Ensure indices
+                emb = self.embedding(x)
+
             self.lstm.flatten_parameters()
             _, (h_n, _) = self.lstm(emb)
 
@@ -640,7 +657,10 @@ def _build_lstm_bundle(
             else:
                 h = h_n[-1]
 
-            return self.fc(h)
+            logits = self.fc(h)
+            if return_features:
+                return logits, h
+            return logits
 
     torch.manual_seed(int(seed))
     model = _LSTMClassifier().to(sample.device)

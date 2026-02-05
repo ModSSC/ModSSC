@@ -447,6 +447,7 @@ def run_experiment(config_path: Path) -> int:
             seed=preprocess_seed,
             fit_indices=fit_indices,
             cache=cfg.preprocess.cache,
+            cache_dir=cfg.preprocess.cache_dir,
         )
         artifacts["preprocess"] = {
             "seed": preprocess_seed,

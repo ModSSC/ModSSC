@@ -66,8 +66,7 @@ method:
     classifier_id: lstm_scratch
     classifier_backend: torch
     classifier_params:
-      hidden_sizes:
-      - 128
+      hidden_size: 128
       activation: relu
       dropout: 0.1
       lr: 0.001

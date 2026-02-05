@@ -130,6 +130,7 @@ class PreprocessConfig:
     fit_on: str | None
     cache: bool
     plan: dict[str, Any]
+    cache_dir: str | None = None
 
 
 @dataclass(frozen=True)
@@ -315,7 +316,7 @@ class ExperimentConfig:
         sampling_cfg = SamplingConfig(seed=_optional_int(sampling, "seed"), plan=plan)
 
         preprocess = _as_mapping(data.get("preprocess", {}), name="preprocess")
-        _check_unknown(preprocess, {"seed", "fit_on", "cache", "plan"}, name="preprocess")
+        _check_unknown(preprocess, {"seed", "fit_on", "cache", "plan", "cache_dir"}, name="preprocess")
         pre_plan = _optional_mapping(preprocess, "plan")
         if not pre_plan:
             raise BenchConfigError("preprocess.plan must be provided")
@@ -324,6 +325,7 @@ class ExperimentConfig:
             fit_on=_optional_str(preprocess, "fit_on"),
             cache=_optional_bool(preprocess, "cache", default=True),
             plan=pre_plan,
+            cache_dir=_optional_str(preprocess, "cache_dir"),
         )
 
         views_cfg = None

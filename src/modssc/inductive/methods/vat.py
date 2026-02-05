@@ -134,13 +134,29 @@ class VATMethod(InductiveMethod):
             probs = torch.softmax(logits_u, dim=1)
 
         x_base = _get_x_tensor(x_u)
-        d = torch.randn(x_base.shape, device=x_base.device, dtype=x_base.dtype, generator=generator)
+
+        # Support embedding-level perturbation (e.g. for NLP)
+        get_emb_fn = getattr(model, "get_input_embeddings", None)
+        if get_emb_fn is None and hasattr(model, "module"):
+            get_emb_fn = getattr(model.module, "get_input_embeddings", None)
+
+        # If model exposes embeddings, we perturb them instead of discrete inputs
+        # x_anchor is now (B, L, D) typically
+        x_anchor = get_emb_fn(x_base) if get_emb_fn is not None else x_base
+
+        d = torch.randn(x_anchor.shape, device=x_anchor.device, dtype=x_anchor.dtype, generator=generator)
         for _ in range(int(num_iters)):
             d = _l2_normalize(d) * float(xi)
             d = d.detach()
             d.requires_grad_(True)
             with freeze_batchnorm(model, enabled=bool(freeze_bn)):
-                logits_d = extract_logits(model(_add_to_x(x_u, d)))
+                if get_emb_fn is not None:
+                    # Pass perturbed embeddings directly.
+                    # Requires model.forward to support embedding input if dim matches.
+                    logits_d = extract_logits(model(x_anchor + d))
+                else:
+                    logits_d = extract_logits(model(_add_to_x(x_u, d)))
+
             if int(logits_d.ndim) != 2:
                 raise InductiveValidationError("Model logits must be 2D (batch, classes).")
             log_probs_d = torch.nn.functional.log_softmax(logits_d, dim=1)
@@ -165,7 +181,10 @@ class VATMethod(InductiveMethod):
 
         r_adv = _l2_normalize(d) * float(eps)
         with freeze_batchnorm(model, enabled=bool(freeze_bn)):
-            logits_adv = extract_logits(model(_add_to_x(x_u, r_adv)))
+            if get_emb_fn is not None:
+                logits_adv = extract_logits(model(x_anchor + r_adv))
+            else:
+                logits_adv = extract_logits(model(_add_to_x(x_u, r_adv)))
         if int(logits_adv.ndim) != 2:
             raise InductiveValidationError("Model logits must be 2D (batch, classes).")
         log_probs_adv = torch.nn.functional.log_softmax(logits_adv, dim=1)

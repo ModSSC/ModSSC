@@ -98,6 +98,7 @@ def run(
     seed: int,
     fit_indices: np.ndarray | None,
     cache: bool,
+    cache_dir: str | None = None,
 ) -> PreprocessResult:
     start = perf_counter()
     plan = _plan_from_dict(plan_dict)
@@ -120,6 +121,7 @@ def run(
         seed=int(seed),
         fit_indices=fit_indices,
         cache=bool(cache),
+        cache_dir=cache_dir,
     )
     _LOGGER.info(
         "Preprocess result: fingerprint=%s plan_fingerprint=%s cache_dir=%s skipped=%s",
