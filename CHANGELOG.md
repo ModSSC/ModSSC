@@ -4,10 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on "Keep a Changelog", and this project adheres to Semantic Versioning.
 
+## 0.2.4
+- Improved torch container and device handling in inductive benchmarks.
+- Added LSTM embedding support and hidden_size alias in inductive bundles.
+- Added preprocess cache_dir passthrough for benchmarks.
+- Added VAT embedding perturbation support and related tests.
+
+## 0.2.3
+- Fixed bugs in Trinet inductive pipeline.
+
 ## 0.2.2
-- Ajout du support de `activation` pour GraphSAGE inductif.
-- Ajout de `core.to_torch` dans les configs TriNet vision (best + smoke).
-- Mise a jour des tests GraphSAGE.
+- Added `activation` support for inductive GraphSAGE.
+- Added `core.to_torch` in TriNet vision configs (best + smoke).
+- Updated GraphSAGE tests.
 
 ## 0.2.1
 - Bump version metadata.

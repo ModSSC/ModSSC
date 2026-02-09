@@ -226,6 +226,28 @@ def test_get_torch_helpers_dict_and_tensor():
     assert deep_utils.get_torch_ndim(d) == 2
 
 
+def test_get_torch_device_dict_paths():
+    # Case 1: Dict with no "x", but with a tensor value
+    t = torch.tensor([1, 2])
+    d1 = {"other": t}
+    assert deep_utils.get_torch_device(d1) == t.device
+
+    # Case 2: Dict object with device attribute
+    class DeviceDict(dict):
+        def __init__(self, device):
+            self.device = device
+
+    mock_dev = torch.device("cpu")
+    d2 = DeviceDict(mock_dev)
+    d2["val"] = "not_a_tensor"
+    assert deep_utils.get_torch_device(d2) == mock_dev
+
+    # Case 3: Error case - no tensors found
+    d3 = {"val": "string"}
+    with pytest.raises(InductiveValidationError, match="Cannot infer device"):
+        deep_utils.get_torch_device(d3)
+
+
 def _install_fake_tg_utils(monkeypatch, *, raise_import: bool):
     import sys
     import types

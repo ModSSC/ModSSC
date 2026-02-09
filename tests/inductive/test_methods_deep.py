@@ -600,6 +600,46 @@ def test_deep_method_specific_invalid_specs():
         )
 
 
+def test_vat_loss_uses_module_embeddings():
+    class _EmbeddedNet(torch.nn.Module):
+        def __init__(self, vocab_size: int = 7, embed_dim: int = 4, n_classes: int = 2):
+            super().__init__()
+            self.embedding = torch.nn.Embedding(vocab_size, embed_dim)
+            self.fc = torch.nn.Linear(embed_dim, n_classes, bias=False)
+
+        def get_input_embeddings(self, x):
+            return self.embedding(x)
+
+        def forward(self, x):
+            emb = x if x.ndim == 3 else self.embedding(x)
+            pooled = emb.mean(dim=1)
+            return self.fc(pooled)
+
+    class _Wrapper(torch.nn.Module):
+        def __init__(self, module: torch.nn.Module):
+            super().__init__()
+            self.module = module
+
+        def forward(self, x):
+            return self.module(x)
+
+    model = _Wrapper(_EmbeddedNet())
+    x_u = torch.randint(0, 7, (3, 5))
+    generator = torch.Generator().manual_seed(0)
+
+    loss = VATMethod()._vat_loss(
+        model,
+        x_u,
+        generator=generator,
+        xi=1e-6,
+        eps=2.5,
+        num_iters=1,
+        freeze_bn=False,
+        detach_target=True,
+    )
+    assert loss.ndim == 0
+
+
 @pytest.mark.parametrize("method_cls", DEEP_METHODS)
 def test_deep_methods_predict_proba_backend_mismatch(method_cls):
     data = _make_flex_data() if method_cls is FlexMatchMethod else make_torch_ssl_dataset()

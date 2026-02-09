@@ -43,8 +43,8 @@ def test_default_cache_dir_heuristic():
 
         cache_mock = MagicMock()
         preprocess_mock = MagicMock()
-        parent.__truediv__.side_effect = (
-            lambda x: pyproj_mock if x == "pyproject.toml" else cache_mock
+        parent.__truediv__.side_effect = lambda x: (
+            pyproj_mock if x == "pyproject.toml" else cache_mock
         )
         cache_mock.__truediv__.return_value = preprocess_mock
 

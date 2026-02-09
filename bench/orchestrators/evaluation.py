@@ -103,16 +103,8 @@ def _views_for_split(
     out: dict[str, Any] = {}
     idx = np.asarray(sampling.indices[split], dtype=np.int64)
     split_ref = sampling.refs.get(split, "train")
-    use_torch = is_torch_tensor(backend_ref)
-    device = None
-    if use_torch:
-        if hasattr(backend_ref, "device"):
-            device = backend_ref.device
-        elif isinstance(backend_ref, dict):
-            for v in backend_ref.values():
-                if is_torch_tensor(v) and hasattr(v, "device"):
-                    device = v.device
-                    break
+    device = _first_torch_device(backend_ref)
+    use_torch = device is not None or is_torch_tensor(backend_ref)
 
     for name, ds in views.views.items():
         base = ds.train if split_ref == "train" else ds.test
@@ -151,6 +143,34 @@ def _smart_to_torch(x: Any, device: Any) -> Any:
     return torch.as_tensor(x_np, device=device, dtype=dtype)
 
 
+def _first_torch_device(obj: Any) -> Any | None:
+    if obj is None:
+        return None
+    if isinstance(obj, dict):
+        for v in obj.values():
+            dev = _first_torch_device(v)
+            if dev is not None:
+                return dev
+        return None
+    if isinstance(obj, (list, tuple, set)):
+        for v in obj:
+            dev = _first_torch_device(v)
+            if dev is not None:
+                return dev
+        return None
+    if is_torch_tensor(obj):
+        return getattr(obj, "device", None)
+    return None
+
+
+def _infer_method_device(method: Any) -> Any | None:
+    for attr in ("_svm", "_bundle", "_model", "_clf1", "_clf2"):
+        dev = _first_torch_device(getattr(method, attr, None))
+        if dev is not None:
+            return dev
+    return None
+
+
 def evaluate_inductive(
     *,
     method: Any,
@@ -173,9 +193,6 @@ def evaluate_inductive(
             m_dev_spec if isinstance(m_dev_spec, str) else None
         )
 
-        if dest_dev is not None:
-            X = _smart_to_torch(X, dest_dev)
-
         # Fallback inspection for torch models if device attr missing
         if dest_dev is None and hasattr(method, "_bundle") and method._bundle is not None:
             try:
@@ -186,9 +203,14 @@ def evaluate_inductive(
                     p = next(mdl.parameters(), None)
                     if p is not None:
                         dest_dev = p.device
-                        X = _smart_to_torch(X, dest_dev)
             except Exception as e:
                 _LOGGER.debug("Failed to infer device from model: %s", e)
+
+        if dest_dev is None and getattr(method, "_backend", None) == "torch":
+            dest_dev = _infer_method_device(method)
+
+        if dest_dev is not None:
+            X = _smart_to_torch(X, dest_dev)
 
         if method_id == "co_training":
             if views is None:
