@@ -168,10 +168,6 @@ def _infer_method_device(method: Any) -> Any | None:
         dev = _first_torch_device(getattr(method, attr, None))
         if dev is not None:
             return dev
-    for val in getattr(method, "__dict__", {}).values():
-        dev = _first_torch_device(val)
-        if dev is not None:
-            return dev
     return None
 
 

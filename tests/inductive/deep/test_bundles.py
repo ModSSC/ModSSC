@@ -734,6 +734,44 @@ def test_build_lstm_bundle_vocab_infer_and_bidirectional():
     assert bundle3.model.embedding.num_embeddings == 5
 
 
+def test_build_lstm_bundle_hidden_size_alias_and_features():
+    sample = torch.tensor([[1, 2, 3], [3, 2, 1]], dtype=torch.int64)
+    bundle = bundles._build_lstm_bundle(
+        sample,
+        num_classes=3,
+        params={
+            "vocab_size": 10,
+            "hidden_sizes": [7],
+            "embed_dim": 6,
+            "return_features": True,
+            "bidirectional": False,
+        },
+        seed=0,
+        ema=False,
+    )
+    embeddings = bundle.model.get_input_embeddings(sample)
+    assert embeddings.shape == (2, 3, 6)
+
+    logits, feats = bundle.model(embeddings)
+    assert logits.shape == (2, 3)
+    assert feats.shape == (2, 7)
+
+    bundle2 = bundles._build_lstm_bundle(
+        sample,
+        num_classes=2,
+        params={
+            "vocab_size": 12,
+            "hidden_size": 11,
+            "embed_dim": 5,
+            "bidirectional": False,
+        },
+        seed=0,
+        ema=False,
+    )
+    out = bundle2.model(sample)
+    assert out.shape == (2, 2)
+
+
 def _install_fake_tg_nn(monkeypatch, *, with_sage: bool):
     nn_mod = types.ModuleType("torch_geometric.nn")
     if with_sage:

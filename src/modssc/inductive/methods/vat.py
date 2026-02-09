@@ -144,7 +144,9 @@ class VATMethod(InductiveMethod):
         # x_anchor is now (B, L, D) typically
         x_anchor = get_emb_fn(x_base) if get_emb_fn is not None else x_base
 
-        d = torch.randn(x_anchor.shape, device=x_anchor.device, dtype=x_anchor.dtype, generator=generator)
+        d = torch.randn(
+            x_anchor.shape, device=x_anchor.device, dtype=x_anchor.dtype, generator=generator
+        )
         for _ in range(int(num_iters)):
             d = _l2_normalize(d) * float(xi)
             d = d.detach()

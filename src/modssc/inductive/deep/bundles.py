@@ -609,7 +609,9 @@ def _build_lstm_bundle(
         if isinstance(hidden_size_param, (list, tuple)) and hidden_size_param:
             hidden_size_param = hidden_size_param[0]
 
-    hidden_dim = int(params.get("hidden_dim", hidden_size_param if hidden_size_param is not None else 128))
+    hidden_dim = int(
+        params.get("hidden_dim", hidden_size_param if hidden_size_param is not None else 128)
+    )
     num_layers = int(params.get("num_layers", 1))
     dropout = float(params.get("dropout", 0.0))
     lr = float(params.get("lr", 1e-3))

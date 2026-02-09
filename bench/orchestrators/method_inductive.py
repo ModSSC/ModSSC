@@ -35,7 +35,18 @@ def _array_backend_flags(x: Any) -> tuple[bool, bool]:
             has_torch = has_torch or child_torch
             has_numpy = has_numpy or child_numpy
         return has_torch, has_numpy
-    if isinstance(x, (np.ndarray, list, tuple)):
+    if isinstance(x, (list, tuple, set)):
+        has_torch = False
+        has_numpy = False
+        for value in x:
+            child_torch, child_numpy = _array_backend_flags(value)
+            has_torch = has_torch or child_torch
+            has_numpy = has_numpy or child_numpy
+            if not child_torch and not child_numpy:
+                # Lists of scalars are numpy-like.
+                has_numpy = True
+        return has_torch, has_numpy
+    if isinstance(x, np.ndarray):
         return False, True
     return False, False
 
@@ -56,8 +67,14 @@ def _torch_container_device(x: Any) -> Any:
         if "x" in x and is_torch_tensor(x["x"]):
             return x["x"].device
         for value in x.values():
-            if is_torch_tensor(value):
-                return value.device
+            dev = _torch_container_device(value)
+            if dev is not None:
+                return dev
+    if isinstance(x, (list, tuple, set)):
+        for value in x:
+            dev = _torch_container_device(value)
+            if dev is not None:
+                return dev
     return None
 
 

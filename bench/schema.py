@@ -316,7 +316,9 @@ class ExperimentConfig:
         sampling_cfg = SamplingConfig(seed=_optional_int(sampling, "seed"), plan=plan)
 
         preprocess = _as_mapping(data.get("preprocess", {}), name="preprocess")
-        _check_unknown(preprocess, {"seed", "fit_on", "cache", "plan", "cache_dir"}, name="preprocess")
+        _check_unknown(
+            preprocess, {"seed", "fit_on", "cache", "plan", "cache_dir"}, name="preprocess"
+        )
         pre_plan = _optional_mapping(preprocess, "plan")
         if not pre_plan:
             raise BenchConfigError("preprocess.plan must be provided")
