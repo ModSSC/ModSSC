@@ -192,7 +192,7 @@ def test_poisson_learning_numpy_eps_zero_branch(monkeypatch):
     y = np.array([0, 0, 0, 1, 1, 1], dtype=np.int64)
     labeled_mask = np.array([True, False, False, True, False, False])
 
-    monkeypatch.setattr(pl, "laplacian_matvec_numpy", lambda **_: lambda x: np.zeros_like(x))
+    monkeypatch.setattr(pl, "laplacian_matvec_numpy", lambda **_: np.zeros_like)
 
     def fake_cg(matvec, b, tol, max_iter):
         matvec(np.zeros_like(b))
