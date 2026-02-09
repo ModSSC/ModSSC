@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on "Keep a Changelog", and this project adheres to Semantic Versioning.
 
+## 0.2.4
+- Improved torch container and device handling in inductive benchmarks.
+- Added LSTM embedding support and hidden_size alias in inductive bundles.
+- Added preprocess cache_dir passthrough for benchmarks.
+- Added VAT embedding perturbation support and related tests.
+
 ## 0.2.3
 - Fixed bugs in Trinet inductive pipeline.
 
