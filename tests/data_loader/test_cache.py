@@ -124,8 +124,8 @@ def test_default_cache_dir_dev_repo():
         mock_pyproj = MagicMock()
         mock_pyproj.exists.return_value = True
 
-        mock_root.__truediv__.side_effect = (
-            lambda x: mock_pyproj if x == "pyproject.toml" else MagicMock()
+        mock_root.__truediv__.side_effect = lambda x: (
+            mock_pyproj if x == "pyproject.toml" else MagicMock()
         )
 
         res = default_cache_dir()

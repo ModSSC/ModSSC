@@ -335,8 +335,8 @@ class TestStructEmbeddings:
         mock_sklearn.TruncatedSVD = mock_svd_cls
 
         with patch("modssc.graph.featurization.views.struct.optional_import") as mock_import:
-            mock_import.side_effect = (
-                lambda name, extra=None: mock_scipy if "scipy" in name else mock_sklearn
+            mock_import.side_effect = lambda name, extra=None: (
+                mock_scipy if "scipy" in name else mock_sklearn
             )
             emb = struct_embeddings(edge_index=edge_index, n_nodes=2, params=params, seed=42)
             assert emb.shape == (2, 2)
