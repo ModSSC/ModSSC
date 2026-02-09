@@ -340,7 +340,7 @@ def test_poisson_learning_torch_eps_zero_branch(monkeypatch):
     y = torch.tensor([0, 1, 0], dtype=torch.long)
     labeled_mask = torch.tensor([True, True, False], dtype=torch.bool)
 
-    monkeypatch.setattr(pl, "laplacian_matvec_torch", lambda **_: lambda x: torch.zeros_like(x))
+    monkeypatch.setattr(pl, "laplacian_matvec_torch", lambda **_: torch.zeros_like)
 
     def fake_cg(matvec, b, device, tol, max_iter):
         matvec(torch.zeros_like(b))
