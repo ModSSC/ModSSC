@@ -78,7 +78,7 @@ method:
     device: "auto"
     dtype: float32
   params:
-    batch_size: 128
+    batch_size: 64
     pretrain_epochs: 10
     finetune_epochs: 50
     distill_epochs: 10
@@ -99,7 +99,7 @@ method:
       dropout: 0.1
       lr: 0.001
       weight_decay: 0.0
-      batch_size: 256
+      batch_size: 64
       max_epochs: 50
     ema: false
 evaluation:
