@@ -1,0 +1,84 @@
+run:
+  name: best_graph_lazy_random_walk_cora_p02
+  seed: 6
+  output_dir: runs/p02/transductive/lazy_random_walk/graph/cora
+  fail_fast: true
+  log_level: detailed
+
+limits:
+  profile: auto
+
+dataset:
+  id: cora
+  options:
+    n_samples: 64
+    n_features: 4
+    n_classes: 2
+    official_test: true
+    test_size: 0.25
+    class_filter:
+    - 0
+    - 1
+  download: true
+sampling:
+  seed: 6
+  plan:
+    split:
+      kind: holdout
+      test_fraction: 0.2
+      val_fraction: 0.1
+      stratify: true
+      shuffle: true
+    labeling:
+      mode: fraction
+      value: 0.02
+      strategy: balanced
+      min_per_class: 1
+    imbalance:
+      kind: none
+    policy:
+      respect_official_test: true
+      use_official_graph_masks: true
+      allow_override_official: false
+preprocess:
+  seed: 6
+  fit_on: train_labeled
+  cache: true
+  plan:
+    output_key: features.X
+    steps:
+    - id: labels.encode
+    - id: core.ensure_2d
+    - id: core.to_numpy
+graph:
+  enabled: true
+  seed: 6
+  cache: true
+  spec:
+    scheme: knn
+    metric: cosine
+    k: 15
+    symmetrize: or
+    weights:
+      kind: heat
+      sigma: 1.0
+    normalize: rw
+    self_loops: true
+    backend: numpy
+    chunk_size: 1024
+    feature_field: features.X
+method:
+  kind: transductive
+  id: lazy_random_walk
+  device:
+    device: "auto"
+    dtype: float32
+  params:
+    alpha: 0.99
+evaluation:
+  report_splits:
+  - val
+  - test
+  metrics:
+  - accuracy
+  - macro_f1

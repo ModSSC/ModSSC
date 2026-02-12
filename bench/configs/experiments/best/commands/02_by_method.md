@@ -1,0 +1,55 @@
+# Raw Commands By Method
+
+Raw commands are split into smaller files:
+
+- `by_method/adamatch.md`
+- `by_method/adsh.md`
+- `by_method/appnp.md`
+- `by_method/chebnet.md`
+- `by_method/co_training.md`
+- `by_method/comatch.md`
+- `by_method/daso.md`
+- `by_method/deep_co_training.md`
+- `by_method/defixmatch.md`
+- `by_method/democratic_co_learning.md`
+- `by_method/dynamic_label_propagation.md`
+- `by_method/fixmatch.md`
+- `by_method/flexmatch.md`
+- `by_method/free_match.md`
+- `by_method/gat.md`
+- `by_method/gcn.md`
+- `by_method/gcnii.md`
+- `by_method/grafn.md`
+- `by_method/grand.md`
+- `by_method/graph_mincuts.md`
+- `by_method/graphhop.md`
+- `by_method/graphsage.md`
+- `by_method/h_gcn.md`
+- `by_method/label_propagation.md`
+- `by_method/label_spreading.md`
+- `by_method/laplace_learning.md`
+- `by_method/lazy_random_walk.md`
+- `by_method/mean_teacher.md`
+- `by_method/meta_pseudo_labels.md`
+- `by_method/mixmatch.md`
+- `by_method/n_gcn.md`
+- `by_method/noisy_student.md`
+- `by_method/p_laplace_learning.md`
+- `by_method/pi_model.md`
+- `by_method/planetoid.md`
+- `by_method/poisson_learning.md`
+- `by_method/poisson_mbo.md`
+- `by_method/pseudo_label.md`
+- `by_method/s4vm.md`
+- `by_method/self_training.md`
+- `by_method/setred.md`
+- `by_method/sgc.md`
+- `by_method/simclr_v2.md`
+- `by_method/softmatch.md`
+- `by_method/supervised.md`
+- `by_method/temporal_ensembling.md`
+- `by_method/tri_training.md`
+- `by_method/trinet.md`
+- `by_method/tsvm.md`
+- `by_method/uda.md`
+- `by_method/vat.md`
