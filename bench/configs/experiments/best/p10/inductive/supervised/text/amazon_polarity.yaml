@@ -1,0 +1,86 @@
+run:
+  name: best_text_inductive_supervised_amazon_polarity_p10
+  seed: 2
+  output_dir: runs/p10/inductive/supervised/text/amazon_polarity
+  log_level: detailed
+  fail_fast: true
+
+limits:
+  profile: auto
+
+dataset:
+  id: amazon_polarity
+  download: true
+  options:
+    text_column: content
+    label_column: label
+    prefer_test_split: true
+sampling:
+  seed: 2
+  plan:
+    split:
+      kind: holdout
+      test_fraction: 0.2
+      val_fraction: 0.1
+      stratify: true
+      shuffle: true
+    labeling:
+      mode: fraction
+      value: 0.10
+      strategy: balanced
+      min_per_class: 1
+    imbalance:
+      kind: none
+    policy:
+      respect_official_test: true
+      use_official_graph_masks: true
+      allow_override_official: false
+preprocess:
+  seed: 2
+  fit_on: train_labeled
+  cache: true
+  plan:
+    output_key: features.X
+    steps:
+    - id: labels.encode
+    - id: labels.to_torch
+      params:
+        device: "auto"
+        dtype: int64
+    - id: text.ensure_strings
+    - id: text.vocab_tokenizer
+      params:
+        max_length: 256
+        vocab_size: 20000
+    - id: core.to_torch
+      params:
+        device: "auto"
+        dtype: float32
+method:
+  kind: inductive
+  id: pseudo_label
+  device:
+    device: "auto"
+    dtype: float32
+  params:
+    classifier_id: lstm_scratch
+    classifier_backend: torch
+    classifier_params:
+      hidden_dim: 128
+      activation: relu
+      dropout: 0.1
+      lr: 0.001
+      weight_decay: 0.0
+      batch_size: 256
+      max_epochs: 50
+    max_iter: 0
+    confidence_threshold: 0.95
+    min_new_labels: 1
+evaluation:
+  split_for_model_selection: val
+  report_splits:
+  - val
+  - test
+  metrics:
+  - accuracy
+  - macro_f1

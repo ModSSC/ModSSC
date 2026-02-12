@@ -1,0 +1,103 @@
+run:
+  name: best_audio_inductive_fixmatch_yesno_p10
+  seed: 4
+  output_dir: runs/p10/inductive/fixmatch/audio/yesno
+  fail_fast: true
+  log_level: detailed
+
+limits:
+  profile: auto
+
+dataset:
+  id: yesno
+  download: true
+sampling:
+  seed: 4
+  plan:
+    split:
+      kind: holdout
+      test_fraction: 0.2
+      val_fraction: 0.1
+      stratify: true
+      shuffle: true
+    labeling:
+      mode: fraction
+      value: 0.10
+      strategy: balanced
+      min_per_class: 1
+    imbalance:
+      kind: none
+    policy:
+      respect_official_test: true
+      use_official_graph_masks: true
+      allow_override_official: false
+preprocess:
+  seed: 4
+  fit_on: train_labeled
+  cache: true
+  plan:
+    output_key: features.X
+    steps:
+    - id: labels.encode
+    - id: labels.to_torch
+      params:
+        device: "auto"
+        dtype: int64
+    - id: audio.load_waveform
+      params:
+        allow_fallback: true
+        target_sample_rate: 16000
+        max_length: 16000
+    - id: core.to_torch
+      params:
+        device: "auto"
+        dtype: float32
+augmentation:
+  enabled: true
+  seed: 4
+  mode: fixed
+  modality: tabular
+  weak:
+    steps:
+    - id: tabular.gaussian_noise
+      params:
+        std: 0.01
+  strong:
+    steps:
+    - id: tabular.feature_dropout
+      params:
+        p: 0.2
+method:
+  kind: inductive
+  id: fixmatch
+  device:
+    device: "auto"
+    dtype: float32
+  params:
+    lambda_u: 1.0
+    p_cutoff: 0.95
+    temperature: 0.5
+    hard_label: true
+    use_cat: false
+    batch_size: 128
+    max_epochs: 50
+    detach_target: true
+  model:
+    classifier_id: audio_pretrained
+    classifier_backend: torch
+    classifier_params:
+      bundle: WAV2VEC2_BASE
+      freeze_backbone: false
+      lr: 0.0001
+      weight_decay: 0.0001
+      batch_size: 8
+      max_epochs: 5
+    ema: false
+evaluation:
+  split_for_model_selection: val
+  report_splits:
+  - val
+  - test
+  metrics:
+  - accuracy
+  - macro_f1
