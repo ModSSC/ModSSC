@@ -38,7 +38,6 @@ python -m bench.main --config bench/configs/experiments/best/p01/inductive/super
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/temporal_ensembling/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/tri_training/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/trinet/audio/yesno.yaml
-python -m bench.main --config bench/configs/experiments/best/p01/inductive/tsvm/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/uda/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/vat/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p01/transductive/appnp/audio/yesno.yaml
@@ -199,7 +198,6 @@ python -m bench.main --config bench/configs/experiments/best/p01/inductive/super
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/temporal_ensembling/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/tri_training/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/trinet/text/imdb.yaml
-python -m bench.main --config bench/configs/experiments/best/p01/inductive/tsvm/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/uda/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/vat/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p01/transductive/appnp/text/imdb.yaml
@@ -310,7 +308,6 @@ python -m bench.main --config bench/configs/experiments/best/p02/inductive/super
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/temporal_ensembling/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/tri_training/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/trinet/audio/yesno.yaml
-python -m bench.main --config bench/configs/experiments/best/p02/inductive/tsvm/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/uda/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/vat/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p02/transductive/appnp/audio/yesno.yaml
@@ -471,7 +468,6 @@ python -m bench.main --config bench/configs/experiments/best/p02/inductive/super
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/temporal_ensembling/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/tri_training/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/trinet/text/imdb.yaml
-python -m bench.main --config bench/configs/experiments/best/p02/inductive/tsvm/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/uda/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/vat/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p02/transductive/appnp/text/imdb.yaml
@@ -582,7 +578,6 @@ python -m bench.main --config bench/configs/experiments/best/p05/inductive/super
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/temporal_ensembling/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/tri_training/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/trinet/audio/yesno.yaml
-python -m bench.main --config bench/configs/experiments/best/p05/inductive/tsvm/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/uda/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/vat/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p05/transductive/appnp/audio/yesno.yaml
@@ -743,7 +738,6 @@ python -m bench.main --config bench/configs/experiments/best/p05/inductive/super
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/temporal_ensembling/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/tri_training/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/trinet/text/imdb.yaml
-python -m bench.main --config bench/configs/experiments/best/p05/inductive/tsvm/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/uda/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/vat/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p05/transductive/appnp/text/imdb.yaml
@@ -854,7 +848,6 @@ python -m bench.main --config bench/configs/experiments/best/p10/inductive/super
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/temporal_ensembling/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/tri_training/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/trinet/audio/yesno.yaml
-python -m bench.main --config bench/configs/experiments/best/p10/inductive/tsvm/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/uda/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/vat/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p10/transductive/appnp/audio/yesno.yaml
@@ -1015,7 +1008,6 @@ python -m bench.main --config bench/configs/experiments/best/p10/inductive/super
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/temporal_ensembling/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/tri_training/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/trinet/text/imdb.yaml
-python -m bench.main --config bench/configs/experiments/best/p10/inductive/tsvm/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/uda/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/vat/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p10/transductive/appnp/text/imdb.yaml
@@ -1126,7 +1118,6 @@ python -m bench.main --config bench/configs/experiments/best/p20/inductive/super
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/temporal_ensembling/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/tri_training/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/trinet/audio/yesno.yaml
-python -m bench.main --config bench/configs/experiments/best/p20/inductive/tsvm/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/uda/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/vat/audio/yesno.yaml
 python -m bench.main --config bench/configs/experiments/best/p20/transductive/appnp/audio/yesno.yaml
@@ -1287,7 +1278,6 @@ python -m bench.main --config bench/configs/experiments/best/p20/inductive/super
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/temporal_ensembling/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/tri_training/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/trinet/text/imdb.yaml
-python -m bench.main --config bench/configs/experiments/best/p20/inductive/tsvm/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/uda/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/vat/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p20/transductive/appnp/text/imdb.yaml

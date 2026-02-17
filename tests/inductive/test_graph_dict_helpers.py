@@ -4,7 +4,6 @@ import pytest
 import torch
 
 import modssc.inductive.methods.setred as setred
-import modssc.inductive.methods.tsvm as tsvm
 import modssc.inductive.methods.vat as vat
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.mixmatch import _mixup
@@ -31,7 +30,6 @@ def test_mixup_dict_and_errors():
 def test_get_torch_x_helpers():
     x = torch.zeros((2, 2))
     assert setred._get_torch_x({"x": x}) is x
-    assert tsvm._get_torch_x({"x": x}) is x
 
 
 def test_vat_graph_helpers():

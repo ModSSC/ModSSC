@@ -25,7 +25,6 @@ from .softmatch import SoftMatchMethod
 from .temporal_ensembling import TemporalEnsemblingMethod
 from .tri_training import TriTrainingMethod
 from .trinet import TriNetMethod
-from .tsvm import TSVMMethod
 from .uda import UDAMethod
 from .vat import VATMethod
 
@@ -55,7 +54,6 @@ __all__ = [
     "TemporalEnsemblingMethod",
     "TriNetMethod",
     "TriTrainingMethod",
-    "TSVMMethod",
     "UDAMethod",
     "VATMethod",
 ]
