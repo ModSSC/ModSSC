@@ -12,6 +12,14 @@ Run the benchmark runner with the toy inductive config:
 python -m bench.main --config bench/configs/experiments/toy_inductive.yaml
 ```
 
+If your config uses environment placeholders (like `${MODSSC_OUTPUT_DIR}`), export them first:
+
+```bash
+export MODSSC_OUTPUT_DIR=/tmp/modssc_runs
+export MODSSC_DATASET_CACHE_DIR=/tmp/modssc_cache/datasets
+export MODSSC_PREPROCESS_CACHE_DIR=/tmp/modssc_cache/preprocess
+```
+
 Run a quick Python API pass with the dataset loader and sampling plan:
 
 ```python

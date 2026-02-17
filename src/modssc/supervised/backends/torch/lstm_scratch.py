@@ -29,6 +29,7 @@ class TorchLSTMClassifier(BaseSupervisedClassifier):
         embedding_dim: int = 128,
         hidden_dim: int = 256,
         num_layers: int = 2,
+        activation: str | None = None,
         dropout: float = 0.5,
         lr: float = 1e-3,
         weight_decay: float = 0.0,
@@ -42,6 +43,7 @@ class TorchLSTMClassifier(BaseSupervisedClassifier):
         self.embedding_dim = int(embedding_dim)
         self.hidden_dim = int(hidden_dim)
         self.num_layers = int(num_layers)
+        self.activation = activation
         self.dropout = float(dropout)
         self.lr = float(lr)
         self.weight_decay = float(weight_decay)

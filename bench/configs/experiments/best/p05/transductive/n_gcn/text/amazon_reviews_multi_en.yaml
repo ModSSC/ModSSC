@@ -1,7 +1,7 @@
 run:
   name: best_text_transductive_n_gcn_amazon_reviews_multi_en_p05
   seed: 2
-  output_dir: runs/p05/transductive/n_gcn/text/amazon_reviews_multi_en
+  output_dir: ${MODSSC_OUTPUT_DIR}/p05/transductive/n_gcn/text/amazon_reviews_multi_en
   log_level: detailed
   fail_fast: true
 
@@ -11,6 +11,7 @@ limits:
 dataset:
   id: amazon_reviews_multi_en
   download: true
+  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
   options:
     text_column: review_body
     label_column: stars
@@ -39,6 +40,7 @@ preprocess:
   seed: 2
   fit_on: train_labeled
   cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
   plan:
     output_key: features.X
     steps:
@@ -82,6 +84,7 @@ graph:
   enabled: true
   seed: 2
   cache: true
+  cache_dir: /home/mbarbaux/scratch/ModSSC/cache/graphs
   spec:
     scheme: knn
     metric: cosine

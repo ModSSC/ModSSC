@@ -1,7 +1,7 @@
 run:
   name: best_audio_inductive_adamatch_yesno_p05
   seed: 4
-  output_dir: runs/p05/inductive/adamatch/audio/yesno
+  output_dir: ${MODSSC_OUTPUT_DIR}/p05/inductive/adamatch/audio/yesno
   fail_fast: true
   log_level: detailed
 
@@ -11,6 +11,7 @@ limits:
 dataset:
   id: yesno
   download: true
+  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
 sampling:
   seed: 4
   plan:
@@ -35,6 +36,7 @@ preprocess:
   seed: 4
   fit_on: train_labeled
   cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
   plan:
     output_key: features.X
     steps:

@@ -1,7 +1,7 @@
 run:
   name: best_text_transductive_graphhop_dbpedia_14_p01
   seed: 2
-  output_dir: runs/p01/transductive/graphhop/text/dbpedia_14
+  output_dir: ${MODSSC_OUTPUT_DIR}/p01/transductive/graphhop/text/dbpedia_14
   log_level: detailed
   fail_fast: true
 
@@ -11,6 +11,7 @@ limits:
 dataset:
   id: dbpedia_14
   download: true
+  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
   options:
     text_column: content
     label_column: label
@@ -39,6 +40,7 @@ preprocess:
   seed: 2
   fit_on: train_labeled
   cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
   plan:
     output_key: features.X
     steps:
@@ -81,6 +83,7 @@ graph:
   enabled: true
   seed: 2
   cache: true
+  cache_dir: /home/mbarbaux/scratch/ModSSC/cache/graphs
   spec:
     scheme: knn
     metric: cosine

@@ -14,6 +14,8 @@ Start with where files live, then how they are loaded, then the schema blocks yo
 ## How configs are loaded
 - Bench configs are read from YAML with `bench.utils.io.load_yaml` and validated via `ExperimentConfig.from_dict`. <sup class="cite"><a href="#source-3">[3]</a><a href="#source-2">[2]</a></sup>
 
+- Bench configs support environment variable expansion in string values (for example `${MODSSC_OUTPUT_DIR}` or `$MODSSC_OUTPUT_DIR`). This is useful for `run.output_dir`, `dataset.cache_dir`, and `preprocess.cache_dir` placeholders in YAML. <sup class="cite"><a href="#source-3">[3]</a></sup>
+
 - CLI plan/spec files use `load_yaml_or_json` and are validated with their respective `from_dict` methods. <sup class="cite"><a href="#source-4">[4]</a><a href="#source-5">[5]</a><a href="#source-6">[6]</a></sup>
 
 - Preprocess plans are loaded from YAML with `modssc.preprocess.plan.load_plan`. <sup class="cite"><a href="#source-7">[7]</a></sup>
@@ -26,6 +28,23 @@ Run a bench config:
 
 ```bash
 python -m bench.main --config bench/configs/experiments/toy_inductive.yaml
+```
+
+Run a bench config with environment variable placeholders:
+
+```bash
+MODSSC_OUTPUT_DIR=/tmp/modssc_runs \
+MODSSC_DATASET_CACHE_DIR=/tmp/modssc_cache/datasets \
+MODSSC_PREPROCESS_CACHE_DIR=/tmp/modssc_cache/preprocess \
+python -m bench.main --config bench/configs/experiments/toy_inductive.yaml
+```
+
+Or export them once per shell session:
+
+```bash
+export MODSSC_OUTPUT_DIR=/tmp/modssc_runs
+export MODSSC_DATASET_CACHE_DIR=/tmp/modssc_cache/datasets
+export MODSSC_PREPROCESS_CACHE_DIR=/tmp/modssc_cache/preprocess
 ```
 
 Load and inspect a config in Python:

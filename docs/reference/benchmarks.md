@@ -13,6 +13,14 @@ python -m bench.main --config bench/configs/experiments/toy_inductive.yaml
 python -m bench.main --config bench/configs/experiments/toy_transductive.yaml
 ```
 
+If you are using environment variable placeholders in configs (like `${MODSSC_OUTPUT_DIR}`), set them once before running:
+
+```bash
+export MODSSC_OUTPUT_DIR=/tmp/modssc_runs
+export MODSSC_DATASET_CACHE_DIR=/tmp/modssc_cache/datasets
+export MODSSC_PREPROCESS_CACHE_DIR=/tmp/modssc_cache/preprocess
+```
+
 Enable verbose logging for a run:
 
 ```bash

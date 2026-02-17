@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 The format is based on "Keep a Changelog", and this project adheres to Semantic Versioning.
 
+## 0.2.5
+- Added env var passthrough for dataset, preprocess, and runs cache directories in benchmarks.
+
 ## 0.2.4
 - Improved torch container and device handling in inductive benchmarks.
 - Added LSTM embedding support and hidden_size alias in inductive bundles.
