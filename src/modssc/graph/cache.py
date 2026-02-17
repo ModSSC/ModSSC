@@ -14,13 +14,32 @@ from platformdirs import user_cache_dir
 
 from .artifacts import DatasetViews, GraphArtifact
 
+GRAPH_CACHE_ENV = "MODSSC_GRAPH_CACHE_DIR"
+GRAPH_VIEWS_CACHE_ENV = "MODSSC_GRAPH_VIEWS_CACHE_DIR"
+CACHE_ROOT_ENV = "MODSSC_CACHE_ROOT"
+
 
 class GraphCacheError(RuntimeError):
     """Raised when a graph cache entry is missing or corrupted."""
 
 
 def default_cache_dir() -> Path:
+    override = os.environ.get(GRAPH_CACHE_ENV)
+    if override:
+        return Path(override).expanduser().resolve()
+
+    root_override = os.environ.get(CACHE_ROOT_ENV)
+    if root_override:
+        return Path(root_override).expanduser().resolve() / "graphs"
+
     return Path(user_cache_dir("modssc")) / "graphs"
+
+
+def default_views_cache_dir() -> Path:
+    override = os.environ.get(GRAPH_VIEWS_CACHE_ENV)
+    if override:
+        return Path(override).expanduser().resolve()
+    return default_cache_dir().parent / "graph_views"
 
 
 def _safe_write_json(path: Path, payload: dict[str, Any]) -> None:
@@ -247,7 +266,7 @@ class ViewsCache:
 
     @classmethod
     def default(cls) -> ViewsCache:
-        return cls(root=default_cache_dir().parent / "graph_views")
+        return cls(root=default_views_cache_dir())
 
     def entry_dir(self, fingerprint: str) -> Path:
         return self.root / str(fingerprint)

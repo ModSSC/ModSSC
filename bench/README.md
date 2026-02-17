@@ -31,7 +31,44 @@ python -m pip install -e ".[inductive-torch,supervised-torch]"
 ```bash
 python -m bench.main --config bench/configs/experiments/toy_inductive.yaml
 python -m bench.main --config bench/configs/experiments/toy_transductive.yaml
+python -m bench.main --config bench/configs/experiments/toy_inductive.yaml --num-runs 5
 ```
+
+To run the same config on multiple seeds, set `run.seeds` in YAML:
+
+```yaml
+run:
+  name: toy_pseudo_label
+  seed: 0
+  seeds: [1, 2, 3, 4, 5]
+```
+
+Or generate the same sweep pattern from CLI without editing YAML:
+
+```bash
+# Equivalent to run.seeds: [run.seed, run.seed+1, ..., run.seed+4]
+python -m bench.main --config bench/configs/experiments/toy_inductive.yaml --num-runs 5
+```
+
+When `--num-runs` is provided, it overrides `run.seeds`.
+
+## Cache behavior in multi-seed
+
+Recommended setup:
+
+```bash
+export MODSSC_CACHE_ROOT=/tmp/modssc_cache
+```
+
+Keep one shared cache root for speed. Fingerprints isolate seed-dependent artifacts automatically.
+
+- Dataset cache: reused across seeds when dataset identity/options are unchanged.
+- Sampling splits: seed-dependent fingerprints (one per seed), but bench currently computes splits in-memory (`save=False`) and does not persist split cache entries.
+- Preprocess cache: seed-dependent (one entry per seed for the same plan).
+- Graph cache: seed-dependent (one entry per seed for the same graph spec and preprocess fingerprint).
+- Method fit/eval: always recomputed.
+
+Use a different `MODSSC_CACHE_ROOT` only when you need strict clean-room runs (for example branch/commit comparisons from scratch).
 
 ## Memory limits
 Use `limits` in the YAML to cap batch sizes and graph chunking when GPUs are tight on memory:

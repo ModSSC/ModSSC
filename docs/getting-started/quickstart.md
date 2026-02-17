@@ -20,6 +20,12 @@ export MODSSC_DATASET_CACHE_DIR=/tmp/modssc_cache/datasets
 export MODSSC_PREPROCESS_CACHE_DIR=/tmp/modssc_cache/preprocess
 ```
 
+Or set one global cache root for all runtime caches:
+
+```bash
+export MODSSC_CACHE_ROOT=/tmp/modssc_cache
+```
+
 Run a quick Python API pass with the dataset loader and sampling plan:
 
 ```python

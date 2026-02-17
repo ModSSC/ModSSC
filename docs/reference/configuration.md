@@ -16,6 +16,10 @@ Start with where files live, then how they are loaded, then the schema blocks yo
 
 - Bench configs support environment variable expansion in string values (for example `${MODSSC_OUTPUT_DIR}` or `$MODSSC_OUTPUT_DIR`). This is useful for `run.output_dir`, `dataset.cache_dir`, and `preprocess.cache_dir` placeholders in YAML. <sup class="cite"><a href="#source-3">[3]</a></sup>
 
+- Unresolved placeholders now fail fast with an explicit error (key path + missing variable names) instead of being kept as literal strings.
+
+- Runtime cache env vars (outside YAML placeholders): `MODSSC_CACHE_ROOT` (global root), `MODSSC_CACHE_DIR` (dataset cache), `MODSSC_PREPROCESS_CACHE_DIR` (preprocess cache), `MODSSC_SPLIT_CACHE_DIR` (sampling split cache), `MODSSC_GRAPH_CACHE_DIR` (graph cache), `MODSSC_GRAPH_VIEWS_CACHE_DIR` (graph views cache).
+
 - CLI plan/spec files use `load_yaml_or_json` and are validated with their respective `from_dict` methods. <sup class="cite"><a href="#source-4">[4]</a><a href="#source-5">[5]</a><a href="#source-6">[6]</a></sup>
 
 - Preprocess plans are loaded from YAML with `modssc.preprocess.plan.load_plan`. <sup class="cite"><a href="#source-7">[7]</a></sup>
@@ -63,7 +67,7 @@ The bench entry point, schema, and YAML loader are in [`bench/main.py`](https://
 ## Experiment config schema (bench)
 Top-level keys and their required fields are defined in [`bench/schema.py`](https://github.com/ModSSC/ModSSC/blob/main/bench/schema.py):
 
-- `run`: `name`, `seed`, `output_dir`, `fail_fast`, optional `log_level`. <sup class="cite"><a href="#source-2">[2]</a></sup>
+- `run`: `name`, `seed`, `output_dir`, `fail_fast`, optional `log_level`, optional `seeds` (list of run seeds for a sweep). <sup class="cite"><a href="#source-2">[2]</a></sup>
 
 - `dataset`: `id`, optional `options`, `download`, `cache_dir`. <sup class="cite"><a href="#source-2">[2]</a></sup>
 

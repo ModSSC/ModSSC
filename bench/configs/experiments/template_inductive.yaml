@@ -1,6 +1,8 @@
 run:
   name: "imdb_pseudo_label"
   seed: 123
+  # Optional sweep mode (same config, seed changed per run):
+  # seeds: [1, 2, 3, 4, 5]
   output_dir: "runs"
   fail_fast: true
   log_level: detailed

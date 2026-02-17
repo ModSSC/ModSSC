@@ -25,6 +25,25 @@ def test_default_cache_dir_override():
         assert path == Path("/tmp/custom_cache").resolve()
 
 
+def test_default_cache_dir_root_override(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    root = tmp_path / "global_cache_root"
+    monkeypatch.delenv("MODSSC_PREPROCESS_CACHE_DIR", raising=False)
+    monkeypatch.setenv("MODSSC_CACHE_ROOT", str(root))
+    path = default_cache_dir()
+    assert path == (root / "preprocess").resolve()
+
+
+def test_default_cache_dir_specific_override_has_priority(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    root = tmp_path / "global_cache_root"
+    specific = tmp_path / "preprocess_specific"
+    monkeypatch.setenv("MODSSC_CACHE_ROOT", str(root))
+    monkeypatch.setenv("MODSSC_PREPROCESS_CACHE_DIR", str(specific))
+    path = default_cache_dir()
+    assert path == specific.resolve()
+
+
 def test_default_cache_dir_heuristic():
     with patch("pathlib.Path.cwd") as mock_cwd:
         mock_path = MagicMock(spec=Path)

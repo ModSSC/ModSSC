@@ -12,6 +12,8 @@ from modssc.graph.cache import (
     GraphCacheError,
     ViewsCache,
     _safe_write_json,
+    default_cache_dir,
+    default_views_cache_dir,
 )
 from modssc.graph.construction.backends.sklearn_backend import (
     epsilon_edges_sklearn,
@@ -333,6 +335,34 @@ def test_cache_defaults():
     vc = ViewsCache.default()
     assert isinstance(vc.root, Path)
     assert "modssc" in str(vc.root)
+
+
+def test_cache_defaults_with_global_root(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    root = tmp_path / "global_cache_root"
+    monkeypatch.setenv("MODSSC_CACHE_ROOT", str(root))
+    monkeypatch.delenv("MODSSC_GRAPH_CACHE_DIR", raising=False)
+    monkeypatch.delenv("MODSSC_GRAPH_VIEWS_CACHE_DIR", raising=False)
+
+    assert default_cache_dir() == (root / "graphs").resolve()
+    assert default_views_cache_dir() == (root / "graph_views").resolve()
+    assert GraphCache.default().root == (root / "graphs").resolve()
+    assert ViewsCache.default().root == (root / "graph_views").resolve()
+
+
+def test_cache_defaults_specific_overrides_have_priority(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    root = tmp_path / "global_cache_root"
+    graph = tmp_path / "graph_specific"
+    views = tmp_path / "graph_views_specific"
+    monkeypatch.setenv("MODSSC_CACHE_ROOT", str(root))
+    monkeypatch.setenv("MODSSC_GRAPH_CACHE_DIR", str(graph))
+    monkeypatch.setenv("MODSSC_GRAPH_VIEWS_CACHE_DIR", str(views))
+
+    assert default_cache_dir() == graph.resolve()
+    assert default_views_cache_dir() == views.resolve()
+    assert GraphCache.default().root == graph.resolve()
+    assert ViewsCache.default().root == views.resolve()
 
 
 def test_cache_list_purge(tmp_path):

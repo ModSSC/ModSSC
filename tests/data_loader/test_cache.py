@@ -139,6 +139,23 @@ def test_default_cache_dir_env_override(monkeypatch: pytest.MonkeyPatch, tmp_pat
     assert default_cache_dir() == custom.resolve()
 
 
+def test_default_cache_dir_root_override(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    root = tmp_path / "global_cache_root"
+    monkeypatch.delenv("MODSSC_CACHE_DIR", raising=False)
+    monkeypatch.setenv("MODSSC_CACHE_ROOT", str(root))
+    assert default_cache_dir() == (root / "datasets").resolve()
+
+
+def test_default_cache_dir_env_has_priority_over_root(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    specific = tmp_path / "dataset_specific"
+    root = tmp_path / "global_cache_root"
+    monkeypatch.setenv("MODSSC_CACHE_DIR", str(specific))
+    monkeypatch.setenv("MODSSC_CACHE_ROOT", str(root))
+    assert default_cache_dir() == specific.resolve()
+
+
 def test_atomic_write_text_and_dir_size(tmp_path: Path) -> None:
     p = tmp_path / "file.txt"
     atomic_write_text(p, "hello")

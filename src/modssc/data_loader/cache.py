@@ -17,12 +17,17 @@ from modssc.data_loader.errors import ManifestError
 from modssc.data_loader.manifest import Manifest, read_manifest
 
 CACHE_ENV = "MODSSC_CACHE_DIR"
+CACHE_ROOT_ENV = "MODSSC_CACHE_ROOT"
 
 
 def default_cache_dir() -> Path:
     override = os.environ.get(CACHE_ENV)
     if override:
         return Path(override).expanduser().resolve()
+
+    root_override = os.environ.get(CACHE_ROOT_ENV)
+    if root_override:
+        return Path(root_override).expanduser().resolve() / "datasets"
 
     # Heuristic: if running in a dev repo (pyproject.toml exists in parents),
     # default to a local "cache" folder at the repo root.

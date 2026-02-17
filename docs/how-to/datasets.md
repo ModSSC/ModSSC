@@ -54,7 +54,7 @@ _ = download_dataset("toy")
 
 
 !!! tip
-  Override the dataset cache directory with `MODSSC_CACHE_DIR` if you want to store datasets outside the repo or default user cache. For bench YAML configs, you can also set `MODSSC_DATASET_CACHE_DIR` and reference it in `dataset.cache_dir`. <sup class="cite"><a href="#source-3">[3]</a></sup>
+  Override the dataset cache directory with `MODSSC_CACHE_DIR` if you want to store datasets outside the repo or default user cache. For a single root across caches, you can set `MODSSC_CACHE_ROOT`. For bench YAML configs, you can also set `MODSSC_DATASET_CACHE_DIR` and reference it in `dataset.cache_dir`. <sup class="cite"><a href="#source-3">[3]</a></sup>
 
 
 ## Related links

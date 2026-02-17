@@ -1,6 +1,8 @@
 run:
   name: "mnist_label_propagation_knn"
   seed: 7
+  # Optional sweep mode (same config, seed changed per run):
+  # seeds: [1, 2, 3, 4, 5]
   output_dir: "runs"
   log_level: detailed
 
