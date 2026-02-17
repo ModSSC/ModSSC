@@ -1,7 +1,7 @@
 run:
   name: best_graph_transductive_lazy_random_walk_pubmed_p20
   seed: 6
-  output_dir: runs/p20/transductive/lazy_random_walk/graph/pubmed
+  output_dir: ${MODSSC_OUTPUT_DIR}/p20/transductive/lazy_random_walk/graph/pubmed
   fail_fast: true
   log_level: detailed
 
@@ -20,6 +20,7 @@ dataset:
     - 0
     - 1
   download: true
+  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
 sampling:
   seed: 6
   plan:
@@ -44,6 +45,7 @@ preprocess:
   seed: 6
   fit_on: train_labeled
   cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
   plan:
     output_key: features.X
     steps:
@@ -54,6 +56,7 @@ graph:
   enabled: true
   seed: 6
   cache: true
+  cache_dir: /home/mbarbaux/scratch/ModSSC/cache/graphs
   spec:
     scheme: knn
     metric: cosine

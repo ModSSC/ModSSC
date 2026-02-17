@@ -1,7 +1,7 @@
 run:
   name: best_vision_inductive_supervised_cifar100_p20
   seed: 3
-  output_dir: runs/p20/inductive/supervised/vision/cifar100
+  output_dir: ${MODSSC_OUTPUT_DIR}/p20/inductive/supervised/vision/cifar100
   log_level: detailed
   fail_fast: true
 
@@ -11,6 +11,7 @@ limits:
 dataset:
   id: cifar100
   download: true
+  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
 sampling:
   seed: 3
   plan:
@@ -35,6 +36,7 @@ preprocess:
   seed: 3
   fit_on: train_labeled
   cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
   plan:
     output_key: features.X
     steps:

@@ -1,7 +1,7 @@
 run:
   name: best_graph_inductive_pseudo_label_pubmed_p01
   seed: 5
-  output_dir: runs/p01/inductive/pseudo_label/graph/pubmed
+  output_dir: ${MODSSC_OUTPUT_DIR}/p01/inductive/pseudo_label/graph/pubmed
   fail_fast: true
   log_level: detailed
 
@@ -11,6 +11,7 @@ limits:
 dataset:
   id: pubmed
   download: true
+  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
 sampling:
   seed: 5
   plan:
@@ -35,6 +36,7 @@ preprocess:
   seed: 5
   fit_on: train_labeled
   cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
   plan:
     output_key: features.X
     steps:

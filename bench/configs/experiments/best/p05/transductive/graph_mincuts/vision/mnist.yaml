@@ -1,7 +1,7 @@
 run:
   name: best_vision_transductive_graph_mincuts_mnist_p05
   seed: 3
-  output_dir: runs/p05/transductive/graph_mincuts/vision/mnist
+  output_dir: ${MODSSC_OUTPUT_DIR}/p05/transductive/graph_mincuts/vision/mnist
   log_level: detailed
   fail_fast: true
 
@@ -11,6 +11,7 @@ limits:
 dataset:
   id: mnist
   download: true
+  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
   options:
     class_filter:
     - 0
@@ -39,6 +40,7 @@ preprocess:
   seed: 3
   fit_on: train_labeled
   cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
   plan:
     output_key: features.X
     steps:
@@ -79,6 +81,7 @@ graph:
   enabled: true
   seed: 3
   cache: true
+  cache_dir: /home/mbarbaux/scratch/ModSSC/cache/graphs
   spec:
     scheme: knn
     metric: cosine

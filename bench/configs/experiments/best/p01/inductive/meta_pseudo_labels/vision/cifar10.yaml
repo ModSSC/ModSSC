@@ -1,7 +1,7 @@
 run:
   name: best_vision_inductive_meta_pseudo_labels_cifar10_p01
   seed: 3
-  output_dir: runs/p01/inductive/meta_pseudo_labels/vision/cifar10
+  output_dir: ${MODSSC_OUTPUT_DIR}/p01/inductive/meta_pseudo_labels/vision/cifar10
   log_level: detailed
   fail_fast: true
 limits:
@@ -9,6 +9,7 @@ limits:
 dataset:
   id: cifar10
   download: true
+  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
 sampling:
   seed: 3
   plan:
@@ -33,6 +34,7 @@ preprocess:
   seed: 3
   fit_on: train_labeled
   cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
   plan:
     output_key: features.X
     steps:

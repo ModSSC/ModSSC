@@ -22,6 +22,8 @@ Pick the path that fits your goal: learn the concepts, run examples, or dive int
 - **Getting started**: [install and first run](https://modssc.github.io/ModSSC/getting-started/installation).
 - **CLI and API reference**: [full command and API list](https://modssc.github.io/ModSSC/reference/cli).
 
+If you use benchmark configs with environment placeholders, set `MODSSC_OUTPUT_DIR`, `MODSSC_DATASET_CACHE_DIR`, and `MODSSC_PREPROCESS_CACHE_DIR` before running. See the [Configuration reference](https://modssc.github.io/ModSSC/reference/configuration) for examples.
+
 ### Examples
 
 - **Examples**: small scripts in [examples/](examples/).

@@ -1,7 +1,7 @@
 run:
   name: best_tabular_transductive_grand_breast_cancer_p20
   seed: 1
-  output_dir: runs/p20/transductive/grand/tabular/breast_cancer
+  output_dir: ${MODSSC_OUTPUT_DIR}/p20/transductive/grand/tabular/breast_cancer
   log_level: detailed
   fail_fast: true
 
@@ -11,6 +11,7 @@ limits:
 dataset:
   id: breast_cancer
   download: true
+  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
 sampling:
   seed: 1
   plan:
@@ -35,6 +36,7 @@ preprocess:
   seed: 1
   fit_on: train_labeled
   cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
   plan:
     output_key: features.X
     steps:
@@ -74,6 +76,7 @@ graph:
   enabled: true
   seed: 1
   cache: true
+  cache_dir: /home/mbarbaux/scratch/ModSSC/cache/graphs
   spec:
     scheme: knn
     metric: cosine
