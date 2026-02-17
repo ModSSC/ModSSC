@@ -193,11 +193,8 @@ python -m bench.main --config bench/configs/experiments/smoke/inductive/pseudo_l
 
 ```
 mkdir -p log/inductive/s4vm/audio log/inductive/s4vm/graph log/inductive/s4vm/tabular log/inductive/s4vm/text log/inductive/s4vm/vision
-python -m bench.main --config bench/configs/experiments/smoke/inductive/s4vm/audio/speechcommands.yaml > log/inductive/s4vm/audio/speechcommands.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/inductive/s4vm/graph/cora.yaml > log/inductive/s4vm/graph/cora.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/inductive/s4vm/tabular/breast_cancer.yaml > log/inductive/s4vm/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/inductive/s4vm/text/imdb.yaml > log/inductive/s4vm/text/imdb.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/inductive/s4vm/vision/mnist.yaml > log/inductive/s4vm/vision/mnist.log 2>&1
 ```
 
 ## inductive/self_training
@@ -275,17 +272,6 @@ python -m bench.main --config bench/configs/experiments/smoke/inductive/trinet/g
 python -m bench.main --config bench/configs/experiments/smoke/inductive/trinet/tabular/iris.yaml > log/inductive/trinet/tabular/iris.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/inductive/trinet/text/imdb.yaml > log/inductive/trinet/text/imdb.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/inductive/trinet/vision/mnist.yaml > log/inductive/trinet/vision/mnist.log 2>&1
-```
-
-## inductive/tsvm
-
-```
-mkdir -p log/inductive/tsvm/audio log/inductive/tsvm/graph log/inductive/tsvm/tabular log/inductive/tsvm/text log/inductive/tsvm/vision
-python -m bench.main --config bench/configs/experiments/smoke/inductive/tsvm/audio/speechcommands.yaml > log/inductive/tsvm/audio/speechcommands.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/inductive/tsvm/graph/cora.yaml > log/inductive/tsvm/graph/cora.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/inductive/tsvm/tabular/breast_cancer.yaml > log/inductive/tsvm/tabular/breast_cancer.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/inductive/tsvm/text/imdb.yaml > log/inductive/tsvm/text/imdb.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/inductive/tsvm/vision/mnist.yaml > log/inductive/tsvm/vision/mnist.log 2>&1
 ```
 
 ## inductive/uda
@@ -559,10 +545,6 @@ python -m bench.main --config bench/configs/experiments/smoke/transductive/sgc/v
 
 ```
 mkdir -p log/transductive/tsvm/audio log/transductive/tsvm/graph log/transductive/tsvm/tabular log/transductive/tsvm/text log/transductive/tsvm/vision
-python -m bench.main --config bench/configs/experiments/smoke/transductive/tsvm/audio/speechcommands.yaml > log/transductive/tsvm/audio/speechcommands.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/transductive/tsvm/graph/cora.yaml > log/transductive/tsvm/graph/cora.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/transductive/tsvm/graph/toy.yaml > log/transductive/tsvm/graph/toy.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/transductive/tsvm/tabular/breast_cancer.yaml > log/transductive/tsvm/tabular/breast_cancer.log 2>&1
 python -m bench.main --config bench/configs/experiments/smoke/transductive/tsvm/text/imdb.yaml > log/transductive/tsvm/text/imdb.log 2>&1
-python -m bench.main --config bench/configs/experiments/smoke/transductive/tsvm/vision/mnist.yaml > log/transductive/tsvm/vision/mnist.log 2>&1
 ```

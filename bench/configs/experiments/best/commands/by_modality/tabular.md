@@ -104,8 +104,6 @@ python -m bench.main --config bench/configs/experiments/best/p01/inductive/trine
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/trinet/tabular/breast_cancer.yaml
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/trinet/tabular/iris.yaml
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/trinet/tabular/toy.yaml
-python -m bench.main --config bench/configs/experiments/best/p01/inductive/tsvm/tabular/adult.yaml
-python -m bench.main --config bench/configs/experiments/best/p01/inductive/tsvm/tabular/breast_cancer.yaml
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/uda/tabular/adult.yaml
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/uda/tabular/breast_cancer.yaml
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/uda/tabular/iris.yaml
@@ -308,8 +306,6 @@ python -m bench.main --config bench/configs/experiments/best/p02/inductive/trine
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/trinet/tabular/breast_cancer.yaml
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/trinet/tabular/iris.yaml
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/trinet/tabular/toy.yaml
-python -m bench.main --config bench/configs/experiments/best/p02/inductive/tsvm/tabular/adult.yaml
-python -m bench.main --config bench/configs/experiments/best/p02/inductive/tsvm/tabular/breast_cancer.yaml
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/uda/tabular/adult.yaml
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/uda/tabular/breast_cancer.yaml
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/uda/tabular/iris.yaml
@@ -512,8 +508,6 @@ python -m bench.main --config bench/configs/experiments/best/p05/inductive/trine
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/trinet/tabular/breast_cancer.yaml
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/trinet/tabular/iris.yaml
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/trinet/tabular/toy.yaml
-python -m bench.main --config bench/configs/experiments/best/p05/inductive/tsvm/tabular/adult.yaml
-python -m bench.main --config bench/configs/experiments/best/p05/inductive/tsvm/tabular/breast_cancer.yaml
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/uda/tabular/adult.yaml
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/uda/tabular/breast_cancer.yaml
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/uda/tabular/iris.yaml
@@ -716,8 +710,6 @@ python -m bench.main --config bench/configs/experiments/best/p10/inductive/trine
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/trinet/tabular/breast_cancer.yaml
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/trinet/tabular/iris.yaml
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/trinet/tabular/toy.yaml
-python -m bench.main --config bench/configs/experiments/best/p10/inductive/tsvm/tabular/adult.yaml
-python -m bench.main --config bench/configs/experiments/best/p10/inductive/tsvm/tabular/breast_cancer.yaml
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/uda/tabular/adult.yaml
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/uda/tabular/breast_cancer.yaml
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/uda/tabular/iris.yaml
@@ -920,8 +912,6 @@ python -m bench.main --config bench/configs/experiments/best/p20/inductive/trine
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/trinet/tabular/breast_cancer.yaml
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/trinet/tabular/iris.yaml
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/trinet/tabular/toy.yaml
-python -m bench.main --config bench/configs/experiments/best/p20/inductive/tsvm/tabular/adult.yaml
-python -m bench.main --config bench/configs/experiments/best/p20/inductive/tsvm/tabular/breast_cancer.yaml
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/uda/tabular/adult.yaml
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/uda/tabular/breast_cancer.yaml
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/uda/tabular/iris.yaml

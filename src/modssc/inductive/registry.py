@@ -149,7 +149,6 @@ def register_builtin_methods() -> None:
         "modssc.inductive.methods.trinet:TriNetMethod",
         status="implemented",
     )
-    register_method("tsvm", "modssc.inductive.methods.tsvm:TSVMMethod", status="implemented")
     register_method("s4vm", "modssc.inductive.methods.s4vm:S4VMMethod", status="implemented")
 
 

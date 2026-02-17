@@ -180,9 +180,6 @@ python -m bench.main --config bench/configs/experiments/best/p01/inductive/trine
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/trinet/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/trinet/text/yelp_polarity.yaml
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/trinet/text/yelp_review_full.yaml
-python -m bench.main --config bench/configs/experiments/best/p01/inductive/tsvm/text/amazon_polarity.yaml
-python -m bench.main --config bench/configs/experiments/best/p01/inductive/tsvm/text/imdb.yaml
-python -m bench.main --config bench/configs/experiments/best/p01/inductive/tsvm/text/yelp_polarity.yaml
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/uda/text/ag_news.yaml
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/uda/text/amazon_polarity.yaml
 python -m bench.main --config bench/configs/experiments/best/p01/inductive/uda/text/amazon_reviews_multi_en.yaml
@@ -536,9 +533,6 @@ python -m bench.main --config bench/configs/experiments/best/p02/inductive/trine
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/trinet/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/trinet/text/yelp_polarity.yaml
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/trinet/text/yelp_review_full.yaml
-python -m bench.main --config bench/configs/experiments/best/p02/inductive/tsvm/text/amazon_polarity.yaml
-python -m bench.main --config bench/configs/experiments/best/p02/inductive/tsvm/text/imdb.yaml
-python -m bench.main --config bench/configs/experiments/best/p02/inductive/tsvm/text/yelp_polarity.yaml
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/uda/text/ag_news.yaml
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/uda/text/amazon_polarity.yaml
 python -m bench.main --config bench/configs/experiments/best/p02/inductive/uda/text/amazon_reviews_multi_en.yaml
@@ -892,9 +886,6 @@ python -m bench.main --config bench/configs/experiments/best/p05/inductive/trine
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/trinet/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/trinet/text/yelp_polarity.yaml
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/trinet/text/yelp_review_full.yaml
-python -m bench.main --config bench/configs/experiments/best/p05/inductive/tsvm/text/amazon_polarity.yaml
-python -m bench.main --config bench/configs/experiments/best/p05/inductive/tsvm/text/imdb.yaml
-python -m bench.main --config bench/configs/experiments/best/p05/inductive/tsvm/text/yelp_polarity.yaml
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/uda/text/ag_news.yaml
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/uda/text/amazon_polarity.yaml
 python -m bench.main --config bench/configs/experiments/best/p05/inductive/uda/text/amazon_reviews_multi_en.yaml
@@ -1248,9 +1239,6 @@ python -m bench.main --config bench/configs/experiments/best/p10/inductive/trine
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/trinet/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/trinet/text/yelp_polarity.yaml
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/trinet/text/yelp_review_full.yaml
-python -m bench.main --config bench/configs/experiments/best/p10/inductive/tsvm/text/amazon_polarity.yaml
-python -m bench.main --config bench/configs/experiments/best/p10/inductive/tsvm/text/imdb.yaml
-python -m bench.main --config bench/configs/experiments/best/p10/inductive/tsvm/text/yelp_polarity.yaml
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/uda/text/ag_news.yaml
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/uda/text/amazon_polarity.yaml
 python -m bench.main --config bench/configs/experiments/best/p10/inductive/uda/text/amazon_reviews_multi_en.yaml
@@ -1604,9 +1592,6 @@ python -m bench.main --config bench/configs/experiments/best/p20/inductive/trine
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/trinet/text/imdb.yaml
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/trinet/text/yelp_polarity.yaml
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/trinet/text/yelp_review_full.yaml
-python -m bench.main --config bench/configs/experiments/best/p20/inductive/tsvm/text/amazon_polarity.yaml
-python -m bench.main --config bench/configs/experiments/best/p20/inductive/tsvm/text/imdb.yaml
-python -m bench.main --config bench/configs/experiments/best/p20/inductive/tsvm/text/yelp_polarity.yaml
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/uda/text/ag_news.yaml
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/uda/text/amazon_polarity.yaml
 python -m bench.main --config bench/configs/experiments/best/p20/inductive/uda/text/amazon_reviews_multi_en.yaml
