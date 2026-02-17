@@ -56,6 +56,27 @@ def _optional_int(data: Mapping[str, Any], key: str) -> int | None:
     return int(val)
 
 
+def _optional_seed_list(data: Mapping[str, Any], key: str, *, name: str) -> list[int] | None:
+    val = data.get(key)
+    if val is None:
+        return None
+    if not isinstance(val, list):
+        raise BenchConfigError(f"{name}.{key} must be a list[int] when provided")
+    if not val:
+        raise BenchConfigError(f"{name}.{key} must be non-empty when provided")
+    out: list[int] = []
+    seen: set[int] = set()
+    for i, item in enumerate(val):
+        if not isinstance(item, int):
+            raise BenchConfigError(f"{name}.{key}[{i}] must be an int")
+        seed = int(item)
+        if seed in seen:
+            raise BenchConfigError(f"{name}.{key} must not contain duplicates")
+        seen.add(seed)
+        out.append(seed)
+    return out
+
+
 def _optional_positive_int(data: Mapping[str, Any], key: str, *, name: str) -> int | None:
     val = _optional_int(data, key)
     if val is None:
@@ -95,6 +116,7 @@ class RunConfig:
     name: str
     seed: int
     output_dir: str
+    seeds: list[int] | None = None
     fail_fast: bool = True
     log_level: str | None = None
 
@@ -246,11 +268,14 @@ class ExperimentConfig:
         )
 
         run = _as_mapping(data.get("run", {}), name="run")
-        _check_unknown(run, {"name", "seed", "output_dir", "fail_fast", "log_level"}, name="run")
+        _check_unknown(
+            run, {"name", "seed", "seeds", "output_dir", "fail_fast", "log_level"}, name="run"
+        )
         run_cfg = RunConfig(
             name=_require_str(run, "name", name="run"),
             seed=int(run.get("seed", 0)),
             output_dir=str(run.get("output_dir", "runs")),
+            seeds=_optional_seed_list(run, "seeds", name="run"),
             fail_fast=_optional_bool(run, "fail_fast", default=True),
             log_level=_optional_str(run, "log_level"),
         )

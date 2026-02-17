@@ -34,12 +34,23 @@ from .orchestrators import reporting as report_orch
 from .orchestrators import sampling as sampling_orch
 from .orchestrators import views as views_orch
 from .schema import BenchConfigError, ExperimentConfig
+from .seed_sweep import apply_global_seed, sweep_run_name
 from .utils.import_tools import check_extra_installed
 from .utils.io import load_yaml
 
 _ALLOWED_METRICS = set(list_metrics())
 _ALLOWED_SPLITS = {"train", "val", "test"}
 _LOGGER = logging.getLogger(__name__)
+
+
+def _positive_int(value: str) -> int:
+    try:
+        out = int(value)
+    except (TypeError, ValueError) as exc:
+        raise argparse.ArgumentTypeError("must be an integer") from exc
+    if out <= 0:
+        raise argparse.ArgumentTypeError("must be > 0")
+    return out
 
 
 def _dataset_has_graph(dataset: Any) -> bool:
@@ -319,9 +330,7 @@ def _resolve_log_level_for_run(config_path: Path, cli_log_level: str | None) -> 
     return resolve_log_level(cfg.run.log_level)
 
 
-def run_experiment(config_path: Path) -> int:
-    raw = load_yaml(config_path)
-    cfg = ExperimentConfig.from_dict(raw)
+def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: ExperimentConfig) -> int:
     raw, limit_changes, resolved_limits = apply_limits(raw, limits=cfg.limits)
     if limit_changes:
         profile = resolved_limits.profile if resolved_limits is not None else None
@@ -671,6 +680,45 @@ def run_experiment(config_path: Path) -> int:
     return 0 if status == "success" else 1
 
 
+def run_experiment(config_path: Path, *, num_runs: int | None = None) -> int:
+    if num_runs is not None and num_runs <= 0:
+        raise ValueError("num_runs must be > 0")
+
+    raw = load_yaml(config_path)
+    cfg = ExperimentConfig.from_dict(raw)
+
+    if num_runs is not None:
+        seeds = [int(cfg.run.seed) + i for i in range(num_runs)]
+        _LOGGER.info(
+            "Run-count sweep start: name=%s num_runs=%s base_seed=%s seeds=%s",
+            cfg.run.name,
+            num_runs,
+            cfg.run.seed,
+            seeds,
+        )
+    elif cfg.run.seeds:
+        seeds = [int(s) for s in cfg.run.seeds]
+        _LOGGER.info("Seed sweep start: name=%s seeds=%s", cfg.run.name, seeds)
+    else:
+        return _run_experiment_single(config_path, raw=raw, cfg=cfg)
+
+    failures = 0
+    for i, seed in enumerate(seeds, start=1):
+        run_name = sweep_run_name(cfg.run.name, seed=seed, index=i - 1, total=len(seeds))
+        sweep_raw = apply_global_seed(raw, seed=seed, run_name=run_name)
+        sweep_cfg = ExperimentConfig.from_dict(sweep_raw)
+        _LOGGER.info("Seed sweep run %s/%s: seed=%s name=%s", i, len(seeds), seed, run_name)
+        code = _run_experiment_single(config_path, raw=sweep_raw, cfg=sweep_cfg)
+        if code != 0:
+            failures += 1
+
+    if failures:
+        _LOGGER.warning("Seed sweep finished with failures: %s/%s", failures, len(seeds))
+        return 1
+    _LOGGER.info("Seed sweep finished successfully: %s runs", len(seeds))
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run ModSSC benchmark orchestration")
     parser.add_argument("--config", required=True, help="Path to experiment YAML")
@@ -679,13 +727,22 @@ def main() -> int:
         default=None,
         help="Logging level: none, basic, detailed (aliases: quiet, full).",
     )
+    parser.add_argument(
+        "--num-runs",
+        type=_positive_int,
+        default=None,
+        help=(
+            "Run count sweep from run.seed (equivalent to run.seeds=[seed, seed+1, ...]). "
+            "Overrides run.seeds when provided."
+        ),
+    )
     args = parser.parse_args()
     try:
         resolved = _resolve_log_level_for_run(Path(args.config), args.log_level)
     except ValueError as exc:
         raise SystemExit(str(exc)) from exc
     configure_logging(resolved)
-    return run_experiment(Path(args.config))
+    return run_experiment(Path(args.config), num_runs=args.num_runs)
 
 
 if __name__ == "__main__":

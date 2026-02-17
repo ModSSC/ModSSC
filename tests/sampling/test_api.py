@@ -47,10 +47,25 @@ def test_default_split_cache_dir_with_env(monkeypatch):
 def test_default_split_cache_dir_no_env(monkeypatch):
     """Test default_split_cache_dir without environment variable."""
     monkeypatch.delenv("MODSSC_SPLIT_CACHE_DIR", raising=False)
+    monkeypatch.delenv("MODSSC_CACHE_ROOT", raising=False)
     cache_dir = default_split_cache_dir()
 
     assert "modssc" in str(cache_dir).lower()
     assert "splits" in str(cache_dir)
+
+
+def test_default_split_cache_dir_root_override(monkeypatch, tmp_path):
+    monkeypatch.delenv("MODSSC_SPLIT_CACHE_DIR", raising=False)
+    monkeypatch.setenv("MODSSC_CACHE_ROOT", str(tmp_path / "global_cache_root"))
+    cache_dir = default_split_cache_dir()
+    assert cache_dir == (tmp_path / "global_cache_root" / "splits").resolve()
+
+
+def test_default_split_cache_dir_specific_override_has_priority(monkeypatch, tmp_path):
+    monkeypatch.setenv("MODSSC_CACHE_ROOT", str(tmp_path / "global_cache_root"))
+    monkeypatch.setenv("MODSSC_SPLIT_CACHE_DIR", str(tmp_path / "split_specific"))
+    cache_dir = default_split_cache_dir()
+    assert cache_dir == (tmp_path / "split_specific").resolve()
 
 
 def test_resolve_dataset_fingerprint_from_arg():

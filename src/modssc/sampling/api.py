@@ -22,6 +22,7 @@ from modssc.sampling.storage import load_split as _load_split
 from modssc.sampling.storage import save_split as _save_split
 
 SPLIT_CACHE_ENV = "MODSSC_SPLIT_CACHE_DIR"
+CACHE_ROOT_ENV = "MODSSC_CACHE_ROOT"
 SCHEMA_VERSION = 1
 
 logger = logging.getLogger(__name__)
@@ -31,6 +32,10 @@ def default_split_cache_dir() -> Path:
     override = os.environ.get(SPLIT_CACHE_ENV)
     if override:
         return Path(override).expanduser().resolve()
+
+    root_override = os.environ.get(CACHE_ROOT_ENV)
+    if root_override:
+        return Path(root_override).expanduser().resolve() / "splits"
 
     # Heuristic: if running in a dev repo (pyproject.toml exists in parents),
     # default to a local "cache" folder at the repo root.
