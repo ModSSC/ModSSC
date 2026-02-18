@@ -158,16 +158,42 @@ def _first_torch_device(obj: Any) -> Any | None:
             if dev is not None:
                 return dev
         return None
+    params = getattr(obj, "parameters", None)
+    if callable(params):
+        try:
+            first_param = next(params(), None)
+        except Exception:
+            first_param = None
+        if first_param is not None and hasattr(first_param, "device"):
+            return first_param.device
+    buffers = getattr(obj, "buffers", None)
+    if callable(buffers):
+        try:
+            first_buffer = next(buffers(), None)
+        except Exception:
+            first_buffer = None
+        if first_buffer is not None and hasattr(first_buffer, "device"):
+            return first_buffer.device
     if is_torch_tensor(obj):
         return getattr(obj, "device", None)
+    dev_attr = getattr(obj, "device", None)
+    if isinstance(dev_attr, str):
+        return dev_attr
+    if dev_attr is not None and type(dev_attr).__name__ == "device":
+        return dev_attr
     return None
 
 
 def _infer_method_device(method: Any) -> Any | None:
-    for attr in ("_svm", "_bundle", "_model", "_clf1", "_clf2"):
-        dev = _first_torch_device(getattr(method, attr, None))
+    for attr in ("_svm", "_bundle", "_model", "_clf", "_clf1", "_clf2"):
+        candidate = getattr(method, attr, None)
+        dev = _first_torch_device(candidate)
         if dev is not None:
             return dev
+        for nested in ("_model", "model", "_bundle", "_svm", "_clf", "_clf1", "_clf2"):
+            dev = _first_torch_device(getattr(candidate, nested, None))
+            if dev is not None:
+                return dev
     return None
 
 
