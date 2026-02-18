@@ -17,7 +17,7 @@ from modssc.inductive.methods.self_training import (
 )
 from modssc.inductive.types import DeviceSpec
 
-from .conftest import DummyDataset, make_numpy_dataset, make_torch_dataset
+from ..conftest import DummyDataset, make_numpy_dataset, make_torch_dataset
 
 torch = pytest.importorskip("torch")
 

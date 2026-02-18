@@ -40,7 +40,7 @@ from modssc.inductive.methods.uda import UDAMethod, UDASpec
 from modssc.inductive.methods.vat import VATMethod, VATSpec
 from modssc.inductive.types import DeviceSpec
 
-from .conftest import (
+from ..conftest import (
     DummyDataset,
     make_model_bundle,
     make_numpy_dataset,

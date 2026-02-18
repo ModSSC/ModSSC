@@ -8,7 +8,7 @@ from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.types import DeviceSpec
 
-from .conftest import DummyDataset, make_numpy_dataset, make_torch_dataset
+from ..conftest import DummyDataset, make_numpy_dataset, make_torch_dataset
 
 
 class _LinearLogits(torch.nn.Module):

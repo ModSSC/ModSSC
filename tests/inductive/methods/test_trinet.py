@@ -13,7 +13,7 @@ from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.trinet import TriNetMethod, TriNetSpec
 from modssc.inductive.types import DeviceSpec, InductiveDataset
 
-from .conftest import SimpleNet, make_numpy_dataset, make_torch_dataset
+from ..conftest import SimpleNet, make_numpy_dataset, make_torch_dataset
 
 
 def _make_bundle(model: torch.nn.Module, *, meta: dict | None = None) -> TorchModelBundle:

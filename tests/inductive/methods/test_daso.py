@@ -16,7 +16,7 @@ from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.daso import DASOMethod, DASOSpec
 from modssc.inductive.types import DeviceSpec, InductiveDataset
 
-from .conftest import make_numpy_dataset, make_torch_ssl_dataset
+from ..conftest import make_numpy_dataset, make_torch_ssl_dataset
 
 
 class _DASONet(torch.nn.Module):
