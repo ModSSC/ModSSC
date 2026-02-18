@@ -11,7 +11,7 @@ from modssc.inductive.errors import InductiveValidationError, OptionalDependency
 from modssc.inductive.methods import deep_utils
 from modssc.inductive.types import DeviceSpec
 
-from .conftest import SimpleNet
+from ..conftest import SimpleNet
 
 
 def test_resolve_device_cpu():

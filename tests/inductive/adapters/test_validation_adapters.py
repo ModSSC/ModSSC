@@ -26,7 +26,7 @@ from modssc.inductive.validation import (
     validate_inductive_dataset,
 )
 
-from .conftest import DummyDataset, make_numpy_dataset, make_torch_dataset
+from ..conftest import DummyDataset, make_numpy_dataset, make_torch_dataset
 
 
 class _DetachArray:

@@ -17,7 +17,7 @@ from modssc.inductive.methods.meta_pseudo_labels import (
 )
 from modssc.inductive.types import DeviceSpec, InductiveDataset
 
-from .conftest import make_numpy_dataset, make_torch_ssl_dataset
+from ..conftest import make_numpy_dataset, make_torch_ssl_dataset
 
 
 class _LinearNet(torch.nn.Module):

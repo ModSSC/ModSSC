@@ -14,7 +14,7 @@ from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.simclr_v2 import SimCLRv2Method, SimCLRv2Spec
 from modssc.inductive.types import DeviceSpec, InductiveDataset
 
-from .conftest import make_numpy_dataset, make_torch_ssl_dataset
+from ..conftest import make_numpy_dataset, make_torch_ssl_dataset
 
 
 class _ProjectorNet(torch.nn.Module):

@@ -20,7 +20,7 @@ from modssc.inductive.methods.setred import (
 )
 from modssc.inductive.types import DeviceSpec
 
-from .conftest import DummyDataset, make_numpy_dataset, make_torch_dataset
+from ..conftest import DummyDataset, make_numpy_dataset, make_torch_dataset
 
 
 def test_setred_helpers_graph_and_selection():

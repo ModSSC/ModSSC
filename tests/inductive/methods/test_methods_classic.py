@@ -21,7 +21,7 @@ from modssc.inductive.methods.self_training import SelfTrainingMethod, SelfTrain
 from modssc.inductive.methods.tri_training import TriTrainingMethod, TriTrainingSpec
 from modssc.inductive.types import DeviceSpec
 
-from .conftest import DummyDataset, make_numpy_dataset, make_torch_dataset
+from ..conftest import DummyDataset, make_numpy_dataset, make_torch_dataset
 
 
 @pytest.mark.parametrize(
