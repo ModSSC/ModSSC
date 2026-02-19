@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import importlib
 import platform
 import subprocess
 import sys
-from importlib import metadata
+from importlib import import_module, metadata
 from pathlib import Path
 from typing import Any
 
@@ -47,7 +46,7 @@ def collect_runtime_versions(*, repo_root: Path | None = None) -> dict[str, Any]
     }
 
     try:
-        torch = importlib.import_module("torch")
+        torch = import_module("torch")
     except Exception:
         out["cuda"] = None
         out["cudnn"] = None
