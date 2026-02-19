@@ -193,9 +193,11 @@ def _objective_value(
     X_u_s = prepared_artifacts["X_u_s"]
     X_u_s_1 = prepared_artifacts.get("X_u_s_1")
     use_test = prepared_artifacts["use_test"]
+    strict = bool(prepared_artifacts.get("strict", False))
+    requires_torch = bool(prepared_artifacts.get("requires_torch", False))
 
     if cfg.method.kind == "inductive":
-        method = inductive_orch.run(
+        method, _ = inductive_orch.run(
             pre,
             sampling,
             views=views,
@@ -204,6 +206,8 @@ def _objective_value(
             X_u_s_1=X_u_s_1,
             cfg=cfg.method,
             seed=seed,
+            strict=strict,
+            requires_torch=requires_torch,
         )
         metrics = eval_orch.evaluate_inductive(
             method=method,
@@ -213,11 +217,12 @@ def _objective_value(
             metrics=[metric],
             method_id=cfg.method.method_id,
             views=views,
+            strict=strict,
         )
     else:
         if graph is None:
             raise ValueError("Transductive HPO requires a graph")
-        method, data = transductive_orch.run(
+        method, data, _ = transductive_orch.run(
             dataset=pre.dataset,
             graph=graph,
             masks=masks,
@@ -225,6 +230,7 @@ def _objective_value(
             seed=seed,
             use_test_split=use_test,
             expected_labeled_count=expected_labeled_count,
+            strict=strict,
         )
         metrics = eval_orch.evaluate_transductive(
             method=method,
