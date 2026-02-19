@@ -478,6 +478,37 @@ def _resolve_log_level_for_run(config_path: Path, cli_log_level: str | None) -> 
     return resolved
 
 
+def _derive_run_id(*, effective_config_hash: str, seed: int, versions: Mapping[str, Any]) -> str:
+    return hash_any(
+        {
+            "effective_config_hash": effective_config_hash,
+            "seed": int(seed),
+            "versions": dict(versions),
+            "git_sha": versions.get("git_sha"),
+        }
+    )[:20]
+
+
+def _sync_ctx_run_identity(ctx: RunContext, *, run_id: str) -> None:
+    if ctx.run_id == run_id:
+        return
+
+    old_run_id = ctx.run_id
+    old_run_dir = ctx.run_dir
+    timestamp = old_run_dir.name.rsplit("-", 1)[-1]
+    new_run_dir = ctx.output_dir / f"{ctx.name}-{run_id}-{timestamp}"
+    if new_run_dir.exists():
+        raise BenchRuntimeError(
+            "E_BENCH_RUN_DIR_COLLISION",
+            f"cannot update run directory for recalculated run_id; target already exists: {new_run_dir}",
+        )
+
+    old_run_dir.rename(new_run_dir)
+    ctx.run_id = str(run_id)
+    ctx.run_dir = new_run_dir
+    _LOGGER.info("Run identity updated after config mutation: %s -> %s", old_run_id, run_id)
+
+
 def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: ExperimentConfig) -> int:
     requested_raw = deep_merge({}, raw)
     config_hash = hash_any(requested_raw)
@@ -496,14 +527,11 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
 
     effective_config_hash = hash_any(raw)
     versions = collect_runtime_versions(repo_root=config_path.parent)
-    run_id = hash_any(
-        {
-            "effective_config_hash": effective_config_hash,
-            "seed": int(cfg.run.seed),
-            "versions": versions,
-            "git_sha": versions.get("git_sha"),
-        }
-    )[:20]
+    run_id = _derive_run_id(
+        effective_config_hash=effective_config_hash,
+        seed=int(cfg.run.seed),
+        versions=versions,
+    )
 
     ctx = RunContext.from_run_config(
         name=cfg.run.name,
@@ -852,7 +880,17 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
             if hpo_limit_changes:
                 _LOGGER.info("Applied memory limits after HPO: changes=%s", len(hpo_limit_changes))
                 _LOGGER.debug("Limit adjustments: %s", hpo_limit_changes)
-            cfg = ExperimentConfig.from_dict(patched_raw)
+            raw = patched_raw
+            cfg = ExperimentConfig.from_dict(raw)
+            effective_config_hash = hash_any(raw)
+            patched_run_id = _derive_run_id(
+                effective_config_hash=effective_config_hash,
+                seed=int(cfg.run.seed),
+                versions=versions,
+            )
+            _sync_ctx_run_identity(ctx, run_id=patched_run_id)
+            ctx.write_config_copy(raw)
+            resolution["backend"]["requested"]["method"] = cfg.method.params.get("backend")
 
         if cfg.method.kind == "inductive":
             _LOGGER.info("Method: %s", cfg.method.method_id)

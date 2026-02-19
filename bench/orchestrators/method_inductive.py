@@ -172,7 +172,10 @@ def _smart_to_torch(x: Any, device: Any) -> Any:
 
     torch = _torch_module()
     x_np = np.asarray(x)
-    return torch.as_tensor(x_np, device=device)
+    if x_np.dtype == np.uint8:
+        return torch.tensor(x_np, device=device, dtype=torch.float32).div_(255.0)
+    dtype = torch.float32 if x_np.dtype == np.float64 else None
+    return torch.as_tensor(x_np, device=device, dtype=dtype)
 
 
 def _validate_strict_tensor_contract(name: str, value: Any) -> None:

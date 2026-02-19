@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import importlib
 import platform
 import subprocess
 import sys
-import importlib
 from importlib import metadata
 from pathlib import Path
 from typing import Any
