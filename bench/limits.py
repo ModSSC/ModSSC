@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from .schema import LimitsConfig
+from .schema import BenchConfigError, LimitsConfig
 
 
 @dataclass(frozen=True)
@@ -64,11 +64,16 @@ def _detect_profile() -> str | None:
     return "v100"
 
 
-def resolve_limits(cfg: LimitsConfig | None) -> ResolvedLimits | None:
+def resolve_limits(cfg: LimitsConfig | None, *, strict: bool = False) -> ResolvedLimits | None:
     if cfg is None:
         return None
 
     profile = cfg.profile.lower() if cfg.profile else None
+    if strict and profile == "auto":
+        raise BenchConfigError(
+            "limits.profile='auto' is forbidden when run.benchmark_mode=true",
+            code="E_BENCH_AUTO_FORBIDDEN",
+        )
     resolved_profile = None
     defaults: dict[str, int] = {}
 
@@ -197,9 +202,9 @@ def _ensure_dict(parent: dict[str, Any], key: str) -> dict[str, Any]:
 
 
 def apply_limits(
-    raw: dict[str, Any], *, limits: LimitsConfig | None
+    raw: dict[str, Any], *, limits: LimitsConfig | None, strict: bool = False
 ) -> tuple[dict[str, Any], list[str], ResolvedLimits | None]:
-    resolved = resolve_limits(limits)
+    resolved = resolve_limits(limits, strict=strict)
     if resolved is None:
         return raw, [], None
 

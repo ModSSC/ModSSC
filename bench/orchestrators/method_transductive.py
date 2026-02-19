@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import logging
 from collections.abc import Mapping
 from dataclasses import is_dataclass, replace
@@ -12,31 +13,81 @@ from modssc.device import resolve_device_name
 from modssc.graph.artifacts import GraphArtifact, NodeDataset
 from modssc.transductive.registry import get_method_class, get_method_info
 
+from ..errors import BenchRuntimeError
 from ..schema import MethodConfig
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def _resolve_method_device(device: str | None, *, supports_gpu: bool) -> str | None:
-    if device is None or device != "auto":
+def _resolve_method_device(device: str | None, *, supports_gpu: bool, strict: bool) -> str | None:
+    if device is None:
+        return None
+    if strict and device == "auto":
+        raise BenchRuntimeError(
+            "E_BENCH_AUTO_FORBIDDEN",
+            "method.device.device='auto' is forbidden when run.benchmark_mode=true",
+        )
+    if device != "auto":
         return device
     if not supports_gpu:
         return "cpu"
     return resolve_device_name(device)
 
 
-def _build_spec(method_cls: type[Any], params: dict[str, Any]) -> Any:
-    if not params:
-        return None
-    spec = None
+def _default_spec(method_cls: type[Any], *, strict: bool) -> Any:
     try:
         inst = method_cls()
-        spec = getattr(inst, "spec", None)
-    except Exception:
-        spec = None
+    except (TypeError, ValueError, RuntimeError, ImportError, ModuleNotFoundError) as exc:
+        if strict:
+            raise BenchRuntimeError(
+                "E_BENCH_METHOD_INTROSPECTION",
+                f"failed to instantiate transductive method for spec introspection: {exc}",
+            ) from exc
+        return None
+    spec = getattr(inst, "spec", None)
+    if spec is not None and is_dataclass(spec):
+        return spec
+    return None
+
+
+def _build_spec(method_cls: type[Any], params: dict[str, Any], *, strict: bool) -> Any:
+    spec = _default_spec(method_cls, strict=strict)
+    if not params:
+        return spec
     if spec is not None and is_dataclass(spec):
         return replace(spec, **params)
-    raise ValueError("Method params provided but no dataclass spec is available")
+    raise BenchRuntimeError(
+        "E_BENCH_METHOD_SPEC",
+        "method.params were provided but no dataclass spec is available",
+    )
+
+
+def _resolve_method_backend(*, cfg: MethodConfig, spec: Any, strict: bool) -> str | None:
+    backend = cfg.params.get("backend")
+    if backend is None and spec is not None and hasattr(spec, "backend"):
+        backend = spec.backend
+    if backend is None:
+        return None
+    backend_s = str(backend)
+    if strict and backend_s.lower() == "auto":
+        raise BenchRuntimeError(
+            "E_BENCH_AUTO_FORBIDDEN",
+            "method backend 'auto' is forbidden when run.benchmark_mode=true",
+        )
+    return backend_s
+
+
+def _ensure_backend_dependencies(backend: str | None) -> None:
+    if backend is None:
+        return
+    if backend.lower() == "torch":
+        try:
+            importlib.import_module("torch")
+        except ModuleNotFoundError as exc:
+            raise BenchRuntimeError(
+                "E_BENCH_DEPENDENCY_MISSING",
+                "method backend 'torch' requires dependency 'torch'",
+            ) from exc
 
 
 def _to_numpy(x: Any) -> np.ndarray:
@@ -102,6 +153,7 @@ def graph_from_dataset(dataset: Any, n_nodes: int) -> GraphArtifact:
     edges = dataset.train.edges
     if isinstance(edges, GraphArtifact):
         return edges
+
     edge_weight = None
     edge_index = None
     if isinstance(edges, Mapping):
@@ -109,6 +161,7 @@ def graph_from_dataset(dataset: Any, n_nodes: int) -> GraphArtifact:
         edge_weight = edges.get("edge_weight")
     else:
         edge_index = edges
+
     edge_index = np.asarray(edge_index)
     if edge_index.ndim == 2 and edge_index.shape[0] != 2 and edge_index.shape[1] == 2:
         edge_index = edge_index.T
@@ -121,6 +174,22 @@ def graph_from_dataset(dataset: Any, n_nodes: int) -> GraphArtifact:
     )
 
 
+def _dtype_descriptor(value: Any) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    dtype = getattr(value, "dtype", None)
+    shape = getattr(value, "shape", None)
+    out: dict[str, Any] = {}
+    if dtype is not None:
+        out["dtype"] = str(dtype)
+    if shape is not None:
+        try:
+            out["shape"] = list(shape)
+        except TypeError:
+            out["shape"] = None
+    return out or None
+
+
 def run(
     *,
     dataset: Any,
@@ -130,22 +199,32 @@ def run(
     seed: int,
     use_test_split: bool,
     expected_labeled_count: int | None = None,
-) -> Any:
+    strict: bool = False,
+) -> tuple[Any, NodeDataset, dict[str, Any]]:
     start = perf_counter()
     method_info = get_method_info(cfg.method_id)
     resolved_device = _resolve_method_device(
-        cfg.device.device, supports_gpu=method_info.supports_gpu
+        cfg.device.device,
+        supports_gpu=method_info.supports_gpu,
+        strict=strict,
     )
+
+    method_cls = get_method_class(cfg.method_id)
+    spec = _build_spec(method_cls, cfg.params, strict=strict)
+    resolved_backend = _resolve_method_backend(cfg=cfg, spec=spec, strict=strict)
+    _ensure_backend_dependencies(resolved_backend)
+
     _LOGGER.info(
-        "Transductive method start: id=%s seed=%s device=%s resolved_device=%s use_test=%s",
+        "Transductive method start: id=%s seed=%s device=%s resolved_device=%s backend=%s use_test=%s strict=%s",
         cfg.method_id,
         int(seed),
         cfg.device.device,
         resolved_device,
+        resolved_backend,
         bool(use_test_split),
+        bool(strict),
     )
     _LOGGER.debug("Transductive method params: %s", dict(cfg.params))
-    method_cls = get_method_class(cfg.method_id)
 
     X_train = dataset.train.X
     y_train = dataset.train.y
@@ -154,22 +233,23 @@ def run(
 
     X_all = _combine_splits(X_train, X_test)
     y_all = _combine_splits(y_train, y_test)
-    n_test = 0 if X_test is None else X_test.shape[0]
+    n_test = 0 if X_test is None else int(X_test.shape[0])
     _LOGGER.info(
         "Transductive data: n_nodes=%s n_train=%s n_test=%s",
-        X_all.shape[0],
-        X_train.shape[0],
+        int(X_all.shape[0]),
+        int(X_train.shape[0]),
         n_test,
     )
 
     labeled_mask = np.asarray(masks.get("labeled_mask", masks.get("train_mask")), dtype=bool)
     labeled_count = int(labeled_mask.sum())
     if expected_labeled_count is not None and labeled_count != int(expected_labeled_count):
-        raise ValueError(
-            "Transductive labeled mask mismatch: expected "
-            f"{int(expected_labeled_count)} labeled nodes from sampling stats, "
-            f"got {labeled_count}."
+        raise BenchRuntimeError(
+            "E_BENCH_MASK_CONTRACT",
+            "transductive labeled mask mismatch: expected "
+            f"{int(expected_labeled_count)} from sampling stats, got {labeled_count}",
         )
+
     train_all_mask = masks.get("train_mask")
     train_count = (
         int(np.asarray(train_all_mask, dtype=bool).sum()) if train_all_mask is not None else None
@@ -211,13 +291,31 @@ def run(
         meta={"y_true": _to_numpy(y_all), "y_obs": y_obs},
     )
 
-    spec = _build_spec(method_cls, cfg.params)
     method = method_cls(spec) if spec is not None else method_cls()
-
     method.fit(data, device=resolved_device, seed=int(seed))
+
+    resolved_backend_final = resolved_backend
+    if resolved_backend_final is None:
+        maybe_backend = getattr(method, "_backend", None)
+        resolved_backend_final = str(maybe_backend) if maybe_backend is not None else None
+
+    method_resolution = {
+        "backend": resolved_backend_final,
+        "classifier_backend": None,
+        "dtypes": {
+            "X": _dtype_descriptor(X_all),
+            "y_true": _dtype_descriptor(_to_numpy(y_all)),
+            "y_obs": _dtype_descriptor(y_obs),
+        },
+        "normalization": {
+            "implicit_method_conversion": False,
+            "strict_contract_validated": bool(strict),
+        },
+    }
+
     _LOGGER.info(
         "Transductive method done: id=%s duration_s=%.3f",
         cfg.method_id,
         perf_counter() - start,
     )
-    return method, data
+    return method, data, method_resolution

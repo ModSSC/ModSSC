@@ -9,7 +9,10 @@ from modssc.hpo import HpoError, Space
 
 
 class BenchConfigError(ValueError):
-    pass
+    def __init__(self, message: str, *, code: str = "E_BENCH_CONFIG") -> None:
+        self.code = str(code)
+        self.message = str(message)
+        super().__init__(f"{self.code}: {self.message}")
 
 
 def _as_mapping(obj: Any, *, name: str) -> Mapping[str, Any]:
@@ -119,6 +122,7 @@ class RunConfig:
     seeds: list[int] | None = None
     fail_fast: bool = True
     log_level: str | None = None
+    benchmark_mode: bool = True
 
 
 @dataclass(frozen=True)
@@ -269,15 +273,25 @@ class ExperimentConfig:
 
         run = _as_mapping(data.get("run", {}), name="run")
         _check_unknown(
-            run, {"name", "seed", "seeds", "output_dir", "fail_fast", "log_level"}, name="run"
+            run,
+            {"name", "seed", "seeds", "output_dir", "fail_fast", "log_level", "benchmark_mode"},
+            name="run",
         )
+        benchmark_mode = _optional_bool(run, "benchmark_mode", default=True)
+        fail_fast = _optional_bool(run, "fail_fast", default=True)
+        if benchmark_mode and not fail_fast:
+            raise BenchConfigError(
+                "run.fail_fast must be true when run.benchmark_mode=true",
+                code="E_BENCH_FAIL_FAST_REQUIRED",
+            )
         run_cfg = RunConfig(
             name=_require_str(run, "name", name="run"),
             seed=int(run.get("seed", 0)),
             output_dir=str(run.get("output_dir", "runs")),
             seeds=_optional_seed_list(run, "seeds", name="run"),
-            fail_fast=_optional_bool(run, "fail_fast", default=True),
+            fail_fast=fail_fast,
             log_level=_optional_str(run, "log_level"),
+            benchmark_mode=benchmark_mode,
         )
 
         limits_cfg = None

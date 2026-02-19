@@ -4,12 +4,12 @@ import argparse
 import logging
 import traceback
 from collections.abc import Mapping
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
-from modssc.data_augmentation.utils import is_torch_tensor
 from modssc.device import resolve_device_name
 from modssc.evaluation import list_metrics
 from modssc.hpo import deep_merge
@@ -18,9 +18,11 @@ from modssc.inductive.registry import get_method_info as get_inductive_method_in
 from modssc.logging import configure_logging, resolve_log_level
 from modssc.preprocess import step_info
 from modssc.sampling.result import SamplingResult
+from modssc.transductive.registry import get_method_class as get_transductive_method_class
 from modssc.transductive.registry import get_method_info as get_transductive_method_info
 
 from .context import RunContext
+from .errors import BenchRuntimeError, extract_error_code
 from .limits import apply_limits
 from .orchestrators import augmentation as aug_orch
 from .orchestrators import dataset as ds_orch
@@ -33,10 +35,13 @@ from .orchestrators import preprocess as prep_orch
 from .orchestrators import reporting as report_orch
 from .orchestrators import sampling as sampling_orch
 from .orchestrators import views as views_orch
+from .orchestrators.slicing import select_rows
 from .schema import BenchConfigError, ExperimentConfig
 from .seed_sweep import apply_global_seed, sweep_run_name
+from .utils.hashing import hash_any
 from .utils.import_tools import check_extra_installed
 from .utils.io import load_yaml
+from .utils.runtime import collect_runtime_versions
 
 _ALLOWED_METRICS = set(list_metrics())
 _ALLOWED_SPLITS = {"train", "val", "test"}
@@ -87,21 +92,43 @@ def _check_extra(extra: str) -> None:
     missing = check_extra_installed(extra)
     if missing:
         raise BenchConfigError(
-            f"Missing optional dependency for extra '{extra}': {sorted(set(missing))}"
+            f"Missing optional dependency for extra '{extra}': {sorted(set(missing))}",
+            code="E_BENCH_DEPENDENCY_MISSING",
         )
 
 
-def _method_requires_torch(method_id: str) -> bool:
+def _method_requires_torch(method_id: str, *, strict: bool) -> bool:
     cls = get_inductive_method_class(method_id)
     try:
         inst = cls()
-    except Exception:
+    except (TypeError, ValueError, RuntimeError, ImportError, ModuleNotFoundError) as exc:
+        if strict:
+            raise BenchConfigError(
+                f"failed to introspect inductive method '{method_id}' for benchmark preflight: {exc}",
+                code="E_BENCH_METHOD_INTROSPECTION",
+            ) from exc
         return False
     spec = getattr(inst, "spec", None)
-    return bool(hasattr(spec, "model_bundle"))
+    bundle_fields = (
+        "model_bundle",
+        "teacher_bundle",
+        "student_bundle",
+        "model_bundle_1",
+        "model_bundle_2",
+        "pretrain_bundle",
+        "finetune_bundle",
+        "shared_bundle",
+        "head_bundles",
+    )
+    return any(hasattr(spec, field) for field in bundle_fields)
 
 
-def _resolve_method_device(requested: str, *, supports_gpu: bool) -> str:
+def _resolve_method_device(requested: str, *, supports_gpu: bool, strict: bool) -> str:
+    if strict and requested == "auto":
+        raise BenchConfigError(
+            "method.device.device='auto' is forbidden when run.benchmark_mode=true",
+            code="E_BENCH_AUTO_FORBIDDEN",
+        )
     if requested != "auto":
         return requested
     if not supports_gpu:
@@ -158,42 +185,52 @@ def _preflight(
         and cfg.method.method_id == "co_training"
         and cfg.views is None
     ):
-        raise BenchConfigError("co_training requires views to be configured")
+        raise BenchConfigError("co_training requires views to be configured", code="E_BENCH_CONFIG")
 
     if cfg.method.kind == "transductive":
         graph_enabled = bool(cfg.graph and cfg.graph.enabled)
         if not dataset_has_graph and not graph_enabled:
             raise BenchConfigError(
-                "Transductive methods require a graph; set graph.enabled=true or use a graph dataset"
+                "Transductive methods require a graph; set graph.enabled=true or use a graph dataset",
+                code="E_BENCH_GRAPH_REQUIRED",
             )
 
     if cfg.augmentation is not None and cfg.augmentation.enabled:
         if cfg.augmentation.mode != "fixed":
-            raise BenchConfigError("Only augmentation.mode='fixed' is supported")
+            raise BenchConfigError(
+                "Only augmentation.mode='fixed' is supported",
+                code="E_BENCH_CONFIG",
+            )
         if not cfg.augmentation.weak or not cfg.augmentation.strong:
-            raise BenchConfigError("augmentation.weak and augmentation.strong must be provided")
+            raise BenchConfigError(
+                "augmentation.weak and augmentation.strong must be provided",
+                code="E_BENCH_CONFIG",
+            )
 
     for metric in cfg.evaluation.metrics:
         if metric not in _ALLOWED_METRICS:
-            raise BenchConfigError(f"Unknown metric: {metric}")
+            raise BenchConfigError(f"Unknown metric: {metric}", code="E_BENCH_CONFIG")
 
     for split in cfg.evaluation.report_splits:
         if split not in _ALLOWED_SPLITS:
-            raise BenchConfigError(f"Unknown split: {split}")
+            raise BenchConfigError(f"Unknown split: {split}", code="E_BENCH_CONFIG")
     return method_info
 
 
 def _preprocess_step_ids(plan_dict: dict[str, Any]) -> list[str]:
     steps_raw = plan_dict.get("steps", [])
     if not isinstance(steps_raw, list):
-        raise BenchConfigError("preprocess.plan.steps must be a list")
+        raise BenchConfigError("preprocess.plan.steps must be a list", code="E_BENCH_CONFIG")
     ids: list[str] = []
     for item in steps_raw:
         if not isinstance(item, dict):
-            raise BenchConfigError("Each preprocess step must be a mapping")
+            raise BenchConfigError("Each preprocess step must be a mapping", code="E_BENCH_CONFIG")
         step_id = str(item.get("id") or item.get("step_id") or "")
         if not step_id:
-            raise BenchConfigError("Each preprocess step must define 'id'")
+            raise BenchConfigError(
+                "Each preprocess step must define 'id'",
+                code="E_BENCH_CONFIG",
+            )
         ids.append(step_id)
     return ids
 
@@ -263,75 +300,191 @@ def _expected_labeled_count(stats: Mapping[str, Any] | None) -> int | None:
     return None
 
 
-def _select_rows(X: Any, idx: np.ndarray) -> Any:
-    if isinstance(X, dict):
-        out = {}
-        # Special handling for Graph in main.py too!
-        if "edge_index" in X:
-            try:
-                import importlib
-
-                torch = importlib.import_module("torch")
-                from torch_geometric.utils import subgraph
-
-                ei = X["edge_index"]
-                idx_t = torch.as_tensor(idx, device=ei.device, dtype=torch.long)
-                sub_ei, _ = subgraph(idx_t, ei, relabel_nodes=True)
-                out["edge_index"] = sub_ei
-            except Exception:
-                pass
-
-        for k, v in X.items():
-            if k == "edge_index":
-                if "edge_index" not in out:
-                    out[k] = v
-                continue
-
-            if is_torch_tensor(v):
-                import importlib
-
-                # ...
-                torch = importlib.import_module("torch")
-                # Heuristic: slice if dim 0 covers the indices and is not tiny (like edge_index's 2)
-                if v.ndim > 0 and v.shape[0] > idx.max():
-                    out[k] = v[torch.as_tensor(idx, device=v.device, dtype=torch.long)]
-                else:
-                    out[k] = v
-            elif isinstance(v, (np.ndarray, list)):
-                v_arr = np.array(v)
-                if v_arr.ndim > 0 and v_arr.shape[0] > idx.max():
-                    out[k] = v_arr[idx]
-                else:
-                    out[k] = v
-            else:
-                out[k] = v
-        return out
-
-    if is_torch_tensor(X):
-        import importlib
-
-        torch = importlib.import_module("torch")
-        return X[torch.as_tensor(idx, device=X.device, dtype=torch.long)]
-    return X[idx]
-
-
 def _write_error_traceback(ctx: RunContext, tb: str) -> None:
     try:
         (ctx.run_dir / "error.txt").write_text(tb, encoding="utf-8")
-    except Exception:
+    except OSError:
         _LOGGER.exception("Failed to write error.txt")
 
 
+def _scan_auto_entries(node: Any, *, path: str) -> list[str]:
+    paths: list[str] = []
+    if isinstance(node, Mapping):
+        for key, value in node.items():
+            child = f"{path}.{key}" if path else str(key)
+            if (
+                isinstance(value, str)
+                and value.strip().lower() == "auto"
+                and key
+                in {
+                    "device",
+                    "backend",
+                    "classifier_backend",
+                    "profile",
+                }
+            ):
+                paths.append(child)
+            paths.extend(_scan_auto_entries(value, path=child))
+    elif isinstance(node, list):
+        for i, value in enumerate(node):
+            paths.extend(_scan_auto_entries(value, path=f"{path}[{i}]"))
+    return paths
+
+
+def _collect_requested_normalization(plan_dict: Mapping[str, Any]) -> list[str]:
+    out: list[str] = []
+    steps = plan_dict.get("steps", [])
+    if not isinstance(steps, list):
+        return out
+    for item in steps:
+        if not isinstance(item, Mapping):
+            continue
+        step_id = str(item.get("id") or item.get("step_id") or "")
+        if not step_id:
+            continue
+        if "normalize" in step_id or step_id in {
+            "core.cast_dtype",
+            "core.cast_fp16",
+            "core.to_torch",
+            "core.to_numpy",
+        }:
+            out.append(step_id)
+    return out
+
+
+def _method_has_backend_param(kind: str, method_id: str, *, strict: bool) -> bool:
+    if kind == "inductive":
+        cls = get_inductive_method_class(method_id)
+    else:
+        cls = get_transductive_method_class(method_id)
+    try:
+        inst = cls()
+    except (TypeError, ValueError, RuntimeError, ImportError, ModuleNotFoundError) as exc:
+        if strict:
+            raise BenchConfigError(
+                f"failed to introspect method '{method_id}' backend policy: {exc}",
+                code="E_BENCH_METHOD_INTROSPECTION",
+            ) from exc
+        return False
+    spec = getattr(inst, "spec", None)
+    return bool(hasattr(spec, "backend"))
+
+
+def _benchmark_contract_preflight(
+    *,
+    cfg: ExperimentConfig,
+    raw: Mapping[str, Any],
+    preprocess_steps: list[str],
+    view_preprocess_steps: list[str],
+) -> None:
+    if not cfg.run.benchmark_mode:
+        return
+
+    if cfg.dataset.download:
+        raise BenchConfigError(
+            "dataset.download must be false when run.benchmark_mode=true",
+            code="E_BENCH_DOWNLOAD_FORBIDDEN",
+        )
+    if not cfg.dataset.cache_dir:
+        raise BenchConfigError(
+            "dataset.cache_dir must be explicitly set when run.benchmark_mode=true",
+            code="E_BENCH_CACHE_DIR_REQUIRED",
+        )
+    if cfg.method.device.device == "auto":
+        raise BenchConfigError(
+            "method.device.device='auto' is forbidden when run.benchmark_mode=true",
+            code="E_BENCH_AUTO_FORBIDDEN",
+        )
+    if cfg.limits is not None and cfg.limits.profile == "auto":
+        raise BenchConfigError(
+            "limits.profile='auto' is forbidden when run.benchmark_mode=true",
+            code="E_BENCH_AUTO_FORBIDDEN",
+        )
+    if cfg.graph is not None and cfg.graph.enabled:
+        graph_backend = cfg.graph.spec.get("backend")
+        if isinstance(graph_backend, str) and graph_backend.lower() == "auto":
+            raise BenchConfigError(
+                "graph.spec.backend='auto' is forbidden when run.benchmark_mode=true",
+                code="E_BENCH_AUTO_FORBIDDEN",
+            )
+
+    if cfg.method.model is not None and cfg.method.model.classifier_backend == "auto":
+        raise BenchConfigError(
+            "method.model.classifier_backend='auto' is forbidden when run.benchmark_mode=true",
+            code="E_BENCH_AUTO_FORBIDDEN",
+        )
+
+    if cfg.evaluation.split_for_model_selection is None:
+        raise BenchConfigError(
+            "evaluation.split_for_model_selection must be set when run.benchmark_mode=true",
+            code="E_BENCH_SPLIT_MODEL_SELECTION_REQUIRED",
+        )
+    if cfg.evaluation.split_for_model_selection not in cfg.evaluation.report_splits:
+        raise BenchConfigError(
+            "evaluation.split_for_model_selection must be included in evaluation.report_splits",
+            code="E_BENCH_SPLIT_MODEL_SELECTION_INVALID",
+        )
+    if (
+        cfg.search is not None
+        and cfg.search.enabled
+        and cfg.search.objective.split != cfg.evaluation.split_for_model_selection
+    ):
+        raise BenchConfigError(
+            "search.objective.split must match evaluation.split_for_model_selection in benchmark_mode",
+            code="E_BENCH_SPLIT_MODEL_SELECTION_CONFLICT",
+        )
+
+    if _method_has_backend_param(cfg.method.kind, cfg.method.method_id, strict=True):
+        backend = cfg.method.params.get("backend")
+        if backend is None:
+            raise BenchConfigError(
+                f"method.params.backend must be explicitly set for method '{cfg.method.method_id}' in benchmark_mode",
+                code="E_BENCH_BACKEND_REQUIRED",
+            )
+        if str(backend).lower() == "auto":
+            raise BenchConfigError(
+                "method.params.backend='auto' is forbidden when run.benchmark_mode=true",
+                code="E_BENCH_AUTO_FORBIDDEN",
+            )
+
+    auto_paths = _scan_auto_entries(raw, path="")
+    if auto_paths:
+        raise BenchConfigError(
+            "auto is forbidden in benchmark_mode at: " + ", ".join(sorted(set(auto_paths))),
+            code="E_BENCH_AUTO_FORBIDDEN",
+        )
+
+    if _requires_fit_indices(preprocess_steps) and cfg.preprocess.fit_on is None:
+        raise BenchConfigError(
+            "preprocess.fit_on must be set when preprocess includes fittable steps",
+            code="E_BENCH_FIT_ON_REQUIRED",
+        )
+    if _requires_fit_indices(view_preprocess_steps) and cfg.preprocess.fit_on is None:
+        raise BenchConfigError(
+            "preprocess.fit_on must be set when views preprocess includes fittable steps",
+            code="E_BENCH_FIT_ON_REQUIRED",
+        )
+
+
 def _resolve_log_level_for_run(config_path: Path, cli_log_level: str | None) -> str:
-    if cli_log_level is not None and str(cli_log_level).strip():
-        return resolve_log_level(cli_log_level)
     raw = load_yaml(config_path)
     cfg = ExperimentConfig.from_dict(raw)
-    return resolve_log_level(cfg.run.log_level)
+    if cli_log_level is not None and str(cli_log_level).strip():
+        resolved = resolve_log_level(cli_log_level)
+    else:
+        resolved = resolve_log_level(cfg.run.log_level)
+    if cfg.run.benchmark_mode and resolved == "none":
+        return "basic"
+    return resolved
 
 
 def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: ExperimentConfig) -> int:
-    raw, limit_changes, resolved_limits = apply_limits(raw, limits=cfg.limits)
+    requested_raw = deep_merge({}, raw)
+    config_hash = hash_any(requested_raw)
+
+    raw, limit_changes, resolved_limits = apply_limits(
+        raw, limits=cfg.limits, strict=cfg.run.benchmark_mode
+    )
     if limit_changes:
         profile = resolved_limits.profile if resolved_limits is not None else None
         profile_label = profile or "custom"
@@ -341,9 +494,21 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
         _LOGGER.debug("Limit adjustments: %s", limit_changes)
         cfg = ExperimentConfig.from_dict(raw)
 
+    effective_config_hash = hash_any(raw)
+    versions = collect_runtime_versions(repo_root=config_path.parent)
+    run_id = hash_any(
+        {
+            "effective_config_hash": effective_config_hash,
+            "seed": int(cfg.run.seed),
+            "versions": versions,
+            "git_sha": versions.get("git_sha"),
+        }
+    )[:20]
+
     ctx = RunContext.from_run_config(
         name=cfg.run.name,
         seed=cfg.run.seed,
+        run_id=run_id,
         output_dir=cfg.run.output_dir,
         config_path=config_path,
         fail_fast=cfg.run.fail_fast,
@@ -360,26 +525,79 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
     hpo_summary: dict[str, Any] | None = None
     status = "success"
     error: str | None = None
+    error_code: str | None = None
+    fallback_events: list[dict[str, Any]] = []
+
+    preprocess_steps = _preprocess_step_ids(cfg.preprocess.plan)
+    view_preprocess_steps = (
+        _views_preprocess_step_ids(cfg.views.plan) if cfg.views is not None else []
+    )
+    normalization_requested = _collect_requested_normalization(cfg.preprocess.plan)
+    for pre_key in (cfg.views.plan if cfg.views is not None else {}).get("views", []):
+        if isinstance(pre_key, Mapping) and isinstance(pre_key.get("preprocess"), Mapping):
+            normalization_requested.extend(_collect_requested_normalization(pre_key["preprocess"]))
+
+    resolution: dict[str, Any] = {
+        "device": {"requested": cfg.method.device.device, "resolved": None},
+        "backend": {
+            "requested": {
+                "method": cfg.method.params.get("backend"),
+                "classifier": (
+                    cfg.method.model.classifier_backend if cfg.method.model is not None else None
+                ),
+                "graph": cfg.graph.spec.get("backend") if cfg.graph is not None else None,
+            },
+            "resolved": {},
+        },
+        "dtype": {
+            "requested": {"method_device_dtype": cfg.method.device.dtype},
+            "resolved": {},
+        },
+        "normalization": {
+            "requested": {"preprocess_steps": sorted(set(normalization_requested))},
+            "resolved": {},
+        },
+        "splits": {
+            "requested": list(cfg.evaluation.report_splits),
+            "resolved": {},
+        },
+        "limits": {
+            "requested": asdict(cfg.limits) if cfg.limits is not None else None,
+            "resolved": asdict(resolved_limits) if resolved_limits is not None else None,
+            "changes": list(limit_changes),
+        },
+    }
+    protocol: dict[str, Any] = {
+        "kind": cfg.method.kind,
+        "use_test_split": None,
+        "report_splits": list(cfg.evaluation.report_splits),
+        "split_for_model_selection": cfg.evaluation.split_for_model_selection,
+    }
 
     try:
+        _benchmark_contract_preflight(
+            cfg=cfg,
+            raw=raw,
+            preprocess_steps=preprocess_steps,
+            view_preprocess_steps=view_preprocess_steps,
+        )
+
         _LOGGER.info("Loading dataset: %s", cfg.dataset.id)
         dataset, dataset_info = ds_orch.load(cfg.dataset)
         dataset_has_graph = _dataset_has_graph(dataset)
 
-        preprocess_steps = _preprocess_step_ids(cfg.preprocess.plan)
-        view_preprocess_steps = (
-            _views_preprocess_step_ids(cfg.views.plan) if cfg.views is not None else []
-        )
         all_preprocess_steps = preprocess_steps + view_preprocess_steps
 
         _LOGGER.info("Preflight checks")
         if _requires_fit_indices(preprocess_steps) and cfg.preprocess.fit_on is None:
             raise BenchConfigError(
-                "preprocess.fit_on must be set when the plan includes fittable steps"
+                "preprocess.fit_on must be set when the plan includes fittable steps",
+                code="E_BENCH_FIT_ON_REQUIRED",
             )
         if _requires_fit_indices(view_preprocess_steps) and cfg.preprocess.fit_on is None:
             raise BenchConfigError(
-                "preprocess.fit_on must be set when views include fittable preprocess steps"
+                "preprocess.fit_on must be set when views include fittable preprocess steps",
+                code="E_BENCH_FIT_ON_REQUIRED",
             )
 
         method_info = _preflight(
@@ -388,11 +606,21 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
             preprocess_steps=all_preprocess_steps,
             dataset_has_graph=dataset_has_graph,
         )
+
+        requires_torch = (
+            _method_requires_torch(cfg.method.method_id, strict=cfg.run.benchmark_mode)
+            if cfg.method.kind == "inductive"
+            else False
+        )
         resolved_device = _resolve_method_device(
-            cfg.method.device.device, supports_gpu=method_info.supports_gpu
+            cfg.method.device.device,
+            supports_gpu=method_info.supports_gpu,
+            strict=cfg.run.benchmark_mode,
         )
         _record_resolved_device(raw, cfg=cfg, resolved_device=resolved_device)
         ctx.write_config_copy(raw)
+
+        resolution["device"]["resolved"] = resolved_device
         artifacts["method"] = {
             "id": cfg.method.method_id,
             "kind": cfg.method.kind,
@@ -402,22 +630,17 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
                 "dtype": cfg.method.device.dtype,
             },
         }
-        _LOGGER.info(
-            "Resolved device: requested=%s resolved=%s",
-            cfg.method.device.device,
-            resolved_device,
-        )
+
         if (
-            cfg.method.kind == "inductive"
-            and _method_requires_torch(cfg.method.method_id)
+            cfg.run.benchmark_mode
+            and cfg.method.kind == "inductive"
+            and requires_torch
             and "core.to_torch" not in preprocess_steps
         ):
-            # Optimisation H100: on autorise l'absence de to_torch si on gère la conversion plus tard
-            # (validation désactivée pour permettre le pipeline uint8)
-            pass
-            # raise BenchConfigError(
-            #    "Torch inductive methods require preprocess step 'core.to_torch'"
-            # )
+            raise BenchConfigError(
+                "Torch inductive methods require preprocess step 'core.to_torch' in benchmark_mode",
+                code="E_BENCH_PREPROCESS_TO_TORCH_REQUIRED",
+            )
 
         artifacts["dataset"] = {
             "id": cfg.dataset.id,
@@ -434,6 +657,12 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
             dataset_id=cfg.dataset.id,
         )
         use_test = _use_test_split(sampling)
+        protocol["use_test_split"] = bool(use_test)
+        resolution["splits"]["resolved"] = {
+            "report_splits": list(cfg.evaluation.report_splits),
+            "use_test_split": bool(use_test),
+            "refs": dict(sampling.refs),
+        }
         artifacts["sampling"] = {
             "seed": sampling_seed,
             "plan": sampling.plan,
@@ -442,8 +671,13 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
         }
 
         if cfg.method.kind == "inductive" and sampling.is_graph():
-            _LOGGER.warning("Inductive method on graph dataset; converting graph masks to indices.")
             sampling = _graph_sampling_to_inductive(sampling)
+            fallback_events.append(
+                {
+                    "code": "E_BENCH_GRAPH_SAMPLING_CONVERTED",
+                    "message": "Converted graph masks to inductive indices for inductive method",
+                }
+            )
 
         _LOGGER.info("Preprocess")
         fit_indices = prep_orch.resolve_fit_indices(
@@ -487,7 +721,10 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
         if cfg.graph is not None and cfg.graph.enabled:
             _LOGGER.info("Graph")
             if not cfg.graph.spec:
-                raise BenchConfigError("graph.spec must be provided when graph.enabled=true")
+                raise BenchConfigError(
+                    "graph.spec must be provided when graph.enabled=true",
+                    code="E_BENCH_GRAPH_SPEC_REQUIRED",
+                )
             graph_seed = ctx.seed_for("graph", cfg.graph.seed)
             ds_fp = pre.dataset.meta.get("dataset_fingerprint")
             graph = graph_orch.build(
@@ -504,11 +741,14 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
                 "fingerprint": graph.meta.get("fingerprint"),
                 "spec": cfg.graph.spec,
             }
+            resolution["backend"]["resolved"]["graph"] = cfg.graph.spec.get("backend")
         elif dataset_has_graph:
             _LOGGER.info("Graph (dataset-provided)")
             if pre.dataset.train.edges is None:
-                raise BenchConfigError("Graph dataset is missing train.edges")
-            # y can be a numpy array or a torch tensor on GPU; .shape works for both
+                raise BenchConfigError(
+                    "Graph dataset is missing train.edges",
+                    code="E_BENCH_GRAPH_MISSING_EDGES",
+                )
             n_nodes = int(pre.dataset.train.y.shape[0])
             graph = transductive_orch.graph_from_dataset(pre.dataset, n_nodes)
             artifacts["graph"] = {
@@ -517,6 +757,7 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
                 "spec": None,
                 "source": "dataset",
             }
+            resolution["backend"]["resolved"]["graph"] = "dataset"
 
         X_u_w = None
         X_u_s = None
@@ -528,9 +769,8 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
         ):
             _LOGGER.info("Augmentation")
             idx_u = np.asarray(sampling.indices["train_unlabeled"], dtype=np.int64)
-            X_u = _select_rows(pre.dataset.train.X, idx_u)
+            X_u = select_rows(pre.dataset.train.X, idx_u, context="main.augmentation")
 
-            # For graph dictionaries, extract 'x' for tabular augmentation
             X_u_aug_input = X_u
             if isinstance(X_u, dict) and "x" in X_u:
                 X_u_aug_input = X_u["x"]
@@ -548,13 +788,12 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
                 strong_views=strong_views,
             )
 
-            # If input was a graph dict, reconstruct dicts for augmented data
             if isinstance(X_u, dict) and "x" in X_u:
 
-                def _wrapg(aug_x, ref):
+                def _wrapg(aug_x: Any, ref: Mapping[str, Any]) -> Any:
                     if aug_x is None:
                         return None
-                    d = ref.copy()
+                    d = dict(ref)
                     d["x"] = aug_x
                     return d
 
@@ -568,7 +807,10 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
         expected_labeled_count = None
         if cfg.method.kind == "transductive":
             if graph is None:
-                raise BenchConfigError("Transductive methods require a graph")
+                raise BenchConfigError(
+                    "Transductive methods require a graph",
+                    code="E_BENCH_GRAPH_REQUIRED",
+                )
             n_train = int(pre.dataset.train.y.shape[0])
             n_test = (
                 int(pre.dataset.test.y.shape[0])
@@ -589,6 +831,8 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
             "use_test": use_test,
             "masks": masks,
             "expected_labeled_count": expected_labeled_count,
+            "strict": bool(cfg.run.benchmark_mode),
+            "requires_torch": bool(requires_torch),
         }
 
         if cfg.search is not None and cfg.search.enabled:
@@ -600,7 +844,11 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
                 prepared_artifacts=prepared_artifacts,
             )
             patched_raw = deep_merge(raw, best_patch)
-            patched_raw, hpo_limit_changes, _ = apply_limits(patched_raw, limits=cfg.limits)
+            patched_raw, hpo_limit_changes, _ = apply_limits(
+                patched_raw,
+                limits=cfg.limits,
+                strict=cfg.run.benchmark_mode,
+            )
             if hpo_limit_changes:
                 _LOGGER.info("Applied memory limits after HPO: changes=%s", len(hpo_limit_changes))
                 _LOGGER.debug("Limit adjustments: %s", hpo_limit_changes)
@@ -609,7 +857,7 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
         if cfg.method.kind == "inductive":
             _LOGGER.info("Method: %s", cfg.method.method_id)
             method_seed = ctx.seed_for("method", None)
-            method = inductive_orch.run(
+            method, method_resolution = inductive_orch.run(
                 pre,
                 sampling,
                 views=views,
@@ -618,6 +866,8 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
                 X_u_s_1=X_u_s_1,
                 cfg=cfg.method,
                 seed=method_seed,
+                strict=cfg.run.benchmark_mode,
+                requires_torch=requires_torch,
             )
             metrics = eval_orch.evaluate_inductive(
                 method=method,
@@ -627,11 +877,12 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
                 metrics=cfg.evaluation.metrics,
                 method_id=cfg.method.method_id,
                 views=views,
+                strict=cfg.run.benchmark_mode,
             )
         else:
             _LOGGER.info("Method: %s", cfg.method.method_id)
             method_seed = ctx.seed_for("method", None)
-            method, data = transductive_orch.run(
+            method, data, method_resolution = transductive_orch.run(
                 dataset=pre.dataset,
                 graph=graph,
                 masks=masks,
@@ -639,6 +890,7 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
                 seed=method_seed,
                 use_test_split=use_test,
                 expected_labeled_count=expected_labeled_count,
+                strict=cfg.run.benchmark_mode,
             )
             metrics = eval_orch.evaluate_transductive(
                 method=method,
@@ -648,22 +900,40 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
                 masks=masks,
             )
 
+        resolution["backend"]["resolved"]["method"] = method_resolution.get("backend")
+        resolution["backend"]["resolved"]["classifier"] = method_resolution.get(
+            "classifier_backend"
+        )
+        resolution["dtype"]["resolved"] = method_resolution.get("dtypes", {})
+        resolution["normalization"]["resolved"] = method_resolution.get("normalization", {})
+
     except Exception as exc:
         status = "failed"
         error = f"{type(exc).__name__}: {exc}"
+        error_code = extract_error_code(exc)
         _write_error_traceback(ctx, traceback.format_exc())
         _LOGGER.exception("Run failed")
-        if ctx.fail_fast:
-            report_orch.write_run_summary(
-                ctx=ctx,
-                cfg=cfg,
-                artifacts=artifacts,
-                metrics=metrics,
-                hpo=hpo_summary,
-                status=status,
-                error=error,
-            )
+        report_orch.write_run_summary(
+            ctx=ctx,
+            cfg=cfg,
+            artifacts=artifacts,
+            metrics=metrics,
+            hpo=hpo_summary,
+            status=status,
+            hashes={
+                "config_hash": config_hash,
+                "effective_config_hash": effective_config_hash,
+            },
+            resolution=resolution,
+            protocol=protocol,
+            versions=versions,
+            fallback_events=fallback_events,
+            error=error,
+            error_code=error_code,
+        )
+        if cfg.run.benchmark_mode or ctx.fail_fast:
             raise
+        return 1
 
     if metrics is not None:
         _LOGGER.info("Metrics: %s", metrics)
@@ -675,9 +945,18 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
         metrics=metrics,
         hpo=hpo_summary,
         status=status,
+        hashes={
+            "config_hash": config_hash,
+            "effective_config_hash": effective_config_hash,
+        },
+        resolution=resolution,
+        protocol=protocol,
+        versions=versions,
+        fallback_events=fallback_events,
         error=error,
+        error_code=error_code,
     )
-    return 0 if status == "success" else 1
+    return 0
 
 
 def run_experiment(config_path: Path, *, num_runs: int | None = None) -> int:
@@ -708,9 +987,20 @@ def run_experiment(config_path: Path, *, num_runs: int | None = None) -> int:
         sweep_raw = apply_global_seed(raw, seed=seed, run_name=run_name)
         sweep_cfg = ExperimentConfig.from_dict(sweep_raw)
         _LOGGER.info("Seed sweep run %s/%s: seed=%s name=%s", i, len(seeds), seed, run_name)
-        code = _run_experiment_single(config_path, raw=sweep_raw, cfg=sweep_cfg)
+        try:
+            code = _run_experiment_single(config_path, raw=sweep_raw, cfg=sweep_cfg)
+        except Exception:
+            if cfg.run.benchmark_mode:
+                raise
+            failures += 1
+            continue
         if code != 0:
             failures += 1
+            if cfg.run.benchmark_mode:
+                raise BenchRuntimeError(
+                    "E_BENCH_SWEEP_FAILED",
+                    "seed sweep aborted due to failed run in benchmark_mode",
+                )
 
     if failures:
         _LOGGER.warning("Seed sweep finished with failures: %s/%s", failures, len(seeds))
