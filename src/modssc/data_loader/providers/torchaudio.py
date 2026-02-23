@@ -17,10 +17,20 @@ from modssc.data_loader.providers.common import (
 from modssc.data_loader.types import DatasetIdentity, LoadedDataset, Split
 from modssc.data_loader.uri import ParsedURI
 
-_apply_class_filter = apply_class_filter
 _apply_limits = apply_limits
-_limit_samples = limit_samples
 _normalize_filter = normalize_filter
+
+
+def _apply_class_filter(
+    X: np.ndarray, y: np.ndarray, *, class_filter: list[Any] | None
+) -> tuple[np.ndarray, np.ndarray]:
+    return apply_class_filter(X, y, class_filter=class_filter)
+
+
+def _limit_samples(
+    X: np.ndarray, y: np.ndarray, *, max_samples: int | None, seed: int | None
+) -> tuple[np.ndarray, np.ndarray]:
+    return limit_samples(X, y, max_samples=max_samples, seed=seed)
 
 
 class TorchaudioProvider(BaseProvider):

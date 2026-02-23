@@ -35,7 +35,8 @@ from modssc.inductive.types import DeviceSpec
 logger = logging.getLogger(__name__)
 
 
-_get_torch_x = unwrap_torch_x
+def _get_torch_x(obj: Any):
+    return unwrap_torch_x(obj)
 
 
 def _pairwise_distances_numpy(X: np.ndarray) -> np.ndarray:

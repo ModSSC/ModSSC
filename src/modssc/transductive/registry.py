@@ -105,7 +105,10 @@ get_method_info = make_get_method_info(
     get_method_class=get_method_class,
     method_info_cls=MethodInfo,
 )
-_debug_registry = make_debug_registry(
-    registry=_REGISTRY,
-    ensure_builtins=register_builtin_methods,
-)
+
+
+def _debug_registry():
+    return make_debug_registry(
+        registry=_REGISTRY,
+        ensure_builtins=register_builtin_methods,
+    )()

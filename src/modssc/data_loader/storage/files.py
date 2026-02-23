@@ -16,7 +16,9 @@ from modssc.data_loader.json_utils import to_jsonable
 from modssc.data_loader.numpy_adapter import to_numpy
 from modssc.data_loader.types import LoadedDataset, Split
 
-_jsonable = to_jsonable
+
+def _jsonable(obj: Any) -> Any:
+    return to_jsonable(obj)
 
 
 def _is_str_object_array(arr: np.ndarray) -> bool:
