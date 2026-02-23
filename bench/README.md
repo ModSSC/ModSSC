@@ -34,6 +34,13 @@ python -m bench.main --config bench/configs/experiments/toy_transductive.yaml
 python -m bench.main --config bench/configs/experiments/toy_inductive.yaml --num-runs 5
 ```
 
+Minimal preset (few configs per modality):
+
+```bash
+python -m bench.main --config bench/configs/experiments/minimal/inductive/pseudo_label/text/imdb.yaml
+python -m bench.main --config bench/configs/experiments/minimal/transductive/gcn/graph/cora.yaml
+```
+
 To run the same config on multiple seeds, set `run.seeds` in YAML:
 
 ```yaml
