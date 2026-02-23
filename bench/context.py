@@ -13,6 +13,7 @@ from .utils.io import dump_yaml, write_json
 class RunContext:
     name: str
     seed: int
+    run_id: str
     output_dir: Path
     run_dir: Path
     started_at: str
@@ -25,17 +26,19 @@ class RunContext:
         *,
         name: str,
         seed: int,
+        run_id: str,
         output_dir: str | Path,
         config_path: Path | None,
         fail_fast: bool,
     ) -> RunContext:
         out_root = Path(output_dir).expanduser().resolve()
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        run_dir = out_root / f"{name}-{timestamp}"
+        run_dir = out_root / f"{name}-{run_id}-{timestamp}"
         started_at = datetime.now(timezone.utc).isoformat()
         return cls(
             name=name,
             seed=int(seed),
+            run_id=str(run_id),
             output_dir=out_root,
             run_dir=run_dir,
             started_at=started_at,

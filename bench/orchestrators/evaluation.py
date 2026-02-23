@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import logging
 from collections.abc import Iterable, Mapping
 from time import perf_counter
@@ -14,6 +15,9 @@ from modssc.preprocess.types import PreprocessResult
 from modssc.sampling.result import SamplingResult
 from modssc.views.types import ViewsResult
 
+from ..errors import BenchRuntimeError
+from .slicing import select_rows
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -24,7 +28,10 @@ def _split_data(
     split: str,
 ) -> tuple[Any, Any]:
     if sampling.is_graph():
-        raise ValueError("Inductive evaluation does not support graph sampling")
+        raise BenchRuntimeError(
+            "E_BENCH_EVAL_SPLIT_INVALID",
+            "inductive evaluation does not support graph sampling",
+        )
 
     idx = np.asarray(sampling.indices[split], dtype=np.int64)
     ref = sampling.refs.get(split, "train")
@@ -33,12 +40,18 @@ def _split_data(
         base = pre.dataset.train
     else:
         if pre.dataset.test is None:
-            raise ValueError("Requested test split but dataset has no test")
+            raise BenchRuntimeError(
+                "E_BENCH_EVAL_SPLIT_INVALID",
+                "requested test split but dataset has no test split",
+            )
         base = pre.dataset.test
 
     X = base.X
     y = _labels_for_split(pre, ref, base)
-    return _select_rows(X, idx), _select_rows(y, idx)
+    return (
+        select_rows(X, idx, context=f"evaluation.{split}.X"),
+        select_rows(y, idx, context=f"evaluation.{split}.y"),
+    )
 
 
 def _labels_for_split(pre: PreprocessResult, ref: str, base: Any) -> Any:
@@ -48,49 +61,58 @@ def _labels_for_split(pre: PreprocessResult, ref: str, base: Any) -> Any:
     return base.y
 
 
-def _select_rows(X: Any, idx: np.ndarray) -> Any:
-    if isinstance(X, dict):
-        new_X = {}
-        # Special handling for Graph data
-        if "edge_index" in X:
-            try:
-                import torch
-                from torch_geometric.utils import subgraph
-            except ImportError:
-                pass
-            else:
-                # Align subset device with edge_index to avoid mismatch in subgraph
-                edge_index_in = X["edge_index"]
-                device = edge_index_in.device if hasattr(edge_index_in, "device") else "cpu"
+def _smart_to_torch(x: Any, device: Any) -> Any:
+    if x is None:
+        return None
 
-                subset = torch.as_tensor(idx, dtype=torch.long, device=device)
-
-                # relabel_nodes=True ensures indices map to 0..len(subset)-1
-                # which corresponds to the sliced feature matrices
-                edge_index, _ = subgraph(subset, edge_index_in, relabel_nodes=True)
-                new_X["edge_index"] = edge_index
-
-        for k, v in X.items():
-            if k == "edge_index":
-                continue
-            new_X[k] = _select_rows(v, idx)
-        return new_X
-
-    if is_torch_tensor(X):
-        import importlib
-
-        torch = importlib.import_module("torch")
-        return X[torch.as_tensor(idx, device=X.device, dtype=torch.long)]
-    return X[idx]
-
-
-def _to_torch_like(x: Any, ref: Any) -> Any:
-    if is_torch_tensor(x):
-        return x
-    import importlib
+    if isinstance(x, dict):
+        return {k: _smart_to_torch(v, device) for k, v in x.items()}
 
     torch = importlib.import_module("torch")
-    return torch.as_tensor(np.asarray(x), device=ref.device, dtype=ref.dtype)
+
+    if is_torch_tensor(x):
+        if hasattr(x, "to"):
+            return x.to(device)
+        return x
+
+    x_np = np.asarray(x)
+    if x_np.dtype == np.uint8:
+        return torch.tensor(x_np, device=device, dtype=torch.float32).div_(255.0)
+    dtype = torch.float32 if x_np.dtype == np.float64 else None
+    return torch.as_tensor(x_np, device=device, dtype=dtype)
+
+
+def _array_backend_flags(x: Any) -> tuple[bool, bool]:
+    if is_torch_tensor(x):
+        return True, False
+    if isinstance(x, Mapping):
+        has_torch = False
+        has_numpy = False
+        for value in x.values():
+            child_torch, child_numpy = _array_backend_flags(value)
+            has_torch = has_torch or child_torch
+            has_numpy = has_numpy or child_numpy
+        return has_torch, has_numpy
+    if isinstance(x, (list, tuple, set)):
+        has_torch = False
+        has_numpy = False
+        for value in x:
+            child_torch, child_numpy = _array_backend_flags(value)
+            has_torch = has_torch or child_torch
+            has_numpy = has_numpy or child_numpy
+        return has_torch, has_numpy
+    if isinstance(x, np.ndarray):
+        return False, True
+    return False, False
+
+
+def _is_torch_container(x: Any) -> bool:
+    if is_torch_tensor(x):
+        return True
+    if isinstance(x, Mapping):
+        has_torch, has_numpy = _array_backend_flags(x)
+        return has_torch and not has_numpy
+    return False
 
 
 def _views_for_split(
@@ -99,6 +121,7 @@ def _views_for_split(
     split: str,
     sampling: SamplingResult,
     backend_ref: Any,
+    strict: bool,
 ) -> dict[str, Any]:
     out: dict[str, Any] = {}
     idx = np.asarray(sampling.indices[split], dtype=np.int64)
@@ -109,38 +132,21 @@ def _views_for_split(
     for name, ds in views.views.items():
         base = ds.train if split_ref == "train" else ds.test
         if base is None:
-            raise ValueError("Requested test split but view has no test split")
-        X = _select_rows(base.X, idx)
-        if use_torch and device is not None:
-            X = _smart_to_torch(X, device)
+            raise BenchRuntimeError(
+                "E_BENCH_EVAL_SPLIT_INVALID",
+                f"requested test split but view '{name}' has no test split",
+            )
+        X = select_rows(base.X, idx, context=f"evaluation.views[{name}].{split}")
+        if use_torch:
+            if strict and not _is_torch_container(X):
+                raise BenchRuntimeError(
+                    "E_BENCH_PREPROCESS_TO_TORCH_REQUIRED",
+                    f"view '{name}' is not torch-backed in benchmark_mode",
+                )
+            if not strict and device is not None:
+                X = _smart_to_torch(X, device)
         out[name] = {"X": X}
     return out
-
-
-def _smart_to_torch(x: Any, device: Any) -> Any:
-    """Converts numpy to torch, scaling uint8 to [0,1]."""
-    if x is None:
-        return None
-
-    if isinstance(x, dict):
-        return {k: _smart_to_torch(v, device) for k, v in x.items()}
-
-    import importlib
-
-    torch = importlib.import_module("torch")
-
-    if is_torch_tensor(x):
-        if hasattr(x, "to"):
-            return x.to(device)
-        return x
-
-    x_np = np.asarray(x)
-
-    if x_np.dtype == np.uint8:
-        return torch.tensor(x_np, device=device, dtype=torch.float32).div_(255.0)
-
-    dtype = torch.float32 if x_np.dtype == np.float64 else None
-    return torch.as_tensor(x_np, device=device, dtype=dtype)
 
 
 def _first_torch_device(obj: Any) -> Any | None:
@@ -160,18 +166,12 @@ def _first_torch_device(obj: Any) -> Any | None:
         return None
     params = getattr(obj, "parameters", None)
     if callable(params):
-        try:
-            first_param = next(params(), None)
-        except Exception:
-            first_param = None
+        first_param = next(params(), None)
         if first_param is not None and hasattr(first_param, "device"):
             return first_param.device
     buffers = getattr(obj, "buffers", None)
     if callable(buffers):
-        try:
-            first_buffer = next(buffers(), None)
-        except Exception:
-            first_buffer = None
+        first_buffer = next(buffers(), None)
         if first_buffer is not None and hasattr(first_buffer, "device"):
             return first_buffer.device
     if is_torch_tensor(obj):
@@ -206,50 +206,59 @@ def evaluate_inductive(
     metrics: Iterable[str],
     method_id: str,
     views: ViewsResult | None,
+    strict: bool = False,
 ) -> dict[str, dict[str, float]]:
     start = perf_counter()
-    _LOGGER.info("Evaluation (inductive): splits=%s metrics=%s", list(report_splits), list(metrics))
+    _LOGGER.info(
+        "Evaluation (inductive): splits=%s metrics=%s strict=%s",
+        list(report_splits),
+        list(metrics),
+        bool(strict),
+    )
     results: dict[str, dict[str, float]] = {}
     for split in report_splits:
         X, y = _split_data(pre, sampling, split=split)
 
-        # JIT Convert if method has device spec (indicates torch/deep method)
         m_dev_spec = getattr(method, "device", None)
         dest_dev = getattr(m_dev_spec, "device", None) or (
             m_dev_spec if isinstance(m_dev_spec, str) else None
         )
 
-        # Fallback inspection for torch models if device attr missing
-        if dest_dev is None and hasattr(method, "_bundle") and method._bundle is not None:
-            try:
-                mdl = method._bundle.model
-                import torch
-
-                if isinstance(mdl, torch.nn.Module):
-                    p = next(mdl.parameters(), None)
-                    if p is not None:
-                        dest_dev = p.device
-            except Exception as e:
-                _LOGGER.debug("Failed to infer device from model: %s", e)
-
         if dest_dev is None and getattr(method, "_backend", None) == "torch":
             dest_dev = _infer_method_device(method)
 
         if dest_dev is not None:
-            X = _smart_to_torch(X, dest_dev)
+            if strict and not _is_torch_container(X):
+                raise BenchRuntimeError(
+                    "E_BENCH_PREPROCESS_TO_TORCH_REQUIRED",
+                    f"evaluation split '{split}' is not torch-backed in benchmark_mode",
+                )
+            if not strict:
+                X = _smart_to_torch(X, dest_dev)
 
         if method_id == "co_training":
             if views is None:
-                raise ValueError("co_training requires views for evaluation")
-            views_payload = _views_for_split(views, split=split, sampling=sampling, backend_ref=X)
+                raise BenchRuntimeError(
+                    "E_BENCH_EVAL_CONTRACT",
+                    "co_training requires views for evaluation",
+                )
+            views_payload = _views_for_split(
+                views,
+                split=split,
+                sampling=sampling,
+                backend_ref=X,
+                strict=strict,
+            )
             data = InductiveDataset(X_l=X, y_l=y, views=views_payload)
             scores = method.predict_proba(data)
         else:
             scores = method.predict_proba(X)
+
         scores_np = to_numpy(scores)
         y_true = labels_1d(y)
         y_pred = predict_labels(scores_np)
         results[split] = compute_metrics(y_true, y_pred, metrics)
+
     _LOGGER.info("Evaluation (inductive) done: duration_s=%.3f", perf_counter() - start)
     return results
 
@@ -279,8 +288,14 @@ def evaluate_transductive(
     for split in report_splits:
         key = f"{split}_mask"
         if key not in masks:
-            raise ValueError(f"Missing mask for split {split!r}")
-        mask = masks[key]
+            raise BenchRuntimeError("E_BENCH_EVAL_CONTRACT", f"missing mask for split '{split}'")
+        mask = np.asarray(masks[key], dtype=bool)
+        if mask.shape[0] != y_true.shape[0]:
+            raise BenchRuntimeError(
+                "E_BENCH_EVAL_CONTRACT",
+                f"mask size mismatch for split '{split}': {mask.shape[0]} vs {y_true.shape[0]}",
+            )
         results[split] = compute_metrics(y_true[mask], y_pred_all[mask], metrics)
+
     _LOGGER.info("Evaluation (transductive) done: duration_s=%.3f", perf_counter() - start)
     return results
