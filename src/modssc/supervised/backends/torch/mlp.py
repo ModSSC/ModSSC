@@ -6,11 +6,10 @@ from time import perf_counter
 from typing import Any
 
 from modssc.supervised.backends.torch.common import (
-    TorchArgmaxPredictMixin,
-    TorchScoresProbaMixin,
+    TorchScoresClassifierBase,
     make_activation,
 )
-from modssc.supervised.base import BaseSupervisedClassifier, FitResult
+from modssc.supervised.base import FitResult
 from modssc.supervised.errors import SupervisedValidationError
 from modssc.supervised.optional import optional_import
 
@@ -34,7 +33,7 @@ def _normalize_hidden_sizes(hidden_sizes: Any) -> tuple[int, ...]:
 _make_activation = make_activation
 
 
-class TorchMLPClassifier(TorchArgmaxPredictMixin, TorchScoresProbaMixin, BaseSupervisedClassifier):
+class TorchMLPClassifier(TorchScoresClassifierBase):
     """Torch MLP classifier for vector features."""
 
     classifier_id = "mlp"

@@ -1,7 +1,11 @@
 import numpy as np
 import pytest
 
-from modssc.supervised.base import BaseSupervisedClassifier
+from modssc.supervised.base import (
+    BaseSupervisedClassifier,
+    PredictScoresFromProbaMixin,
+    SupportsProbaMixin,
+)
 from modssc.supervised.errors import NotSupportedError
 
 
@@ -130,3 +134,19 @@ def test_base_classifier_set_classes():
     y = ["a", "b", "a"]
     y_enc = clf.fit(None, y)
     np.testing.assert_array_equal(y_enc, np.array([0, 1, 0]))
+
+
+def test_supports_proba_mixin_returns_true():
+    class Clf(SupportsProbaMixin):
+        pass
+
+    assert Clf().supports_proba is True
+
+
+def test_predict_scores_from_proba_mixin_delegates():
+    class Clf(PredictScoresFromProbaMixin):
+        def predict_proba(self, X):  # noqa: ARG002
+            return np.array([[0.2, 0.8]], dtype=np.float32)
+
+    scores = Clf().predict_scores(None)
+    np.testing.assert_array_equal(scores, np.array([[0.2, 0.8]], dtype=np.float32))

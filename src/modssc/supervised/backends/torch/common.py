@@ -4,7 +4,11 @@ from typing import Any
 
 import numpy as np
 
-from modssc.supervised.base import PredictScoresFromProbaMixin, SupportsProbaMixin
+from modssc.supervised.base import (
+    BaseSupervisedClassifier,
+    PredictScoresFromProbaMixin,
+    SupportsProbaMixin,
+)
 from modssc.supervised.errors import SupervisedValidationError
 
 
@@ -69,6 +73,50 @@ class TorchNumpyProbaPredictMixin:
                 return idx.numpy()
             return np.asarray(idx)
         return np.asarray(probs).argmax(axis=1)
+
+
+class TorchScoresClassifierBase(
+    TorchArgmaxPredictMixin,
+    TorchScoresProbaMixin,
+    BaseSupervisedClassifier,
+):
+    """Explicit torch classifier base for score/proba/predict behavior."""
+
+    @property
+    def supports_proba(self) -> bool:
+        return True
+
+    def predict(self, X: Any):
+        return TorchArgmaxPredictMixin.predict(self, X)
+
+    def predict_proba(self, X: Any):
+        return TorchScoresProbaMixin.predict_proba(self, X)
+
+    def predict_scores(self, X: Any):
+        return PredictScoresFromProbaMixin.predict_scores(self, X)
+
+
+class TorchNumpyProbaClassifierBase(
+    TorchNumpyProbaPredictMixin,
+    TorchSupportsProbaMixin,
+    BaseSupervisedClassifier,
+):
+    """Explicit torch classifier base using numpy/tensor predict_proba outputs."""
+
+    @property
+    def supports_proba(self) -> bool:
+        return True
+
+    def predict(self, X: Any):
+        return TorchNumpyProbaPredictMixin.predict(self, X)
+
+
+class TorchSupportsProbaClassifierBase(BaseSupervisedClassifier):
+    """Explicit torch classifier base for implementations that support probabilities."""
+
+    @property
+    def supports_proba(self) -> bool:
+        return True
 
 
 def make_softmax_scores_method(*, torch_getter):

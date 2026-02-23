@@ -6,11 +6,10 @@ from time import perf_counter
 from typing import Any
 
 from modssc.supervised.backends.torch.common import (
-    TorchArgmaxPredictMixin,
-    TorchScoresProbaMixin,
+    TorchScoresClassifierBase,
     make_activation,
 )
-from modssc.supervised.base import BaseSupervisedClassifier, FitResult
+from modssc.supervised.base import FitResult
 from modssc.supervised.errors import SupervisedValidationError
 from modssc.supervised.optional import optional_import
 
@@ -94,9 +93,7 @@ class _AudioCNN(torch.nn.Module):
         return self.head(x)
 
 
-class TorchAudioCNNClassifier(
-    TorchArgmaxPredictMixin, TorchScoresProbaMixin, BaseSupervisedClassifier
-):
+class TorchAudioCNNClassifier(TorchScoresClassifierBase):
     """Small 1D CNN for audio tensors (N, C, L)."""
 
     classifier_id = "audio_cnn"

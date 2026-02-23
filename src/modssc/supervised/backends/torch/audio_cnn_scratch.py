@@ -6,10 +6,9 @@ from typing import Any
 import numpy as np
 
 from modssc.supervised.backends.torch.common import (
-    TorchNumpyProbaPredictMixin,
-    TorchSupportsProbaMixin,
+    TorchNumpyProbaClassifierBase,
 )
-from modssc.supervised.base import BaseSupervisedClassifier, FitResult
+from modssc.supervised.base import FitResult
 from modssc.supervised.optional import optional_import
 from modssc.supervised.utils import seed_everything
 
@@ -22,9 +21,7 @@ def _torch():
     )
 
 
-class TorchAudioCNNClassifier(
-    TorchNumpyProbaPredictMixin, TorchSupportsProbaMixin, BaseSupervisedClassifier
-):
+class TorchAudioCNNClassifier(TorchNumpyProbaClassifierBase):
     """Simple 2D CNN for Audio Spectrograms (Tabula Rasa context)."""
 
     classifier_id = "audio_cnn_scratch"

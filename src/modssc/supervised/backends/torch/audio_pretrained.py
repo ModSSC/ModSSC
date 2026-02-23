@@ -4,8 +4,8 @@ import logging
 from time import perf_counter
 from typing import Any
 
-from modssc.supervised.backends.torch.common import TorchArgmaxPredictMixin, TorchScoresProbaMixin
-from modssc.supervised.base import BaseSupervisedClassifier, FitResult
+from modssc.supervised.backends.torch.common import TorchScoresClassifierBase
+from modssc.supervised.base import FitResult
 from modssc.supervised.errors import SupervisedValidationError
 from modssc.supervised.optional import optional_import
 
@@ -49,9 +49,7 @@ def _extract_features(model: Any, waveforms: Any, torch) -> Any:
     raise SupervisedValidationError("Audio backbone returned invalid feature shape.")
 
 
-class TorchAudioPretrainedClassifier(
-    TorchArgmaxPredictMixin, TorchScoresProbaMixin, BaseSupervisedClassifier
-):
+class TorchAudioPretrainedClassifier(TorchScoresClassifierBase):
     """Torchaudio pretrained model with a linear head."""
 
     classifier_id = "audio_pretrained"

@@ -4,8 +4,8 @@ import logging
 from time import perf_counter
 from typing import Any
 
-from modssc.supervised.backends.torch.common import TorchArgmaxPredictMixin, TorchScoresProbaMixin
-from modssc.supervised.base import BaseSupervisedClassifier, FitResult
+from modssc.supervised.backends.torch.common import TorchScoresClassifierBase
+from modssc.supervised.base import FitResult
 from modssc.supervised.errors import SupervisedValidationError
 from modssc.supervised.optional import optional_import
 
@@ -16,9 +16,7 @@ def _torch():
     return optional_import("torch", extra="supervised-torch", feature="supervised:logreg")
 
 
-class TorchLogRegClassifier(
-    TorchArgmaxPredictMixin, TorchScoresProbaMixin, BaseSupervisedClassifier
-):
+class TorchLogRegClassifier(TorchScoresClassifierBase):
     """Torch logistic regression (linear softmax)."""
 
     classifier_id = "logreg"

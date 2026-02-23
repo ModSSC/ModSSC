@@ -3,8 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from modssc.supervised.backends.torch.common import TorchSupportsProbaMixin
-from modssc.supervised.base import BaseSupervisedClassifier, FitResult
+from modssc.supervised.backends.torch.common import TorchSupportsProbaClassifierBase
+from modssc.supervised.base import FitResult
 from modssc.supervised.optional import optional_import
 from modssc.supervised.utils import seed_everything
 
@@ -49,7 +49,7 @@ def _normalize_hidden_sizes(hidden_sizes: Any) -> tuple[int, ...] | None:
     raise ValueError("hidden_sizes must be an int or a sequence of ints.")
 
 
-class TorchGraphSAGEClassifier(TorchSupportsProbaMixin, BaseSupervisedClassifier):
+class TorchGraphSAGEClassifier(TorchSupportsProbaClassifierBase):
     """Inductive GraphSAGE classifier using neighbor sampling (Tabula Rasa context)."""
 
     classifier_id = "graphsage_inductive"

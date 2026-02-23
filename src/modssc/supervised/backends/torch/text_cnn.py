@@ -6,11 +6,10 @@ from time import perf_counter
 from typing import Any
 
 from modssc.supervised.backends.torch.common import (
-    TorchArgmaxPredictMixin,
-    TorchScoresProbaMixin,
+    TorchScoresClassifierBase,
     make_activation,
 )
-from modssc.supervised.base import BaseSupervisedClassifier, FitResult
+from modssc.supervised.base import FitResult
 from modssc.supervised.errors import SupervisedValidationError
 from modssc.supervised.optional import optional_import
 
@@ -68,9 +67,7 @@ class _TextCNN(torch.nn.Module):
         return self.fc(merged)
 
 
-class TorchTextCNNClassifier(
-    TorchArgmaxPredictMixin, TorchScoresProbaMixin, BaseSupervisedClassifier
-):
+class TorchTextCNNClassifier(TorchScoresClassifierBase):
     """Text CNN for sequence embeddings (N, L, D) or (N, D, L)."""
 
     classifier_id = "text_cnn"

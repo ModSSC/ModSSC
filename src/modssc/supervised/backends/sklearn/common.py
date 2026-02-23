@@ -6,8 +6,6 @@ import numpy as np
 
 from modssc.supervised.base import (
     BaseSupervisedClassifier,
-    PredictScoresFromProbaMixin,
-    SupportsProbaMixin,
 )
 from modssc.supervised.utils import ensure_2d
 
@@ -47,24 +45,26 @@ def predict_decoded_labels(
     return classifier._decode(np.asarray(pred_enc, dtype=np.int64))
 
 
-class _SklearnPredictDecodedMixin:
+class _SklearnDecodedClassifierBase(BaseSupervisedClassifier):
     def predict(self, X: Any) -> np.ndarray:
         model = getattr(self, "_model", None)
         return predict_decoded_labels(self, model=model, X=X)
 
 
-class SklearnProbaClassifier(
-    SupportsProbaMixin,
-    PredictScoresFromProbaMixin,
-    _SklearnPredictDecodedMixin,
-    BaseSupervisedClassifier,
-):
+class SklearnProbaClassifier(_SklearnDecodedClassifierBase):
+    @property
+    def supports_proba(self) -> bool:
+        return True
+
+    def predict_scores(self, X: Any) -> np.ndarray:
+        return self.predict_proba(X)
+
     def predict_proba(self, X: Any) -> np.ndarray:
         model = getattr(self, "_model", None)
         return predict_proba_float32(model, X)
 
 
-class SklearnDecisionFunctionClassifier(_SklearnPredictDecodedMixin, BaseSupervisedClassifier):
+class SklearnDecisionFunctionClassifier(_SklearnDecodedClassifierBase):
     def predict_scores(self, X: Any) -> np.ndarray:
         model = getattr(self, "_model", None)
         return decision_scores_float32(model, X)

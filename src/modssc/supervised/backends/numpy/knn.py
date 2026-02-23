@@ -9,8 +9,6 @@ import numpy as np
 from modssc.supervised.base import (
     BaseSupervisedClassifier,
     FitResult,
-    PredictScoresFromProbaMixin,
-    SupportsProbaMixin,
 )
 from modssc.supervised.errors import SupervisedValidationError
 from modssc.supervised.utils import ensure_2d
@@ -18,7 +16,7 @@ from modssc.supervised.utils import ensure_2d
 logger = logging.getLogger(__name__)
 
 
-class NumpyKNNClassifier(SupportsProbaMixin, PredictScoresFromProbaMixin, BaseSupervisedClassifier):
+class NumpyKNNClassifier(BaseSupervisedClassifier):
     """Pure numpy kNN classifier.
 
     Notes
@@ -29,6 +27,10 @@ class NumpyKNNClassifier(SupportsProbaMixin, PredictScoresFromProbaMixin, BaseSu
 
     classifier_id = "knn"
     backend = "numpy"
+
+    @property
+    def supports_proba(self) -> bool:
+        return True
 
     def __init__(
         self,
@@ -149,6 +151,9 @@ class NumpyKNNClassifier(SupportsProbaMixin, PredictScoresFromProbaMixin, BaseSu
         row_sum[row_sum == 0.0] = 1.0
         out = out / row_sum
         return out
+
+    def predict_scores(self, X: Any) -> np.ndarray:
+        return self.predict_proba(X)
 
     def predict(self, X: Any) -> np.ndarray:
         proba = self.predict_proba(X)

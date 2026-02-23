@@ -6,12 +6,11 @@ from time import perf_counter
 from typing import Any
 
 from modssc.supervised.backends.torch.common import (
-    TorchArgmaxPredictMixin,
-    TorchScoresProbaMixin,
+    TorchScoresClassifierBase,
     make_activation,
     make_softmax_scores_method,
 )
-from modssc.supervised.base import BaseSupervisedClassifier, FitResult
+from modssc.supervised.base import FitResult
 from modssc.supervised.errors import SupervisedValidationError
 from modssc.supervised.optional import optional_import
 
@@ -94,9 +93,7 @@ class _ImageCNN(torch.nn.Module):
         return self.head(x)
 
 
-class TorchImageCNNClassifier(
-    TorchArgmaxPredictMixin, TorchScoresProbaMixin, BaseSupervisedClassifier
-):
+class TorchImageCNNClassifier(TorchScoresClassifierBase):
     """Small CNN for image tensors (N, C, H, W)."""
 
     classifier_id = "image_cnn"

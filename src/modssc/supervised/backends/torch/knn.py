@@ -4,8 +4,8 @@ import logging
 from time import perf_counter
 from typing import Any, Literal
 
-from modssc.supervised.backends.torch.common import TorchSupportsProbaMixin
-from modssc.supervised.base import BaseSupervisedClassifier, FitResult
+from modssc.supervised.backends.torch.common import TorchSupportsProbaClassifierBase
+from modssc.supervised.base import FitResult
 from modssc.supervised.errors import SupervisedValidationError
 from modssc.supervised.optional import optional_import
 
@@ -16,7 +16,7 @@ def _torch():
     return optional_import("torch", extra="supervised-torch", feature="supervised:knn")
 
 
-class TorchKNNClassifier(TorchSupportsProbaMixin, BaseSupervisedClassifier):
+class TorchKNNClassifier(TorchSupportsProbaClassifierBase):
     """Torch kNN classifier (supports CPU/GPU depending on tensors device)."""
 
     classifier_id = "knn"

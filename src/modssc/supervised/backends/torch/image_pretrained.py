@@ -6,11 +6,10 @@ from time import perf_counter
 from typing import Any
 
 from modssc.supervised.backends.torch.common import (
-    TorchArgmaxPredictMixin,
-    TorchScoresProbaMixin,
+    TorchScoresClassifierBase,
     make_softmax_scores_method,
 )
-from modssc.supervised.base import BaseSupervisedClassifier, FitResult
+from modssc.supervised.base import FitResult
 from modssc.supervised.errors import SupervisedValidationError
 from modssc.supervised.optional import optional_import
 
@@ -152,9 +151,7 @@ def _load_model(model_name: str, weights: Any):
     return model_fn(**kwargs)
 
 
-class TorchImagePretrainedClassifier(
-    TorchArgmaxPredictMixin, TorchScoresProbaMixin, BaseSupervisedClassifier
-):
+class TorchImagePretrainedClassifier(TorchScoresClassifierBase):
     """Torchvision pretrained image classifier (fine-tunable)."""
 
     classifier_id = "image_pretrained"

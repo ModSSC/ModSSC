@@ -6,10 +6,9 @@ from typing import Any
 import numpy as np
 
 from modssc.supervised.backends.torch.common import (
-    TorchNumpyProbaPredictMixin,
-    TorchSupportsProbaMixin,
+    TorchNumpyProbaClassifierBase,
 )
-from modssc.supervised.base import BaseSupervisedClassifier, FitResult
+from modssc.supervised.base import FitResult
 from modssc.supervised.optional import optional_import
 from modssc.supervised.utils import seed_everything
 
@@ -20,9 +19,7 @@ def _torch():
     return optional_import("torch", extra="supervised-torch", feature="supervised:lstm_scratch")
 
 
-class TorchLSTMClassifier(
-    TorchNumpyProbaPredictMixin, TorchSupportsProbaMixin, BaseSupervisedClassifier
-):
+class TorchLSTMClassifier(TorchNumpyProbaClassifierBase):
     """LSTM classifier for token sequence features (Tabula Rasa context)."""
 
     classifier_id = "lstm_scratch"
