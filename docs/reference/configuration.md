@@ -421,6 +421,6 @@ evaluation:
   <li id="source-23"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/hpo/samplers.py"><code>src/modssc/hpo/samplers.py</code></a></li>
   <li id="source-24"><a href="https://github.com/ModSSC/ModSSC/blob/main/bench/configs/experiments/toy_inductive.yaml"><code>bench/configs/experiments/toy_inductive.yaml</code></a></li>
   <li id="source-25"><a href="https://github.com/ModSSC/ModSSC/blob/main/bench/configs/experiments/toy_transductive.yaml"><code>bench/configs/experiments/toy_transductive.yaml</code></a></li>
-  <li id="source-26"><a href="https://github.com/ModSSC/ModSSC/blob/main/bench/configs/experiments/best/inductive/softmatch/text/ag_news.yaml"><code>bench/configs/experiments/best/inductive/softmatch/text/ag_news.yaml</code></a></li>
+  <li id="source-26"><a href="https://github.com/ModSSC/ModSSC/blob/main/bench/configs/experiments/minimal/inductive/pseudo_label/text/imdb.yaml"><code>bench/configs/experiments/minimal/inductive/pseudo_label/text/imdb.yaml</code></a></li>
 </ol>
 </details>

@@ -78,7 +78,7 @@ The view plan schema is defined in [`src/modssc/views/plan.py`](https://github.c
   <li id="source-3"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/inductive/methods/co_training.py"><code>src/modssc/inductive/methods/co_training.py</code></a></li>
   <li id="source-4"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/inductive/types.py"><code>src/modssc/inductive/types.py</code></a></li>
   <li id="source-5"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/preprocess/plan.py"><code>src/modssc/preprocess/plan.py</code></a></li>
-  <li id="source-6"><a href="https://github.com/ModSSC/ModSSC/blob/main/bench/configs/experiments/best/inductive/co_training/text/imdb.yaml"><code>bench/configs/experiments/best/inductive/co_training/text/imdb.yaml</code></a></li>
+  <li id="source-6"><a href="https://github.com/ModSSC/ModSSC/blob/main/bench/configs/experiments/minimal/inductive/co_training/text/imdb.yaml"><code>bench/configs/experiments/minimal/inductive/co_training/text/imdb.yaml</code></a></li>
   <li id="source-7"><a href="https://github.com/ModSSC/ModSSC/blob/main/bench/schema.py"><code>bench/schema.py</code></a></li>
 </ol>
 </details>
