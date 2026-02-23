@@ -69,8 +69,23 @@ def _safe_read_json(path: Path) -> dict[str, Any]:
     return data
 
 
+class _FingerprintCacheOps:
+    root: Path
+
+    def entry_dir(self, fingerprint: str) -> Path:
+        return self.root / str(fingerprint)
+
+    def exists(self, fingerprint: str) -> bool:
+        return (self.entry_dir(fingerprint) / "manifest.json").exists()
+
+    def list(self) -> list[str]:
+        if not self.root.exists():
+            return []
+        return sorted([p.name for p in self.root.iterdir() if p.is_dir()])
+
+
 @dataclass(frozen=True)
-class GraphCache:
+class GraphCache(_FingerprintCacheOps):
     """Disk cache for constructed graphs.
 
     Optional sharded edge storage:
@@ -87,12 +102,6 @@ class GraphCache:
     @classmethod
     def default(cls) -> GraphCache:
         return cls(root=default_cache_dir())
-
-    def entry_dir(self, fingerprint: str) -> Path:
-        return self.root / str(fingerprint)
-
-    def exists(self, fingerprint: str) -> bool:
-        return (self.entry_dir(fingerprint) / "manifest.json").exists()
 
     def _clear_entry_dir(self, d: Path) -> None:
         if not d.exists():
@@ -244,11 +253,6 @@ class GraphCache:
         )
         return graph, manifest
 
-    def list(self) -> list[str]:
-        if not self.root.exists():
-            return []
-        return sorted([p.name for p in self.root.iterdir() if p.is_dir()])
-
     def purge(self) -> int:
         if not self.root.exists():
             return 0
@@ -261,18 +265,12 @@ class GraphCache:
 
 
 @dataclass(frozen=True)
-class ViewsCache:
+class ViewsCache(_FingerprintCacheOps):
     root: Path
 
     @classmethod
     def default(cls) -> ViewsCache:
         return cls(root=default_views_cache_dir())
-
-    def entry_dir(self, fingerprint: str) -> Path:
-        return self.root / str(fingerprint)
-
-    def exists(self, fingerprint: str) -> bool:
-        return (self.entry_dir(fingerprint) / "manifest.json").exists()
 
     def save(
         self,
@@ -324,8 +322,3 @@ class ViewsCache:
         meta = dict(manifest.get("meta", {}))
         views = DatasetViews(views=views_dict, y=np.asarray(y), masks=dict(masks), meta=meta)
         return views, manifest
-
-    def list(self) -> list[str]:
-        if not self.root.exists():
-            return []
-        return sorted([p.name for p in self.root.iterdir() if p.is_dir()])

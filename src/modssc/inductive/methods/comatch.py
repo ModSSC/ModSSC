@@ -10,6 +10,7 @@ from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.deep_utils import (
+    TorchBundlePredictMixin,
     concat_data,
     cycle_batch_indices,
     cycle_batches,
@@ -17,6 +18,7 @@ from modssc.inductive.methods.deep_utils import (
     ensure_model_bundle,
     ensure_model_device,
     num_batches,
+    one_hot_labels,
 )
 from modssc.inductive.methods.utils import (
     detect_backend,
@@ -90,11 +92,7 @@ def _contrastive_loss(feats_s0: Any, feats_s1: Any, q: Any, *, temperature: floa
     return -(torch.log(sim + 1e-7) * q).sum(dim=1).mean()
 
 
-def _one_hot(labels: Any, *, n_classes: int) -> Any:
-    torch = optional_import("torch", extra="inductive-torch")
-    return torch.nn.functional.one_hot(labels.to(torch.int64), num_classes=int(n_classes)).to(
-        dtype=torch.float32
-    )
+_one_hot = one_hot_labels
 
 
 @dataclass(frozen=True)
@@ -120,7 +118,7 @@ class CoMatchSpec:
     detach_target: bool = True
 
 
-class CoMatchMethod(InductiveMethod):
+class CoMatchMethod(TorchBundlePredictMixin, InductiveMethod):
     """CoMatch with memory-smoothed pseudo-labels and contrastive graph loss (torch-only)."""
 
     info = MethodInfo(
@@ -582,58 +580,3 @@ class CoMatchMethod(InductiveMethod):
         self._backend = backend
         logger.info("Finished %s.fit in %.3fs", self.info.method_id, perf_counter() - start)
         return self
-
-    def predict_proba(self, X: Any) -> Any:
-        if self._bundle is None:
-            raise RuntimeError("Model is not fitted yet. Call fit() first.")
-        backend = self._backend or detect_backend(X)
-        if backend != "torch":
-            raise InductiveValidationError("predict_proba requires torch tensors.")
-        torch = optional_import("torch", extra="inductive-torch")
-
-        # Support Dict or Tensor
-        if not isinstance(X, torch.Tensor) and not isinstance(X, dict):
-            raise InductiveValidationError("predict_proba requires torch.Tensor or dict inputs.")
-
-        model = self._bundle.model
-        was_training = model.training
-        model.eval()
-
-        # Batched inference
-        batch_size = int(self.spec.batch_size)
-        from .deep_utils import extract_logits, slice_data
-
-        n_samples = int(X["x"].shape[0]) if isinstance(X, dict) else int(X.shape[0])
-
-        all_logits = []
-        with torch.no_grad():
-            for start in range(0, n_samples, batch_size):
-                end = min(start + batch_size, n_samples)
-                if isinstance(X, dict):
-                    idx = torch.arange(start, end, device=X["x"].device)
-                    batch_X = slice_data(X, idx)
-                else:
-                    batch_X = X[start:end]
-
-                logits_batch = extract_logits(model(batch_X))
-                if int(logits_batch.ndim) != 2:
-                    raise InductiveValidationError("Model logits must be 2D (batch, classes).")
-                all_logits.append(logits_batch)
-
-            if not all_logits:
-                # Handle empty case
-                logits = torch.empty(
-                    (0, 0), device=X["x"].device if isinstance(X, dict) else X.device
-                )
-            else:
-                logits = torch.cat(all_logits, dim=0)
-
-            probs = torch.softmax(logits, dim=1)
-
-        if was_training:
-            model.train()
-        return probs
-
-    def predict(self, X: Any) -> Any:
-        proba = self.predict_proba(X)
-        return proba.argmax(dim=1)

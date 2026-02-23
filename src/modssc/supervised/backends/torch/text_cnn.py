@@ -5,7 +5,11 @@ from collections.abc import Iterable
 from time import perf_counter
 from typing import Any
 
-from modssc.supervised.base import BaseSupervisedClassifier, FitResult
+from modssc.supervised.backends.torch.common import (
+    TorchScoresClassifierBase,
+    make_activation,
+)
+from modssc.supervised.base import FitResult
 from modssc.supervised.errors import SupervisedValidationError
 from modssc.supervised.optional import optional_import
 
@@ -16,14 +20,7 @@ def _torch():
     return optional_import("torch", extra="supervised-torch", feature="supervised:text_cnn")
 
 
-def _make_activation(name: str, torch):
-    if name == "relu":
-        return torch.nn.ReLU()
-    if name == "gelu":
-        return torch.nn.GELU()
-    if name == "tanh":
-        return torch.nn.Tanh()
-    raise SupervisedValidationError(f"Unknown activation: {name!r}")
+_make_activation = make_activation
 
 
 torch = _torch()
@@ -70,7 +67,7 @@ class _TextCNN(torch.nn.Module):
         return self.fc(merged)
 
 
-class TorchTextCNNClassifier(BaseSupervisedClassifier):
+class TorchTextCNNClassifier(TorchScoresClassifierBase):
     """Text CNN for sequence embeddings (N, L, D) or (N, D, L)."""
 
     classifier_id = "text_cnn"
@@ -104,10 +101,6 @@ class TorchTextCNNClassifier(BaseSupervisedClassifier):
         self._model: Any | None = None
         self._classes_t: Any | None = None
         self._kernel_sizes: tuple[int, ...] | None = None
-
-    @property
-    def supports_proba(self) -> bool:
-        return True
 
     def _prepare_X(self, X: Any, torch) -> Any:
         if not isinstance(X, torch.Tensor):
@@ -243,16 +236,3 @@ class TorchTextCNNClassifier(BaseSupervisedClassifier):
         with torch.no_grad():
             logits = self._model(X3.to(dtype=torch.float32))
             return torch.softmax(logits, dim=1)
-
-    def predict_scores(self, X: Any):
-        return self._scores(X)
-
-    def predict_proba(self, X: Any):
-        return self._scores(X)
-
-    def predict(self, X: Any):
-        if self._classes_t is None:
-            raise RuntimeError("Model is not fitted")
-        scores = self._scores(X)
-        idx = scores.argmax(dim=1)
-        return self._classes_t[idx]

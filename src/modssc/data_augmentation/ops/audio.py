@@ -9,6 +9,7 @@ from ..registry import register_op
 from ..types import AugmentationContext, Modality
 from ..utils import is_torch_tensor
 from .base import AugmentationOp
+from .common import apply_gaussian_noise
 
 
 @register_op("audio.add_noise")
@@ -21,22 +22,12 @@ class AddNoise(AugmentationOp):
     std: float = 0.005
 
     def apply(self, x: Any, *, rng: np.random.Generator, ctx: AugmentationContext) -> Any:  # noqa: ARG002
-        std = float(self.std)
-        if std < 0:
-            raise ValueError("std must be >= 0")
-        if std == 0:
-            return x
-        if is_torch_tensor(x):
-            import importlib
-
-            torch = importlib.import_module("torch")
-            seed = int(rng.integers(0, 1 << 31))
-            gen = torch.Generator(device=x.device).manual_seed(seed)
-            noise = torch.randn(x.shape, generator=gen, device=x.device, dtype=x.dtype) * std
-            return x + noise
-        arr = np.asarray(x)
-        noise = rng.normal(0.0, std, size=arr.shape).astype(arr.dtype, copy=False)
-        return arr + noise
+        return apply_gaussian_noise(
+            x,
+            std=float(self.std),
+            rng=rng,
+            is_torch_tensor_fn=is_torch_tensor,
+        )
 
 
 @register_op("audio.time_shift")

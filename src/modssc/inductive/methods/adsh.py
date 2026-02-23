@@ -10,6 +10,7 @@ from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.deep_utils import (
+    ArgmaxPredictMixin,
     concat_data,
     cycle_batch_indices,
     cycle_batches,
@@ -120,7 +121,7 @@ class ADSHSpec:
     majority_class: int | None = None
 
 
-class ADSHMethod(InductiveMethod):
+class ADSHMethod(ArgmaxPredictMixin, InductiveMethod):
     """ADSH adaptive thresholding for class-imbalanced SSL (torch-only)."""
 
     info = MethodInfo(
@@ -388,7 +389,3 @@ class ADSHMethod(InductiveMethod):
         if was_training:
             model.train()
         return proba
-
-    def predict(self, X: Any) -> Any:
-        proba = self.predict_proba(X)
-        return proba.argmax(dim=1)

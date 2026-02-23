@@ -324,6 +324,88 @@ def test_slice_data_dict_with_and_without_pyg(monkeypatch):
     assert "edge_index" not in out2
 
 
+def test_sharpen_probs():
+    probs = torch.tensor([[0.5, 0.5]], dtype=torch.float32)
+    out_identity = deep_utils.sharpen_probs(probs, temperature=1.0)
+    assert torch.equal(out_identity, probs)
+
+    out = deep_utils.sharpen_probs(probs, temperature=0.5)
+    assert out.shape == probs.shape
+    assert torch.allclose(out.sum(dim=1), torch.ones((1,), dtype=probs.dtype))
+
+    with pytest.raises(InductiveValidationError, match="temperature must be > 0"):
+        deep_utils.sharpen_probs(probs, temperature=0.0)
+
+
+def test_predict_proba_from_bundle_tensor_and_dict_paths():
+    model = SimpleNet()
+    bundle = TorchModelBundle(model=model, optimizer=torch.optim.SGD(model.parameters(), lr=0.1))
+
+    model.train()
+    X = torch.zeros((3, 2), dtype=torch.float32)
+    proba = deep_utils.predict_proba_from_bundle(
+        bundle,
+        fitted_backend="torch",
+        X=X,
+        batch_size=2,
+    )
+    assert proba.shape == (3, 2)
+    assert model.training is True
+
+    class _DictModel(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.fc = torch.nn.Linear(2, 2, bias=False)
+
+        def forward(self, x):
+            if isinstance(x, dict):
+                x = x["x"]
+            return self.fc(x)
+
+    dict_model = _DictModel()
+    dict_bundle = TorchModelBundle(
+        model=dict_model,
+        optimizer=torch.optim.SGD(dict_model.parameters(), lr=0.1),
+    )
+    dict_input = {"x": torch.zeros((0, 2), dtype=torch.float32)}
+    proba_empty = deep_utils.predict_proba_from_bundle(
+        dict_bundle,
+        fitted_backend="torch",
+        X=dict_input,
+        batch_size=4,
+    )
+    assert proba_empty.shape == (0, 0)
+
+
+def test_predict_proba_from_bundle_error_paths():
+    with pytest.raises(RuntimeError, match="Model is not fitted yet"):
+        deep_utils.predict_proba_from_bundle(
+            None,
+            fitted_backend="torch",
+            X=torch.zeros((1, 2)),
+            batch_size=1,
+        )
+
+    model = SimpleNet()
+    bundle = TorchModelBundle(model=model, optimizer=torch.optim.SGD(model.parameters(), lr=0.1))
+
+    with pytest.raises(InductiveValidationError, match="predict_proba requires torch tensors"):
+        deep_utils.predict_proba_from_bundle(
+            bundle,
+            fitted_backend=None,
+            X=np.zeros((2, 2), dtype=np.float32),
+            batch_size=2,
+        )
+
+    with pytest.raises(InductiveValidationError, match="predict_proba requires torch.Tensor"):
+        deep_utils.predict_proba_from_bundle(
+            bundle,
+            fitted_backend="torch",
+            X=[[0.0, 1.0]],
+            batch_size=2,
+        )
+
+
 def test_slice_data_dict_with_slice_idx(monkeypatch):
     import sys
     import types
@@ -461,3 +543,16 @@ def test_validate_torch_model_bundle_errors():
 
     with pytest.raises(InductiveValidationError):
         validate_torch_model_bundle(TorchModelBundle(model=base, optimizer=opt, ema_model="bad"))
+
+
+def test_argmax_predict_mixin_default_and_predict():
+    mixin = deep_utils.ArgmaxPredictMixin()
+    with pytest.raises(NotImplementedError):
+        mixin.predict_proba(torch.zeros((1, 2), dtype=torch.float32))
+
+    class _Dummy(deep_utils.ArgmaxPredictMixin):
+        def predict_proba(self, X: torch.Tensor) -> torch.Tensor:
+            return torch.tensor([[0.1, 0.9], [0.8, 0.2]], dtype=torch.float32, device=X.device)
+
+    pred = _Dummy().predict(torch.zeros((2, 3), dtype=torch.float32))
+    assert torch.equal(pred, torch.tensor([1, 0], dtype=torch.int64))

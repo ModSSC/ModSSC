@@ -5,7 +5,10 @@ from typing import Any
 
 import numpy as np
 
-from modssc.supervised.base import BaseSupervisedClassifier, FitResult
+from modssc.supervised.backends.torch.common import (
+    TorchNumpyProbaClassifierBase,
+)
+from modssc.supervised.base import FitResult
 from modssc.supervised.optional import optional_import
 from modssc.supervised.utils import seed_everything
 
@@ -16,7 +19,7 @@ def _torch():
     return optional_import("torch", extra="supervised-torch", feature="supervised:lstm_scratch")
 
 
-class TorchLSTMClassifier(BaseSupervisedClassifier):
+class TorchLSTMClassifier(TorchNumpyProbaClassifierBase):
     """LSTM classifier for token sequence features (Tabula Rasa context)."""
 
     classifier_id = "lstm_scratch"
@@ -51,10 +54,6 @@ class TorchLSTMClassifier(BaseSupervisedClassifier):
         self.max_epochs = int(max_epochs)
 
         self._model: Any | None = None
-
-    @property
-    def supports_proba(self) -> bool:
-        return True
 
     def fit(self, X: Any, y: Any) -> FitResult:
         torch = _torch()
@@ -147,13 +146,6 @@ class TorchLSTMClassifier(BaseSupervisedClassifier):
             n_classes=num_classes,
         )
         return self._fit_result
-
-    def predict(self, X: Any) -> Any:
-        torch = _torch()
-        probs = self.predict_proba(X)
-        if isinstance(probs, np.ndarray):
-            return np.argmax(probs, axis=1)
-        return torch.argmax(probs, dim=1).cpu().numpy()
 
     def predict_proba(self, X: Any) -> Any:
         torch = _torch()

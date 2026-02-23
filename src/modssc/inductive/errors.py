@@ -2,18 +2,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from modssc.dependency_errors import PackageOptionalDependencyMessageMixin
+
 
 @dataclass(frozen=True)
-class OptionalDependencyError(ImportError):
+class OptionalDependencyError(PackageOptionalDependencyMessageMixin, ImportError):
     """Raised when an optional dependency (extra) is required but missing."""
 
     package: str
     extra: str
     message: str | None = None
-
-    def __str__(self) -> str:
-        base = self.message or f"Optional dependency {self.package!r} is required."
-        return f'{base} Install with: pip install "modssc[{self.extra}]"'
 
 
 class InductiveValidationError(ValueError):

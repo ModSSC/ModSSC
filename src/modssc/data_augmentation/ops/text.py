@@ -32,9 +32,19 @@ class Lowercase(AugmentationOp):
         return out if many else out[0]
 
 
+class _PerItemTextOp(AugmentationOp):
+    def _apply_one(self, s: str, *, rng: np.random.Generator) -> str:
+        raise NotImplementedError
+
+    def apply(self, x: Any, *, rng: np.random.Generator, ctx: AugmentationContext) -> Any:  # noqa: ARG002
+        items, many = _as_list(x)
+        out = [self._apply_one(s, rng=rng) for s in items]
+        return out if many else out[0]
+
+
 @register_op("text.word_dropout")
 @dataclass
-class WordDropout(AugmentationOp):
+class WordDropout(_PerItemTextOp):
     """Randomly drop words from whitespace-tokenized text."""
 
     op_id: str = "text.word_dropout"
@@ -53,15 +63,10 @@ class WordDropout(AugmentationOp):
             keep = [tokens[int(rng.integers(0, len(tokens)))]]
         return " ".join(keep)
 
-    def apply(self, x: Any, *, rng: np.random.Generator, ctx: AugmentationContext) -> Any:  # noqa: ARG002
-        items, many = _as_list(x)
-        out = [self._apply_one(s, rng=rng) for s in items]
-        return out if many else out[0]
-
 
 @register_op("text.random_swap")
 @dataclass
-class RandomSwap(AugmentationOp):
+class RandomSwap(_PerItemTextOp):
     """Randomly swap two words N times."""
 
     op_id: str = "text.random_swap"
@@ -79,8 +84,3 @@ class RandomSwap(AugmentationOp):
             j = int(j)
             tokens[i], tokens[j] = tokens[j], tokens[i]
         return " ".join(tokens)
-
-    def apply(self, x: Any, *, rng: np.random.Generator, ctx: AugmentationContext) -> Any:  # noqa: ARG002
-        items, many = _as_list(x)
-        out = [self._apply_one(s, rng=rng) for s in items]
-        return out if many else out[0]

@@ -11,6 +11,7 @@ from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.deep_utils import (
+    ArgmaxPredictMixin,
     cycle_batch_indices,
     cycle_batches,
     ensure_float_tensor,
@@ -195,7 +196,7 @@ class SimCLRv2Spec:
     detach_target: bool = True
 
 
-class SimCLRv2Method(InductiveMethod):
+class SimCLRv2Method(ArgmaxPredictMixin, InductiveMethod):
     """SimCLRv2 pretrain -> fine-tune -> distill (torch-only)."""
 
     info = MethodInfo(
@@ -563,7 +564,3 @@ class SimCLRv2Method(InductiveMethod):
         if was_training:
             model.train()
         return proba
-
-    def predict(self, X: Any) -> Any:
-        proba = self.predict_proba(X)
-        return proba.argmax(dim=1)

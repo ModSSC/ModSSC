@@ -5,6 +5,8 @@ from typing import Literal
 
 import numpy as np
 
+from modssc.seed_utils import mix_seed32 as _derive_seed
+
 from ...errors import GraphValidationError
 from ...optional import optional_import
 from ..backends.faiss_backend import FaissParams, knn_search_faiss
@@ -22,18 +24,6 @@ class AnchorParams:
     method: AnchorMethod = "random"
     candidate_limit: int = 1000
     chunk_size: int = 512
-
-
-def _derive_seed(seed: int, salt: int) -> int:
-    # Deterministic 32-bit mixing (avoid Python's randomized hash).
-    # Implemented with Python ints to get wrap-around semantics without numpy overflow warnings.
-    x = (int(seed) + 0x9E3779B97F4A7C15 + int(salt)) & 0xFFFFFFFFFFFFFFFF
-    x ^= (x >> 30) & 0xFFFFFFFFFFFFFFFF
-    x = (x * 0xBF58476D1CE4E5B9) & 0xFFFFFFFFFFFFFFFF
-    x ^= (x >> 27) & 0xFFFFFFFFFFFFFFFF
-    x = (x * 0x94D049BB133111EB) & 0xFFFFFFFFFFFFFFFF
-    x ^= (x >> 31) & 0xFFFFFFFFFFFFFFFF
-    return int(x & 0xFFFFFFFF)
 
 
 def _choose_anchors(

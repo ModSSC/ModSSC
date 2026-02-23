@@ -9,8 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-import numpy as np
-
+from modssc.data_loader.json_utils import to_jsonable as _jsonable
 from modssc.data_loader.types import DatasetIdentity, LoadedDataset
 
 
@@ -20,34 +19,6 @@ def utc_now_iso() -> str:
 
 def python_version() -> str:
     return sys.version.split()[0]
-
-
-def _jsonable(obj: Any) -> Any:
-    if obj is None:
-        return None
-    if isinstance(obj, (bool, int, float, str)):
-        return obj
-    if isinstance(obj, Path):
-        return str(obj)
-    if isinstance(obj, np.ndarray):
-        return {"__type__": "ndarray", "shape": list(obj.shape), "dtype": str(obj.dtype)}
-    if hasattr(obj, "shape") and hasattr(obj, "dtype"):
-        try:
-            shape = list(obj.shape)
-        except Exception:
-            shape = None
-        return {
-            "__type__": type(obj).__name__,
-            "shape": shape,
-            "dtype": str(getattr(obj, "dtype", "")),
-        }
-    if isinstance(obj, Mapping):
-        return {str(k): _jsonable(v) for k, v in obj.items()}
-    if isinstance(obj, (list, tuple)):
-        if len(obj) > 50:
-            return {"__type__": type(obj).__name__, "len": len(obj)}
-        return [_jsonable(v) for v in obj]
-    return {"__type__": type(obj).__name__}
 
 
 def dataset_summary(ds: LoadedDataset) -> dict[str, Any]:

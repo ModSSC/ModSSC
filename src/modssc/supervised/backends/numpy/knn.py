@@ -6,7 +6,10 @@ from typing import Any, Literal
 
 import numpy as np
 
-from modssc.supervised.base import BaseSupervisedClassifier, FitResult
+from modssc.supervised.base import (
+    BaseSupervisedClassifier,
+    FitResult,
+)
 from modssc.supervised.errors import SupervisedValidationError
 from modssc.supervised.utils import ensure_2d
 
@@ -24,6 +27,10 @@ class NumpyKNNClassifier(BaseSupervisedClassifier):
 
     classifier_id = "knn"
     backend = "numpy"
+
+    @property
+    def supports_proba(self) -> bool:
+        return True
 
     def __init__(
         self,
@@ -45,10 +52,6 @@ class NumpyKNNClassifier(BaseSupervisedClassifier):
 
         self._X_train: np.ndarray | None = None
         self._y_train_enc: np.ndarray | None = None
-
-    @property
-    def supports_proba(self) -> bool:
-        return True
 
     def fit(self, X: Any, y: Any) -> FitResult:
         start = perf_counter()

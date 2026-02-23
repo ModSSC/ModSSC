@@ -1,25 +1,12 @@
 from __future__ import annotations
 
 import json
-import os
-import tempfile
 from pathlib import Path
 
 import numpy as np
 
+from modssc.io_utils import atomic_write_text as _atomic_write_text
 from modssc.sampling.result import SamplingResult
-
-
-def _atomic_write_text(path: Path, text: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(
-        "w", delete=False, dir=str(path.parent), encoding="utf-8"
-    ) as tmp:
-        tmp.write(text)
-        tmp.flush()
-        os.fsync(tmp.fileno())
-        tmp_path = Path(tmp.name)
-    tmp_path.replace(path)
 
 
 def save_split(result: SamplingResult, out_dir: Path, *, overwrite: bool = False) -> Path:

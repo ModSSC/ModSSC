@@ -11,6 +11,7 @@ from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.deep_utils import (
+    ArgmaxPredictMixin,
     concat_data,
     cycle_batches,
     ensure_float_tensor,
@@ -22,6 +23,7 @@ from modssc.inductive.methods.deep_utils import (
     get_torch_device,
     get_torch_len,
     num_batches,
+    one_hot_labels,
     slice_data,
 )
 from modssc.inductive.methods.utils import (
@@ -68,11 +70,7 @@ def _soft_cross_entropy(logits: Any, targets: Any) -> Any:
     return -(targets * log_probs).sum(dim=1).mean()
 
 
-def _one_hot(labels: Any, *, n_classes: int) -> Any:
-    torch = optional_import("torch", extra="inductive-torch")
-    return torch.nn.functional.one_hot(labels.to(torch.int64), num_classes=int(n_classes)).to(
-        dtype=torch.float32
-    )
+_one_hot = one_hot_labels
 
 
 def _output_smearing(labels: Any, *, n_classes: int, std: float, generator: Any) -> Any:
@@ -368,7 +366,7 @@ class TriNetSpec:
     freeze_bn: bool = True
 
 
-class TriNetMethod(InductiveMethod):
+class TriNetMethod(ArgmaxPredictMixin, InductiveMethod):
     """Tri-Net semi-supervised deep learning (torch-only)."""
 
     info = MethodInfo(
@@ -631,7 +629,3 @@ class TriNetMethod(InductiveMethod):
             if was:
                 model.train()
         return avg
-
-    def predict(self, X: Any) -> Any:
-        proba = self.predict_proba(X)
-        return proba.argmax(dim=1)

@@ -22,6 +22,7 @@ from modssc.inductive.methods.utils import (
     predict_scores,
     select_top_per_class,
     select_top_per_class_torch,
+    unwrap_torch_x,
 )
 from modssc.inductive.optional import optional_import
 from modssc.inductive.types import DeviceSpec
@@ -80,14 +81,11 @@ def _view_predict_payload_numpy(value: Any, *, name: str) -> np.ndarray:
     return X
 
 
-def _get_torch_tensor(obj: Any) -> Any:
-    if isinstance(obj, dict) and "x" in obj:
-        return obj["x"]
-    return obj
-
-
 def _is_valid_torch(obj: Any, torch: Any) -> bool:
     return isinstance(obj, torch.Tensor) or (isinstance(obj, dict) and "x" in obj)
+
+
+_get_torch_tensor = unwrap_torch_x
 
 
 def _get_torch_len(obj: Any) -> int:

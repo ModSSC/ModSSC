@@ -5,6 +5,8 @@ from typing import Any
 
 import numpy as np
 
+from modssc.numpy_utils import to_numpy
+
 from .types import Backend
 
 
@@ -18,19 +20,6 @@ def is_torch_tensor(x: Any) -> bool:
         return False
     # Typical tensor attributes
     return hasattr(x, "shape") and hasattr(x, "dtype") and hasattr(x, "device")
-
-
-def to_numpy(x: Any) -> np.ndarray:
-    """Best-effort conversion to numpy (detaches torch tensors)."""
-    if isinstance(x, np.ndarray):
-        return x
-    if hasattr(x, "detach"):
-        x = x.detach()
-    if hasattr(x, "cpu"):
-        x = x.cpu()
-    if hasattr(x, "numpy"):
-        return x.numpy()
-    return np.asarray(x)
 
 
 def _u64_from_bytes(b: bytes) -> int:

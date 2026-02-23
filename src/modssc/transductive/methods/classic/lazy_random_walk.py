@@ -9,6 +9,9 @@ import numpy as np
 
 from modssc.device import resolve_device_name
 from modssc.transductive.base import MethodInfo, TransductiveMethod
+from modssc.transductive.methods.classic.common import (
+    build_affinity_matrix as _build_affinity_matrix,
+)
 from modssc.transductive.methods.utils import DiffusionResult, _validate_graph_inputs, to_numpy
 from modssc.transductive.validation import validate_node_dataset
 
@@ -49,18 +52,6 @@ def _encode_binary(
     y_enc[y == classes[0]] = -1.0
     y_enc[y == classes[1]] = 1.0
     return y_enc, classes
-
-
-def _build_affinity_matrix(
-    *, n_nodes: int, edge_index: np.ndarray, edge_weight: np.ndarray
-) -> np.ndarray:
-    W = np.zeros((n_nodes, n_nodes), dtype=np.float32)
-    src = edge_index[0]
-    dst = edge_index[1]
-    np.add.at(W, (dst, src), edge_weight)
-    W = 0.5 * (W + W.T)
-    np.fill_diagonal(W, 0.0)
-    return W
 
 
 def lazy_random_walk_numpy(

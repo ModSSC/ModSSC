@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 
+from modssc.numpy_utils import to_numpy as as_numpy
 from modssc.supervised.errors import SupervisedValidationError
 from modssc.supervised.optional import optional_import
 
@@ -35,19 +36,6 @@ def seed_everything(seed: int, *, deterministic: bool = True) -> None:
         if hasattr(torch.backends, "cudnn"):
             torch.backends.cudnn.deterministic = True
             torch.backends.cudnn.benchmark = False
-
-
-def as_numpy(x: Any) -> np.ndarray:
-    """Convert common array-likes (numpy, torch, lists) to numpy without copying when possible."""
-    if isinstance(x, np.ndarray):
-        return x
-    if hasattr(x, "detach"):
-        x = x.detach()
-    if hasattr(x, "cpu"):
-        x = x.cpu()
-    if hasattr(x, "numpy"):
-        return x.numpy()
-    return np.asarray(x)
 
 
 def ensure_2d(X: Any) -> np.ndarray:

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from modssc.dependency_errors import MissingExtraErrorMessageMixin
+
 
 class DataLoaderError(RuntimeError):
     """Base error for modssc.data_loader."""
@@ -23,18 +25,11 @@ class ProviderNotFoundError(DataLoaderError):
 
 
 @dataclass(frozen=True)
-class OptionalDependencyError(DataLoaderError):
+class OptionalDependencyError(MissingExtraErrorMessageMixin, DataLoaderError):
     """Raised when an optional dependency (extra) required by a provider is missing."""
 
     extra: str
     purpose: str | None = None
-
-    def __str__(self) -> str:
-        msg = f"Missing optional dependency extra: {self.extra!r}."
-        if self.purpose:
-            msg += f" Required for: {self.purpose}."
-        msg += f' Install with: pip install "modssc[{self.extra}]"'
-        return msg
 
 
 class DatasetNotCachedError(DataLoaderError):

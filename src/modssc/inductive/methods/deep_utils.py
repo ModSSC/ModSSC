@@ -7,11 +7,9 @@ from typing import Any
 
 from modssc.inductive.deep import TorchModelBundle, validate_torch_model_bundle
 from modssc.inductive.errors import InductiveValidationError
-from modssc.inductive.optional import optional_import
+from modssc.inductive.optional import import_torch
 
-
-def _torch():
-    return optional_import("torch", extra="inductive-torch")
+_torch = import_torch
 
 
 def ensure_model_bundle(bundle: TorchModelBundle) -> TorchModelBundle:
@@ -59,6 +57,109 @@ def extract_features(output: Any):
     raise InductiveValidationError(
         "model output must be a mapping with key 'feat' when mixup_manifold is enabled."
     )
+
+
+def sharpen_probs(probs: Any, *, temperature: float) -> Any:
+    if temperature <= 0:
+        raise InductiveValidationError("temperature must be > 0.")
+    if temperature == 1.0:
+        return probs
+    power = 1.0 / float(temperature)
+    sharpened = probs.pow(power)
+    denom = sharpened.sum(dim=1, keepdim=True)
+    denom = denom.clamp_min(1e-12)
+    return sharpened / denom
+
+
+def one_hot_labels(labels: Any, *, n_classes: int) -> Any:
+    torch = _torch()
+    return torch.nn.functional.one_hot(labels.to(torch.int64), num_classes=int(n_classes)).to(
+        dtype=torch.float32
+    )
+
+
+def init_alignment_uniform(*, n_classes: int, device: Any) -> tuple[Any, Any]:
+    torch = _torch()
+    uniform = torch.full((int(n_classes),), 1.0 / float(n_classes), device=device)
+    return uniform.clone(), uniform.clone()
+
+
+def predict_proba_from_bundle(
+    bundle: TorchModelBundle | None,
+    *,
+    fitted_backend: str | None,
+    X: Any,
+    batch_size: int,
+):
+    if bundle is None:
+        raise RuntimeError("Model is not fitted yet. Call fit() first.")
+
+    from modssc.inductive.methods.utils import detect_backend
+
+    backend = fitted_backend or detect_backend(X)
+    if backend != "torch":
+        raise InductiveValidationError("predict_proba requires torch tensors.")
+    torch = _torch()
+
+    # Support Dict or Tensor
+    if not isinstance(X, torch.Tensor) and not isinstance(X, dict):
+        raise InductiveValidationError("predict_proba requires torch.Tensor or dict inputs.")
+
+    model = bundle.model
+    was_training = model.training
+    model.eval()
+
+    n_samples = int(X["x"].shape[0]) if isinstance(X, dict) else int(X.shape[0])
+
+    all_logits = []
+    with torch.no_grad():
+        for start in range(0, n_samples, int(batch_size)):
+            end = min(start + int(batch_size), n_samples)
+            if isinstance(X, dict):
+                idx = torch.arange(start, end, device=X["x"].device)
+                batch_X = slice_data(X, idx)
+            else:
+                batch_X = X[start:end]
+
+            logits_batch = extract_logits(model(batch_X))
+            if int(logits_batch.ndim) != 2:
+                raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+            all_logits.append(logits_batch)
+
+        if not all_logits:
+            # Handle empty case
+            logits = torch.empty((0, 0), device=X["x"].device if isinstance(X, dict) else X.device)
+        else:
+            logits = torch.cat(all_logits, dim=0)
+
+        probs = torch.softmax(logits, dim=1)
+
+    if was_training:
+        model.train()
+    return probs
+
+
+class ArgmaxPredictMixin:
+    def predict_proba(self, X: Any) -> Any:
+        raise NotImplementedError
+
+    def predict(self, X: Any) -> Any:
+        proba = self.predict_proba(X)
+        return proba.argmax(dim=1)
+
+
+class TorchBundlePredictMixin(ArgmaxPredictMixin):
+    _bundle: TorchModelBundle | None
+    _backend: str | None
+    spec: Any
+
+    def predict_proba(self, X: Any) -> Any:
+        return predict_proba_from_bundle(
+            self._bundle,
+            fitted_backend=self._backend,
+            X=X,
+            batch_size=int(self.spec.batch_size),
+        )
 
 
 def ensure_float_tensor(x: Any, *, name: str) -> None:

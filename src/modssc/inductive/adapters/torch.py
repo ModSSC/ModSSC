@@ -9,12 +9,10 @@ import numpy as np
 from ..backends import torch_backend
 from ..base import InductiveDatasetLike
 from ..errors import InductiveValidationError
-from ..optional import optional_import
+from ..optional import import_torch
 from ..types import DeviceSpec
 
-
-def _torch():
-    return optional_import("torch", extra="inductive-torch")
+_torch = import_torch
 
 
 def _suggest_step(name: str) -> str:

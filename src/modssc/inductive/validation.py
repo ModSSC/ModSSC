@@ -5,21 +5,10 @@ from typing import Any
 
 import numpy as np
 
+from modssc.numpy_utils import to_numpy as _as_numpy
+
 from .base import InductiveDatasetLike
 from .errors import InductiveValidationError
-
-
-def _as_numpy(a: Any) -> np.ndarray:
-    if isinstance(a, np.ndarray):
-        return a
-    # torch tensor support without importing torch
-    if hasattr(a, "detach") and hasattr(a, "cpu") and hasattr(a, "numpy"):
-        return a.detach().cpu().numpy()
-    if hasattr(a, "cpu") and hasattr(a, "numpy"):
-        return a.cpu().numpy()
-    if hasattr(a, "numpy"):
-        return a.numpy()
-    return np.asarray(a)
 
 
 def _require_2d(x: Any, *, name: str) -> np.ndarray:

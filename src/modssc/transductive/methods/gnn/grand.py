@@ -10,6 +10,7 @@ import numpy as np
 from modssc.transductive.base import MethodInfo, TransductiveMethod
 from modssc.transductive.optional import optional_import
 
+from .common import TwoLayerMLP as _MLP
 from .common import normalize_device_name, prepare_data_cached, spmm, torch
 
 logger = logging.getLogger(__name__)
@@ -20,23 +21,6 @@ def _propagate(x: Any, edge_index: Any, edge_weight: Any, *, n_nodes: int, steps
     for _ in range(int(steps)):
         out = spmm(edge_index, edge_weight, out, n_nodes=n_nodes)
     return out
-
-
-class _MLP(torch.nn.Module):
-    def __init__(
-        self, in_channels: int, hidden_dim: int, out_channels: int, *, dropout: float
-    ) -> None:
-        super().__init__()
-        self.dropout = float(dropout)
-        self.lin1 = torch.nn.Linear(in_channels, hidden_dim)
-        self.lin2 = torch.nn.Linear(hidden_dim, out_channels)
-
-    def forward(self, x: Any) -> Any:
-        x = torch.nn.functional.dropout(x, p=self.dropout, training=self.training)
-        x = torch.relu(self.lin1(x))
-        x = torch.nn.functional.dropout(x, p=self.dropout, training=self.training)
-        x = self.lin2(x)
-        return x
 
 
 @dataclass(frozen=True)

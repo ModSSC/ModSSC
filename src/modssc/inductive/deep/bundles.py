@@ -5,13 +5,11 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from modssc.inductive.errors import InductiveValidationError
-from modssc.inductive.optional import optional_import
+from modssc.inductive.optional import import_torch
 
 from .types import TorchModelBundle
 
-
-def _torch():
-    return optional_import("torch", extra="inductive-torch")
+_torch = import_torch
 
 
 def _normalize_hidden_sizes(

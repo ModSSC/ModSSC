@@ -4,16 +4,15 @@ import logging
 from time import perf_counter
 from typing import Any
 
-import numpy as np
-
-from modssc.supervised.base import BaseSupervisedClassifier, FitResult
+from modssc.supervised.backends.sklearn.common import SklearnProbaClassifier
+from modssc.supervised.base import FitResult
 from modssc.supervised.optional import optional_import
 from modssc.supervised.utils import ensure_2d
 
 logger = logging.getLogger(__name__)
 
 
-class SklearnRandomForestClassifier(BaseSupervisedClassifier):
+class SklearnRandomForestClassifier(SklearnProbaClassifier):
     classifier_id = "random_forest"
     backend = "sklearn"
 
@@ -39,10 +38,6 @@ class SklearnRandomForestClassifier(BaseSupervisedClassifier):
         self.bootstrap = bool(bootstrap)
         self.class_weight = class_weight
         self._model: Any | None = None
-
-    @property
-    def supports_proba(self) -> bool:
-        return True
 
     def fit(self, X: Any, y: Any) -> FitResult:
         start = perf_counter()
@@ -89,20 +84,3 @@ class SklearnRandomForestClassifier(BaseSupervisedClassifier):
         )
         logger.info("Finished %s.fit in %.3fs", self.classifier_id, perf_counter() - start)
         return self._fit_result
-
-    def predict_proba(self, X: Any) -> np.ndarray:
-        if self._model is None:
-            raise RuntimeError("Model is not fitted")
-        X2 = ensure_2d(X)
-        proba = self._model.predict_proba(X2)
-        return np.asarray(proba, dtype=np.float32)
-
-    def predict_scores(self, X: Any) -> np.ndarray:
-        return self.predict_proba(X)
-
-    def predict(self, X: Any) -> np.ndarray:
-        if self._model is None:
-            raise RuntimeError("Model is not fitted")
-        X2 = ensure_2d(X)
-        pred_enc = self._model.predict(X2)
-        return self._decode(np.asarray(pred_enc, dtype=np.int64))

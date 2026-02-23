@@ -9,6 +9,7 @@ from modssc.data_augmentation.ops.text import (
     RandomSwap,
     WordDropout,
     _as_list,
+    _PerItemTextOp,
 )
 from modssc.data_augmentation.registry import get_op
 from modssc.data_augmentation.utils import make_numpy_rng
@@ -83,3 +84,9 @@ def test_text_random_swap():
     out = op.apply(["a b c", "d e f"], rng=rng, ctx=ctx)
     assert isinstance(out, list)
     assert len(out) == 2
+
+
+def test_per_item_text_op_default_apply_one_raises():
+    op = _PerItemTextOp(op_id="text._per_item")
+    with pytest.raises(NotImplementedError):
+        op._apply_one("abc", rng=np.random.default_rng(0))

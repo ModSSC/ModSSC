@@ -4,16 +4,15 @@ import logging
 from time import perf_counter
 from typing import Any, Literal
 
-import numpy as np
-
-from modssc.supervised.base import BaseSupervisedClassifier, FitResult
+from modssc.supervised.backends.sklearn.common import SklearnDecisionFunctionClassifier
+from modssc.supervised.base import FitResult
 from modssc.supervised.optional import optional_import
 from modssc.supervised.utils import ensure_2d
 
 logger = logging.getLogger(__name__)
 
 
-class SklearnLinearSVMClassifier(BaseSupervisedClassifier):
+class SklearnLinearSVMClassifier(SklearnDecisionFunctionClassifier):
     classifier_id = "linear_svm"
     backend = "sklearn"
 
@@ -35,10 +34,6 @@ class SklearnLinearSVMClassifier(BaseSupervisedClassifier):
         self.dual = bool(dual)
         self.class_weight = class_weight
         self._model: Any | None = None
-
-    @property
-    def supports_proba(self) -> bool:
-        return False
 
     def fit(self, X: Any, y: Any) -> FitResult:
         start = perf_counter()
@@ -79,20 +74,3 @@ class SklearnLinearSVMClassifier(BaseSupervisedClassifier):
         )
         logger.info("Finished %s.fit in %.3fs", self.classifier_id, perf_counter() - start)
         return self._fit_result
-
-    def predict_scores(self, X: Any) -> np.ndarray:
-        if self._model is None:
-            raise RuntimeError("Model is not fitted")
-        X2 = ensure_2d(X)
-        scores = self._model.decision_function(X2)
-        scores = np.asarray(scores, dtype=np.float32)
-        if scores.ndim == 1:
-            scores = np.stack([-scores, scores], axis=1)
-        return scores
-
-    def predict(self, X: Any) -> np.ndarray:
-        if self._model is None:
-            raise RuntimeError("Model is not fitted")
-        X2 = ensure_2d(X)
-        pred_enc = self._model.predict(X2)
-        return self._decode(np.asarray(pred_enc, dtype=np.int64))

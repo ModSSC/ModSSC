@@ -10,7 +10,14 @@ import numpy as np
 from modssc.transductive.base import MethodInfo, TransductiveMethod
 from modssc.transductive.optional import optional_import
 
-from .common import normalize_device_name, prepare_data_cached, spmm, torch, train_fullbatch
+from .common import (
+    normalize_device_name,
+    prepare_data_cached,
+    spmm,
+    torch,
+    train_fullbatch,
+    two_layer_gnn_forward,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -35,12 +42,7 @@ class _GraphSAGENet(torch.nn.Module):
         self.conv1 = _SAGEConv(in_channels, hidden_dim)
         self.conv2 = _SAGEConv(hidden_dim, out_channels)
 
-    def forward(self, x: Any, edge_index: Any, edge_weight: Any, *, n_nodes: int) -> Any:
-        x = torch.nn.functional.dropout(x, p=self.dropout, training=self.training)
-        x = torch.relu(self.conv1(x, edge_index, edge_weight, n_nodes=n_nodes))
-        x = torch.nn.functional.dropout(x, p=self.dropout, training=self.training)
-        x = self.conv2(x, edge_index, edge_weight, n_nodes=n_nodes)
-        return x
+    forward = two_layer_gnn_forward
 
 
 @dataclass(frozen=True)

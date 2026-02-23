@@ -27,6 +27,7 @@ from modssc.inductive.methods.utils import (
     ensure_numpy_data,
     ensure_torch_data,
     predict_scores,
+    unwrap_torch_x,
 )
 from modssc.inductive.optional import optional_import
 from modssc.inductive.types import DeviceSpec
@@ -34,10 +35,8 @@ from modssc.inductive.types import DeviceSpec
 logger = logging.getLogger(__name__)
 
 
-def _get_torch_x(obj: Any) -> Any:
-    if isinstance(obj, dict) and "x" in obj:
-        return obj["x"]
-    return obj
+def _get_torch_x(obj: Any):
+    return unwrap_torch_x(obj)
 
 
 def _pairwise_distances_numpy(X: np.ndarray) -> np.ndarray:
@@ -433,8 +432,8 @@ class SetredMethod(InductiveMethod):
             X_l0 = slice_data(X_pool, sel_idx_t)
             y_l0 = pred[sel_idx_t]
 
-            X_l_feat = _get_torch_x(X_l)
-            X_l0_feat = _get_torch_x(X_l0)
+            X_l_feat = unwrap_torch_x(X_l)
+            X_l0_feat = unwrap_torch_x(X_l0)
             X_all_np = np.concatenate(
                 [X_l_feat.detach().cpu().numpy(), X_l0_feat.detach().cpu().numpy()],
                 axis=0,

@@ -4,16 +4,15 @@ import logging
 from time import perf_counter
 from typing import Any
 
-import numpy as np
-
-from modssc.supervised.base import BaseSupervisedClassifier, FitResult
+from modssc.supervised.backends.sklearn.common import SklearnProbaClassifier
+from modssc.supervised.base import FitResult
 from modssc.supervised.optional import optional_import
 from modssc.supervised.utils import ensure_2d
 
 logger = logging.getLogger(__name__)
 
 
-class SklearnGaussianNBClassifier(BaseSupervisedClassifier):
+class SklearnGaussianNBClassifier(SklearnProbaClassifier):
     classifier_id = "gaussian_nb"
     backend = "sklearn"
 
@@ -21,10 +20,6 @@ class SklearnGaussianNBClassifier(BaseSupervisedClassifier):
         super().__init__(seed=seed, n_jobs=None)
         self.var_smoothing = float(var_smoothing)
         self._model: Any | None = None
-
-    @property
-    def supports_proba(self) -> bool:
-        return True
 
     def fit(self, X: Any, y: Any) -> FitResult:
         start = perf_counter()
@@ -50,25 +45,8 @@ class SklearnGaussianNBClassifier(BaseSupervisedClassifier):
         logger.info("Finished %s.fit in %.3fs", self.classifier_id, perf_counter() - start)
         return self._fit_result
 
-    def predict_proba(self, X: Any) -> np.ndarray:
-        if self._model is None:
-            raise RuntimeError("Model is not fitted")
-        X2 = ensure_2d(X)
-        proba = self._model.predict_proba(X2)
-        return np.asarray(proba, dtype=np.float32)
 
-    def predict_scores(self, X: Any) -> np.ndarray:
-        return self.predict_proba(X)
-
-    def predict(self, X: Any) -> np.ndarray:
-        if self._model is None:
-            raise RuntimeError("Model is not fitted")
-        X2 = ensure_2d(X)
-        pred_enc = self._model.predict(X2)
-        return self._decode(np.asarray(pred_enc, dtype=np.int64))
-
-
-class SklearnMultinomialNBClassifier(BaseSupervisedClassifier):
+class SklearnMultinomialNBClassifier(SklearnProbaClassifier):
     classifier_id = "multinomial_nb"
     backend = "sklearn"
 
@@ -77,10 +55,6 @@ class SklearnMultinomialNBClassifier(BaseSupervisedClassifier):
         self.alpha = float(alpha)
         self.fit_prior = bool(fit_prior)
         self._model: Any | None = None
-
-    @property
-    def supports_proba(self) -> bool:
-        return True
 
     def fit(self, X: Any, y: Any) -> FitResult:
         start = perf_counter()
@@ -106,25 +80,8 @@ class SklearnMultinomialNBClassifier(BaseSupervisedClassifier):
         logger.info("Finished %s.fit in %.3fs", self.classifier_id, perf_counter() - start)
         return self._fit_result
 
-    def predict_proba(self, X: Any) -> np.ndarray:
-        if self._model is None:
-            raise RuntimeError("Model is not fitted")
-        X2 = ensure_2d(X)
-        proba = self._model.predict_proba(X2)
-        return np.asarray(proba, dtype=np.float32)
 
-    def predict_scores(self, X: Any) -> np.ndarray:
-        return self.predict_proba(X)
-
-    def predict(self, X: Any) -> np.ndarray:
-        if self._model is None:
-            raise RuntimeError("Model is not fitted")
-        X2 = ensure_2d(X)
-        pred_enc = self._model.predict(X2)
-        return self._decode(np.asarray(pred_enc, dtype=np.int64))
-
-
-class SklearnBernoulliNBClassifier(BaseSupervisedClassifier):
+class SklearnBernoulliNBClassifier(SklearnProbaClassifier):
     classifier_id = "bernoulli_nb"
     backend = "sklearn"
 
@@ -141,10 +98,6 @@ class SklearnBernoulliNBClassifier(BaseSupervisedClassifier):
         self.binarize = binarize if binarize is None else float(binarize)
         self.fit_prior = bool(fit_prior)
         self._model: Any | None = None
-
-    @property
-    def supports_proba(self) -> bool:
-        return True
 
     def fit(self, X: Any, y: Any) -> FitResult:
         start = perf_counter()
@@ -179,20 +132,3 @@ class SklearnBernoulliNBClassifier(BaseSupervisedClassifier):
         )
         logger.info("Finished %s.fit in %.3fs", self.classifier_id, perf_counter() - start)
         return self._fit_result
-
-    def predict_proba(self, X: Any) -> np.ndarray:
-        if self._model is None:
-            raise RuntimeError("Model is not fitted")
-        X2 = ensure_2d(X)
-        proba = self._model.predict_proba(X2)
-        return np.asarray(proba, dtype=np.float32)
-
-    def predict_scores(self, X: Any) -> np.ndarray:
-        return self.predict_proba(X)
-
-    def predict(self, X: Any) -> np.ndarray:
-        if self._model is None:
-            raise RuntimeError("Model is not fitted")
-        X2 = ensure_2d(X)
-        pred_enc = self._model.predict(X2)
-        return self._decode(np.asarray(pred_enc, dtype=np.int64))
