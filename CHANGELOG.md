@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 The format is based on "Keep a Changelog", and this project adheres to Semantic Versioning.
 
+## 0.3
+- Refactored modules to reduce redundancy, centralize shared functions, and improve maintainability and test coverage.
+
 ## 0.2.5
 - Added env var passthrough for dataset, preprocess, and runs cache directories in benchmarks.
 

@@ -7,6 +7,8 @@ from typing import Literal
 
 import numpy as np
 
+from modssc.seed_utils import mix_seed32 as _derive_seed
+
 from ...optional import optional_import
 
 StructMethod = Literal["deepwalk", "node2vec"]
@@ -22,16 +24,6 @@ class StructParams:
     p: float = 1.0
     q: float = 1.0
     max_dense_nodes: int = 2000  # use dense PPMI + numpy SVD under this threshold
-
-
-def _derive_seed(seed: int, salt: int) -> int:
-    x = (int(seed) + 0x9E3779B97F4A7C15 + int(salt)) & 0xFFFFFFFFFFFFFFFF
-    x ^= (x >> 30) & 0xFFFFFFFFFFFFFFFF
-    x = (x * 0xBF58476D1CE4E5B9) & 0xFFFFFFFFFFFFFFFF
-    x ^= (x >> 27) & 0xFFFFFFFFFFFFFFFF
-    x = (x * 0x94D049BB133111EB) & 0xFFFFFFFFFFFFFFFF
-    x ^= (x >> 31) & 0xFFFFFFFFFFFFFFFF
-    return int(x & 0xFFFFFFFF)
 
 
 def _build_neighbors(

@@ -9,6 +9,7 @@ import numpy as np
 
 from modssc.data_loader.optional import optional_import
 from modssc.data_loader.providers.base import BaseProvider
+from modssc.data_loader.providers.common import normalize_filter as _normalize_filter
 from modssc.data_loader.types import DatasetIdentity, LoadedDataset, Split
 from modssc.data_loader.uri import ParsedURI
 
@@ -161,14 +162,6 @@ def _to_numpy(x: Any) -> np.ndarray:
     if hasattr(obj, "numpy"):
         return np.asarray(obj.numpy())
     return np.asarray(obj)
-
-
-def _normalize_filter(values: Any) -> list[Any] | None:
-    if values is None:
-        return None
-    if isinstance(values, (list, tuple, set, np.ndarray)):
-        return list(values)
-    return [values]
 
 
 def _pad_labels(y: np.ndarray, n_nodes: int) -> np.ndarray:

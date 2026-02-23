@@ -9,6 +9,7 @@ import numpy as np
 
 from modssc.device import resolve_device_name
 from modssc.transductive.base import MethodInfo, TransductiveMethod
+from modssc.transductive.methods.classic.common import infer_num_classes as _infer_num_classes
 from modssc.transductive.methods.utils import DiffusionResult, _validate_graph_inputs, to_numpy
 from modssc.transductive.operators.clamp import labels_to_onehot
 from modssc.transductive.validation import validate_node_dataset
@@ -28,12 +29,6 @@ class LaplaceLearningSpec:
     This method has no hyperparameters in the original formulation; the graph
     structure fully determines the solution.
     """
-
-
-def _infer_num_classes(y: np.ndarray, labeled_mask: np.ndarray | None = None) -> int:
-    y_valid = y[y >= 0]
-    n_classes = int(y_valid.max()) + 1 if y_valid.size else 1
-    return max(1, n_classes)
 
 
 def laplace_learning_numpy(

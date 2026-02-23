@@ -5,6 +5,11 @@ import logging
 from time import perf_counter
 from typing import Any
 
+from modssc.supervised.backends.torch.common import (
+    TorchArgmaxPredictMixin,
+    TorchScoresProbaMixin,
+    make_softmax_scores_method,
+)
 from modssc.supervised.base import BaseSupervisedClassifier, FitResult
 from modssc.supervised.errors import SupervisedValidationError
 from modssc.supervised.optional import optional_import
@@ -147,7 +152,9 @@ def _load_model(model_name: str, weights: Any):
     return model_fn(**kwargs)
 
 
-class TorchImagePretrainedClassifier(BaseSupervisedClassifier):
+class TorchImagePretrainedClassifier(
+    TorchArgmaxPredictMixin, TorchScoresProbaMixin, BaseSupervisedClassifier
+):
     """Torchvision pretrained image classifier (fine-tunable)."""
 
     classifier_id = "image_pretrained"
@@ -185,10 +192,6 @@ class TorchImagePretrainedClassifier(BaseSupervisedClassifier):
         self._classes_t: Any | None = None
         self._input_shape: tuple[int, int, int] | None = None
         self._expected_in_channels: int | None = None
-
-    @property
-    def supports_proba(self) -> bool:
-        return True
 
     def _prepare_X(self, X: Any, torch, *, allow_infer: bool) -> Any:
         if not isinstance(X, torch.Tensor):
@@ -359,27 +362,4 @@ class TorchImagePretrainedClassifier(BaseSupervisedClassifier):
         logger.info("Finished %s.fit in %.3fs", self.classifier_id, perf_counter() - start)
         return self._fit_result
 
-    def _scores(self, X: Any):
-        torch = _torch()
-        if self._model is None or self._classes_t is None:
-            raise RuntimeError("Model is not fitted")
-        X4 = self._prepare_X(X, torch, allow_infer=False)
-        if X4.device != self._classes_t.device:
-            raise SupervisedValidationError("X must be on the same device as the model.")
-        self._model.eval()
-        with torch.no_grad():
-            logits = self._model(X4.to(dtype=torch.float32))
-            return torch.softmax(logits, dim=1)
-
-    def predict_scores(self, X: Any):
-        return self._scores(X)
-
-    def predict_proba(self, X: Any):
-        return self._scores(X)
-
-    def predict(self, X: Any):
-        if self._classes_t is None:
-            raise RuntimeError("Model is not fitted")
-        scores = self._scores(X)
-        idx = scores.argmax(dim=1)
-        return self._classes_t[idx]
+    _scores = make_softmax_scores_method(torch_getter=_torch)

@@ -16,6 +16,17 @@ class FitResult:
     n_classes: int
 
 
+class SupportsProbaMixin:
+    @property
+    def supports_proba(self) -> bool:
+        return True
+
+
+class PredictScoresFromProbaMixin:
+    def predict_scores(self, X: Any) -> np.ndarray:
+        return self.predict_proba(X)
+
+
 class BaseSupervisedClassifier:
     """Backend-agnostic classifier interface.
 

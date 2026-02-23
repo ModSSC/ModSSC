@@ -5,6 +5,10 @@ from typing import Any
 
 import numpy as np
 
+from modssc.supervised.backends.torch.common import (
+    TorchNumpyProbaPredictMixin,
+    TorchSupportsProbaMixin,
+)
 from modssc.supervised.base import BaseSupervisedClassifier, FitResult
 from modssc.supervised.optional import optional_import
 from modssc.supervised.utils import seed_everything
@@ -18,7 +22,9 @@ def _torch():
     )
 
 
-class TorchAudioCNNClassifier(BaseSupervisedClassifier):
+class TorchAudioCNNClassifier(
+    TorchNumpyProbaPredictMixin, TorchSupportsProbaMixin, BaseSupervisedClassifier
+):
     """Simple 2D CNN for Audio Spectrograms (Tabula Rasa context)."""
 
     classifier_id = "audio_cnn_scratch"
@@ -52,10 +58,6 @@ class TorchAudioCNNClassifier(BaseSupervisedClassifier):
         self.max_epochs = int(max_epochs)
 
         self._model: Any | None = None
-
-    @property
-    def supports_proba(self) -> bool:
-        return True
 
     def fit(self, X: Any, y: Any) -> FitResult:
         torch = _torch()
@@ -158,13 +160,6 @@ class TorchAudioCNNClassifier(BaseSupervisedClassifier):
             n_classes=num_classes,
         )
         return self._fit_result
-
-    def predict(self, X: Any) -> Any:
-        torch = _torch()
-        probs = self.predict_proba(X)
-        if isinstance(probs, np.ndarray):
-            return np.argmax(probs, axis=1)
-        return torch.argmax(probs, dim=1).cpu().numpy()
 
     def predict_proba(self, X: Any) -> Any:
         torch = _torch()

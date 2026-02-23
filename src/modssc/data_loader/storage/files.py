@@ -11,8 +11,12 @@ from typing import Any
 
 import numpy as np
 
+from modssc.data_loader.json_utils import mapping_to_jsonable as _jsonable_mapping
+from modssc.data_loader.json_utils import to_jsonable
 from modssc.data_loader.numpy_adapter import to_numpy
 from modssc.data_loader.types import LoadedDataset, Split
+
+_jsonable = to_jsonable
 
 
 def _is_str_object_array(arr: np.ndarray) -> bool:
@@ -149,35 +153,3 @@ class FileStorage:
                     mmap_mode = "r"
             return np.load(path, allow_pickle=True, mmap_mode=mmap_mode)
         raise ValueError(f"Unknown array format: {fmt!r}")
-
-
-def _jsonable_mapping(meta: Mapping[str, Any]) -> dict[str, Any]:
-    return {str(k): _jsonable(v) for k, v in meta.items()}
-
-
-def _jsonable(obj: Any) -> Any:
-    if obj is None:
-        return None
-    if isinstance(obj, (bool, int, float, str)):
-        return obj
-    if isinstance(obj, Path):
-        return str(obj)
-    if isinstance(obj, np.ndarray):
-        return {"__type__": "ndarray", "shape": list(obj.shape), "dtype": str(obj.dtype)}
-    if hasattr(obj, "shape") and hasattr(obj, "dtype"):
-        try:
-            shape = list(obj.shape)
-        except Exception:
-            shape = None
-        return {
-            "__type__": type(obj).__name__,
-            "shape": shape,
-            "dtype": str(getattr(obj, "dtype", "")),
-        }
-    if isinstance(obj, Mapping):
-        return {str(k): _jsonable(v) for k, v in obj.items()}
-    if isinstance(obj, (list, tuple)):
-        if len(obj) > 50:
-            return {"__type__": type(obj).__name__, "len": len(obj)}
-        return [_jsonable(v) for v in obj]
-    return {"__type__": type(obj).__name__}

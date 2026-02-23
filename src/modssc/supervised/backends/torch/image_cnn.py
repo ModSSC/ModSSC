@@ -5,6 +5,12 @@ from collections.abc import Iterable
 from time import perf_counter
 from typing import Any
 
+from modssc.supervised.backends.torch.common import (
+    TorchArgmaxPredictMixin,
+    TorchScoresProbaMixin,
+    make_activation,
+    make_softmax_scores_method,
+)
 from modssc.supervised.base import BaseSupervisedClassifier, FitResult
 from modssc.supervised.errors import SupervisedValidationError
 from modssc.supervised.optional import optional_import
@@ -16,14 +22,7 @@ def _torch():
     return optional_import("torch", extra="supervised-torch", feature="supervised:image_cnn")
 
 
-def _make_activation(name: str, torch):
-    if name == "relu":
-        return torch.nn.ReLU()
-    if name == "gelu":
-        return torch.nn.GELU()
-    if name == "tanh":
-        return torch.nn.Tanh()
-    raise SupervisedValidationError(f"Unknown activation: {name!r}")
+_make_activation = make_activation
 
 
 def _parse_input_shape(input_shape: Any) -> tuple[int, int, int] | None:
@@ -95,7 +94,9 @@ class _ImageCNN(torch.nn.Module):
         return self.head(x)
 
 
-class TorchImageCNNClassifier(BaseSupervisedClassifier):
+class TorchImageCNNClassifier(
+    TorchArgmaxPredictMixin, TorchScoresProbaMixin, BaseSupervisedClassifier
+):
     """Small CNN for image tensors (N, C, H, W)."""
 
     classifier_id = "image_cnn"
@@ -131,10 +132,6 @@ class TorchImageCNNClassifier(BaseSupervisedClassifier):
         self._model: Any | None = None
         self._classes_t: Any | None = None
         self._input_shape: tuple[int, int, int] | None = None
-
-    @property
-    def supports_proba(self) -> bool:
-        return True
 
     def _prepare_X(self, X: Any, torch, *, allow_infer: bool) -> Any:
         if not isinstance(X, torch.Tensor):
@@ -261,27 +258,4 @@ class TorchImageCNNClassifier(BaseSupervisedClassifier):
         logger.info("Finished %s.fit in %.3fs", self.classifier_id, perf_counter() - start)
         return self._fit_result
 
-    def _scores(self, X: Any):
-        torch = _torch()
-        if self._model is None or self._classes_t is None:
-            raise RuntimeError("Model is not fitted")
-        X4 = self._prepare_X(X, torch, allow_infer=False)
-        if X4.device != self._classes_t.device:
-            raise SupervisedValidationError("X must be on the same device as the model.")
-        self._model.eval()
-        with torch.no_grad():
-            logits = self._model(X4.to(dtype=torch.float32))
-            return torch.softmax(logits, dim=1)
-
-    def predict_scores(self, X: Any):
-        return self._scores(X)
-
-    def predict_proba(self, X: Any):
-        return self._scores(X)
-
-    def predict(self, X: Any):
-        if self._classes_t is None:
-            raise RuntimeError("Model is not fitted")
-        scores = self._scores(X)
-        idx = scores.argmax(dim=1)
-        return self._classes_t[idx]
+    _scores = make_softmax_scores_method(torch_getter=_torch)

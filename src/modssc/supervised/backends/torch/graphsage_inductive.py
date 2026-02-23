@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from modssc.supervised.backends.torch.common import TorchSupportsProbaMixin
 from modssc.supervised.base import BaseSupervisedClassifier, FitResult
 from modssc.supervised.optional import optional_import
 from modssc.supervised.utils import seed_everything
@@ -48,7 +49,7 @@ def _normalize_hidden_sizes(hidden_sizes: Any) -> tuple[int, ...] | None:
     raise ValueError("hidden_sizes must be an int or a sequence of ints.")
 
 
-class TorchGraphSAGEClassifier(BaseSupervisedClassifier):
+class TorchGraphSAGEClassifier(TorchSupportsProbaMixin, BaseSupervisedClassifier):
     """Inductive GraphSAGE classifier using neighbor sampling (Tabula Rasa context)."""
 
     classifier_id = "graphsage_inductive"
@@ -102,10 +103,6 @@ class TorchGraphSAGEClassifier(BaseSupervisedClassifier):
 
         self._model: Any | None = None
         self._data: Any | None = None  # We need to hold reference to graph structure for inference
-
-    @property
-    def supports_proba(self) -> bool:
-        return True
 
     def fit(self, X: Any, y: Any, **kwargs) -> FitResult:
         # X here is expected to be a PyG Data object or similar dictionary containing adj details

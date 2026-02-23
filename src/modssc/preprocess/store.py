@@ -47,4 +47,4 @@ class ArtifactStore:
         return self.data[key]
 
     def __contains__(self, key: str) -> bool:
-        return key in self.data
+        return self.has(key)

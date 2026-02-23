@@ -4,6 +4,7 @@ import logging
 from time import perf_counter
 from typing import Any
 
+from modssc.supervised.backends.torch.common import TorchArgmaxPredictMixin, TorchScoresProbaMixin
 from modssc.supervised.base import BaseSupervisedClassifier, FitResult
 from modssc.supervised.errors import SupervisedValidationError
 from modssc.supervised.optional import optional_import
@@ -48,7 +49,9 @@ def _extract_features(model: Any, waveforms: Any, torch) -> Any:
     raise SupervisedValidationError("Audio backbone returned invalid feature shape.")
 
 
-class TorchAudioPretrainedClassifier(BaseSupervisedClassifier):
+class TorchAudioPretrainedClassifier(
+    TorchArgmaxPredictMixin, TorchScoresProbaMixin, BaseSupervisedClassifier
+):
     """Torchaudio pretrained model with a linear head."""
 
     classifier_id = "audio_pretrained"
@@ -77,10 +80,6 @@ class TorchAudioPretrainedClassifier(BaseSupervisedClassifier):
         self._head: Any | None = None
         self._classes_t: Any | None = None
         self._feature_dim: int | None = None
-
-    @property
-    def supports_proba(self) -> bool:
-        return True
 
     def _prepare_X(self, X: Any, torch) -> Any:
         if not isinstance(X, torch.Tensor):
@@ -216,16 +215,3 @@ class TorchAudioPretrainedClassifier(BaseSupervisedClassifier):
             feats = _extract_features(self._backbone, X2.to(dtype=torch.float32), torch)
             logits = self._head(feats)
             return torch.softmax(logits, dim=1)
-
-    def predict_scores(self, X: Any):
-        return self._scores(X)
-
-    def predict_proba(self, X: Any):
-        return self._scores(X)
-
-    def predict(self, X: Any):
-        if self._classes_t is None:
-            raise RuntimeError("Model is not fitted")
-        scores = self._scores(X)
-        idx = scores.argmax(dim=1)
-        return self._classes_t[idx]

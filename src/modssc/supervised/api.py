@@ -1,21 +1,12 @@
 from __future__ import annotations
 
-import importlib
 from typing import Any
 
+from modssc.import_utils import load_object as _load_object
 from modssc.supervised.errors import OptionalDependencyError, UnknownBackendError
 from modssc.supervised.optional import has_module
 from modssc.supervised.registry import get_backend_spec, get_spec, iter_specs
 from modssc.supervised.types import ClassifierRuntime
-
-
-def _load_object(path: str) -> Any:
-    if ":" not in path:
-        raise ValueError(f"Invalid factory path: {path!r} (expected 'module:attr')")
-    mod, attr = path.split(":", 1)
-    module = importlib.import_module(mod)
-    obj = getattr(module, attr)
-    return obj
 
 
 def available_classifiers(*, available_only: bool = False) -> list[dict[str, Any]]:

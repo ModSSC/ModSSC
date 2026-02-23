@@ -8,8 +8,19 @@ import numpy as np
 
 from modssc.data_loader.optional import optional_import
 from modssc.data_loader.providers.base import BaseProvider
+from modssc.data_loader.providers.common import (
+    apply_class_filter,
+    apply_limits,
+    limit_samples,
+    normalize_filter,
+)
 from modssc.data_loader.types import DatasetIdentity, LoadedDataset, Split
 from modssc.data_loader.uri import ParsedURI
+
+_apply_class_filter = apply_class_filter
+_apply_limits = apply_limits
+_limit_samples = limit_samples
+_normalize_filter = normalize_filter
 
 
 class TorchaudioProvider(BaseProvider):
@@ -175,50 +186,3 @@ def _extract_xy(dataset: Any, *, dataset_class: str) -> tuple[np.ndarray, np.nda
         X_list.append(to_numpy(sample[0], allow_object=True))
         y_list.append(sample[2])
     return _as_object_vector(X_list), _as_object_vector(y_list)
-
-
-def _normalize_filter(values: Any) -> list[Any] | None:
-    if values is None:
-        return None
-    if isinstance(values, (list, tuple, set, np.ndarray)):
-        return list(values)
-    return [values]
-
-
-def _apply_class_filter(
-    X: np.ndarray, y: np.ndarray, *, class_filter: list[Any] | None
-) -> tuple[np.ndarray, np.ndarray]:
-    if class_filter is None:
-        return X, y
-    mask = np.isin(y, np.asarray(class_filter))
-    return X[mask], y[mask]
-
-
-def _limit_samples(
-    X: np.ndarray, y: np.ndarray, *, max_samples: int | None, seed: int | None
-) -> tuple[np.ndarray, np.ndarray]:
-    if max_samples is None:
-        return X, y
-    n = int(y.shape[0])
-    max_n = int(max_samples)
-    if max_n <= 0 or n == 0:
-        return X[:0], y[:0]
-    take = min(n, max_n)
-    idx = np.arange(n, dtype=np.int64)
-    if seed is not None:
-        rng = np.random.default_rng(int(seed))
-        rng.shuffle(idx)
-    return X[idx[:take]], y[idx[:take]]
-
-
-def _apply_limits(
-    X: np.ndarray,
-    y: np.ndarray,
-    *,
-    class_filter: list[Any] | None,
-    max_samples: int | None,
-    seed: int | None,
-) -> tuple[np.ndarray, np.ndarray]:
-    X, y = _apply_class_filter(X, y, class_filter=class_filter)
-    X, y = _limit_samples(X, y, max_samples=max_samples, seed=seed)
-    return X, y

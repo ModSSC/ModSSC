@@ -8,7 +8,7 @@ import numpy as np
 
 from modssc.inductive.adapters import NumpyDataset, TorchDataset, to_numpy_dataset, to_torch_dataset
 from modssc.inductive.errors import InductiveValidationError, OptionalDependencyError
-from modssc.inductive.optional import optional_import
+from modssc.inductive.optional import import_torch
 from modssc.inductive.types import DeviceSpec
 from modssc.supervised.api import create_classifier
 from modssc.supervised.types import ClassifierRuntime
@@ -41,8 +41,13 @@ def flatten_if_numpy(x: Any) -> np.ndarray:
     return x
 
 
-def _torch():
-    return optional_import("torch", extra="inductive-torch")
+def unwrap_torch_x(x: Any) -> Any:
+    if isinstance(x, dict) and "x" in x:
+        return x["x"]
+    return x
+
+
+_torch = import_torch
 
 
 def is_torch_tensor(x: Any) -> bool:

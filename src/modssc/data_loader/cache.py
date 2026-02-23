@@ -4,7 +4,6 @@ import contextlib
 import os
 import shutil
 import sqlite3
-import tempfile
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -15,6 +14,7 @@ from platformdirs import user_cache_dir
 
 from modssc.data_loader.errors import ManifestError
 from modssc.data_loader.manifest import Manifest, read_manifest
+from modssc.io_utils import atomic_write_text as _atomic_write_text
 
 CACHE_ENV = "MODSSC_CACHE_DIR"
 CACHE_ROOT_ENV = "MODSSC_CACHE_ROOT"
@@ -123,15 +123,7 @@ def read_cached_manifest(layout: CacheLayout, fingerprint: str) -> Manifest:
 
 
 def atomic_write_text(path: Path, text: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(
-        "w", delete=False, dir=str(path.parent), encoding="utf-8"
-    ) as tmp:
-        tmp.write(text)
-        tmp.flush()
-        os.fsync(tmp.fileno())
-        tmp_path = Path(tmp.name)
-    tmp_path.replace(path)
+    _atomic_write_text(path, text)
 
 
 def dir_size_bytes(path: Path) -> int:

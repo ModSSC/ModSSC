@@ -9,6 +9,7 @@ from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.deep_utils import (
+    TorchBundlePredictMixin,
     concat_data,
     cycle_batch_indices,
     cycle_batches,
@@ -18,7 +19,9 @@ from modssc.inductive.methods.deep_utils import (
     extract_logits,
     get_torch_device,
     get_torch_len,
+    init_alignment_uniform,
     num_batches,
+    sharpen_probs,
     slice_data,
 )
 from modssc.inductive.methods.utils import (
@@ -32,16 +35,7 @@ from modssc.inductive.types import DeviceSpec
 logger = logging.getLogger(__name__)
 
 
-def _sharpen(probs: Any, *, temperature: float) -> Any:
-    if temperature <= 0:
-        raise InductiveValidationError("temperature must be > 0.")
-    if temperature == 1.0:
-        return probs
-    power = 1.0 / float(temperature)
-    sharpened = probs.pow(power)
-    denom = sharpened.sum(dim=1, keepdim=True)
-    denom = denom.clamp_min(1e-12)
-    return sharpened / denom
+_sharpen = sharpen_probs
 
 
 @dataclass(frozen=True)
@@ -63,7 +57,7 @@ class SoftMatchSpec:
     detach_target: bool = True
 
 
-class SoftMatchMethod(InductiveMethod):
+class SoftMatchMethod(TorchBundlePredictMixin, InductiveMethod):
     """SoftMatch with truncated Gaussian weighting (torch-only)."""
 
     info = MethodInfo(
@@ -86,17 +80,14 @@ class SoftMatchMethod(InductiveMethod):
         self._prob_max_mu_t: Any | None = None
         self._prob_max_var_t: Any | None = None
 
-    def _init_align(self, *, n_classes: int, device: Any) -> None:
-        torch = optional_import("torch", extra="inductive-torch")
-        uniform = torch.full((int(n_classes),), 1.0 / float(n_classes), device=device)
-        self._p_model = uniform.clone()
-        self._p_target = uniform.clone()
-
     def _dist_align(self, probs_u: Any, probs_l: Any) -> Any:
         if not bool(self.spec.dist_align):
             return probs_u
         if self._p_model is None or self._p_target is None:
-            self._init_align(n_classes=int(probs_u.shape[1]), device=probs_u.device)
+            self._p_model, self._p_target = init_alignment_uniform(
+                n_classes=int(probs_u.shape[1]),
+                device=probs_u.device,
+            )
         assert self._p_model is not None and self._p_target is not None
         m = float(self.spec.ema_p)
         self._p_model = self._p_model * m + (1.0 - m) * probs_u.mean(dim=0)
@@ -358,58 +349,3 @@ class SoftMatchMethod(InductiveMethod):
         self._backend = backend
         logger.info("Finished %s.fit in %.3fs", self.info.method_id, perf_counter() - start)
         return self
-
-    def predict_proba(self, X: Any) -> Any:
-        if self._bundle is None:
-            raise RuntimeError("Model is not fitted yet. Call fit() first.")
-        backend = self._backend or detect_backend(X)
-        if backend != "torch":
-            raise InductiveValidationError("predict_proba requires torch tensors.")
-        torch = optional_import("torch", extra="inductive-torch")
-
-        # Support Dict or Tensor
-        if not isinstance(X, torch.Tensor) and not isinstance(X, dict):
-            raise InductiveValidationError("predict_proba requires torch.Tensor or dict inputs.")
-
-        model = self._bundle.model
-        was_training = model.training
-        model.eval()
-
-        # Batched inference
-        batch_size = int(self.spec.batch_size)
-        from .deep_utils import extract_logits, slice_data
-
-        n_samples = int(X["x"].shape[0]) if isinstance(X, dict) else int(X.shape[0])
-
-        all_logits = []
-        with torch.no_grad():
-            for start in range(0, n_samples, batch_size):
-                end = min(start + batch_size, n_samples)
-                if isinstance(X, dict):
-                    idx = torch.arange(start, end, device=X["x"].device)
-                    batch_X = slice_data(X, idx)
-                else:
-                    batch_X = X[start:end]
-
-                logits_batch = extract_logits(model(batch_X))
-                if int(logits_batch.ndim) != 2:
-                    raise InductiveValidationError("Model logits must be 2D (batch, classes).")
-                all_logits.append(logits_batch)
-
-            if not all_logits:
-                # Handle empty case
-                logits = torch.empty(
-                    (0, 0), device=X["x"].device if isinstance(X, dict) else X.device
-                )
-            else:
-                logits = torch.cat(all_logits, dim=0)
-
-            probs = torch.softmax(logits, dim=1)
-
-        if was_training:
-            model.train()
-        return probs
-
-    def predict(self, X: Any) -> Any:
-        proba = self.predict_proba(X)
-        return proba.argmax(dim=1)

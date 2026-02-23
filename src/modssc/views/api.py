@@ -9,27 +9,15 @@ from typing import Any
 import numpy as np
 
 from modssc.data_loader.types import LoadedDataset, Split
+from modssc.numpy_utils import to_numpy as _as_numpy
 from modssc.preprocess import preprocess as run_preprocess
+from modssc.shape_utils import shape_of as _shape_of
 
 from .errors import ViewsValidationError
 from .plan import ColumnSelectSpec, ViewsPlan
 from .types import ViewsResult
 
 logger = logging.getLogger(__name__)
-
-
-def _as_numpy(x: Any) -> np.ndarray:
-    """Convert common tensor/array containers to a NumPy array without copying when possible."""
-
-    if isinstance(x, np.ndarray):
-        return x
-    if hasattr(x, "detach"):
-        x = x.detach()
-    if hasattr(x, "cpu"):
-        x = x.cpu()
-    if hasattr(x, "numpy"):
-        return x.numpy()
-    return np.asarray(x)
 
 
 def _stable_u32(text: str) -> int:
@@ -254,13 +242,3 @@ def generate_views(
         perf_counter() - start,
     )
     return result
-
-
-def _shape_of(value: Any) -> tuple[int, ...] | None:
-    shape = getattr(value, "shape", None)
-    if shape is None:
-        return None
-    try:
-        return tuple(int(s) for s in shape)
-    except Exception:
-        return None

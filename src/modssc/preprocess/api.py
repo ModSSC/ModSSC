@@ -11,7 +11,7 @@ from typing import Any
 import numpy as np
 
 from modssc.data_loader.types import LoadedDataset, Split
-from modssc.device import resolve_device_name
+from modssc.device import _try_import_torch, resolve_device_name
 from modssc.preprocess.cache import CacheManager
 from modssc.preprocess.errors import PreprocessCacheError, PreprocessValidationError
 from modssc.preprocess.fingerprint import derive_seed, fingerprint
@@ -19,6 +19,7 @@ from modssc.preprocess.plan import PreprocessPlan
 from modssc.preprocess.registry import StepRegistry, default_step_registry
 from modssc.preprocess.store import ArtifactStore
 from modssc.preprocess.types import PreprocessResult, ResolvedPlan, ResolvedStep, SkippedStep
+from modssc.shape_utils import shape_of as _shape_of
 
 logger = logging.getLogger(__name__)
 
@@ -33,24 +34,9 @@ _MAX_ESTIMATE_ITEMS = 1024
 _MAX_ESTIMATE_DEPTH = 2
 
 
-def _shape_of(value: Any) -> tuple[int, ...] | None:
-    shape = getattr(value, "shape", None)
-    if shape is None:
-        return None
-    try:
-        return tuple(int(s) for s in shape)
-    except Exception:
-        return None
-
-
 @lru_cache(maxsize=1)
 def _get_torch() -> Any | None:
-    try:
-        import importlib
-
-        return importlib.import_module("torch")
-    except Exception:
-        return None
+    return _try_import_torch()
 
 
 def _estimate_collection_bytes(

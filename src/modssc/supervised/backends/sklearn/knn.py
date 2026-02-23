@@ -4,16 +4,15 @@ import logging
 from time import perf_counter
 from typing import Any, Literal
 
-import numpy as np
-
-from modssc.supervised.base import BaseSupervisedClassifier, FitResult
+from modssc.supervised.backends.sklearn.common import SklearnProbaClassifier
+from modssc.supervised.base import FitResult
 from modssc.supervised.optional import optional_import
 from modssc.supervised.utils import ensure_2d
 
 logger = logging.getLogger(__name__)
 
 
-class SklearnKNNClassifier(BaseSupervisedClassifier):
+class SklearnKNNClassifier(SklearnProbaClassifier):
     classifier_id = "knn"
     backend = "sklearn"
 
@@ -33,10 +32,6 @@ class SklearnKNNClassifier(BaseSupervisedClassifier):
         self.weights = str(weights)
         self.algorithm = str(algorithm)
         self._model: Any | None = None
-
-    @property
-    def supports_proba(self) -> bool:
-        return True
 
     def fit(self, X: Any, y: Any) -> FitResult:
         start = perf_counter()
@@ -75,20 +70,3 @@ class SklearnKNNClassifier(BaseSupervisedClassifier):
         )
         logger.info("Finished %s.fit in %.3fs", self.classifier_id, perf_counter() - start)
         return self._fit_result
-
-    def predict_proba(self, X: Any) -> np.ndarray:
-        if self._model is None:
-            raise RuntimeError("Model is not fitted")
-        X2 = ensure_2d(X)
-        proba = self._model.predict_proba(X2)
-        return np.asarray(proba, dtype=np.float32)
-
-    def predict_scores(self, X: Any) -> np.ndarray:
-        return self.predict_proba(X)
-
-    def predict(self, X: Any) -> np.ndarray:
-        if self._model is None:
-            raise RuntimeError("Model is not fitted")
-        X2 = ensure_2d(X)
-        pred_enc = self._model.predict(X2)
-        return self._decode(np.asarray(pred_enc, dtype=np.int64))

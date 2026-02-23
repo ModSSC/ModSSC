@@ -22,6 +22,7 @@ from modssc.inductive.methods.utils import (
     predict_scores,
     select_top_per_class,
     select_top_per_class_torch,
+    unwrap_torch_x,
 )
 from modssc.inductive.optional import optional_import
 from modssc.inductive.types import DeviceSpec
@@ -80,14 +81,11 @@ def _view_predict_payload_numpy(value: Any, *, name: str) -> np.ndarray:
     return X
 
 
-def _get_torch_tensor(obj: Any) -> Any:
-    if isinstance(obj, dict) and "x" in obj:
-        return obj["x"]
-    return obj
-
-
 def _is_valid_torch(obj: Any, torch: Any) -> bool:
     return isinstance(obj, torch.Tensor) or (isinstance(obj, dict) and "x" in obj)
+
+
+_get_torch_tensor = unwrap_torch_x
 
 
 def _get_torch_len(obj: Any) -> int:
@@ -128,8 +126,8 @@ def _view_payload_torch(value: Any, *, name: str):
             f"views[{name!r}] X_l/X_u must be torch tensors. Use preprocess core.to_torch."
         )
 
-    tl = _get_torch_tensor(X_l)
-    tu = _get_torch_tensor(X_u)
+    tl = unwrap_torch_x(X_l)
+    tu = unwrap_torch_x(X_u)
 
     if tl.ndim < 2 or tu.ndim < 2:
         raise InductiveValidationError(f"views[{name!r}] X_l/X_u must be at least 2D tensors.")
@@ -156,7 +154,7 @@ def _view_predict_payload_torch(value: Any, *, name: str):
     if not _is_valid_torch(X, torch):
         raise InductiveValidationError(f"views[{name!r}] must be a torch tensor for prediction.")
 
-    Xt = _get_torch_tensor(X)
+    Xt = unwrap_torch_x(X)
     if Xt.ndim < 2:
         raise InductiveValidationError(f"views[{name!r}] must be at least 2D for prediction.")
     return X

@@ -1,10 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from importlib import import_module
-from typing import Any, Literal
+from typing import Literal
 
-from modssc.transductive.base import MethodInfo, TransductiveMethod
+from modssc.registry_utils import (
+    make_available_methods,
+    make_debug_registry,
+    make_get_method_class,
+    make_get_method_info,
+    make_register_method,
+)
+from modssc.transductive.base import MethodInfo
 
 """Method registry for transductive node classification.
 
@@ -22,27 +28,7 @@ class MethodRef:
 
 
 _REGISTRY: dict[str, MethodRef] = {}
-
-
-def register_method(
-    method_id: str,
-    import_path: str,
-    *,
-    status: Literal["implemented", "planned"] = "implemented",
-) -> None:
-    """Register a method by id and a lazy import string."""
-    if not method_id or not isinstance(method_id, str):
-        raise ValueError("method_id must be a non-empty string")
-    if ":" not in import_path:
-        raise ValueError("import_path must be of the form 'pkg.module:ClassName'")
-    existing = _REGISTRY.get(method_id)
-    if existing is not None and existing.import_path != import_path:
-        raise ValueError(
-            f"method_id {method_id!r} already registered with import_path={existing.import_path!r}"
-        )
-    if status not in {"implemented", "planned"}:
-        raise ValueError("status must be 'implemented' or 'planned'")
-    _REGISTRY[method_id] = MethodRef(method_id=method_id, import_path=import_path, status=status)
+register_method = make_register_method(registry=_REGISTRY, ref_factory=MethodRef)
 
 
 def register_builtin_methods() -> None:
@@ -107,34 +93,19 @@ def register_builtin_methods() -> None:
     register_method("grand", "modssc.transductive.methods.gnn.grand:GRANDMethod")
 
 
-def available_methods(*, available_only: bool = True) -> list[str]:
-    register_builtin_methods()
-    methods = sorted(_REGISTRY.keys())
-    if not available_only:
-        return methods
-    return [m for m in methods if _REGISTRY[m].status != "planned"]
-
-
-def get_method_class(method_id: str) -> type[TransductiveMethod]:
-    register_builtin_methods()
-    if method_id not in _REGISTRY:
-        raise KeyError(f"Unknown method_id: {method_id!r}. Available: {available_methods()}")
-    ref = _REGISTRY[method_id]
-    mod_name, cls_name = ref.import_path.split(":")
-    module = import_module(mod_name)
-    return getattr(module, cls_name)
-
-
-def get_method_info(method_id: str) -> MethodInfo:
-    """Return the :class:`~modssc.transductive.base.MethodInfo` for a method."""
-    cls = get_method_class(method_id)
-    info = getattr(cls, "info", None)
-    if not isinstance(info, MethodInfo):
-        raise TypeError(f"Method class {cls} must expose a class attribute `info: MethodInfo`")
-    return info
-
-
-def _debug_registry() -> dict[str, Any]:
-    """Internal helper for tests."""
-    register_builtin_methods()
-    return {k: v.import_path for k, v in _REGISTRY.items()}
+available_methods = make_available_methods(
+    registry=_REGISTRY, ensure_builtins=register_builtin_methods
+)
+get_method_class = make_get_method_class(
+    registry=_REGISTRY,
+    ensure_builtins=register_builtin_methods,
+    available_methods=lambda: available_methods(),
+)
+get_method_info = make_get_method_info(
+    get_method_class=get_method_class,
+    method_info_cls=MethodInfo,
+)
+_debug_registry = make_debug_registry(
+    registry=_REGISTRY,
+    ensure_builtins=register_builtin_methods,
+)

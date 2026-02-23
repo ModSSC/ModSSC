@@ -9,6 +9,7 @@ from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.deep_utils import (
+    ArgmaxPredictMixin,
     cat_data,
     cycle_batch_indices,
     cycle_batches,
@@ -170,7 +171,7 @@ class DeepCoTrainingSpec:
     adv_clip_max: float | None = None
 
 
-class DeepCoTrainingMethod(InductiveMethod):
+class DeepCoTrainingMethod(ArgmaxPredictMixin, InductiveMethod):
     """Deep Co-Training with adversarial view difference (torch-only)."""
 
     info = MethodInfo(
@@ -547,7 +548,3 @@ class DeepCoTrainingMethod(InductiveMethod):
         if was_training2:
             model2.train()
         return probs
-
-    def predict(self, X: Any) -> Any:
-        proba = self.predict_proba(X)
-        return proba.argmax(dim=1)

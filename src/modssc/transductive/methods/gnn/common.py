@@ -8,6 +8,7 @@ from typing import Any, Literal
 import numpy as np
 
 from modssc.device import resolve_device_name
+from modssc.numpy_utils import to_numpy as _as_numpy
 from modssc.transductive.optional import optional_import
 from modssc.transductive.validation import validate_node_dataset
 
@@ -31,19 +32,6 @@ def set_torch_seed(seed: int) -> None:
     torch.manual_seed(int(seed))
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(int(seed))
-
-
-def _as_numpy(x: Any) -> np.ndarray:
-    if isinstance(x, np.ndarray):
-        return x
-    # Torch tensor
-    if hasattr(x, "detach"):
-        x = x.detach()
-    if hasattr(x, "cpu"):
-        x = x.cpu()
-    if hasattr(x, "numpy"):
-        return x.numpy()
-    return np.asarray(x)
 
 
 def _ensure_2d(X: np.ndarray) -> np.ndarray:
@@ -165,6 +153,31 @@ def spmm(edge_index: Any, edge_weight: Any, X: Any, *, n_nodes: int) -> Any:
     out = torch.zeros((n_nodes, X.shape[1]), device=X.device, dtype=X.dtype)
     out.index_add_(0, dst, X[src] * edge_weight.unsqueeze(1))
     return out
+
+
+class TwoLayerMLP(torch.nn.Module):
+    def __init__(
+        self, in_channels: int, hidden_dim: int, out_channels: int, *, dropout: float
+    ) -> None:
+        super().__init__()
+        self.dropout = float(dropout)
+        self.lin1 = torch.nn.Linear(in_channels, hidden_dim)
+        self.lin2 = torch.nn.Linear(hidden_dim, out_channels)
+
+    def forward(self, x: Any) -> Any:
+        x = torch.nn.functional.dropout(x, p=self.dropout, training=self.training)
+        x = torch.relu(self.lin1(x))
+        x = torch.nn.functional.dropout(x, p=self.dropout, training=self.training)
+        x = self.lin2(x)
+        return x
+
+
+def two_layer_gnn_forward(self, x: Any, edge_index: Any, edge_weight: Any, *, n_nodes: int) -> Any:
+    x = torch.nn.functional.dropout(x, p=self.dropout, training=self.training)
+    x = torch.relu(self.conv1(x, edge_index, edge_weight, n_nodes=n_nodes))
+    x = torch.nn.functional.dropout(x, p=self.dropout, training=self.training)
+    x = self.conv2(x, edge_index, edge_weight, n_nodes=n_nodes)
+    return x
 
 
 def prepare_data(

@@ -9,6 +9,7 @@ from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.deep_utils import (
+    ArgmaxPredictMixin,
     cycle_batch_indices,
     ensure_float_tensor,
     ensure_model_bundle,
@@ -82,7 +83,7 @@ class MetaPseudoLabelsSpec:
     init_teacher_from_student: bool = True
 
 
-class MetaPseudoLabelsMethod(InductiveMethod):
+class MetaPseudoLabelsMethod(ArgmaxPredictMixin, InductiveMethod):
     """Meta Pseudo Labels with UDA teacher (torch-only)."""
 
     info = MethodInfo(
@@ -409,7 +410,3 @@ class MetaPseudoLabelsMethod(InductiveMethod):
         if was_training:
             student.train()
         return proba
-
-    def predict(self, X: Any) -> Any:
-        proba = self.predict_proba(X)
-        return proba.argmax(dim=1)

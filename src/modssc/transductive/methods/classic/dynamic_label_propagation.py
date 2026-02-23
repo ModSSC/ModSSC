@@ -9,6 +9,10 @@ import numpy as np
 
 from modssc.device import resolve_device_name
 from modssc.transductive.base import MethodInfo, TransductiveMethod
+from modssc.transductive.methods.classic.common import (
+    build_affinity_matrix as _build_affinity_matrix,
+)
+from modssc.transductive.methods.classic.common import infer_num_classes as _infer_num_classes
 from modssc.transductive.methods.utils import DiffusionResult, _validate_graph_inputs, to_numpy
 from modssc.transductive.operators.clamp import labels_to_onehot
 from modssc.transductive.validation import validate_node_dataset
@@ -29,24 +33,6 @@ class DynamicLabelPropagationSpec:
     alpha: float = 0.05
     lambda_value: float = 0.1
     max_iter: int = 30
-
-
-def _infer_num_classes(y: np.ndarray, labeled_mask: np.ndarray | None = None) -> int:
-    y_valid = y[y >= 0]
-    n_classes = int(y_valid.max()) + 1 if y_valid.size else 1
-    return max(1, n_classes)
-
-
-def _build_affinity_matrix(
-    *, n_nodes: int, edge_index: np.ndarray, edge_weight: np.ndarray
-) -> np.ndarray:
-    W = np.zeros((n_nodes, n_nodes), dtype=np.float32)
-    src = edge_index[0]
-    dst = edge_index[1]
-    np.add.at(W, (dst, src), edge_weight)
-    W = 0.5 * (W + W.T)
-    np.fill_diagonal(W, 0.0)
-    return W
 
 
 def _knn_matrix_numpy(P0: np.ndarray, k: int) -> np.ndarray:

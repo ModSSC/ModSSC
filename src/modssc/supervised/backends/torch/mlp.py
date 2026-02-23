@@ -5,6 +5,11 @@ from collections.abc import Iterable
 from time import perf_counter
 from typing import Any
 
+from modssc.supervised.backends.torch.common import (
+    TorchArgmaxPredictMixin,
+    TorchScoresProbaMixin,
+    make_activation,
+)
 from modssc.supervised.base import BaseSupervisedClassifier, FitResult
 from modssc.supervised.errors import SupervisedValidationError
 from modssc.supervised.optional import optional_import
@@ -26,17 +31,10 @@ def _normalize_hidden_sizes(hidden_sizes: Any) -> tuple[int, ...]:
     raise SupervisedValidationError("hidden_sizes must be an int or a sequence of ints.")
 
 
-def _make_activation(name: str, torch):
-    if name == "relu":
-        return torch.nn.ReLU()
-    if name == "gelu":
-        return torch.nn.GELU()
-    if name == "tanh":
-        return torch.nn.Tanh()
-    raise SupervisedValidationError(f"Unknown activation: {name!r}")
+_make_activation = make_activation
 
 
-class TorchMLPClassifier(BaseSupervisedClassifier):
+class TorchMLPClassifier(TorchArgmaxPredictMixin, TorchScoresProbaMixin, BaseSupervisedClassifier):
     """Torch MLP classifier for vector features."""
 
     classifier_id = "mlp"
@@ -65,10 +63,6 @@ class TorchMLPClassifier(BaseSupervisedClassifier):
         self.max_epochs = int(max_epochs)
         self._model: Any | None = None
         self._classes_t: Any | None = None
-
-    @property
-    def supports_proba(self) -> bool:
-        return True
 
     def fit(self, X: Any, y: Any) -> FitResult:
         start = perf_counter()
@@ -185,16 +179,3 @@ class TorchMLPClassifier(BaseSupervisedClassifier):
         with torch.no_grad():
             logits = self._model(X.to(dtype=torch.float32))
             return torch.softmax(logits, dim=1)
-
-    def predict_scores(self, X: Any):
-        return self._scores(X)
-
-    def predict_proba(self, X: Any):
-        return self._scores(X)
-
-    def predict(self, X: Any):
-        if self._classes_t is None:
-            raise RuntimeError("Model is not fitted")
-        scores = self._scores(X)
-        idx = scores.argmax(dim=1)
-        return self._classes_t[idx]

@@ -1,22 +1,10 @@
 from __future__ import annotations
 
-import importlib
 from typing import Any
 
+from modssc.import_utils import load_object as _load_object
 from modssc.preprocess.errors import PreprocessValidationError
 from modssc.preprocess.types import ModelSpec
-
-
-def _load_object(import_path: str) -> Any:
-    if ":" not in import_path:
-        raise ValueError(f"Invalid import path: {import_path!r}")
-    module_name, qualname = import_path.split(":", 1)
-    module = importlib.import_module(module_name)
-    obj: Any = module
-    for part in qualname.split("."):
-        obj = getattr(obj, part)
-    return obj
-
 
 BUILTIN_MODELS: tuple[ModelSpec, ...] = (
     # Stubs (no external downloads, used for tests and offline runs)

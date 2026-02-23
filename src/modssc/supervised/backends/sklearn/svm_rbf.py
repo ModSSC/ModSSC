@@ -6,6 +6,12 @@ from typing import Any
 
 import numpy as np
 
+from modssc.supervised.backends.sklearn.common import (
+    decision_scores_float32,
+    predict_decoded_labels,
+    predict_proba_float32,
+    require_fitted_model,
+)
 from modssc.supervised.base import BaseSupervisedClassifier, FitResult
 from modssc.supervised.optional import optional_import
 from modssc.supervised.utils import ensure_2d
@@ -81,29 +87,17 @@ class SklearnSVRBFClassifier(BaseSupervisedClassifier):
         return self._fit_result
 
     def predict_scores(self, X: Any) -> np.ndarray:
-        if self._model is None:
-            raise RuntimeError("Model is not fitted")
-        X2 = ensure_2d(X)
-        if hasattr(self._model, "decision_function"):
-            scores = np.asarray(self._model.decision_function(X2), dtype=np.float32)
-            if scores.ndim == 1:
-                scores = np.stack([-scores, scores], axis=1)
-            return scores
+        model = require_fitted_model(self._model)
+        if hasattr(model, "decision_function"):
+            return decision_scores_float32(model, X)
         # fallback
-        return self.predict_proba(X2) if self.supports_proba else super().predict_scores(X2)
+        return self.predict_proba(X) if self.supports_proba else super().predict_scores(X)
 
     def predict_proba(self, X: Any) -> np.ndarray:
-        if self._model is None:
-            raise RuntimeError("Model is not fitted")
+        model = require_fitted_model(self._model)
         if not self.probability:
             return super().predict_proba(X)
-        X2 = ensure_2d(X)
-        proba = self._model.predict_proba(X2)
-        return np.asarray(proba, dtype=np.float32)
+        return predict_proba_float32(model, X)
 
     def predict(self, X: Any) -> np.ndarray:
-        if self._model is None:
-            raise RuntimeError("Model is not fitted")
-        X2 = ensure_2d(X)
-        pred_enc = self._model.predict(X2)
-        return self._decode(np.asarray(pred_enc, dtype=np.int64))
+        return predict_decoded_labels(self, model=self._model, X=X)
