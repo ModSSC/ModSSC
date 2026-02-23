@@ -5,6 +5,7 @@ import pytest
 
 from modssc.supervised.backends.torch.common import (
     TorchArgmaxPredictMixin,
+    TorchNumpyProbaClassifierBase,
     TorchNumpyProbaPredictMixin,
     _RequiresScoresMixin,
     predict_from_scores,
@@ -45,6 +46,11 @@ def test_torch_argmax_predict_mixin_predicts():
 def test_torch_numpy_proba_predict_mixin_default_predict_proba_raises():
     with pytest.raises(NotImplementedError, match="Subclasses must implement predict_proba"):
         TorchNumpyProbaPredictMixin().predict_proba(np.zeros((1, 2), dtype=np.float32))
+
+
+def test_torch_numpy_proba_classifier_base_default_predict_proba_raises():
+    with pytest.raises(NotImplementedError, match="Subclasses must implement predict_proba"):
+        TorchNumpyProbaClassifierBase().predict_proba(np.zeros((1, 2), dtype=np.float32))
 
 
 def test_torch_numpy_proba_predict_mixin_argmax_axis_fallback():

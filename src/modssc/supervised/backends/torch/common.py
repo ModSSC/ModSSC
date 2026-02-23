@@ -107,6 +107,9 @@ class TorchNumpyProbaClassifierBase(
     def supports_proba(self) -> bool:
         return True
 
+    def predict_proba(self, X: Any):
+        return TorchNumpyProbaPredictMixin.predict_proba(self, X)
+
     def predict(self, X: Any):
         return TorchNumpyProbaPredictMixin.predict(self, X)
 

@@ -126,8 +126,8 @@ def _view_payload_torch(value: Any, *, name: str):
             f"views[{name!r}] X_l/X_u must be torch tensors. Use preprocess core.to_torch."
         )
 
-    tl = unwrap_torch_x(X_l)
-    tu = unwrap_torch_x(X_u)
+    tl = _get_torch_tensor(X_l)
+    tu = _get_torch_tensor(X_u)
 
     if tl.ndim < 2 or tu.ndim < 2:
         raise InductiveValidationError(f"views[{name!r}] X_l/X_u must be at least 2D tensors.")
@@ -154,7 +154,7 @@ def _view_predict_payload_torch(value: Any, *, name: str):
     if not _is_valid_torch(X, torch):
         raise InductiveValidationError(f"views[{name!r}] must be a torch tensor for prediction.")
 
-    Xt = unwrap_torch_x(X)
+    Xt = _get_torch_tensor(X)
     if Xt.ndim < 2:
         raise InductiveValidationError(f"views[{name!r}] must be at least 2D for prediction.")
     return X

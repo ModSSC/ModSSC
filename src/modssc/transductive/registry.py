@@ -99,7 +99,7 @@ available_methods = make_available_methods(
 get_method_class = make_get_method_class(
     registry=_REGISTRY,
     ensure_builtins=register_builtin_methods,
-    available_methods=lambda: available_methods(),
+    available_methods=available_methods,
 )
 get_method_info = make_get_method_info(
     get_method_class=get_method_class,
