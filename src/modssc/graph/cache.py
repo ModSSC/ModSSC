@@ -46,6 +46,10 @@ def default_views_cache_dir() -> Path:
     if override:
         return Path(override).expanduser().resolve()
 
+    graph_override = os.environ.get(GRAPH_CACHE_ENV)
+    if graph_override:
+        return Path(graph_override).expanduser().resolve().parent / "graph_views"
+
     root_override = os.environ.get(CACHE_ROOT_ENV)
     if root_override:
         return Path(root_override).expanduser().resolve() / "graph_views"

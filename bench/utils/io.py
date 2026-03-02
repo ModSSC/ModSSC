@@ -41,11 +41,20 @@ def _format_path(path: tuple[str | int, ...]) -> str:
 
 
 def _default_modssc_env(config_path: Path) -> dict[str, str]:
-    cache_root = default_local_cache_root(start=config_path.parent)
-    if cache_root is None:
-        return {}
+    root_override = os.environ.get("MODSSC_CACHE_ROOT")
+    if root_override:
+        cache_root = Path(root_override).expanduser().resolve()
+    else:
+        cache_root = default_local_cache_root(start=config_path.parent)
+        if cache_root is None:
+            return {}
 
-    dataset_dir = cache_root / "datasets"
+    dataset_override = os.environ.get("MODSSC_CACHE_DIR")
+    dataset_dir = (
+        Path(dataset_override).expanduser().resolve()
+        if dataset_override
+        else cache_root / "datasets"
+    )
     return {
         "MODSSC_CACHE_ROOT": str(cache_root),
         "MODSSC_OUTPUT_DIR": str(cache_root / "output"),
