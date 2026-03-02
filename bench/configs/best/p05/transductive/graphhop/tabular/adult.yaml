@@ -77,7 +77,7 @@ graph:
   enabled: true
   seed: 1
   cache: true
-  cache_dir: /home/mbarbaux/scratch/ModSSC/cache/graphs
+  cache_dir: ${MODSSC_GRAPH_CACHE_DIR}
   spec:
     scheme: knn
     metric: cosine

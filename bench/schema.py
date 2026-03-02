@@ -122,7 +122,7 @@ class RunConfig:
     seeds: list[int] | None = None
     fail_fast: bool = True
     log_level: str | None = None
-    benchmark_mode: bool = True
+    benchmark_mode: bool = False
 
 
 @dataclass(frozen=True)
@@ -277,7 +277,7 @@ class ExperimentConfig:
             {"name", "seed", "seeds", "output_dir", "fail_fast", "log_level", "benchmark_mode"},
             name="run",
         )
-        benchmark_mode = _optional_bool(run, "benchmark_mode", default=True)
+        benchmark_mode = _optional_bool(run, "benchmark_mode", default=False)
         fail_fast = _optional_bool(run, "fail_fast", default=True)
         if benchmark_mode and not fail_fast:
             raise BenchConfigError(
@@ -287,7 +287,7 @@ class ExperimentConfig:
         run_cfg = RunConfig(
             name=_require_str(run, "name", name="run"),
             seed=int(run.get("seed", 0)),
-            output_dir=str(run.get("output_dir", "runs")),
+            output_dir=str(run.get("output_dir", "modssc_cache/output")),
             seeds=_optional_seed_list(run, "seeds", name="run"),
             fail_fast=fail_fast,
             log_level=_optional_str(run, "log_level"),

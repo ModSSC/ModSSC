@@ -10,6 +10,7 @@ import numpy as np
 from platformdirs import user_cache_dir
 
 from modssc.device import mps_is_available
+from modssc.paths import default_local_cache_subdir
 from modssc.preprocess.errors import OptionalDependencyError, PreprocessCacheError
 from modssc.preprocess.fingerprint import stable_json_dumps
 
@@ -33,12 +34,9 @@ def default_cache_dir() -> Path:
     if root_override:
         return Path(root_override).expanduser().resolve() / "preprocess"
 
-    # Heuristic: if running in a dev repo (pyproject.toml exists in parents),
-    # default to a local "cache" folder at the repo root.
-    current = Path.cwd()
-    for parent in [current] + list(current.parents):
-        if (parent / "pyproject.toml").exists():
-            return parent / "cache" / "preprocess"
+    local = default_local_cache_subdir("preprocess")
+    if local is not None:
+        return local
 
     return Path(user_cache_dir("modssc")) / "preprocess"
 

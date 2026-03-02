@@ -67,7 +67,7 @@ The bench entry point, schema, and YAML loader are in [`bench/main.py`](https://
 ## Experiment config schema (bench)
 Top-level keys and their required fields are defined in [`bench/schema.py`](https://github.com/ModSSC/ModSSC/blob/main/bench/schema.py):
 
-- `run`: `name`, `seed`, `output_dir`, `fail_fast`, optional `log_level`, optional `seeds` (list of run seeds for a sweep). <sup class="cite"><a href="#source-2">[2]</a></sup>
+- `run`: `name`, `seed`, `output_dir`, `fail_fast`, optional `log_level`, optional `seeds` (list of run seeds for a sweep), optional `benchmark_mode` (defaults to `false`). <sup class="cite"><a href="#source-2">[2]</a></sup>
 
 - `dataset`: `id`, optional `options`, `download`, `cache_dir`. <sup class="cite"><a href="#source-2">[2]</a></sup>
 

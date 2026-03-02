@@ -10,6 +10,7 @@ from typing import Any
 import numpy as np
 from platformdirs import user_cache_dir
 
+from modssc.paths import default_local_cache_subdir
 from modssc.sampling.errors import MissingDatasetFingerprintError
 from modssc.sampling.fingerprint import derive_seed, stable_hash
 from modssc.sampling.imbalance import apply_imbalance
@@ -37,12 +38,9 @@ def default_split_cache_dir() -> Path:
     if root_override:
         return Path(root_override).expanduser().resolve() / "splits"
 
-    # Heuristic: if running in a dev repo (pyproject.toml exists in parents),
-    # default to a local "cache" folder at the repo root.
-    current = Path.cwd()
-    for parent in [current] + list(current.parents):
-        if (parent / "pyproject.toml").exists():
-            return parent / "cache" / "splits"
+    local = default_local_cache_subdir("splits")
+    if local is not None:
+        return local
 
     return Path(user_cache_dir("modssc")) / "splits"
 

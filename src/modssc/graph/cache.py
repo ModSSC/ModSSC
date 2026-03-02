@@ -12,6 +12,8 @@ from typing import Any
 import numpy as np
 from platformdirs import user_cache_dir
 
+from modssc.paths import default_local_cache_subdir
+
 from .artifacts import DatasetViews, GraphArtifact
 
 GRAPH_CACHE_ENV = "MODSSC_GRAPH_CACHE_DIR"
@@ -32,6 +34,10 @@ def default_cache_dir() -> Path:
     if root_override:
         return Path(root_override).expanduser().resolve() / "graphs"
 
+    local = default_local_cache_subdir("graphs")
+    if local is not None:
+        return local
+
     return Path(user_cache_dir("modssc")) / "graphs"
 
 
@@ -39,6 +45,14 @@ def default_views_cache_dir() -> Path:
     override = os.environ.get(GRAPH_VIEWS_CACHE_ENV)
     if override:
         return Path(override).expanduser().resolve()
+
+    root_override = os.environ.get(CACHE_ROOT_ENV)
+    if root_override:
+        return Path(root_override).expanduser().resolve() / "graph_views"
+
+    local = default_local_cache_subdir("graph_views")
+    if local is not None:
+        return local
     return default_cache_dir().parent / "graph_views"
 
 

@@ -34,6 +34,14 @@ python -m bench.main --config bench/configs/experiments/toy_transductive.yaml
 python -m bench.main --config bench/configs/experiments/toy_inductive.yaml --num-runs 5
 ```
 
+`run.benchmark_mode` is disabled by default. Enable it only when you need strict,
+fully pinned benchmark contracts:
+
+```yaml
+run:
+  benchmark_mode: true
+```
+
 Minimal preset (few configs per modality):
 
 ```bash

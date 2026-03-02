@@ -29,5 +29,5 @@ All command files are in English and contain raw `python -m bench.main --config 
 ## Command Format
 
 ```bash
-python -m bench.main --config bench/configs/experiments/best/<pXX>/<kind>/<method>/<modality>/<dataset>.yaml
+python -m bench.main --config bench/configs/best/<pXX>/<kind>/<method>/<modality>/<dataset>.yaml
 ```

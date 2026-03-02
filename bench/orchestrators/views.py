@@ -17,7 +17,20 @@ from .preprocess import _plan_from_dict as _preprocess_plan_from_dict
 _LOGGER = logging.getLogger(__name__)
 
 
+def _check_unknown_keys(data: Mapping[str, Any], *, allowed: set[str], path: str) -> None:
+    unknown = set(data.keys()) - allowed
+    if unknown:
+        raise ValueError(f"Unknown keys in {path}: {sorted(unknown)}")
+
+
 def _column_spec_from_dict(obj: Mapping[str, Any]) -> ColumnSelectSpec:
+    if not isinstance(obj, Mapping):
+        raise ValueError("view.columns must be a mapping")
+    _check_unknown_keys(
+        obj,
+        allowed={"mode", "indices", "fraction", "complement_of", "seed_offset"},
+        path="view.columns",
+    )
     return ColumnSelectSpec(
         mode=str(obj.get("mode", "all")),
         indices=tuple(int(i) for i in obj.get("indices", []) or ()),
@@ -28,6 +41,13 @@ def _column_spec_from_dict(obj: Mapping[str, Any]) -> ColumnSelectSpec:
 
 
 def _view_spec_from_dict(obj: Mapping[str, Any]) -> ViewSpec:
+    if not isinstance(obj, Mapping):
+        raise ValueError("Each view must be a mapping")
+    _check_unknown_keys(
+        obj,
+        allowed={"name", "preprocess", "columns", "meta"},
+        path="views.plan.views[]",
+    )
     name = str(obj.get("name", ""))
     if not name:
         raise ValueError("Each view must define 'name'")
@@ -50,6 +70,10 @@ def _view_spec_from_dict(obj: Mapping[str, Any]) -> ViewSpec:
 
 
 def _plan_from_dict(obj: Mapping[str, Any]) -> ViewsPlan:
+    if not isinstance(obj, Mapping):
+        raise ValueError("views.plan must be a mapping")
+    _check_unknown_keys(obj, allowed={"views"}, path="views.plan")
+
     views_raw = obj.get("views", [])
     if not isinstance(views_raw, list):
         raise ValueError("views.plan.views must be a list")

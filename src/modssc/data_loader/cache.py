@@ -15,6 +15,7 @@ from platformdirs import user_cache_dir
 from modssc.data_loader.errors import ManifestError
 from modssc.data_loader.manifest import Manifest, read_manifest
 from modssc.io_utils import atomic_write_text as _atomic_write_text
+from modssc.paths import default_local_cache_subdir
 
 CACHE_ENV = "MODSSC_CACHE_DIR"
 CACHE_ROOT_ENV = "MODSSC_CACHE_ROOT"
@@ -29,13 +30,9 @@ def default_cache_dir() -> Path:
     if root_override:
         return Path(root_override).expanduser().resolve() / "datasets"
 
-    # Heuristic: if running in a dev repo (pyproject.toml exists in parents),
-    # default to a local "cache" folder at the repo root.
-    current = Path.cwd()
-    # Check current and parents for pyproject.toml
-    for parent in [current] + list(current.parents):
-        if (parent / "pyproject.toml").exists():
-            return parent / "cache" / "datasets"
+    local = default_local_cache_subdir("datasets")
+    if local is not None:
+        return local
 
     return Path(user_cache_dir("modssc")) / "datasets"
 
