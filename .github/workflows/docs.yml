@@ -3,14 +3,23 @@ name: Docs
 on:
   push:
     branches: ["main"]
+    tags: ["v*"]
     paths:
       - "docs/**"
       - "mkdocs.yml"
+      - "README.md"
+      - "CHANGELOG.md"
+      - "pyproject.toml"
+      - "src/modssc/__about__.py"
       - ".github/workflows/docs.yml"
   pull_request:
     paths:
       - "docs/**"
       - "mkdocs.yml"
+      - "README.md"
+      - "CHANGELOG.md"
+      - "pyproject.toml"
+      - "src/modssc/__about__.py"
       - ".github/workflows/docs.yml"
   workflow_dispatch:
 
