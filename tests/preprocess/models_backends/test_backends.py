@@ -215,6 +215,45 @@ def test_torchvision_image_encode(monkeypatch):
     assert res_empty.shape == (0, 0)
 
 
+def test_torchvision_image_encode_with_unknown_input_channels(monkeypatch):
+    torch = pytest.importorskip("torch")
+    from modssc.preprocess.models_backends import torchvision_image as backend
+
+    class StemlessModel(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.head = torch.nn.Linear(1, 2)
+
+        def forward(self, x):
+            x = x.mean(dim=(1, 2, 3), keepdim=False).unsqueeze(1)
+            return self.head(x)
+
+    def fake_require(module, **kwargs):
+        del kwargs
+        if module == "torch":
+            return torch
+        return MagicMock()
+
+    monkeypatch.setattr(backend, "require", fake_require)
+    monkeypatch.setattr(
+        backend.image_pretrained_backend, "_load_model", lambda *_a, **_k: StemlessModel()
+    )
+    monkeypatch.setattr(
+        backend.image_pretrained_backend, "_infer_in_channels", lambda *_a, **_k: None
+    )
+
+    encoder = backend.TorchvisionImageEncoder()
+
+    res_single_chw = encoder.encode(np.zeros((3, 8, 8), dtype=np.float32), batch_size=1)
+    assert res_single_chw.shape == (1, 1)
+
+    res_single_hwc = encoder.encode(np.zeros((8, 8, 3), dtype=np.float32), batch_size=1)
+    assert res_single_hwc.shape == (1, 1)
+
+    res_batched_gray = encoder.encode(np.zeros((5, 8, 8), dtype=np.float32), batch_size=2)
+    assert res_batched_gray.shape == (5, 1)
+
+
 def test_torchvision_image_helpers(monkeypatch):
     torch = pytest.importorskip("torch")
     from modssc.preprocess.errors import PreprocessValidationError
@@ -312,6 +351,11 @@ def test_torchvision_image_helpers(monkeypatch):
 
     arr_hwc = np.zeros((6, 7, 3), dtype=np.float32)
     assert backend._to_nchw(arr_hwc).shape == (3, 6, 7)
+
+    assert backend._is_single_image_3d(np.zeros((3, 6, 7), dtype=np.float32)) is True
+    assert backend._is_single_image_3d(np.zeros((6, 7, 3), dtype=np.float32)) is True
+    assert backend._is_single_image_3d(np.zeros((5, 6, 7), dtype=np.float32)) is False
+    assert backend._is_single_image_3d(np.zeros((6, 7), dtype=np.float32)) is False
 
     with pytest.raises(PreprocessValidationError, match="expects 2D/3D images"):
         backend._to_nchw(np.zeros((1, 2, 3, 4), dtype=np.float32))

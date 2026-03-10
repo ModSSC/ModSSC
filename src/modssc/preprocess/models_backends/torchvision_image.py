@@ -51,6 +51,14 @@ def _to_nchw(arr: np.ndarray) -> np.ndarray:
     )
 
 
+def _is_single_image_3d(arr: np.ndarray) -> bool:
+    if arr.ndim != 3:
+        return False
+    if arr.shape[0] in (1, 3, 4) and arr.shape[-1] not in (1, 3, 4):
+        return True
+    return arr.shape[-1] in (1, 3, 4)
+
+
 @dataclass
 class TorchvisionImageEncoder:
     model_name: str = "resnet18"
@@ -123,10 +131,7 @@ class TorchvisionImageEncoder:
             return [X]
 
         # Treat 3D arrays as a single image only when their layout is unambiguous.
-        if X.shape[-1] in (1, 3, 4):
-            return [X]
-        expected = self._expected_in_channels
-        if expected is not None and int(X.shape[0]) == int(expected):
+        if _is_single_image_3d(X):
             return [X]
         return [X[i] for i in range(X.shape[0])]
 
