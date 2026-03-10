@@ -9,6 +9,24 @@ from modssc.supervised.registry import get_backend_spec, get_spec, iter_specs
 from modssc.supervised.types import ClassifierRuntime
 
 
+def _normalize_classifier_params(classifier_id: str, params: dict[str, Any]) -> dict[str, Any]:
+    out = dict(params)
+
+    # Keep bench/deep-config aliases compatible with direct supervised constructors.
+    if classifier_id == "lstm_scratch":
+        alias = out.get("hidden_size")
+        if alias is None and "hidden_sizes" in out:
+            alias = out.get("hidden_sizes")
+            if isinstance(alias, (list, tuple)):
+                alias = alias[0] if alias else None
+        if alias is not None and "hidden_dim" not in out:
+            out["hidden_dim"] = int(alias)
+        out.pop("hidden_sizes", None)
+        out.pop("hidden_size", None)
+
+    return out
+
+
 def available_classifiers(*, available_only: bool = False) -> list[dict[str, Any]]:
     """List classifiers and their backends.
 
@@ -63,7 +81,7 @@ def create_classifier(
     - params are passed to the backend constructor (after runtime injection).
     """
     spec = get_spec(classifier_id)
-    params = dict(params or {})
+    params = _normalize_classifier_params(classifier_id, dict(params or {}))
     runtime = runtime or ClassifierRuntime()
 
     chosen_backend: str

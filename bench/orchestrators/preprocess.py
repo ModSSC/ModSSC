@@ -16,6 +16,12 @@ from modssc.sampling.result import SamplingResult
 _LOGGER = logging.getLogger(__name__)
 
 
+def _check_unknown_keys(data: Mapping[str, Any], *, allowed: set[str], path: str) -> None:
+    unknown = set(data.keys()) - allowed
+    if unknown:
+        raise ValueError(f"Unknown keys in {path}: {sorted(unknown)}")
+
+
 def _shape_of(value: Any) -> tuple[int, ...] | None:
     shape = getattr(value, "shape", None)
     if shape is None:
@@ -27,15 +33,28 @@ def _shape_of(value: Any) -> tuple[int, ...] | None:
 
 
 def _plan_from_dict(obj: Mapping[str, Any]) -> PreprocessPlan:
+    if not isinstance(obj, Mapping):
+        raise ValueError("preprocess.plan must be a mapping")
+    _check_unknown_keys(obj, allowed={"output_key", "steps"}, path="preprocess.plan")
+
     output_key = str(obj.get("output_key", "features.X"))
     steps_raw = obj.get("steps", [])
     if not isinstance(steps_raw, list):
         raise ValueError("preprocess.plan.steps must be a list")
 
     steps: list[StepConfig] = []
-    for item in steps_raw:
+    for index, item in enumerate(steps_raw):
         if not isinstance(item, Mapping):
             raise ValueError("Each preprocess step must be a mapping")
+        _check_unknown_keys(
+            item,
+            allowed={"id", "step_id", "params", "modalities", "requires_fields", "enabled"},
+            path=f"preprocess.plan.steps[{index}]",
+        )
+        if "id" in item and "step_id" in item and str(item["id"]) != str(item["step_id"]):
+            raise ValueError(
+                f"preprocess.plan.steps[{index}] has conflicting 'id' and 'step_id' values"
+            )
         step_id = str(item.get("id") or item.get("step_id") or "")
         if not step_id:
             raise ValueError("Each preprocess step must define 'id'")

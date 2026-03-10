@@ -365,6 +365,20 @@ def test_cache_defaults_specific_overrides_have_priority(
     assert ViewsCache.default().root == views.resolve()
 
 
+def test_cache_defaults_graph_override_sets_implicit_views_path(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    graph = tmp_path / "graph_specific"
+    monkeypatch.setenv("MODSSC_GRAPH_CACHE_DIR", str(graph))
+    monkeypatch.delenv("MODSSC_GRAPH_VIEWS_CACHE_DIR", raising=False)
+    monkeypatch.delenv("MODSSC_CACHE_ROOT", raising=False)
+
+    assert default_cache_dir() == graph.resolve()
+    assert default_views_cache_dir() == (graph.resolve().parent / "graph_views")
+    assert GraphCache.default().root == graph.resolve()
+    assert ViewsCache.default().root == (graph.resolve().parent / "graph_views")
+
+
 def test_cache_list_purge(tmp_path):
     cache = GraphCache(root=tmp_path)
     assert cache.list() == []

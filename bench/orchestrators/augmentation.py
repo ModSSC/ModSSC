@@ -15,14 +15,31 @@ from modssc.data_augmentation.utils import is_torch_tensor
 _LOGGER = logging.getLogger(__name__)
 
 
+def _check_unknown_keys(data: Mapping[str, Any], *, allowed: set[str], path: str) -> None:
+    unknown = set(data.keys()) - allowed
+    if unknown:
+        raise ValueError(f"Unknown keys in {path}: {sorted(unknown)}")
+
+
 def _plan_from_dict(obj: Mapping[str, Any], *, modality: str | None) -> AugmentationPlan:
+    if not isinstance(obj, Mapping):
+        raise ValueError("augmentation plan must be a mapping")
+    _check_unknown_keys(obj, allowed={"steps", "modality"}, path="augmentation plan")
+
     steps_raw = obj.get("steps", [])
     if not isinstance(steps_raw, list):
         raise ValueError("augmentation.steps must be a list")
     steps: list[StepConfig] = []
-    for item in steps_raw:
+    for index, item in enumerate(steps_raw):
         if not isinstance(item, Mapping):
             raise ValueError("Each augmentation step must be a mapping")
+        _check_unknown_keys(
+            item,
+            allowed={"id", "op_id", "params"},
+            path=f"augmentation.steps[{index}]",
+        )
+        if "id" in item and "op_id" in item and str(item["id"]) != str(item["op_id"]):
+            raise ValueError(f"augmentation.steps[{index}] has conflicting 'id' and 'op_id' values")
         op_id = str(item.get("id") or item.get("op_id") or "")
         if not op_id:
             raise ValueError("Each augmentation step must define 'id'")

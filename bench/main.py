@@ -556,10 +556,6 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
     error_code: str | None = None
     fallback_events: list[dict[str, Any]] = []
 
-    preprocess_steps = _preprocess_step_ids(cfg.preprocess.plan)
-    view_preprocess_steps = (
-        _views_preprocess_step_ids(cfg.views.plan) if cfg.views is not None else []
-    )
     normalization_requested = _collect_requested_normalization(cfg.preprocess.plan)
     for pre_key in (cfg.views.plan if cfg.views is not None else {}).get("views", []):
         if isinstance(pre_key, Mapping) and isinstance(pre_key.get("preprocess"), Mapping):
@@ -603,6 +599,11 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
     }
 
     try:
+        preprocess_steps = _preprocess_step_ids(cfg.preprocess.plan)
+        view_preprocess_steps = (
+            _views_preprocess_step_ids(cfg.views.plan) if cfg.views is not None else []
+        )
+
         _benchmark_contract_preflight(
             cfg=cfg,
             raw=raw,
@@ -1028,16 +1029,16 @@ def run_experiment(config_path: Path, *, num_runs: int | None = None) -> int:
         try:
             code = _run_experiment_single(config_path, raw=sweep_raw, cfg=sweep_cfg)
         except Exception:
-            if cfg.run.benchmark_mode:
+            if sweep_cfg.run.benchmark_mode or sweep_cfg.run.fail_fast:
                 raise
             failures += 1
             continue
         if code != 0:
             failures += 1
-            if cfg.run.benchmark_mode:
+            if sweep_cfg.run.benchmark_mode or sweep_cfg.run.fail_fast:
                 raise BenchRuntimeError(
                     "E_BENCH_SWEEP_FAILED",
-                    "seed sweep aborted due to failed run in benchmark_mode",
+                    "seed sweep aborted due to failed run with fail_fast=true",
                 )
 
     if failures:
