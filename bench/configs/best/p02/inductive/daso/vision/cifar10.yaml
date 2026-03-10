@@ -1,7 +1,8 @@
+---
 run:
   name: best_vision_inductive_daso_cifar10_p02
   seed: 3
-  output_dir: ${MODSSC_OUTPUT_DIR}/p02/inductive/daso/vision/cifar10
+  output_dir: "${MODSSC_OUTPUT_DIR}/p02/inductive/daso/vision/cifar10"
   log_level: detailed
   fail_fast: true
 limits:
@@ -9,7 +10,7 @@ limits:
 dataset:
   id: cifar10
   download: true
-  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
+  cache_dir: "${MODSSC_DATASET_CACHE_DIR}"
 sampling:
   seed: 3
   plan:
@@ -34,14 +35,14 @@ preprocess:
   seed: 3
   fit_on: train_labeled
   cache: true
-  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
+  cache_dir: "${MODSSC_PREPROCESS_CACHE_DIR}"
   plan:
     output_key: features.X
     steps:
     - id: labels.encode
     - id: labels.to_torch
       params:
-        device: "auto"
+        device: auto
         dtype: int64
     - id: vision.ensure_num_channels
       params:
@@ -51,8 +52,18 @@ preprocess:
         order: NCHW
     - id: vision.resize
       params:
-        height: 224
-        width: 224
+        height: 32
+        width: 32
+    - id: vision.normalize
+      params:
+        mean:
+        - 123.675
+        - 116.28
+        - 103.53
+        std:
+        - 58.395
+        - 57.12
+        - 57.375
     - id: core.copy_raw
 augmentation:
   enabled: true
@@ -73,8 +84,7 @@ augmentation:
     - id: vision.random_horizontal_flip
     - id: vision.cutout
       params:
-        n_holes: 1
-        length: 16
+        frac: 0.25
 method:
   kind: inductive
   id: daso

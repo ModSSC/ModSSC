@@ -4,10 +4,8 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/p02/transductive/grafn/tabular/iris
   log_level: detailed
   fail_fast: true
-
 limits:
   profile: auto
-
 dataset:
   id: iris
   download: true
@@ -42,6 +40,8 @@ preprocess:
     steps:
     - id: labels.encode
     - id: core.ensure_2d
+    - id: tabular.impute
+    - id: tabular.standard_scaler
     - id: core.pca
       params:
         n_components: 30
@@ -50,14 +50,14 @@ method:
   kind: transductive
   id: grafn
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     hidden_dims:
     - 128
     - 128
     lr: 0.01
-    weight_decay: 0.00001
+    weight_decay: 1.0e-05
     max_epochs: 200
     patience: 50
     tau: 0.1

@@ -43,6 +43,7 @@ preprocess:
     - id: labels.encode
     - id: audio.wav2vec2
       params:
+        model_id: wav2vec2:base
         batch_size: 8
     - id: core.pca
       params:

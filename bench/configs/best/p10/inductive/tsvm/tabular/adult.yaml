@@ -4,10 +4,8 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/p10/inductive/tsvm/tabular/adult
   log_level: detailed
   fail_fast: true
-
 limits:
   profile: auto
-
 dataset:
   id: adult
   download: true
@@ -23,7 +21,7 @@ sampling:
       shuffle: true
     labeling:
       mode: fraction
-      value: 0.10
+      value: 0.1
       strategy: balanced
       min_per_class: 1
     imbalance:
@@ -41,18 +39,16 @@ preprocess:
     output_key: features.X
     steps:
     - id: labels.encode
-    - id: labels.to_torch
-      params:
-        device: "auto"
-        dtype: int64
     - id: tabular.one_hot
     - id: core.ensure_2d
+    - id: tabular.impute
+    - id: tabular.standard_scaler
     - id: core.to_numpy
 method:
   kind: inductive
   id: tsvm
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     max_iter: 10

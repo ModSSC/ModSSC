@@ -50,6 +50,12 @@ def _plan_from_dict(obj: Mapping[str, Any], *, modality: str | None) -> Augmenta
     return AugmentationPlan(steps=tuple(steps), modality=modality)
 
 
+def _is_graph_like_sample(x: Any) -> bool:
+    if isinstance(x, Mapping):
+        return "x" in x and "edge_index" in x
+    return hasattr(x, "x") and hasattr(x, "edge_index")
+
+
 def run(
     X_u: Any,
     *,
@@ -72,6 +78,36 @@ def run(
         return None, None, None
 
     X_u_arr = X_u
+    if modality == "graph" and _is_graph_like_sample(X_u_arr):
+        weak = _plan_from_dict(weak_plan, modality=modality)
+        strong = _plan_from_dict(strong_plan, modality=modality)
+        strategy = build_strategy(weak=weak, strong=strong)
+        ctx0 = AugmentationContext(
+            seed=int(seed),
+            sample_id=0 if sample_ids is None or len(sample_ids) == 0 else int(sample_ids[0]),
+            epoch=0,
+            modality=modality,
+        )
+        _LOGGER.info(
+            "Augmentation start: mode=%s modality=%s seed=%s n_samples=1 strong_views=%s",
+            mode,
+            modality,
+            int(seed),
+            int(strong_views),
+        )
+        xw, xs = strategy.apply(X_u_arr, ctx=ctx0)
+        xs1 = None
+        if int(strong_views) > 1:
+            ctx1 = AugmentationContext(
+                seed=int(seed) + 1,
+                sample_id=ctx0.sample_id,
+                epoch=0,
+                modality=modality,
+            )
+            xs1 = strategy.strong.apply(X_u_arr, ctx=ctx1)
+        _LOGGER.info("Augmentation done: duration_s=%.3f", perf_counter() - start)
+        return xw, xs, xs1
+
     if hasattr(X_u_arr, "shape") and int(X_u_arr.shape[0]) == 0:
         _LOGGER.info("Augmentation skipped: empty unlabeled split")
         if int(strong_views) > 1:

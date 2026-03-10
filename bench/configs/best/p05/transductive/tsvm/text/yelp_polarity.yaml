@@ -4,10 +4,8 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/p05/transductive/tsvm/text/yelp_polarity
   log_level: detailed
   fail_fast: true
-
 limits:
   profile: auto
-
 dataset:
   id: yelp_polarity
   download: true
@@ -52,6 +50,7 @@ preprocess:
     - id: text.sentence_transformer
       params:
         batch_size: 32
+        model_id: st:all-MiniLM-L6-v2
     - id: core.pca
       params:
         n_components: 128
@@ -60,7 +59,7 @@ method:
   kind: transductive
   id: tsvm
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     max_iter: 10

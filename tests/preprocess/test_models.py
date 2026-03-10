@@ -35,6 +35,7 @@ def test_available_models_all():
     all_models = available_models()
     assert len(all_models) > 0
     assert "stub:text" in all_models
+    assert "torchvision:resnet18" in all_models
 
 
 def test_model_spec_unknown():
@@ -54,3 +55,11 @@ def test_model_info():
 def test_load_encoder():
     encoder = load_encoder("stub:text", dim=16)
     assert encoder is not None
+
+
+def test_model_info_torchvision_resnet18():
+    info = model_info("torchvision:resnet18")
+    assert info["id"] == "torchvision:resnet18"
+    assert info["modality"] == "vision"
+    assert info["default_kwargs"]["model_name"] == "resnet18"
+    assert info["default_kwargs"]["weights"] == "DEFAULT"

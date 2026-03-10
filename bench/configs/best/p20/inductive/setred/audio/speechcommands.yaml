@@ -4,10 +4,8 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/p20/inductive/setred/audio/speechcommands
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: speechcommands
   download: true
@@ -23,7 +21,7 @@ sampling:
       shuffle: true
     labeling:
       mode: fraction
-      value: 0.20
+      value: 0.2
       strategy: balanced
       min_per_class: 1
     imbalance:
@@ -41,35 +39,25 @@ preprocess:
     output_key: features.X
     steps:
     - id: labels.encode
-    - id: labels.to_torch
+    - id: audio.wav2vec2
       params:
-        device: "auto"
-        dtype: int64
-    - id: audio.load_waveform
+        model_id: wav2vec2:base
+        batch_size: 8
+    - id: core.pca
       params:
-        allow_fallback: true
-        target_sample_rate: 16000
-        max_length: 16000
-    - id: core.to_torch
-      params:
-        device: "auto"
-        dtype: float32
+        n_components: 128
+    - id: core.to_numpy
 method:
   kind: inductive
   id: setred
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
-    classifier_id: audio_pretrained
-    classifier_backend: torch
+    classifier_id: logreg
+    classifier_backend: sklearn
     classifier_params:
-      bundle: WAV2VEC2_BASE
-      freeze_backbone: false
-      lr: 0.0001
-      weight_decay: 0.0001
-      batch_size: 8
-      max_epochs: 5
+      max_iter: 1000
     max_iter: 10
     confidence_threshold: 0.95
     pool_size: 200

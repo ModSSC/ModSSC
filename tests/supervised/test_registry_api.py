@@ -26,6 +26,32 @@ from modssc.supervised.registry import (
 from modssc.supervised.types import ClassifierRuntime
 
 
+def test_normalize_classifier_params_lstm_aliases() -> None:
+    api = importlib.import_module("modssc.supervised.api")
+
+    params = api._normalize_classifier_params("lstm_scratch", {"hidden_size": 32, "dropout": 0.1})
+    assert params["hidden_dim"] == 32
+    assert params["dropout"] == 0.1
+    assert "hidden_size" not in params
+    assert "hidden_sizes" not in params
+
+    params = api._normalize_classifier_params("lstm_scratch", {"hidden_sizes": [64, 32]})
+    assert params["hidden_dim"] == 64
+    assert "hidden_sizes" not in params
+
+    params = api._normalize_classifier_params("lstm_scratch", {"hidden_sizes": []})
+    assert params == {}
+
+    params = api._normalize_classifier_params(
+        "lstm_scratch", {"hidden_sizes": 48, "hidden_dim": 12}
+    )
+    assert params["hidden_dim"] == 12
+    assert "hidden_sizes" not in params
+
+    params = api._normalize_classifier_params("knn", {"hidden_size": 7})
+    assert params == {"hidden_size": 7}
+
+
 def test_available_classifiers_contains_expected() -> None:
     keys = {d["key"] for d in available_classifiers()}
     assert {"knn", "svm_rbf", "logreg"}.issubset(keys)

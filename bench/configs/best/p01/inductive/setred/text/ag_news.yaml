@@ -4,10 +4,8 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/p01/inductive/setred/text/ag_news
   log_level: detailed
   fail_fast: true
-
 limits:
   profile: auto
-
 dataset:
   id: ag_news
   download: true
@@ -45,36 +43,26 @@ preprocess:
     output_key: features.X
     steps:
     - id: labels.encode
-    - id: labels.to_torch
-      params:
-        device: "auto"
-        dtype: int64
     - id: text.ensure_strings
-    - id: text.vocab_tokenizer
+    - id: text.sentence_transformer
       params:
-        max_length: 256
-        vocab_size: 20000
-    - id: core.to_torch
+        model_id: st:all-MiniLM-L6-v2
+        batch_size: 32
+    - id: core.pca
       params:
-        device: "auto"
-        dtype: float32
+        n_components: 128
+    - id: core.to_numpy
 method:
   kind: inductive
   id: setred
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
-    classifier_id: lstm_scratch
-    classifier_backend: torch
+    classifier_id: logreg
+    classifier_backend: sklearn
     classifier_params:
-      hidden_dim: 128
-      activation: relu
-      dropout: 0.1
-      lr: 0.001
-      weight_decay: 0.0
-      batch_size: 256
-      max_epochs: 50
+      max_iter: 1000
     max_iter: 10
     confidence_threshold: 0.95
     pool_size: 200

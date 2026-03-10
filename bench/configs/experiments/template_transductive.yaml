@@ -37,16 +37,25 @@ preprocess:
   plan:
     output_key: "features.X"
     steps:
-      - id: "vision.resize"
-        params:
-          height: 32
-          width: 32
+      - id: "labels.encode"
       - id: "vision.ensure_num_channels"
         params:
           num_channels: 3
-      - id: "vision.openclip"
+      - id: "vision.channels_order"
         params:
-          model_id: "openclip:ViT-B-32/openai"
+          order: "NCHW"
+      - id: "vision.resize"
+        params:
+          height: 28
+          width: 28
+      - id: "vision.normalize"
+        params:
+          mean: [123.675, 116.28, 103.53]
+          std: [58.395, 57.12, 57.375]
+      - id: "embeddings.auto"
+        params:
+          model_id_vision: "torchvision:resnet18"
+          batch_size: 64
       - id: "core.to_numpy"
 
 graph:

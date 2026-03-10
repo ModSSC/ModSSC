@@ -379,6 +379,22 @@ def test_cache_defaults_graph_override_sets_implicit_views_path(
     assert ViewsCache.default().root == (graph.resolve().parent / "graph_views")
 
 
+def test_cache_defaults_user_cache_fallback(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    user_cache = tmp_path / "user_cache"
+    monkeypatch.delenv("MODSSC_GRAPH_CACHE_DIR", raising=False)
+    monkeypatch.delenv("MODSSC_GRAPH_VIEWS_CACHE_DIR", raising=False)
+    monkeypatch.delenv("MODSSC_CACHE_ROOT", raising=False)
+    monkeypatch.setattr("modssc.graph.cache.default_local_cache_subdir", lambda _name: None)
+    monkeypatch.setattr("modssc.graph.cache.user_cache_dir", lambda _app: str(user_cache))
+
+    assert default_cache_dir() == user_cache / "graphs"
+    assert default_views_cache_dir() == user_cache / "graph_views"
+    assert GraphCache.default().root == user_cache / "graphs"
+    assert ViewsCache.default().root == user_cache / "graph_views"
+
+
 def test_cache_list_purge(tmp_path):
     cache = GraphCache(root=tmp_path)
     assert cache.list() == []

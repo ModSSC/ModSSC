@@ -4,8 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on "Keep a Changelog", and this project adheres to Semantic Versioning.
 
-## 0.3
-- Refactored modules to reduce redundancy, centralize shared functions, and improve maintainability and test coverage.
+## 1.0.0
+- Marked ModSSC as a stable `1.0.0` release.
+- Standardized benchmark configurations across vision, text, audio, tabular, and graph modalities to improve fairness, comparability, and resource discipline.
+- Unified benchmark backbones, feature extraction pipelines, input resolutions, and augmentation policies where technically possible, and documented explicit exceptions where standardization was not feasible.
+- Added a torchvision-based image embedding backend for standardized vision preprocessing and transductive feature extraction.
+- Added token-level text augmentation operators for post-tokenization inductive pipelines.
+- Updated benchmark templates, minimal examples, and benchmark documentation to match the new standardization policies.
+- Expanded backend, cache, and augmentation test coverage and brought the full test suite to 100% coverage.
+- Fixed the torchvision image feature hook implementation to satisfy linting and avoid loop-capture issues.
+- Hardened benchmark path and cache directory handling.
+
+## 0.3.0
+- Refactored modules to reduce redundancy, centralize shared helpers, and improve maintainability and test coverage.
 
 ## 0.2.5
 - Added env var passthrough for dataset, preprocess, and runs cache directories in benchmarks.
@@ -25,14 +36,14 @@ The format is based on "Keep a Changelog", and this project adheres to Semantic 
 - Updated GraphSAGE tests.
 
 ## 0.2.1
-- Bump version metadata.
+- Bumped version metadata.
 
 ## 0.2.0
 - Improved inductive pipeline performance and critical paths.
 - Strengthened test coverage to secure the new optimizations.
 
 ## 0.1.2
-- Fix misc bugs
+- Fixed miscellaneous bugs.
 
 ## 0.1.1
 - Bump version metadata and docs.
@@ -48,7 +59,7 @@ The format is based on "Keep a Changelog", and this project adheres to Semantic 
 - Fixed bugs and improved logging for inductive methods.
 
 ## 0.0.2
-- Updated github workflow
+- Updated GitHub workflows.
 
 ## 0.0.1
 - Initial public release.

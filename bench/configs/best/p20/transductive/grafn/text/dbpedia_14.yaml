@@ -4,10 +4,8 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/p20/transductive/grafn/text/dbpedia_14
   log_level: detailed
   fail_fast: true
-
 limits:
   profile: auto
-
 dataset:
   id: dbpedia_14
   download: true
@@ -27,7 +25,7 @@ sampling:
       shuffle: true
     labeling:
       mode: fraction
-      value: 0.20
+      value: 0.2
       strategy: balanced
       min_per_class: 1
     imbalance:
@@ -49,6 +47,7 @@ preprocess:
     - id: text.sentence_transformer
       params:
         batch_size: 32
+        model_id: st:all-MiniLM-L6-v2
     - id: core.pca
       params:
         n_components: 128
@@ -57,14 +56,14 @@ method:
   kind: transductive
   id: grafn
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     hidden_dims:
     - 128
     - 128
     lr: 0.01
-    weight_decay: 0.00001
+    weight_decay: 1.0e-05
     max_epochs: 200
     patience: 50
     tau: 0.1

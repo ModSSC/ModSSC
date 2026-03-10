@@ -4,10 +4,8 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/p10/inductive/fixmatch/text/ag_news
   log_level: detailed
   fail_fast: true
-
 limits:
   profile: auto
-
 dataset:
   id: ag_news
   download: true
@@ -27,7 +25,7 @@ sampling:
       shuffle: true
     labeling:
       mode: fraction
-      value: 0.10
+      value: 0.1
       strategy: balanced
       min_per_class: 1
     imbalance:
@@ -47,7 +45,7 @@ preprocess:
     - id: labels.encode
     - id: labels.to_torch
       params:
-        device: "auto"
+        device: auto
         dtype: int64
     - id: text.ensure_strings
     - id: text.vocab_tokenizer
@@ -56,28 +54,36 @@ preprocess:
         vocab_size: 20000
     - id: core.to_torch
       params:
-        device: "auto"
+        device: auto
         dtype: float32
 augmentation:
   enabled: true
   seed: 2
   mode: fixed
-  modality: tabular
+  modality: text
   weak:
     steps:
-    - id: tabular.gaussian_noise
+    - id: text.token_mask
       params:
-        std: 0.01
+        p: 0.05
+        mask_token_id: 1
+        pad_token_id: 0
   strong:
     steps:
-    - id: tabular.feature_dropout
+    - id: text.token_mask
       params:
-        p: 0.2
+        p: 0.15
+        mask_token_id: 1
+        pad_token_id: 0
+    - id: text.token_swap
+      params:
+        n_swaps: 1
+        pad_token_id: 0
 method:
   kind: inductive
   id: fixmatch
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     lambda_u: 1.0

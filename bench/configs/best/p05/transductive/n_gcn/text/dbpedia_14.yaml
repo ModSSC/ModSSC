@@ -4,10 +4,8 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/p05/transductive/n_gcn/text/dbpedia_14
   log_level: detailed
   fail_fast: true
-
 limits:
   profile: auto
-
 dataset:
   id: dbpedia_14
   download: true
@@ -49,6 +47,7 @@ preprocess:
     - id: text.sentence_transformer
       params:
         batch_size: 32
+        model_id: st:all-MiniLM-L6-v2
     - id: core.pca
       params:
         n_components: 128
@@ -57,7 +56,7 @@ method:
   kind: transductive
   id: n_gcn
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     hidden_dim: 16
@@ -67,7 +66,7 @@ method:
     classifier: fc
     dropout: 0.5
     lr: 0.01
-    weight_decay: 0.00001
+    weight_decay: 1.0e-05
     max_epochs: 200
     patience: 50
     add_self_loops: true

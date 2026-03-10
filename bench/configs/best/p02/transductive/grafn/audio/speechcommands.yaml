@@ -4,10 +4,8 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/p02/transductive/grafn/audio/speechcommands
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: speechcommands
   download: true
@@ -44,6 +42,7 @@ preprocess:
     - id: audio.wav2vec2
       params:
         batch_size: 8
+        model_id: wav2vec2:base
     - id: core.pca
       params:
         n_components: 128
@@ -52,14 +51,14 @@ method:
   kind: transductive
   id: grafn
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     hidden_dims:
     - 128
     - 128
     lr: 0.01
-    weight_decay: 0.00001
+    weight_decay: 1.0e-05
     max_epochs: 200
     patience: 50
     tau: 0.1

@@ -4,10 +4,8 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/p05/inductive/tsvm/audio/yesno
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: yesno
   download: true
@@ -45,19 +43,19 @@ preprocess:
     output_key: features.X
     steps:
     - id: labels.encode
-    - id: labels.to_torch
-      params:
-        device: "auto"
-        dtype: int64
     - id: audio.wav2vec2
       params:
+        model_id: wav2vec2:base
         batch_size: 8
+    - id: core.pca
+      params:
+        n_components: 128
     - id: core.to_numpy
 method:
   kind: inductive
   id: tsvm
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     max_iter: 10

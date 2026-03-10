@@ -33,11 +33,11 @@ ModSSC is a modular framework for semi-supervised classification across heteroge
 - [Transductive tutorial](tutorials/transductive-toy.md)
 
 ## Version
-Current version is `0.3`, sourced from [`src/modssc/__about__.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/__about__.py) and referenced by the Hatch version config in [`pyproject.toml`](https://github.com/ModSSC/ModSSC/blob/main/pyproject.toml). <sup class="cite"><a href="#source-18">[18]</a><a href="#source-2">[2]</a></sup>
+Current version is `1.0.0`, sourced from [`src/modssc/__about__.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/__about__.py) and referenced by the Hatch version config in [`pyproject.toml`](https://github.com/ModSSC/ModSSC/blob/main/pyproject.toml). <sup class="cite"><a href="#source-18">[18]</a><a href="#source-2">[2]</a></sup>
 
 
 ## Project status and support
-- Status is alpha (Development Status 3) in project metadata. <sup class="cite"><a href="#source-2">[2]</a></sup>
+- Status is production/stable (Development Status 5) in project metadata. <sup class="cite"><a href="#source-2">[2]</a></sup>
 
 - Report issues via the GitHub tracker. <sup class="cite"><a href="#source-2">[2]</a></sup>
 

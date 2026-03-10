@@ -51,6 +51,14 @@ BUILTIN_MODELS: tuple[ModelSpec, ...] = (
         default_kwargs={"model_name": "ViT-B-32", "pretrained": "openai"},
     ),
     ModelSpec(
+        model_id="torchvision:resnet18",
+        import_path="modssc.preprocess.models_backends.torchvision_image:TorchvisionImageEncoder",
+        modality="vision",
+        description="Frozen torchvision ResNet-18 penultimate-layer image embeddings.",
+        required_extra="preprocess-vision",
+        default_kwargs={"model_name": "resnet18", "weights": "DEFAULT"},
+    ),
+    ModelSpec(
         model_id="wav2vec2:base",
         import_path="modssc.preprocess.models_backends.torchaudio_wav2vec2:Wav2Vec2Encoder",
         modality="audio",
