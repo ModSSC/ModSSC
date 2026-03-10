@@ -191,9 +191,17 @@ def test_torchvision_image_encode(monkeypatch):
     res_hwc = encoder.encode(hwc, batch_size=2)
     assert res_hwc.shape == (2, 4)
 
+    batched_gray = np.zeros((5, 8, 8), dtype=np.float32)
+    res_batched_gray = encoder.encode(batched_gray, batch_size=2)
+    assert res_batched_gray.shape == (5, 4)
+
     gray = np.zeros((2, 8, 8, 1), dtype=np.float32)
     res_gray = encoder.encode(gray, batch_size=2)
     assert res_gray.shape == (2, 4)
+
+    single_chw = np.zeros((3, 8, 8), dtype=np.float32)
+    res_single_chw = encoder.encode(single_chw, batch_size=1)
+    assert res_single_chw.shape == (1, 4)
 
     gray_list = [np.zeros((8, 8), dtype=np.float32), np.zeros((8, 8), dtype=np.float32)]
     res_list = encoder.encode(gray_list, batch_size=2)
@@ -335,6 +343,15 @@ def test_torchvision_image_helpers(monkeypatch):
     monkeypatch.setattr(backend.image_pretrained_backend, "_infer_in_channels", lambda *_a, **_k: 3)
 
     encoder = backend.TorchvisionImageEncoder(auto_channel_repeat=False)
+    split_2d = encoder._split_samples(np.zeros((8, 8), dtype=np.float32))
+    assert len(split_2d) == 1
+
+    split_hwc = encoder._split_samples(np.zeros((8, 8, 3), dtype=np.float32))
+    assert len(split_hwc) == 1
+
+    split_other = encoder._split_samples(np.zeros((1, 2, 3, 4, 5), dtype=np.float32))
+    assert len(split_other) == 1
+
     with pytest.raises(PreprocessValidationError, match="Model expects 3 channels, got 1"):
         encoder.encode([np.zeros((8, 8), dtype=np.float32)])
 

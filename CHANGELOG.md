@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 The format is based on "Keep a Changelog", and this project adheres to Semantic Versioning.
 
+## 1.0.1
+- Fixed the torchvision image encoder so batched grayscale arrays shaped `(N, H, W)` are handled as batches instead of being misread as a single sample.
+
 ## 1.0.0
 - Marked ModSSC as a stable `1.0.0` release.
 - Standardized benchmark configurations across vision, text, audio, tabular, and graph modalities to improve fairness, comparability, and resource discipline.

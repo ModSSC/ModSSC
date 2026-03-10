@@ -114,12 +114,28 @@ class TorchvisionImageEncoder:
             )
         return captured[-1].cpu().numpy().astype(np.float32, copy=False)
 
+    def _split_samples(self, X: np.ndarray) -> list[np.ndarray]:
+        if X.ndim <= 2:
+            return [X]
+        if X.ndim == 4:
+            return [X[i] for i in range(X.shape[0])]
+        if X.ndim != 3:
+            return [X]
+
+        # Treat 3D arrays as a single image only when their layout is unambiguous.
+        if X.shape[-1] in (1, 3, 4):
+            return [X]
+        expected = self._expected_in_channels
+        if expected is not None and int(X.shape[0]) == int(expected):
+            return [X]
+        return [X[i] for i in range(X.shape[0])]
+
     def encode(
         self, X: Any, *, batch_size: int = 32, rng: np.random.Generator | None = None
     ) -> np.ndarray:
         del rng
-        if isinstance(X, np.ndarray) and X.ndim >= 3:
-            samples = [X[i] for i in range(X.shape[0])] if X.ndim == 4 else [X]
+        if isinstance(X, np.ndarray):
+            samples = self._split_samples(X)
         elif isinstance(X, list):
             samples = X
         else:
