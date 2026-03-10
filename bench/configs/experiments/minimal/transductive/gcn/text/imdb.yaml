@@ -47,7 +47,8 @@ preprocess:
     - id: text.ensure_strings
     - id: text.sentence_transformer
       params:
-        batch_size: 64
+        model_id: st:all-MiniLM-L6-v2
+        batch_size: 32
     - id: core.pca
       params:
         n_components: 128

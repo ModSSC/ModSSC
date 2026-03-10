@@ -49,8 +49,8 @@ preprocess:
         order: NCHW
     - id: vision.resize
       params:
-        height: 224
-        width: 224
+        height: 28
+        width: 28
     - id: vision.normalize
       params:
         mean:

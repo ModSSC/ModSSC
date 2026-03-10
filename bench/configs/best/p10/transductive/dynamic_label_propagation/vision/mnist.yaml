@@ -1,17 +1,16 @@
+---
 run:
   name: best_vision_transductive_dynamic_label_propagation_mnist_p10
   seed: 3
-  output_dir: ${MODSSC_OUTPUT_DIR}/p10/transductive/dynamic_label_propagation/vision/mnist
+  output_dir: "${MODSSC_OUTPUT_DIR}/p10/transductive/dynamic_label_propagation/vision/mnist"
   log_level: detailed
   fail_fast: true
-
 limits:
   profile: auto
-
 dataset:
   id: mnist
   download: true
-  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
+  cache_dir: "${MODSSC_DATASET_CACHE_DIR}"
 sampling:
   seed: 3
   plan:
@@ -23,7 +22,7 @@ sampling:
       shuffle: true
     labeling:
       mode: fraction
-      value: 0.10
+      value: 0.1
       strategy: balanced
       min_per_class: 1
     imbalance:
@@ -36,7 +35,7 @@ preprocess:
   seed: 3
   fit_on: train_labeled
   cache: true
-  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
+  cache_dir: "${MODSSC_PREPROCESS_CACHE_DIR}"
   plan:
     output_key: features.X
     steps:
@@ -46,20 +45,31 @@ preprocess:
         num_channels: 3
     - id: vision.channels_order
       params:
-        order: NHWC
-    - id: vision.squeeze
-    - id: vision.openclip
+        order: NCHW
+    - id: vision.resize
       params:
+        height: 28
+        width: 28
+    - id: vision.normalize
+      params:
+        mean:
+        - 123.675
+        - 116.28
+        - 103.53
+        std:
+        - 58.395
+        - 57.12
+        - 57.375
+    - id: embeddings.auto
+      params:
+        model_id_vision: torchvision:resnet18
         batch_size: 64
-    - id: core.pca
-      params:
-        n_components: 128
     - id: core.to_numpy
 method:
   kind: transductive
   id: dynamic_label_propagation
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     k_neighbors: 10
@@ -78,7 +88,7 @@ graph:
   enabled: true
   seed: 3
   cache: true
-  cache_dir: ${MODSSC_GRAPH_CACHE_DIR}
+  cache_dir: "${MODSSC_GRAPH_CACHE_DIR}"
   spec:
     scheme: knn
     metric: cosine

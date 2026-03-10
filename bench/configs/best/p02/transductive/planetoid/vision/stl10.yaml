@@ -1,17 +1,16 @@
+---
 run:
   name: best_vision_transductive_planetoid_stl10_p02
   seed: 3
-  output_dir: ${MODSSC_OUTPUT_DIR}/p02/transductive/planetoid/vision/stl10
+  output_dir: "${MODSSC_OUTPUT_DIR}/p02/transductive/planetoid/vision/stl10"
   log_level: detailed
   fail_fast: true
-
 limits:
   profile: auto
-
 dataset:
   id: stl10
   download: true
-  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
+  cache_dir: "${MODSSC_DATASET_CACHE_DIR}"
 sampling:
   seed: 3
   plan:
@@ -36,7 +35,7 @@ preprocess:
   seed: 3
   fit_on: train_labeled
   cache: true
-  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
+  cache_dir: "${MODSSC_PREPROCESS_CACHE_DIR}"
   plan:
     output_key: features.X
     steps:
@@ -44,18 +43,33 @@ preprocess:
     - id: vision.ensure_num_channels
       params:
         num_channels: 3
-    - id: vision.openclip
+    - id: vision.channels_order
       params:
+        order: NCHW
+    - id: vision.resize
+      params:
+        height: 96
+        width: 96
+    - id: vision.normalize
+      params:
+        mean:
+        - 123.675
+        - 116.28
+        - 103.53
+        std:
+        - 58.395
+        - 57.12
+        - 57.375
+    - id: embeddings.auto
+      params:
+        model_id_vision: torchvision:resnet18
         batch_size: 64
-    - id: core.pca
-      params:
-        n_components: 128
     - id: core.to_numpy
 method:
   kind: transductive
   id: planetoid
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     embedding_dim: 128
@@ -84,7 +98,7 @@ graph:
   enabled: true
   seed: 3
   cache: true
-  cache_dir: ${MODSSC_GRAPH_CACHE_DIR}
+  cache_dir: "${MODSSC_GRAPH_CACHE_DIR}"
   spec:
     scheme: knn
     metric: cosine

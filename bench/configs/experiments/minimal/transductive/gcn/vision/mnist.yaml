@@ -46,14 +46,25 @@ preprocess:
         num_channels: 3
     - id: vision.channels_order
       params:
-        order: NHWC
-    - id: vision.squeeze
-    - id: vision.openclip
+        order: NCHW
+    - id: vision.resize
       params:
+        height: 28
+        width: 28
+    - id: vision.normalize
+      params:
+        mean:
+        - 123.675
+        - 116.28
+        - 103.53
+        std:
+        - 58.395
+        - 57.12
+        - 57.375
+    - id: embeddings.auto
+      params:
+        model_id_vision: torchvision:resnet18
         batch_size: 64
-    - id: core.pca
-      params:
-        n_components: 128
     - id: core.to_numpy
 method:
   kind: transductive

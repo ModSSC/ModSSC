@@ -4,10 +4,8 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/p01/inductive/simclr_v2/audio/speechcommands
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: speechcommands
   download: true
@@ -43,7 +41,7 @@ preprocess:
     - id: labels.encode
     - id: labels.to_torch
       params:
-        device: "auto"
+        device: auto
         dtype: int64
     - id: audio.load_waveform
       params:
@@ -52,28 +50,31 @@ preprocess:
         max_length: 16000
     - id: core.to_torch
       params:
-        device: "auto"
+        device: auto
         dtype: float32
 augmentation:
   enabled: true
   seed: 4
   mode: fixed
-  modality: tabular
+  modality: audio
   weak:
     steps:
-    - id: tabular.gaussian_noise
+    - id: audio.add_noise
       params:
-        std: 0.01
+        std: 0.002
   strong:
     steps:
-    - id: tabular.feature_dropout
+    - id: audio.add_noise
       params:
-        p: 0.2
+        std: 0.005
+    - id: audio.time_shift
+      params:
+        max_frac: 0.1
 method:
   kind: inductive
   id: simclr_v2
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     batch_size: 128

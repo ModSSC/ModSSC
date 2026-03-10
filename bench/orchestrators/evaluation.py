@@ -152,6 +152,8 @@ def _views_for_split(
 def _first_torch_device(obj: Any) -> Any | None:
     if obj is None:
         return None
+    if isinstance(obj, np.ndarray):
+        return None
     if isinstance(obj, dict):
         for v in obj.values():
             dev = _first_torch_device(v)

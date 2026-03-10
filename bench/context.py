@@ -9,6 +9,20 @@ from .utils.hashing import derive_seed
 from .utils.io import dump_yaml, write_json
 
 
+def next_available_run_dir(path: Path) -> Path:
+    """Return a non-existing run directory path without deleting existing outputs."""
+    candidate = Path(path)
+    if not candidate.exists():
+        return candidate
+
+    suffix = 1
+    while True:
+        trial = candidate.with_name(f"{candidate.name}__r{suffix:02d}")
+        if not trial.exists():
+            return trial
+        suffix += 1
+
+
 @dataclass
 class RunContext:
     name: str
@@ -51,6 +65,7 @@ class RunContext:
 
     def ensure_dirs(self) -> None:
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.run_dir = next_available_run_dir(self.run_dir)
         self.run_dir.mkdir(parents=True, exist_ok=False)
 
     def write_config_copy(self, data: dict[str, Any]) -> None:

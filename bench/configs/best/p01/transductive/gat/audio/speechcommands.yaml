@@ -4,10 +4,8 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/p01/transductive/gat/audio/speechcommands
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: speechcommands
   download: true
@@ -44,6 +42,7 @@ preprocess:
     - id: audio.wav2vec2
       params:
         batch_size: 8
+        model_id: wav2vec2:base
     - id: core.pca
       params:
         n_components: 128
@@ -52,7 +51,7 @@ method:
   kind: transductive
   id: gat
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     head_dim: 8

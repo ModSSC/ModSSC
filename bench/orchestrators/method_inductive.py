@@ -493,6 +493,20 @@ def _resolve_method_backend(cfg: MethodConfig, method: Any, spec: Any) -> str | 
     return str(backend) if backend is not None else None
 
 
+def _should_auto_to_torch(cfg: MethodConfig, *, requires_torch: bool) -> bool:
+    if requires_torch:
+        return True
+    if cfg.model is not None and str(cfg.model.classifier_backend or "").lower() == "torch":
+        return True
+    classifier_backend = cfg.params.get("classifier_backend")
+    if isinstance(classifier_backend, str):
+        return classifier_backend.lower() == "torch"
+    backend = cfg.params.get("backend")
+    if isinstance(backend, str):
+        return backend.lower() == "torch"
+    return False
+
+
 def run(
     pre: PreprocessResult,
     sampling: SamplingResult,
@@ -552,8 +566,9 @@ def run(
     X_l = select_rows(X_train, idx_l, context="method_inductive.train_labeled")
     X_u = select_rows(X_train, idx_u, context="method_inductive.train_unlabeled")
 
+    auto_to_torch = _should_auto_to_torch(cfg, requires_torch=requires_torch)
     if not strict:
-        if not _is_torch_container(X_l):
+        if auto_to_torch and not _is_torch_container(X_l):
             target_device = resolve_device_name(cfg.device.device)
             X_l = _smart_to_torch(X_l, target_device)
             if X_u is not None:
@@ -564,7 +579,7 @@ def run(
                 X_u_s = _smart_to_torch(X_u_s, target_device)
             if X_u_s_1 is not None:
                 X_u_s_1 = _smart_to_torch(X_u_s_1, target_device)
-        else:
+        elif auto_to_torch and _is_torch_container(X_l):
             target_device = _torch_container_device(X_l) or "cpu"
             X_u_w = _smart_to_torch(X_u_w, target_device)
             X_u_s = _smart_to_torch(X_u_s, target_device)

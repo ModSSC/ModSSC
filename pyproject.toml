@@ -12,7 +12,7 @@ license = { file = "LICENSE" }
 authors = [{ name = "ModSSC contributors" }]
 keywords = ["semi-supervised", "classification"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",

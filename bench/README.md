@@ -16,7 +16,7 @@ python -m pip install -e "."
 # Text datasets + sentence-transformer features
 python -m pip install -e ".[text,preprocess-text,sklearn]"
 
-# Vision datasets + OpenCLIP features
+# Vision datasets + torchvision/OpenCLIP preprocess extras
 python -m pip install -e ".[vision,preprocess-vision]"
 
 # Graph datasets (PyG)
@@ -104,3 +104,6 @@ Artifacts:
 
 Notes:
 - Templates in bench/configs/experiments/ download data and may require extras.
+- Benchmark standardization policies live in:
+  - `bench/configs/best/vision_standardization_policy.md`
+  - `bench/configs/best/multimodal_standardization_policy.md`

@@ -4,10 +4,8 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/p20/transductive/gcnii/audio/speechcommands
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: speechcommands
   download: true
@@ -23,7 +21,7 @@ sampling:
       shuffle: true
     labeling:
       mode: fraction
-      value: 0.20
+      value: 0.2
       strategy: balanced
       min_per_class: 1
     imbalance:
@@ -44,6 +42,7 @@ preprocess:
     - id: audio.wav2vec2
       params:
         batch_size: 8
+        model_id: wav2vec2:base
     - id: core.pca
       params:
         n_components: 128
@@ -52,7 +51,7 @@ method:
   kind: transductive
   id: gcnii
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     hidden_dim: 64

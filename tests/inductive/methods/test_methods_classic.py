@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 import torch
 
 import modssc.inductive.methods.democratic_co_learning as dcl
+from bench.orchestrators.evaluation import _views_for_split
+from bench.orchestrators.method_inductive import _should_auto_to_torch
+from bench.schema import DeviceConfig, MethodConfig, ModelConfig
 from modssc.evaluation import accuracy as accuracy_score
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.co_training import (
@@ -22,6 +27,60 @@ from modssc.inductive.methods.tri_training import TriTrainingMethod, TriTraining
 from modssc.inductive.types import DeviceSpec
 
 from ..conftest import DummyDataset, make_numpy_dataset, make_torch_dataset
+
+
+def test_should_auto_to_torch_respects_method_backend_contract() -> None:
+    device = DeviceConfig(device="auto", dtype="float32")
+
+    co_training_cfg = MethodConfig(
+        kind="inductive",
+        method_id="co_training",
+        device=device,
+        params={"classifier_backend": "sklearn"},
+    )
+    assert _should_auto_to_torch(co_training_cfg, requires_torch=False) is False
+
+    pseudo_label_cfg = MethodConfig(
+        kind="inductive",
+        method_id="pseudo_label",
+        device=device,
+        params={"classifier_backend": "torch"},
+    )
+    assert _should_auto_to_torch(pseudo_label_cfg, requires_torch=False) is True
+
+    softmatch_cfg = MethodConfig(
+        kind="inductive",
+        method_id="softmatch",
+        device=device,
+        model=ModelConfig(classifier_backend="torch"),
+    )
+    assert _should_auto_to_torch(softmatch_cfg, requires_torch=False) is True
+    assert _should_auto_to_torch(co_training_cfg, requires_torch=True) is True
+
+
+def test_views_for_split_keeps_numpy_views_for_numpy_backend() -> None:
+    data, views = _make_views_numpy()
+    views_result = SimpleNamespace(
+        views={
+            name: SimpleNamespace(train=SimpleNamespace(X=view["X_l"]), test=None)
+            for name, view in views.items()
+        }
+    )
+
+    class _Sampling:
+        indices = {"val": np.array([0, 1], dtype=np.int64)}
+        refs = {"val": "train"}
+
+    payload = _views_for_split(
+        views=views_result,
+        split="val",
+        sampling=_Sampling(),
+        backend_ref=data.X_l,
+        strict=False,
+    )
+
+    assert isinstance(payload["v1"]["X"], np.ndarray)
+    assert isinstance(payload["v2"]["X"], np.ndarray)
 
 
 @pytest.mark.parametrize(

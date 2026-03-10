@@ -45,14 +45,14 @@ preprocess:
     steps:
     - id: labels.encode
     - id: text.ensure_strings
-    - id: text.vocab_tokenizer
+    - id: text.sentence_transformer
       params:
-        max_length: 256
-        vocab_size: 20000
-    - id: core.to_torch
+        model_id: st:all-MiniLM-L6-v2
+        batch_size: 32
+    - id: core.pca
       params:
-        device: auto
-        dtype: float32
+        n_components: 128
+    - id: core.to_numpy
 method:
   kind: inductive
   id: co_training
@@ -60,17 +60,10 @@ method:
     device: auto
     dtype: float32
   params:
-    classifier_id: lstm_scratch
-    classifier_backend: torch
+    classifier_id: logreg
+    classifier_backend: sklearn
     classifier_params:
-      hidden_sizes:
-      - 128
-      activation: relu
-      dropout: 0.1
-      lr: 0.001
-      weight_decay: 0.0
-      batch_size: 256
-      max_epochs: 50
+      max_iter: 1000
     max_iter: 20
     k_per_class: 1
 evaluation:

@@ -1,7 +1,3 @@
-# Dataset: adult
-
-## Percentage: p01
-```bash
 python -m bench.main --config bench/configs/best/p01/inductive/adamatch/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p01/inductive/adsh/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p01/inductive/co_training/tabular/adult.yaml
@@ -54,10 +50,6 @@ python -m bench.main --config bench/configs/best/p01/transductive/poisson_learni
 python -m bench.main --config bench/configs/best/p01/transductive/poisson_mbo/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p01/transductive/sgc/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p01/transductive/tsvm/tabular/adult.yaml
-```
-
-## Percentage: p02
-```bash
 python -m bench.main --config bench/configs/best/p02/inductive/adamatch/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p02/inductive/adsh/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p02/inductive/co_training/tabular/adult.yaml
@@ -110,10 +102,6 @@ python -m bench.main --config bench/configs/best/p02/transductive/poisson_learni
 python -m bench.main --config bench/configs/best/p02/transductive/poisson_mbo/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p02/transductive/sgc/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p02/transductive/tsvm/tabular/adult.yaml
-```
-
-## Percentage: p05
-```bash
 python -m bench.main --config bench/configs/best/p05/inductive/adamatch/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p05/inductive/adsh/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p05/inductive/co_training/tabular/adult.yaml
@@ -166,10 +154,6 @@ python -m bench.main --config bench/configs/best/p05/transductive/poisson_learni
 python -m bench.main --config bench/configs/best/p05/transductive/poisson_mbo/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p05/transductive/sgc/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p05/transductive/tsvm/tabular/adult.yaml
-```
-
-## Percentage: p10
-```bash
 python -m bench.main --config bench/configs/best/p10/inductive/adamatch/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p10/inductive/adsh/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p10/inductive/co_training/tabular/adult.yaml
@@ -222,10 +206,6 @@ python -m bench.main --config bench/configs/best/p10/transductive/poisson_learni
 python -m bench.main --config bench/configs/best/p10/transductive/poisson_mbo/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p10/transductive/sgc/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p10/transductive/tsvm/tabular/adult.yaml
-```
-
-## Percentage: p20
-```bash
 python -m bench.main --config bench/configs/best/p20/inductive/adamatch/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p20/inductive/adsh/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p20/inductive/co_training/tabular/adult.yaml
@@ -278,4 +258,3 @@ python -m bench.main --config bench/configs/best/p20/transductive/poisson_learni
 python -m bench.main --config bench/configs/best/p20/transductive/poisson_mbo/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p20/transductive/sgc/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p20/transductive/tsvm/tabular/adult.yaml
-```

@@ -4,10 +4,8 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/p02/inductive/deep_co_training/graph/pubmed
   fail_fast: true
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
   id: pubmed
   download: true
@@ -43,7 +41,7 @@ preprocess:
     - id: labels.encode
     - id: labels.to_torch
       params:
-        device: "auto"
+        device: auto
         dtype: int64
     - id: graph.sparse_adjacency
       params:
@@ -52,31 +50,34 @@ preprocess:
         embed_epochs: 5
         embed_lr: 0.01
         undirected: true
-        device: "auto"
+        device: auto
     - id: core.to_torch
       params:
-        device: "auto"
+        device: auto
         dtype: float32
 augmentation:
   enabled: true
   seed: 5
   mode: fixed
-  modality: tabular
+  modality: graph
   weak:
     steps:
-    - id: tabular.gaussian_noise
+    - id: graph.feature_mask
       params:
-        std: 0.01
+        p: 0.05
   strong:
     steps:
-    - id: tabular.feature_dropout
+    - id: graph.feature_mask
+      params:
+        p: 0.1
+    - id: graph.edge_dropout
       params:
         p: 0.2
 method:
   kind: inductive
   id: deep_co_training
   device:
-    device: "auto"
+    device: auto
     dtype: float32
   params:
     lambda_cot: 1.0

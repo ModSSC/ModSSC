@@ -21,7 +21,7 @@ from modssc.sampling.result import SamplingResult
 from modssc.transductive.registry import get_method_class as get_transductive_method_class
 from modssc.transductive.registry import get_method_info as get_transductive_method_info
 
-from .context import RunContext
+from .context import RunContext, next_available_run_dir
 from .errors import BenchRuntimeError, extract_error_code
 from .limits import apply_limits
 from .orchestrators import augmentation as aug_orch
@@ -495,12 +495,17 @@ def _sync_ctx_run_identity(ctx: RunContext, *, run_id: str) -> None:
 
     old_run_id = ctx.run_id
     old_run_dir = ctx.run_dir
-    timestamp = old_run_dir.name.rsplit("-", 1)[-1]
-    new_run_dir = ctx.output_dir / f"{ctx.name}-{run_id}-{timestamp}"
-    if new_run_dir.exists():
-        raise BenchRuntimeError(
-            "E_BENCH_RUN_DIR_COLLISION",
-            f"cannot update run directory for recalculated run_id; target already exists: {new_run_dir}",
+    prefix = f"{ctx.name}-{old_run_id}-"
+    if old_run_dir.name.startswith(prefix):
+        suffix = old_run_dir.name[len(prefix) :]
+    else:
+        suffix = old_run_dir.name.rsplit("-", 1)[-1]
+    desired_dir = ctx.output_dir / f"{ctx.name}-{run_id}-{suffix}"
+    new_run_dir = next_available_run_dir(desired_dir)
+    if new_run_dir != desired_dir:
+        _LOGGER.warning(
+            "Run directory collision while updating run_id; using alternate path: %s",
+            new_run_dir,
         )
 
     old_run_dir.rename(new_run_dir)
@@ -801,7 +806,7 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
             X_u = select_rows(pre.dataset.train.X, idx_u, context="main.augmentation")
 
             X_u_aug_input = X_u
-            if isinstance(X_u, dict) and "x" in X_u:
+            if cfg.augmentation.modality != "graph" and isinstance(X_u, dict) and "x" in X_u:
                 X_u_aug_input = X_u["x"]
 
             aug_seed = ctx.seed_for("augmentation", cfg.augmentation.seed)
@@ -817,7 +822,7 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
                 strong_views=strong_views,
             )
 
-            if isinstance(X_u, dict) and "x" in X_u:
+            if cfg.augmentation.modality != "graph" and isinstance(X_u, dict) and "x" in X_u:
 
                 def _wrapg(aug_x: Any, ref: Mapping[str, Any]) -> Any:
                     if aug_x is None:
