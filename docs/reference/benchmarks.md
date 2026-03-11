@@ -110,6 +110,14 @@ Each run writes a timestamped directory under [`runs/`](https://github.com/ModSS
 - `run.json` (metrics + metadata)
 - `error.txt` (only on failure)
 
+For multi-seed sweeps, the configured `run.output_dir` becomes a container of sweep folders.
+Each sweep writes one dedicated subdirectory:
+- `<run.output_dir>/<run.name>-sweep-<timestamp>/aggregate.json`
+- `<run.output_dir>/<run.name>-sweep-<timestamp>/<seed-run-dir>/run.json`
+
+This keeps each sweep self-contained, with the aggregate and all child seed runs in
+the same folder.
+
 These outputs are created by the run context and reporting orchestrator. <sup class="cite"><a href="#source-3">[3]</a><a href="#source-4">[4]</a><a href="#source-5">[5]</a></sup>
 
 
@@ -119,6 +127,11 @@ These outputs are created by the run context and reporting orchestrator. <sup cl
 - resolved config blocks
 - artifacts and metrics
 - HPO summary when search is enabled
+
+`aggregate.json` includes:
+- sweep metadata (requested seeds, completed/success/failed counts)
+- aggregated metrics across successful seeds
+- references to the child run directories and `run.json` files
 
 This structure is written in [`bench/orchestrators/reporting.py`](https://github.com/ModSSC/ModSSC/blob/main/bench/orchestrators/reporting.py). <sup class="cite"><a href="#source-4">[4]</a></sup>
 

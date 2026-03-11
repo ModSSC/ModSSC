@@ -1,6 +1,12 @@
 run:
   name: best_graph_transductive_laplace_learning_cora_p02
   seed: 5
+  seeds:
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
   output_dir: ${MODSSC_OUTPUT_DIR}/p02/transductive/laplace_learning/graph/cora
   fail_fast: true
   log_level: detailed

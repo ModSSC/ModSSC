@@ -1,6 +1,12 @@
 run:
   name: best_audio_transductive_poisson_learning_yesno_p05
   seed: 4
+  seeds:
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
   output_dir: ${MODSSC_OUTPUT_DIR}/p05/transductive/poisson_learning/audio/yesno
   fail_fast: true
   log_level: detailed

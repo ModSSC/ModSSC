@@ -1,6 +1,12 @@
 run:
   name: best_text_inductive_vat_yelp_review_full_p05
   seed: 2
+  seeds:
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
   output_dir: ${MODSSC_OUTPUT_DIR}/p05/inductive/vat/text/yelp_review_full
   log_level: detailed
   fail_fast: true

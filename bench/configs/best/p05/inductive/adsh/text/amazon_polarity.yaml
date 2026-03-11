@@ -1,6 +1,12 @@
 run:
   name: best_text_inductive_adsh_amazon_polarity_p05
   seed: 2
+  seeds:
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
   output_dir: ${MODSSC_OUTPUT_DIR}/p05/inductive/adsh/text/amazon_polarity
   log_level: detailed
   fail_fast: true

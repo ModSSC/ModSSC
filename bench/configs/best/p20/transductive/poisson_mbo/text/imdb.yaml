@@ -1,6 +1,12 @@
 run:
   name: best_text_transductive_poisson_mbo_imdb_p20
   seed: 2
+  seeds:
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
   output_dir: ${MODSSC_OUTPUT_DIR}/p20/transductive/poisson_mbo/text/imdb
   log_level: detailed
   fail_fast: true

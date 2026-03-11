@@ -4,7 +4,8 @@ import argparse
 import logging
 import traceback
 from collections.abc import Mapping
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -46,6 +47,13 @@ from .utils.runtime import collect_runtime_versions
 _ALLOWED_METRICS = set(list_metrics())
 _ALLOWED_SPLITS = {"train", "val", "test"}
 _LOGGER = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class SingleRunResult:
+    code: int
+    run_dir: Path
+    run_json_path: Path
 
 
 def _positive_int(value: str) -> int:
@@ -514,7 +522,9 @@ def _sync_ctx_run_identity(ctx: RunContext, *, run_id: str) -> None:
     _LOGGER.info("Run identity updated after config mutation: %s -> %s", old_run_id, run_id)
 
 
-def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: ExperimentConfig) -> int:
+def _run_experiment_single(
+    config_path: Path, *, raw: dict[str, Any], cfg: ExperimentConfig
+) -> SingleRunResult:
     requested_raw = deep_merge({}, raw)
     config_hash = hash_any(requested_raw)
 
@@ -977,7 +987,7 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
         )
         if cfg.run.benchmark_mode or ctx.fail_fast:
             raise
-        return 1
+        return SingleRunResult(code=1, run_dir=ctx.run_dir, run_json_path=ctx.run_dir / "run.json")
 
     if metrics is not None:
         _LOGGER.info("Metrics: %s", metrics)
@@ -1000,7 +1010,7 @@ def _run_experiment_single(config_path: Path, *, raw: dict[str, Any], cfg: Exper
         error=error,
         error_code=error_code,
     )
-    return 0
+    return SingleRunResult(code=0, run_dir=ctx.run_dir, run_json_path=ctx.run_dir / "run.json")
 
 
 def run_experiment(config_path: Path, *, num_runs: int | None = None) -> int:
@@ -1023,28 +1033,50 @@ def run_experiment(config_path: Path, *, num_runs: int | None = None) -> int:
         seeds = [int(s) for s in cfg.run.seeds]
         _LOGGER.info("Seed sweep start: name=%s seeds=%s", cfg.run.name, seeds)
     else:
-        return _run_experiment_single(config_path, raw=raw, cfg=cfg)
+        return _run_experiment_single(config_path, raw=raw, cfg=cfg).code
+
+    sweep_timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    sweep_root = next_available_run_dir(
+        Path(cfg.run.output_dir).expanduser().resolve() / f"{cfg.run.name}-sweep-{sweep_timestamp}"
+    )
+    _LOGGER.info("Seed sweep output dir: %s", sweep_root)
 
     failures = 0
+    run_results: list[SingleRunResult] = []
     for i, seed in enumerate(seeds, start=1):
         run_name = sweep_run_name(cfg.run.name, seed=seed, index=i - 1, total=len(seeds))
         sweep_raw = apply_global_seed(raw, seed=seed, run_name=run_name)
+        sweep_run = sweep_raw.get("run")
+        if not isinstance(sweep_run, dict):
+            sweep_run = {}
+            sweep_raw["run"] = sweep_run
+        sweep_run["output_dir"] = str(sweep_root)
         sweep_cfg = ExperimentConfig.from_dict(sweep_raw)
         _LOGGER.info("Seed sweep run %s/%s: seed=%s name=%s", i, len(seeds), seed, run_name)
         try:
-            code = _run_experiment_single(config_path, raw=sweep_raw, cfg=sweep_cfg)
+            result = _run_experiment_single(config_path, raw=sweep_raw, cfg=sweep_cfg)
         except Exception:
             if sweep_cfg.run.benchmark_mode or sweep_cfg.run.fail_fast:
                 raise
             failures += 1
             continue
-        if code != 0:
+        run_results.append(result)
+        if result.code != 0:
             failures += 1
             if sweep_cfg.run.benchmark_mode or sweep_cfg.run.fail_fast:
                 raise BenchRuntimeError(
                     "E_BENCH_SWEEP_FAILED",
                     "seed sweep aborted due to failed run with fail_fast=true",
                 )
+
+    if run_results:
+        report_orch.write_seed_sweep_summary(
+            output_dir=sweep_root,
+            config_path=config_path,
+            base_name=cfg.run.name,
+            requested_seeds=seeds,
+            run_json_paths=[result.run_json_path for result in run_results],
+        )
 
     if failures:
         _LOGGER.warning("Seed sweep finished with failures: %s/%s", failures, len(seeds))

@@ -2,6 +2,12 @@
 run:
   name: best_vision_inductive_temporal_ensembling_cifar10_p05
   seed: 3
+  seeds:
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
   output_dir: "${MODSSC_OUTPUT_DIR}/p05/inductive/temporal_ensembling/vision/cifar10"
   log_level: detailed
   fail_fast: true

@@ -1,6 +1,12 @@
 run:
   name: best_text_transductive_planetoid_ag_news_p10
   seed: 2
+  seeds:
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
   output_dir: ${MODSSC_OUTPUT_DIR}/p10/transductive/planetoid/text/ag_news
   log_level: detailed
   fail_fast: true

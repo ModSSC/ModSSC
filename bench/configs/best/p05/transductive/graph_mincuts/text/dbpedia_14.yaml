@@ -1,6 +1,12 @@
 run:
   name: best_text_transductive_graph_mincuts_dbpedia_14_p05
   seed: 2
+  seeds:
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
   output_dir: ${MODSSC_OUTPUT_DIR}/p05/transductive/graph_mincuts/text/dbpedia_14
   log_level: detailed
   fail_fast: true

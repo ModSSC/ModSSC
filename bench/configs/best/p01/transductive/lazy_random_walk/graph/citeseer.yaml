@@ -1,6 +1,12 @@
 run:
   name: best_graph_transductive_lazy_random_walk_citeseer_p01
   seed: 6
+  seeds:
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
   output_dir: ${MODSSC_OUTPUT_DIR}/p01/transductive/lazy_random_walk/graph/citeseer
   fail_fast: true
   log_level: detailed

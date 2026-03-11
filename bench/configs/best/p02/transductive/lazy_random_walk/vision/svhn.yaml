@@ -2,6 +2,12 @@
 run:
   name: best_vision_transductive_lazy_random_walk_svhn_p02
   seed: 3
+  seeds:
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
   output_dir: "${MODSSC_OUTPUT_DIR}/p02/transductive/lazy_random_walk/vision/svhn"
   log_level: detailed
   fail_fast: true

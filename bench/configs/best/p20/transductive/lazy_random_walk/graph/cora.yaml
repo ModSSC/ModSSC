@@ -1,6 +1,12 @@
 run:
   name: best_graph_lazy_random_walk_cora_p20
   seed: 6
+  seeds:
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
   output_dir: ${MODSSC_OUTPUT_DIR}/p20/transductive/lazy_random_walk/graph/cora
   fail_fast: true
   log_level: detailed
