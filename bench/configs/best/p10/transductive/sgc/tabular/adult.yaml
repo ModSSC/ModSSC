@@ -1,6 +1,12 @@
 run:
   name: best_tabular_transductive_sgc_adult_p10
   seed: 1
+  seeds:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
   output_dir: ${MODSSC_OUTPUT_DIR}/p10/transductive/sgc/tabular/adult
   log_level: detailed
   fail_fast: true

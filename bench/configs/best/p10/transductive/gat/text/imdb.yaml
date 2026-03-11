@@ -1,6 +1,12 @@
 run:
   name: best_text_transductive_gat_imdb_p10
   seed: 2
+  seeds:
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
   output_dir: ${MODSSC_OUTPUT_DIR}/p10/transductive/gat/text/imdb
   log_level: detailed
   fail_fast: true

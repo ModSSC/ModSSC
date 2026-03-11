@@ -1,6 +1,12 @@
 run:
   name: best_tabular_inductive_setred_breast_cancer_p02
   seed: 1
+  seeds:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
   output_dir: ${MODSSC_OUTPUT_DIR}/p02/inductive/setred/tabular/breast_cancer
   log_level: detailed
   fail_fast: true

@@ -1,6 +1,12 @@
 run:
   name: best_text_inductive_adamatch_imdb_p01
   seed: 2
+  seeds:
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
   output_dir: ${MODSSC_OUTPUT_DIR}/p01/inductive/adamatch/text/imdb
   log_level: detailed
   fail_fast: true

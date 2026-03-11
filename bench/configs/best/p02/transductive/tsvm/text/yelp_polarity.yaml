@@ -1,6 +1,12 @@
 run:
   name: best_text_transductive_tsvm_yelp_polarity_p02
   seed: 2
+  seeds:
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
   output_dir: ${MODSSC_OUTPUT_DIR}/p02/transductive/tsvm/text/yelp_polarity
   log_level: detailed
   fail_fast: true

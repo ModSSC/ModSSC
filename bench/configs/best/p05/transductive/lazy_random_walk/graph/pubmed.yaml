@@ -1,6 +1,12 @@
 run:
   name: best_graph_transductive_lazy_random_walk_pubmed_p05
   seed: 6
+  seeds:
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
   output_dir: ${MODSSC_OUTPUT_DIR}/p05/transductive/lazy_random_walk/graph/pubmed
   fail_fast: true
   log_level: detailed
