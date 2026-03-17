@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 import pytest
 
 try:
@@ -229,6 +232,29 @@ def test_load_model_get_model_path(monkeypatch) -> None:
     monkeypatch.setattr(ip, "_torchvision", lambda: DummyTV)
     out = ip._load_model("resnet18", "DEFAULT")
     assert out["weights"] == DummyWeights.DEFAULT
+
+
+def test_load_model_sets_torch_home(monkeypatch) -> None:
+    class DummyWeights:
+        DEFAULT = "ok"
+
+    class DummyModels:
+        def get_model_weights(self, _name):
+            return DummyWeights
+
+        def get_model(self, name, weights=None):
+            return {"name": name, "weights": weights}
+
+    class DummyTV:
+        models = DummyModels()
+
+    monkeypatch.setattr(ip, "_torchvision", lambda: DummyTV)
+    monkeypatch.setenv("MODSSC_MODEL_CACHE_ROOT", "/tmp/modssc-models")
+    monkeypatch.delenv("TORCH_HOME", raising=False)
+
+    out = ip._load_model("resnet18", "DEFAULT")
+    assert out["weights"] == DummyWeights.DEFAULT
+    assert os.environ["TORCH_HOME"] == str(Path("/tmp/modssc-models/torch").resolve())
 
 
 def test_load_model_pretrained_fallback(monkeypatch) -> None:

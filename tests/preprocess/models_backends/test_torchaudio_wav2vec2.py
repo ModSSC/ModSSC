@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -99,6 +100,62 @@ def test_wav2vec2_init_errors():
             Wav2Vec2Encoder(bundle="BAD_BUNDLE")
 
 
+def test_wav2vec2_init_falls_back_without_dl_kwargs():
+    with patch("modssc.preprocess.models_backends.torchaudio_wav2vec2.require") as mock_require:
+        mock_torchaudio = MagicMock()
+        mock_bundle = MagicMock()
+        mock_model = MagicMock()
+        mock_model.to.return_value = mock_model
+        mock_torchaudio.pipelines.WAV2VEC2_BASE = mock_bundle
+
+        def get_model(*args, **kwargs):
+            del args
+            if kwargs:
+                raise TypeError("kwargs unsupported")
+            return mock_model
+
+        mock_bundle.get_model.side_effect = get_model
+
+        def side_effect(module, **kwargs):
+            del kwargs
+            if module == "torch":
+                return MagicMock()
+            if module == "torchaudio":
+                return mock_torchaudio
+            return MagicMock()
+
+        mock_require.side_effect = side_effect
+
+        with patch(
+            "modssc.preprocess.models_backends.torchaudio_wav2vec2.resolve_device_name",
+            return_value="cpu",
+        ):
+            Wav2Vec2Encoder()
+
+        assert mock_bundle.get_model.call_count == 2
+
+
+def test_wav2vec2_init_wraps_bundle_load_error():
+    with patch("modssc.preprocess.models_backends.torchaudio_wav2vec2.require") as mock_require:
+        mock_torchaudio = MagicMock()
+        mock_bundle = MagicMock()
+        mock_bundle.get_model.side_effect = RuntimeError("offline")
+        mock_torchaudio.pipelines.WAV2VEC2_BASE = mock_bundle
+
+        def side_effect(module, **kwargs):
+            del kwargs
+            if module == "torch":
+                return MagicMock()
+            if module == "torchaudio":
+                return mock_torchaudio
+            return MagicMock()
+
+        mock_require.side_effect = side_effect
+
+        with pytest.raises(RuntimeError, match="Failed to load torchaudio bundle"):
+            Wav2Vec2Encoder()
+
+
 def test_wav2vec2_encode():
     # Mock require to return mocks
     with patch("modssc.preprocess.models_backends.torchaudio_wav2vec2.require") as mock_require:
@@ -132,6 +189,7 @@ def test_wav2vec2_encode():
         mock_require.side_effect = side_effect
 
         encoder = Wav2Vec2Encoder(device="cpu")
+        mock_bundle.get_model.assert_called_with(dl_kwargs={"progress": False})
 
         X = [np.random.randn(100).astype(np.float32)]
         out = encoder.encode(X)
@@ -151,3 +209,30 @@ def test_wav2vec2_encode():
             out_path = encoder.encode(["path1"])
             assert out_path.shape == (1, 10)
             assert mock_load.called
+
+
+def test_wav2vec2_uses_modssc_torch_cache(monkeypatch):
+    with patch("modssc.preprocess.models_backends.torchaudio_wav2vec2.require") as mock_require:
+        mock_torchaudio = MagicMock()
+        mock_bundle = MagicMock()
+        mock_model = MagicMock()
+        mock_model.to.return_value = mock_model
+        mock_bundle.get_model.return_value = mock_model
+        mock_torchaudio.pipelines.WAV2VEC2_BASE = mock_bundle
+
+        def side_effect(module, **kwargs):
+            if module == "torch":
+                return MagicMock()
+            if module == "torchaudio":
+                return mock_torchaudio
+            return MagicMock()
+
+        mock_require.side_effect = side_effect
+        monkeypatch.setenv("MODSSC_MODEL_CACHE_ROOT", "/tmp/modssc-models")
+        monkeypatch.delenv("TORCH_HOME", raising=False)
+
+        Wav2Vec2Encoder()
+
+        assert mock_bundle.get_model.call_args.kwargs["dl_kwargs"]["model_dir"] == str(
+            Path("/tmp/modssc-models/torch/hub/checkpoints").resolve()
+        )

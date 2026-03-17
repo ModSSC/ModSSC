@@ -67,3 +67,4 @@ dev_wip/
 bench/configs/experiments/article/README.md
 bench/configs/experiments/best/
 bench/configs/experiments/smoke/
+bench/slurm/

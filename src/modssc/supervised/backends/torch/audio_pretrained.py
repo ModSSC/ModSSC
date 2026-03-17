@@ -4,6 +4,7 @@ import logging
 from time import perf_counter
 from typing import Any
 
+from modssc.model_cache import ensure_torch_home, torchaudio_download_kwargs
 from modssc.supervised.backends.torch.common import TorchScoresClassifierBase
 from modssc.supervised.base import FitResult
 from modssc.supervised.errors import SupervisedValidationError
@@ -26,6 +27,21 @@ def _load_bundle(bundle_name: str):
     if bundle is None:
         raise SupervisedValidationError(f"Unknown torchaudio bundle: {bundle_name!r}")
     return bundle
+
+
+def _load_bundle_model(bundle_name: str, bundle: Any) -> Any:
+    ensure_torch_home()
+    dl_kwargs = torchaudio_download_kwargs()
+    try:
+        return bundle.get_model(dl_kwargs=dl_kwargs)
+    except TypeError:
+        return bundle.get_model()
+    except Exception as exc:
+        raise SupervisedValidationError(
+            f"Failed to load torchaudio pretrained bundle {bundle_name!r}. "
+            "On offline compute nodes, pre-populate the checkpoint in TORCH_HOME "
+            "or under MODSSC_MODEL_CACHE_ROOT."
+        ) from exc
 
 
 def _extract_features(model: Any, waveforms: Any, torch) -> Any:
@@ -150,7 +166,7 @@ class TorchAudioPretrainedClassifier(TorchScoresClassifierBase):
         torch.manual_seed(int(self.seed or 0))
 
         bundle = _load_bundle(self.bundle)
-        backbone = bundle.get_model().to(X.device)
+        backbone = _load_bundle_model(self.bundle, bundle).to(X.device)
         self._backbone = backbone
 
         X2 = self._prepare_X(X, torch)

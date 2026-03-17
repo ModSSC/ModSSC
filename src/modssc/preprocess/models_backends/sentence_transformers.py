@@ -6,6 +6,7 @@ from typing import Any
 import numpy as np
 
 from modssc.device import resolve_device_name
+from modssc.model_cache import resolve_hf_local_files_only, resolve_sentence_transformers_cache
 from modssc.preprocess.errors import OptionalDependencyError
 from modssc.preprocess.optional import require
 
@@ -27,7 +28,23 @@ class SentenceTransformerEncoder:
         # Store module to avoid re-importing
         self._SentenceTransformer = st.SentenceTransformer  # type: ignore[attr-defined]
         self.device = resolve_device_name(self.device)
-        self._model = self._SentenceTransformer(self.model_name, device=self.device)
+        self.cache_folder = resolve_sentence_transformers_cache()
+        self.local_files_only = resolve_hf_local_files_only()
+        try:
+            self._model = self._SentenceTransformer(
+                self.model_name,
+                device=self.device,
+                cache_folder=self.cache_folder,
+                local_files_only=self.local_files_only,
+            )
+        except Exception as e:
+            mode = "local cache only" if self.local_files_only else "cache/network resolution"
+            raise RuntimeError(
+                f"Failed to load SentenceTransformer model {self.model_name!r} using {mode} "
+                f"(cache_folder={self.cache_folder!r}). "
+                "On offline compute nodes, pre-populate the cache and export "
+                "HF_HUB_OFFLINE=1 and TRANSFORMERS_OFFLINE=1."
+            ) from e
 
     def encode(
         self, X: Any, *, batch_size: int = 32, rng: np.random.Generator | None = None

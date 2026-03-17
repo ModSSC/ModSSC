@@ -67,6 +67,96 @@ def _split_stats(split: Any) -> tuple[int | None, int | None]:
     return n_samples, n_classes
 
 
+def _rebase_cached_path(value: str, *, current_source_root: Path) -> str:
+    path = Path(value)
+    if not path.is_absolute():
+        return value
+
+    try:
+        path.relative_to(current_source_root)
+        return value
+    except ValueError:
+        pass
+
+    if "source" not in path.parts:
+        return value
+
+    source_idx = max(idx for idx, part in enumerate(path.parts) if part == "source")
+    relative_tail = Path(*path.parts[source_idx + 1 :])
+    if not relative_tail.parts:
+        return value
+
+    return str(current_source_root / relative_tail)
+
+
+def _rebase_cached_split_audio_paths(split: Any, *, current_source_root: Path) -> tuple[Any, int]:
+    if split is None:
+        return None, 0
+
+    try:
+        X = np.asarray(split.X, dtype=object)
+    except Exception:
+        return split, 0
+
+    if X.dtype != object or X.size == 0:
+        return split, 0
+
+    rebased = np.empty(X.shape, dtype=object)
+    changed = 0
+
+    for idx, item in enumerate(X.flat):
+        if not isinstance(item, str):
+            return split, 0
+        new_item = _rebase_cached_path(item, current_source_root=current_source_root)
+        if new_item != item:
+            changed += 1
+        rebased.flat[idx] = new_item
+
+    if changed == 0:
+        return split, 0
+
+    return replace(split, X=rebased), changed
+
+
+def _rebase_cached_dataset_paths(
+    layout: cache.CacheLayout, fingerprint: str, dataset: LoadedDataset
+) -> LoadedDataset:
+    try:
+        manifest = cache.read_cached_manifest(layout, fingerprint)
+    except Exception:
+        return dataset
+
+    identity = manifest.identity
+    provider = str(identity.get("provider") or "")
+    dataset_id = identity.get("dataset_id")
+    version = identity.get("version")
+
+    if provider != "torchaudio" or not dataset_id:
+        return dataset
+
+    current_source_root = layout.raw_dir(provider, str(dataset_id), version) / "source"
+
+    train, changed_train = _rebase_cached_split_audio_paths(
+        dataset.train, current_source_root=current_source_root
+    )
+    test, changed_test = _rebase_cached_split_audio_paths(
+        dataset.test, current_source_root=current_source_root
+    )
+
+    changed = changed_train + changed_test
+    if changed == 0:
+        return dataset
+
+    logger.info(
+        "Rebased cached torchaudio paths: fingerprint=%s dataset_id=%s changed=%s source_root=%s",
+        fingerprint,
+        dataset_id,
+        changed,
+        str(current_source_root),
+    )
+    return replace(dataset, train=train, test=test)
+
+
 def cache_dir() -> Path:
     return cache.default_cache_dir()
 
@@ -396,6 +486,7 @@ def _download_and_store(
 def _load_processed(layout: cache.CacheLayout, fingerprint: str) -> LoadedDataset:
     storage = FileStorage()
     ds = storage.load(layout.processed_dir(fingerprint))
+    ds = _rebase_cached_dataset_paths(layout, fingerprint, ds)
     # Ensure fingerprint is in meta
     if ds.meta is None:
         ds = replace(ds, meta={})

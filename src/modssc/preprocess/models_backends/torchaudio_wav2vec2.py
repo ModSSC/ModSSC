@@ -8,6 +8,7 @@ from typing import Any
 import numpy as np
 
 from modssc.device import resolve_device_name
+from modssc.model_cache import ensure_torch_home, torchaudio_download_kwargs
 from modssc.preprocess.errors import OptionalDependencyError
 from modssc.preprocess.numpy_adapter import to_numpy
 from modssc.preprocess.optional import require
@@ -34,7 +35,19 @@ class Wav2Vec2Encoder:
         if not hasattr(pipelines, self.bundle):
             raise ValueError(f"Unknown torchaudio pipeline bundle: {self.bundle!r}")
         b = getattr(pipelines, self.bundle)
-        model = b.get_model()
+        ensure_torch_home()
+        self.dl_kwargs = torchaudio_download_kwargs()
+        try:
+            model = b.get_model(dl_kwargs=self.dl_kwargs)
+        except TypeError:
+            model = b.get_model()
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to load torchaudio bundle {self.bundle!r} "
+                f"(dl_kwargs={self.dl_kwargs!r}). "
+                "On offline compute nodes, pre-populate the checkpoint in TORCH_HOME "
+                "or under MODSSC_MODEL_CACHE_ROOT."
+            ) from e
         model.eval()
         self.device = resolve_device_name(self.device, torch=torch)
         self._model = model.to(self.device or "cpu")

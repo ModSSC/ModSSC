@@ -17,7 +17,26 @@ def _as_idx(idx: np.ndarray | list[int]) -> np.ndarray:
     return idx_arr
 
 
-def _slice_edge_index(edge_index: Any, idx: np.ndarray) -> Any:
+def _infer_num_nodes(X: Mapping[str, Any]) -> int | None:
+    x = X.get("x")
+    shape = getattr(x, "shape", None)
+    if shape is not None:
+        try:
+            if len(shape) > 0:
+                return int(shape[0])
+        except (TypeError, ValueError):
+            pass
+
+    num_nodes = X.get("num_nodes")
+    if num_nodes is None:
+        return None
+    try:
+        return int(num_nodes)
+    except (TypeError, ValueError):
+        return None
+
+
+def _slice_edge_index(edge_index: Any, idx: np.ndarray, *, num_nodes: int | None = None) -> Any:
     try:
         import importlib
 
@@ -38,7 +57,12 @@ def _slice_edge_index(edge_index: Any, idx: np.ndarray) -> Any:
 
     subset = torch.as_tensor(idx, dtype=torch.long, device=device)
     try:
-        sub_ei, _ = pyg_utils.subgraph(subset, ei, relabel_nodes=True)
+        sub_ei, _ = pyg_utils.subgraph(
+            subset,
+            ei,
+            relabel_nodes=True,
+            num_nodes=None if num_nodes is None else int(num_nodes),
+        )
     except (RuntimeError, TypeError, ValueError) as exc:
         raise BenchRuntimeError(
             "E_BENCH_GRAPH_SLICE_ERROR",
@@ -88,8 +112,9 @@ def select_rows(
 
     if isinstance(X, Mapping):
         out: dict[str, Any] = {}
+        num_nodes = _infer_num_nodes(X)
         if "edge_index" in X:
-            out["edge_index"] = _slice_edge_index(X["edge_index"], idx_arr)
+            out["edge_index"] = _slice_edge_index(X["edge_index"], idx_arr, num_nodes=num_nodes)
         for k, v in X.items():
             if k == "edge_index":
                 continue

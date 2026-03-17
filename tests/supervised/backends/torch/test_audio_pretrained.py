@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 try:
@@ -87,6 +89,39 @@ def test_load_bundle_success(monkeypatch) -> None:
 
     monkeypatch.setattr(ap, "_torchaudio", lambda: DummyAudio)
     assert ap._load_bundle("DUMMY") == "ok"
+
+
+def test_load_bundle_model_uses_cache(monkeypatch) -> None:
+    calls: dict[str, object] = {}
+
+    class DummyBundle:
+        def get_model(self, **kwargs):
+            calls.update(kwargs)
+            return "model"
+
+    monkeypatch.setenv("MODSSC_MODEL_CACHE_ROOT", "/tmp/modssc-models")
+    monkeypatch.delenv("TORCH_HOME", raising=False)
+
+    out = ap._load_bundle_model("DUMMY", DummyBundle())
+    assert out == "model"
+    assert calls["dl_kwargs"] == {
+        "progress": False,
+        "model_dir": str(Path("/tmp/modssc-models/torch/hub/checkpoints").resolve()),
+    }
+
+
+def test_load_bundle_model_wraps_unexpected_errors(monkeypatch, tmp_path) -> None:
+    class DummyBundle:
+        def get_model(self, **kwargs):
+            raise RuntimeError("offline")
+
+    monkeypatch.setenv("MODSSC_MODEL_CACHE_ROOT", str(tmp_path / "models"))
+    monkeypatch.delenv("TORCH_HOME", raising=False)
+
+    with pytest.raises(
+        SupervisedValidationError, match="Failed to load torchaudio pretrained bundle"
+    ):
+        ap._load_bundle_model("DUMMY", DummyBundle())
 
 
 def test_audio_pretrained_fit_predict_with_stub_bundle(monkeypatch) -> None:

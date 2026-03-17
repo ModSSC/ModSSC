@@ -189,6 +189,20 @@ def get_torch_len(x: Any) -> int:
     return int(x.shape[0])
 
 
+def should_freeze_batchnorm(*batch_inputs: Any, enabled: bool) -> bool:
+    if enabled:
+        return True
+    for batch in batch_inputs:
+        if batch is None:
+            continue
+        try:
+            if int(get_torch_len(batch)) < 2:
+                return True
+        except Exception:
+            continue
+    return False
+
+
 def get_torch_device(x: Any) -> Any:
     if isinstance(x, dict):
         if "x" in x:

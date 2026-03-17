@@ -324,6 +324,18 @@ class _LinearLogits(torch.nn.Module):
         return self.fc(x)
 
 
+class _BatchNormLogits(torch.nn.Module):
+    def __init__(self, in_dim: int = 2, n_classes: int = 2):
+        super().__init__()
+        self.bn = torch.nn.BatchNorm1d(in_dim)
+        self.fc = torch.nn.Linear(in_dim, n_classes, bias=False)
+
+    def forward(self, x):
+        if isinstance(x, dict):
+            x = x["x"]
+        return self.fc(self.bn(x))
+
+
 class _TeacherLogits1D(_LinearLogits):
     def forward(self, x):
         logits = super().forward(x)
@@ -1698,6 +1710,7 @@ def test_noisy_student_train_teacher_errors():
             data.y_l,
             batch_size=2,
             epochs=1,
+            freeze_bn=True,
             seed=0,
         )
 
@@ -1712,6 +1725,7 @@ def test_noisy_student_train_teacher_errors():
             bad_y,
             batch_size=2,
             epochs=1,
+            freeze_bn=True,
             seed=0,
         )
 
@@ -2817,3 +2831,22 @@ def test_adamatch_fit_slice_dict_missing_x_and_edge_index(monkeypatch):
     spec = _make_spec(AdaMatchMethod, _make_bundle_for(_FeatModel()), use_cat=False)
     with pytest.raises(RuntimeError, match="stop"):
         AdaMatchMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+
+@pytest.mark.parametrize(
+    "method_cls",
+    [
+        PiModelMethod,
+        MeanTeacherMethod,
+        TemporalEnsemblingMethod,
+        MixMatchMethod,
+        VATMethod,
+        NoisyStudentMethod,
+    ],
+)
+def test_singleton_batches_auto_freeze_batchnorm(method_cls):
+    model = _BatchNormLogits()
+    bundle = _make_bundle_for(model, with_ema=method_cls is MeanTeacherMethod)
+    data = make_torch_ssl_dataset()
+    method = method_cls(_make_spec(method_cls, bundle, batch_size=1, freeze_bn=False))
+    method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
