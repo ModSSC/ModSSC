@@ -28,7 +28,6 @@ python -m bench.main --config bench/configs/best/p01/inductive/supervised/audio/
 python -m bench.main --config bench/configs/best/p01/inductive/temporal_ensembling/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p01/inductive/tri_training/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p01/inductive/trinet/audio/yesno.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/tsvm/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p01/inductive/uda/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p01/inductive/vat/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p01/transductive/appnp/audio/yesno.yaml
@@ -84,7 +83,6 @@ python -m bench.main --config bench/configs/best/p02/inductive/supervised/audio/
 python -m bench.main --config bench/configs/best/p02/inductive/temporal_ensembling/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p02/inductive/tri_training/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p02/inductive/trinet/audio/yesno.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/tsvm/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p02/inductive/uda/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p02/inductive/vat/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p02/transductive/appnp/audio/yesno.yaml
@@ -140,7 +138,6 @@ python -m bench.main --config bench/configs/best/p05/inductive/supervised/audio/
 python -m bench.main --config bench/configs/best/p05/inductive/temporal_ensembling/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p05/inductive/tri_training/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p05/inductive/trinet/audio/yesno.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/tsvm/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p05/inductive/uda/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p05/inductive/vat/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p05/transductive/appnp/audio/yesno.yaml
@@ -196,7 +193,6 @@ python -m bench.main --config bench/configs/best/p10/inductive/supervised/audio/
 python -m bench.main --config bench/configs/best/p10/inductive/temporal_ensembling/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p10/inductive/tri_training/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p10/inductive/trinet/audio/yesno.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/tsvm/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p10/inductive/uda/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p10/inductive/vat/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p10/transductive/appnp/audio/yesno.yaml
@@ -252,7 +248,6 @@ python -m bench.main --config bench/configs/best/p20/inductive/supervised/audio/
 python -m bench.main --config bench/configs/best/p20/inductive/temporal_ensembling/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p20/inductive/tri_training/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p20/inductive/trinet/audio/yesno.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/tsvm/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p20/inductive/uda/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p20/inductive/vat/audio/yesno.yaml
 python -m bench.main --config bench/configs/best/p20/transductive/appnp/audio/yesno.yaml

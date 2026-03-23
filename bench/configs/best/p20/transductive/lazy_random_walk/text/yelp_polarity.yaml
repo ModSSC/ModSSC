@@ -1,6 +1,12 @@
 run:
   name: best_text_transductive_lazy_random_walk_yelp_polarity_p20
   seed: 2
+  seeds:
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
   output_dir: ${MODSSC_OUTPUT_DIR}/p20/transductive/lazy_random_walk/text/yelp_polarity
   log_level: detailed
   fail_fast: true

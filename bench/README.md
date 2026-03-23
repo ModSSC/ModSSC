@@ -67,6 +67,9 @@ python -m bench.main --config bench/configs/experiments/toy_inductive.yaml --num
 
 When `--num-runs` is provided, it overrides `run.seeds`.
 
+Best benchmark presets under `bench/configs/best/` now default to 5-seed sweeps via
+`run.seeds`, derived from each config's base `run.seed`.
+
 ## Cache behavior in multi-seed
 
 Recommended setup:
@@ -101,6 +104,8 @@ Artifacts:
 - runs/<name-timestamp>/config.yaml
 - runs/<name-timestamp>/run.json
 - runs/<name-timestamp>/error.txt (if failed)
+- <output_dir>/<run-name>-sweep-<timestamp>/aggregate.json (multi-seed sweep summary)
+- <output_dir>/<run-name>-sweep-<timestamp>/<seed-run-dir>/run.json (child seed runs)
 
 Notes:
 - Templates in bench/configs/experiments/ download data and may require extras.

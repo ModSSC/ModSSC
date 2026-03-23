@@ -2,6 +2,12 @@
 run:
   name: best_vision_transductive_graph_mincuts_mnist_p02
   seed: 3
+  seeds:
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
   output_dir: "${MODSSC_OUTPUT_DIR}/p02/transductive/graph_mincuts/vision/mnist"
   log_level: detailed
   fail_fast: true

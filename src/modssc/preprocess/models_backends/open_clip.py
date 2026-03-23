@@ -6,6 +6,7 @@ from typing import Any
 import numpy as np
 
 from modssc.device import resolve_device_name
+from modssc.model_cache import resolve_openclip_cache_dir
 from modssc.preprocess.errors import OptionalDependencyError
 from modssc.preprocess.numpy_adapter import to_numpy
 from modssc.preprocess.optional import require
@@ -26,9 +27,20 @@ class OpenClipEncoder:
 
         self._torch = torch
         self._open_clip = open_clip
-        model, _, preprocess = open_clip.create_model_and_transforms(
-            self.model_name, pretrained=self.pretrained
-        )
+        self.cache_dir = resolve_openclip_cache_dir()
+        try:
+            model, _, preprocess = open_clip.create_model_and_transforms(
+                self.model_name,
+                pretrained=self.pretrained,
+                cache_dir=self.cache_dir,
+            )
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to load OpenCLIP model {self.model_name!r} "
+                f"with pretrained={self.pretrained!r} (cache_dir={self.cache_dir!r}). "
+                "On offline compute nodes, pre-populate the checkpoint cache and export "
+                "MODSSC_OPENCLIP_CACHE_DIR or MODSSC_MODEL_CACHE_ROOT."
+            ) from e
         model.eval()
         self.device = resolve_device_name(self.device, torch=torch)
         self._model = model.to(self.device or "cpu")

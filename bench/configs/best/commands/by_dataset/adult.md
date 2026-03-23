@@ -24,7 +24,6 @@ python -m bench.main --config bench/configs/best/p01/inductive/supervised/tabula
 python -m bench.main --config bench/configs/best/p01/inductive/temporal_ensembling/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p01/inductive/tri_training/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p01/inductive/trinet/tabular/adult.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/tsvm/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p01/inductive/uda/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p01/inductive/vat/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p01/transductive/appnp/tabular/adult.yaml
@@ -76,7 +75,6 @@ python -m bench.main --config bench/configs/best/p02/inductive/supervised/tabula
 python -m bench.main --config bench/configs/best/p02/inductive/temporal_ensembling/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p02/inductive/tri_training/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p02/inductive/trinet/tabular/adult.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/tsvm/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p02/inductive/uda/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p02/inductive/vat/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p02/transductive/appnp/tabular/adult.yaml
@@ -128,7 +126,6 @@ python -m bench.main --config bench/configs/best/p05/inductive/supervised/tabula
 python -m bench.main --config bench/configs/best/p05/inductive/temporal_ensembling/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p05/inductive/tri_training/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p05/inductive/trinet/tabular/adult.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/tsvm/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p05/inductive/uda/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p05/inductive/vat/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p05/transductive/appnp/tabular/adult.yaml
@@ -180,7 +177,6 @@ python -m bench.main --config bench/configs/best/p10/inductive/supervised/tabula
 python -m bench.main --config bench/configs/best/p10/inductive/temporal_ensembling/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p10/inductive/tri_training/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p10/inductive/trinet/tabular/adult.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/tsvm/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p10/inductive/uda/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p10/inductive/vat/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p10/transductive/appnp/tabular/adult.yaml
@@ -232,7 +228,6 @@ python -m bench.main --config bench/configs/best/p20/inductive/supervised/tabula
 python -m bench.main --config bench/configs/best/p20/inductive/temporal_ensembling/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p20/inductive/tri_training/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p20/inductive/trinet/tabular/adult.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/tsvm/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p20/inductive/uda/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p20/inductive/vat/tabular/adult.yaml
 python -m bench.main --config bench/configs/best/p20/transductive/appnp/tabular/adult.yaml

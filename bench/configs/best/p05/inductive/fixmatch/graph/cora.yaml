@@ -1,6 +1,12 @@
 run:
   name: best_graph_inductive_fixmatch_cora_p05
   seed: 5
+  seeds:
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
   output_dir: ${MODSSC_OUTPUT_DIR}/p05/inductive/fixmatch/graph/cora
   fail_fast: true
   log_level: detailed

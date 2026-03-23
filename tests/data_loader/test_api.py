@@ -8,7 +8,7 @@ import pytest
 
 import modssc.data_loader.api as api
 from modssc.data_loader.errors import DatasetNotCachedError, OptionalDependencyError
-from modssc.data_loader.types import DatasetIdentity
+from modssc.data_loader.types import DatasetIdentity, LoadedDataset, Split
 
 
 def test_cache_dir_uses_env_override(monkeypatch, tmp_path) -> None:
@@ -183,6 +183,91 @@ def test_split_stats_large_sample_skips_unique() -> None:
     n_samples, n_classes = api._split_stats(split)
     assert n_samples == 1_000_001
     assert n_classes is None
+
+
+def test_rebase_cached_path_preserves_non_rewriteable_values(tmp_path) -> None:
+    current_source_root = tmp_path / "raw" / "torchaudio" / "YESNO" / "source"
+    relative = "waves_yesno/clip.wav"
+    already_current = str(current_source_root / "waves_yesno" / "clip.wav")
+    no_source = str(tmp_path / "raw" / "torchaudio" / "YESNO" / "clip.wav")
+    source_only = str(tmp_path / "legacy" / "source")
+
+    assert api._rebase_cached_path(relative, current_source_root=current_source_root) == relative
+    assert (
+        api._rebase_cached_path(already_current, current_source_root=current_source_root)
+        == already_current
+    )
+    assert api._rebase_cached_path(no_source, current_source_root=current_source_root) == no_source
+    assert (
+        api._rebase_cached_path(source_only, current_source_root=current_source_root) == source_only
+    )
+
+
+def test_rebase_cached_split_audio_paths_handles_non_rebased_cases(tmp_path) -> None:
+    current_source_root = tmp_path / "raw" / "torchaudio" / "YESNO" / "source"
+
+    class BadArray:
+        def __array__(self, dtype=None):
+            raise RuntimeError("no array")
+
+    bad_split = types.SimpleNamespace(X=BadArray())
+    rebased_bad, changed_bad = api._rebase_cached_split_audio_paths(
+        bad_split, current_source_root=current_source_root
+    )
+    assert rebased_bad is bad_split
+    assert changed_bad == 0
+
+    empty_split = Split(X=np.asarray([], dtype=object), y=np.asarray([], dtype=np.int64))
+    rebased_empty, changed_empty = api._rebase_cached_split_audio_paths(
+        empty_split, current_source_root=current_source_root
+    )
+    assert rebased_empty is empty_split
+    assert changed_empty == 0
+
+    non_string_split = Split(X=np.asarray([123], dtype=object), y=np.asarray([0], dtype=np.int64))
+    rebased_non_string, changed_non_string = api._rebase_cached_split_audio_paths(
+        non_string_split, current_source_root=current_source_root
+    )
+    assert rebased_non_string is non_string_split
+    assert changed_non_string == 0
+
+    unchanged_split = Split(
+        X=np.asarray([str(current_source_root / "waves_yesno" / "clip.wav")], dtype=object),
+        y=np.asarray([0], dtype=np.int64),
+    )
+    rebased_unchanged, changed_unchanged = api._rebase_cached_split_audio_paths(
+        unchanged_split, current_source_root=current_source_root
+    )
+    assert rebased_unchanged is unchanged_split
+    assert changed_unchanged == 0
+
+
+def test_rebase_cached_dataset_paths_returns_original_when_unchanged(monkeypatch, tmp_path) -> None:
+    layout = api._layout(tmp_path)
+    dataset = LoadedDataset(
+        train=Split(
+            X=np.asarray(
+                [
+                    str(
+                        layout.raw_dir("torchaudio", "YESNO", None)
+                        / "source"
+                        / "waves_yesno"
+                        / "0.wav"
+                    )
+                ],
+                dtype=object,
+            ),
+            y=np.asarray(["yes"], dtype=object),
+        ),
+        test=None,
+        meta={},
+    )
+    manifest = types.SimpleNamespace(
+        identity={"provider": "torchaudio", "dataset_id": "YESNO", "version": None}
+    )
+    monkeypatch.setattr(api.cache, "read_cached_manifest", lambda *_args, **_kwargs: manifest)
+
+    assert api._rebase_cached_dataset_paths(layout, "test-fp", dataset) is dataset
 
 
 def test_download_and_store_cleanup_on_partial_state(monkeypatch, tmp_path) -> None:

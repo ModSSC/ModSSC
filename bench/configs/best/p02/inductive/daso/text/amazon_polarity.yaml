@@ -1,6 +1,12 @@
 run:
   name: best_text_inductive_daso_amazon_polarity_p02
   seed: 2
+  seeds:
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
   output_dir: ${MODSSC_OUTPUT_DIR}/p02/inductive/daso/text/amazon_polarity
   log_level: detailed
   fail_fast: true

@@ -31,3 +31,6 @@ All command files are in English and contain raw `python -m bench.main --config 
 ```bash
 python -m bench.main --config bench/configs/best/<pXX>/<kind>/<method>/<modality>/<dataset>.yaml
 ```
+
+All `best` configs now include `run.seeds` and therefore execute a default 5-seed
+sweep from the base `run.seed`.

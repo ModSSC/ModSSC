@@ -1,8 +1,11 @@
+import os
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
 
+import modssc.model_cache as model_cache
 from modssc.preprocess.errors import OptionalDependencyError
 
 
@@ -32,9 +35,12 @@ def test_sentence_transformer_encode():
 
     mock_model.encode.return_value = np.array([[0.1, 0.2], [0.3, 0.4]], dtype=np.float32)
 
-    with patch(
-        "modssc.preprocess.models_backends.sentence_transformers.require",
-        return_value=mock_st_module,
+    with (
+        patch.dict(os.environ, {}, clear=True),
+        patch(
+            "modssc.preprocess.models_backends.sentence_transformers.require",
+            return_value=mock_st_module,
+        ),
     ):
         from modssc.preprocess.models_backends.sentence_transformers import (
             SentenceTransformerEncoder,
@@ -42,7 +48,12 @@ def test_sentence_transformer_encode():
 
         encoder = SentenceTransformerEncoder(model_name="test-model")
 
-        mock_st_module.SentenceTransformer.assert_called_with("test-model", device=None)
+        mock_st_module.SentenceTransformer.assert_called_with(
+            "test-model",
+            device=None,
+            cache_folder=None,
+            local_files_only=False,
+        )
 
         texts = ["hello", "world"]
         res = encoder.encode(texts, batch_size=2)
@@ -58,6 +69,58 @@ def test_sentence_transformer_encode():
         )
 
 
+def test_sentence_transformer_respects_cache_and_offline_env():
+    mock_st_module = MagicMock()
+    mock_model = MagicMock()
+    mock_st_module.SentenceTransformer.return_value = mock_model
+
+    with (
+        patch.dict(
+            os.environ,
+            {
+                "SENTENCE_TRANSFORMERS_HOME": "/tmp/st-cache",
+                "HF_HUB_OFFLINE": "1",
+            },
+            clear=True,
+        ),
+        patch(
+            "modssc.preprocess.models_backends.sentence_transformers.require",
+            return_value=mock_st_module,
+        ),
+    ):
+        from modssc.preprocess.models_backends.sentence_transformers import (
+            SentenceTransformerEncoder,
+        )
+
+        SentenceTransformerEncoder(model_name="test-model", device="cpu")
+
+        mock_st_module.SentenceTransformer.assert_called_with(
+            "test-model",
+            device="cpu",
+            cache_folder=str(Path("/tmp/st-cache").resolve()),
+            local_files_only=True,
+        )
+
+
+def test_sentence_transformer_wraps_model_load_error():
+    mock_st_module = MagicMock()
+    mock_st_module.SentenceTransformer.side_effect = RuntimeError("offline")
+
+    with (
+        patch.dict(os.environ, {}, clear=True),
+        patch(
+            "modssc.preprocess.models_backends.sentence_transformers.require",
+            return_value=mock_st_module,
+        ),
+    ):
+        from modssc.preprocess.models_backends.sentence_transformers import (
+            SentenceTransformerEncoder,
+        )
+
+        with pytest.raises(RuntimeError, match="Failed to load SentenceTransformer model"):
+            SentenceTransformerEncoder(model_name="broken-model")
+
+
 def test_open_clip_missing_dep():
     with patch("modssc.preprocess.models_backends.open_clip.require") as mock_require:
         mock_require.side_effect = OptionalDependencyError("missing", "purpose")
@@ -65,6 +128,28 @@ def test_open_clip_missing_dep():
 
         with pytest.raises(OptionalDependencyError):
             OpenClipEncoder()
+
+
+def test_open_clip_wraps_model_load_error():
+    mock_open_clip = MagicMock()
+    mock_open_clip.create_model_and_transforms.side_effect = RuntimeError("offline")
+
+    with patch("modssc.preprocess.models_backends.open_clip.require") as mock_require:
+
+        def require_side_effect(module, **kwargs):
+            del kwargs
+            if module == "open_clip":
+                return mock_open_clip
+            if module == "torch":
+                return MagicMock()
+            return MagicMock()
+
+        mock_require.side_effect = require_side_effect
+
+        from modssc.preprocess.models_backends.open_clip import OpenClipEncoder
+
+        with pytest.raises(RuntimeError, match="Failed to load OpenCLIP model"):
+            OpenClipEncoder(model_name="broken-model")
 
 
 def test_open_clip_encode():
@@ -107,6 +192,11 @@ def test_open_clip_encode():
         from modssc.preprocess.models_backends.open_clip import OpenClipEncoder
 
         encoder = OpenClipEncoder()
+        mock_open_clip.create_model_and_transforms.assert_called_with(
+            "ViT-B-32",
+            pretrained="openai",
+            cache_dir=None,
+        )
 
         mock_model.encode_image.return_value = mock_emb1
         img = np.zeros((10, 10, 3), dtype=np.uint8)
@@ -151,6 +241,59 @@ def test_open_clip_encode():
 
         chw = np.zeros((3, 10, 10), dtype=np.uint8)
         encoder.encode(chw)
+
+
+def test_open_clip_respects_cache_env():
+    mock_open_clip = MagicMock()
+    mock_torch = MagicMock()
+    mock_model = MagicMock()
+    mock_model.to.return_value = mock_model
+    mock_open_clip.create_model_and_transforms.return_value = (mock_model, None, MagicMock())
+
+    with (
+        patch.dict(os.environ, {"MODSSC_OPENCLIP_CACHE_DIR": "/tmp/openclip"}, clear=True),
+        patch("modssc.preprocess.models_backends.open_clip.require") as mock_require,
+    ):
+
+        def require_side_effect(module, **kwargs):
+            if module == "open_clip":
+                return mock_open_clip
+            if module == "torch":
+                return mock_torch
+            return MagicMock()
+
+        mock_require.side_effect = require_side_effect
+
+        from modssc.preprocess.models_backends.open_clip import OpenClipEncoder
+
+        OpenClipEncoder()
+
+        mock_open_clip.create_model_and_transforms.assert_called_with(
+            "ViT-B-32",
+            pretrained="openai",
+            cache_dir=str(Path("/tmp/openclip").resolve()),
+        )
+
+
+def test_model_cache_resolves_from_modssc_cache_root():
+    with patch.dict(os.environ, {"MODSSC_CACHE_ROOT": "/tmp/modssc-cache"}, clear=True):
+        root = Path("/tmp/modssc-cache").resolve() / "models"
+        assert model_cache.resolve_model_cache_root() == root
+        assert model_cache.resolve_hf_home() == root / "hf"
+        assert model_cache.resolve_sentence_transformers_cache() == str(
+            root / "hf" / "sentence_transformers"
+        )
+        assert model_cache.resolve_openclip_cache_dir() == str(root / "open_clip")
+
+
+def test_model_cache_prefers_hf_and_transformers_envs():
+    with patch.dict(os.environ, {"HF_HOME": "/tmp/hf-home"}, clear=True):
+        assert model_cache.resolve_hf_home() == Path("/tmp/hf-home").resolve()
+
+    with patch.dict(os.environ, {"TRANSFORMERS_CACHE": "/tmp/transformers-cache"}, clear=True):
+        assert model_cache.resolve_sentence_transformers_cache() == str(
+            Path("/tmp/transformers-cache").resolve()
+        )
 
 
 def test_torchvision_image_encode(monkeypatch):

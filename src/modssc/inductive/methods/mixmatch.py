@@ -24,6 +24,7 @@ from modssc.inductive.methods.deep_utils import (
     get_torch_len,
     num_batches,
     sharpen_probs,
+    should_freeze_batchnorm,
     slice_data,
 )
 from modssc.inductive.methods.utils import (
@@ -242,7 +243,13 @@ class MixMatchMethod(TorchBundlePredictMixin, InductiveMethod):
                 x_uw = slice_data(X_u_w, idx_u)
                 x_us = slice_data(X_u_s, idx_u)
 
-                with torch.no_grad(), freeze_batchnorm(model, enabled=bool(self.spec.freeze_bn)):
+                freeze_bn = should_freeze_batchnorm(
+                    x_lb,
+                    x_uw,
+                    x_us,
+                    enabled=bool(self.spec.freeze_bn),
+                )
+                with torch.no_grad(), freeze_batchnorm(model, enabled=freeze_bn):
                     logits_uw = extract_logits(model(x_uw))
                     logits_us = extract_logits(model(x_us))
 
@@ -263,9 +270,10 @@ class MixMatchMethod(TorchBundlePredictMixin, InductiveMethod):
                 targets = torch.cat([y_lb_onehot, pseudo_u, pseudo_u], dim=0)
 
                 if bool(self.spec.mixup_manifold):
-                    out_lb = model(x_lb)
-                    out_uw = model(x_uw)
-                    out_us = model(x_us)
+                    with freeze_batchnorm(model, enabled=freeze_bn):
+                        out_lb = model(x_lb)
+                        out_uw = model(x_uw)
+                        out_us = model(x_us)
                     feat_lb = extract_features(out_lb)
                     feat_uw = extract_features(out_uw)
                     feat_us = extract_features(out_us)

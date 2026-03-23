@@ -5,6 +5,7 @@ import logging
 from time import perf_counter
 from typing import Any
 
+from modssc.model_cache import ensure_torch_home
 from modssc.supervised.backends.torch.common import (
     TorchScoresClassifierBase,
     make_softmax_scores_method,
@@ -118,6 +119,7 @@ def _replace_classifier(model: Any, n_classes: int, torch) -> Any:
 
 
 def _load_model(model_name: str, weights: Any):
+    ensure_torch_home()
     tv = _torchvision()
     models = tv.models
     if hasattr(models, "get_model"):

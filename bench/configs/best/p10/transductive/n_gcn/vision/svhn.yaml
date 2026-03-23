@@ -2,6 +2,12 @@
 run:
   name: best_vision_transductive_n_gcn_svhn_p10
   seed: 3
+  seeds:
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
   output_dir: "${MODSSC_OUTPUT_DIR}/p10/transductive/n_gcn/vision/svhn"
   log_level: detailed
   fail_fast: true

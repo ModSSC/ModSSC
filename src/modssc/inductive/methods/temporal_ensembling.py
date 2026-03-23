@@ -20,6 +20,7 @@ from modssc.inductive.methods.deep_utils import (
     get_torch_device,
     get_torch_len,
     num_batches,
+    should_freeze_batchnorm,
     slice_data,
 )
 from modssc.inductive.methods.utils import (
@@ -183,11 +184,16 @@ class TemporalEnsemblingMethod(TorchBundlePredictMixin, InductiveMethod):
             for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
                 x_uw = slice_data(X_u_w, idx_u)
                 x_us = slice_data(X_u_s, idx_u)
-                logits_l = extract_logits(model(x_lb))
-                if int(logits_l.ndim) != 2:
-                    raise InductiveValidationError("Model logits must be 2D (batch, classes).")
-
-                with freeze_batchnorm(model, enabled=bool(self.spec.freeze_bn)):
+                freeze_bn = should_freeze_batchnorm(
+                    x_lb,
+                    x_uw,
+                    x_us,
+                    enabled=bool(self.spec.freeze_bn),
+                )
+                with freeze_batchnorm(model, enabled=freeze_bn):
+                    logits_l = extract_logits(model(x_lb))
+                    if int(logits_l.ndim) != 2:
+                        raise InductiveValidationError("Model logits must be 2D (batch, classes).")
                     logits_uw = extract_logits(model(x_uw))
                     logits_us = extract_logits(model(x_us))
 

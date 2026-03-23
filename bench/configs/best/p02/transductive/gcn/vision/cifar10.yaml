@@ -2,6 +2,12 @@
 run:
   name: best_vision_transductive_gcn_cifar10_p02
   seed: 3
+  seeds:
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
   output_dir: "${MODSSC_OUTPUT_DIR}/p02/transductive/gcn/vision/cifar10"
   log_level: detailed
   fail_fast: true

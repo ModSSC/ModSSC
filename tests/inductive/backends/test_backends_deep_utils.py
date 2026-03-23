@@ -170,6 +170,8 @@ def test_freeze_batchnorm_and_num_batches():
 
     assert deep_utils.num_batches(0, 4) == 1
     assert deep_utils.num_batches(5, 2) == 3
+    assert deep_utils.should_freeze_batchnorm(None, enabled=False) is False
+    assert deep_utils.should_freeze_batchnorm(object(), enabled=False) is False
 
 
 def test_cycle_batch_indices_and_batches():

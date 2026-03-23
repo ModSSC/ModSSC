@@ -1,6 +1,12 @@
 run:
   name: best_text_inductive_uda_amazon_polarity_p01
   seed: 2
+  seeds:
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
   output_dir: ${MODSSC_OUTPUT_DIR}/p01/inductive/uda/text/amazon_polarity
   log_level: detailed
   fail_fast: true

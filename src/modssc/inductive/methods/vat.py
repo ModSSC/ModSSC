@@ -21,6 +21,7 @@ from modssc.inductive.methods.deep_utils import (
     get_torch_device,
     get_torch_len,
     num_batches,
+    should_freeze_batchnorm,
     slice_data,
 )
 from modssc.inductive.methods.utils import (
@@ -120,15 +121,16 @@ class VATMethod(TorchBundlePredictMixin, InductiveMethod):
         torch = optional_import("torch", extra="inductive-torch")
         if int(num_iters) <= 0:
             raise InductiveValidationError("num_iters must be >= 1.")
+        freeze_bn_active = should_freeze_batchnorm(x_u, enabled=bool(freeze_bn))
 
         if detach_target:
-            with torch.no_grad(), freeze_batchnorm(model, enabled=bool(freeze_bn)):
+            with torch.no_grad(), freeze_batchnorm(model, enabled=freeze_bn_active):
                 logits_u = extract_logits(model(x_u))
                 if int(logits_u.ndim) != 2:
                     raise InductiveValidationError("Model logits must be 2D (batch, classes).")
                 probs = torch.softmax(logits_u, dim=1)
         else:
-            with freeze_batchnorm(model, enabled=bool(freeze_bn)):
+            with freeze_batchnorm(model, enabled=freeze_bn_active):
                 logits_u = extract_logits(model(x_u))
             if int(logits_u.ndim) != 2:
                 raise InductiveValidationError("Model logits must be 2D (batch, classes).")
@@ -152,7 +154,7 @@ class VATMethod(TorchBundlePredictMixin, InductiveMethod):
             d = _l2_normalize(d) * float(xi)
             d = d.detach()
             d.requires_grad_(True)
-            with freeze_batchnorm(model, enabled=bool(freeze_bn)):
+            with freeze_batchnorm(model, enabled=freeze_bn_active):
                 if get_emb_fn is not None:
                     # Pass perturbed embeddings directly.
                     # Requires model.forward to support embedding input if dim matches.
@@ -183,7 +185,7 @@ class VATMethod(TorchBundlePredictMixin, InductiveMethod):
             d = grad.detach()
 
         r_adv = _l2_normalize(d) * float(eps)
-        with freeze_batchnorm(model, enabled=bool(freeze_bn)):
+        with freeze_batchnorm(model, enabled=freeze_bn_active):
             if get_emb_fn is not None:
                 logits_adv = extract_logits(model(x_anchor + r_adv))
             else:
@@ -304,9 +306,11 @@ class VATMethod(TorchBundlePredictMixin, InductiveMethod):
             for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
                 x_u = slice_data(X_u, idx_u)
 
-                logits_l = extract_logits(model(x_lb))
-                if int(logits_l.ndim) != 2:
-                    raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+                freeze_bn_l = should_freeze_batchnorm(x_lb, enabled=bool(self.spec.freeze_bn))
+                with freeze_batchnorm(model, enabled=freeze_bn_l):
+                    logits_l = extract_logits(model(x_lb))
+                    if int(logits_l.ndim) != 2:
+                        raise InductiveValidationError("Model logits must be 2D (batch, classes).")
                 if y_lb.min().item() < 0 or y_lb.max().item() >= int(logits_l.shape[1]):
                     raise InductiveValidationError("y_l labels must be within [0, n_classes).")
 

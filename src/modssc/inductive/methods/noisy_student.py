@@ -23,6 +23,7 @@ from modssc.inductive.methods.deep_utils import (
     get_torch_device,
     get_torch_len,
     num_batches,
+    should_freeze_batchnorm,
     slice_data,
 )
 from modssc.inductive.methods.utils import (
@@ -108,6 +109,7 @@ class NoisyStudentMethod(TorchBundlePredictMixin, InductiveMethod):
         *,
         batch_size: int,
         epochs: int,
+        freeze_bn: bool,
         seed: int,
     ) -> None:
         if int(epochs) <= 0:
@@ -125,9 +127,11 @@ class NoisyStudentMethod(TorchBundlePredictMixin, InductiveMethod):
                 steps=steps_l,
             )
             for step, (x_lb, y_lb) in enumerate(iter_l):
-                logits_l = extract_logits(student(x_lb))
-                if int(logits_l.ndim) != 2:
-                    raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+                freeze_student_bn = should_freeze_batchnorm(x_lb, enabled=bool(freeze_bn))
+                with freeze_batchnorm(student, enabled=freeze_student_bn):
+                    logits_l = extract_logits(student(x_lb))
+                    if int(logits_l.ndim) != 2:
+                        raise InductiveValidationError("Model logits must be 2D (batch, classes).")
                 if y_lb.min().item() < 0 or y_lb.max().item() >= int(logits_l.shape[1]):
                     raise InductiveValidationError("y_l labels must be within [0, n_classes).")
                 sup_loss = torch.nn.functional.cross_entropy(logits_l, y_lb)
@@ -230,6 +234,7 @@ class NoisyStudentMethod(TorchBundlePredictMixin, InductiveMethod):
             y_l,
             batch_size=int(self.spec.batch_size),
             epochs=int(self.spec.teacher_epochs),
+            freeze_bn=bool(self.spec.freeze_bn),
             seed=int(seed),
         )
 
@@ -272,8 +277,13 @@ class NoisyStudentMethod(TorchBundlePredictMixin, InductiveMethod):
             for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
                 x_uw = slice_data(X_uw, idx_u)
                 x_us = slice_data(X_us, idx_u)
+                freeze_student_bn = should_freeze_batchnorm(
+                    x_lb,
+                    x_us,
+                    enabled=bool(self.spec.freeze_bn),
+                )
 
-                if bool(self.spec.use_cat) and not bool(self.spec.freeze_bn):
+                if bool(self.spec.use_cat) and not freeze_student_bn:
                     inputs = concat_data([x_lb, x_us])
                     logits = extract_logits(student(inputs))
                     if int(logits.ndim) != 2:
@@ -287,8 +297,8 @@ class NoisyStudentMethod(TorchBundlePredictMixin, InductiveMethod):
                     logits_l = logits[:num_lb]
                     logits_us = logits[num_lb:]
                 else:
-                    logits_l = extract_logits(student(x_lb))
-                    with freeze_batchnorm(student, enabled=bool(self.spec.freeze_bn)):
+                    with freeze_batchnorm(student, enabled=freeze_student_bn):
+                        logits_l = extract_logits(student(x_lb))
                         logits_us = extract_logits(student(x_us))
                 if int(logits_l.ndim) != 2 or int(logits_us.ndim) != 2:
                     raise InductiveValidationError("Model logits must be 2D (batch, classes).")
@@ -309,7 +319,11 @@ class NoisyStudentMethod(TorchBundlePredictMixin, InductiveMethod):
                 sup_loss = torch.nn.functional.cross_entropy(logits_l, y_lb)
 
                 teacher_ctx = torch.no_grad() if bool(self.spec.detach_target) else nullcontext()
-                with teacher_ctx, freeze_batchnorm(teacher, enabled=bool(self.spec.freeze_bn)):
+                freeze_teacher_bn = should_freeze_batchnorm(
+                    x_uw,
+                    enabled=bool(self.spec.freeze_bn),
+                )
+                with teacher_ctx, freeze_batchnorm(teacher, enabled=freeze_teacher_bn):
                     logits_uw = extract_logits(teacher(x_uw))
                 if int(logits_uw.ndim) != 2:
                     raise InductiveValidationError("Teacher logits must be 2D (batch, classes).")

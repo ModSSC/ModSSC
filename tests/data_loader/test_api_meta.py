@@ -1,7 +1,9 @@
 from unittest.mock import MagicMock, patch
 
+import numpy as np
+
 import modssc.data_loader.api as api
-from modssc.data_loader.types import DatasetIdentity, LoadedDataset
+from modssc.data_loader.types import DatasetIdentity, LoadedDataset, Split
 
 
 def test_download_dataset_injects_meta_if_none(tmp_path):
@@ -43,4 +45,41 @@ def test_load_processed_injects_meta_if_none(tmp_path):
         layout = MagicMock()
         ds = api._load_processed(layout, fingerprint="test_fp")
         assert ds.meta is not None
+        assert ds.meta["dataset_fingerprint"] == "test_fp"
+
+
+def test_load_processed_rebases_cached_torchaudio_paths(tmp_path):
+    with (
+        patch("modssc.data_loader.api.FileStorage") as mock_storage_cls,
+        patch("modssc.data_loader.api.cache.read_cached_manifest") as mock_read_manifest,
+    ):
+        mock_storage = MagicMock()
+        mock_storage_cls.return_value = mock_storage
+
+        cached_path = (
+            "/Users/melvin/Desktop/ModSSC Project/ModSSC/modssc_cache/datasets/raw/"
+            "torchaudio/YESNO/noversion/source/waves_yesno/0_0_0_0_1_1_1_1.wav"
+        )
+        mock_storage.load.return_value = LoadedDataset(
+            train=Split(
+                X=np.asarray([cached_path], dtype=object),
+                y=np.asarray(["yes"], dtype=object),
+            ),
+            test=None,
+            meta={"provider": "torchaudio", "representation": "paths_or_waveforms"},
+        )
+        mock_read_manifest.return_value = MagicMock(
+            identity={"provider": "torchaudio", "dataset_id": "YESNO", "version": None}
+        )
+
+        layout = api._layout(tmp_path)
+        ds = api._load_processed(layout, fingerprint="test_fp")
+
+        expected = str(
+            layout.raw_dir("torchaudio", "YESNO", None)
+            / "source"
+            / "waves_yesno"
+            / "0_0_0_0_1_1_1_1.wav"
+        )
+        assert ds.train.X.tolist() == [expected]
         assert ds.meta["dataset_fingerprint"] == "test_fp"

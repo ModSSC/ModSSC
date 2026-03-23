@@ -20,6 +20,7 @@ from modssc.inductive.methods.deep_utils import (
     get_torch_device,
     get_torch_len,
     num_batches,
+    should_freeze_batchnorm,
     slice_data,
 )
 from modssc.inductive.methods.utils import (
@@ -203,15 +204,26 @@ class MeanTeacherMethod(TorchBundlePredictMixin, InductiveMethod):
                 steps=steps_per_epoch,
             )
             for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
-                logits_l = extract_logits(student(x_lb))
-                if int(logits_l.ndim) != 2:
-                    raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+                x_uw = slice_data(X_u_w, idx_u)
+                x_us = slice_data(X_u_s, idx_u)
 
-                with torch.no_grad(), freeze_batchnorm(teacher, enabled=bool(self.spec.freeze_bn)):
-                    logits_uw = extract_logits(teacher(slice_data(X_u_w, idx_u)))
+                freeze_student_bn = should_freeze_batchnorm(
+                    x_lb,
+                    x_us,
+                    enabled=bool(self.spec.freeze_bn),
+                )
+                with freeze_batchnorm(student, enabled=freeze_student_bn):
+                    logits_l = extract_logits(student(x_lb))
+                    if int(logits_l.ndim) != 2:
+                        raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+                    logits_us = extract_logits(student(x_us))
 
-                with freeze_batchnorm(student, enabled=bool(self.spec.freeze_bn)):
-                    logits_us = extract_logits(student(slice_data(X_u_s, idx_u)))
+                freeze_teacher_bn = should_freeze_batchnorm(
+                    x_uw,
+                    enabled=bool(self.spec.freeze_bn),
+                )
+                with torch.no_grad(), freeze_batchnorm(teacher, enabled=freeze_teacher_bn):
+                    logits_uw = extract_logits(teacher(x_uw))
 
                 if logits_uw.shape != logits_us.shape:
                     raise InductiveValidationError("Unlabeled logits shape mismatch.")
