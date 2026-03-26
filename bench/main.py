@@ -5,19 +5,19 @@ import logging
 import traceback
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
-from modssc.device import resolve_device_name
 from modssc.evaluation import list_metrics
 from modssc.hpo import deep_merge
 from modssc.inductive.registry import get_method_class as get_inductive_method_class
 from modssc.inductive.registry import get_method_info as get_inductive_method_info
-from modssc.logging import configure_logging, resolve_log_level
 from modssc.preprocess import step_info
+from modssc.runtime.device import resolve_device_name
+from modssc.runtime.logging import configure_logging, resolve_log_level
 from modssc.sampling.result import SamplingResult
 from modssc.transductive.registry import get_method_class as get_transductive_method_class
 from modssc.transductive.registry import get_method_info as get_transductive_method_info
@@ -1035,7 +1035,7 @@ def run_experiment(config_path: Path, *, num_runs: int | None = None) -> int:
     else:
         return _run_experiment_single(config_path, raw=raw, cfg=cfg).code
 
-    sweep_timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    sweep_timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     sweep_root = next_available_run_dir(
         Path(cfg.run.output_dir).expanduser().resolve() / f"{cfg.run.name}-sweep-{sweep_timestamp}"
     )

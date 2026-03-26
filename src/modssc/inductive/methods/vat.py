@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from time import perf_counter
 from typing import Any
 
-from modssc.device import resolve_device_name
 from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
@@ -31,6 +30,7 @@ from modssc.inductive.methods.utils import (
 )
 from modssc.inductive.optional import optional_import
 from modssc.inductive.types import DeviceSpec
+from modssc.runtime.device import resolve_device_name
 
 logger = logging.getLogger(__name__)
 

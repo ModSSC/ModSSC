@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import asdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from statistics import fmean, pstdev
 from time import perf_counter
@@ -34,7 +34,7 @@ def write_run_summary(
     error_code: str | None = None,
 ) -> None:
     start = perf_counter()
-    finished_at = datetime.now(timezone.utc).isoformat()
+    finished_at = datetime.now(UTC).isoformat()
     payload = {
         "run": {
             "name": ctx.name,
@@ -180,7 +180,7 @@ def write_seed_sweep_summary(
             "successful_run_count": len(successful_reports),
             "failed_run_count": failed_count,
             "status": status,
-            "aggregated_at": datetime.now(timezone.utc).isoformat(),
+            "aggregated_at": datetime.now(UTC).isoformat(),
         },
         "metrics": aggregated_metrics,
         "runs": run_entries,

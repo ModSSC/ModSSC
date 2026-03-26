@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -46,9 +46,9 @@ class RunContext:
         fail_fast: bool,
     ) -> RunContext:
         out_root = Path(output_dir).expanduser().resolve()
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
         run_dir = out_root / f"{name}-{run_id}-{timestamp}"
-        started_at = datetime.now(timezone.utc).isoformat()
+        started_at = datetime.now(UTC).isoformat()
         return cls(
             name=name,
             seed=int(seed),

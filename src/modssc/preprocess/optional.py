@@ -1,28 +1,19 @@
 from __future__ import annotations
 
-import importlib
 from typing import Any
 
+from modssc.dependencies.optional import has_module, make_optional_import
 from modssc.preprocess.errors import OptionalDependencyError
 
 
-def is_available(module: str) -> bool:
-    """Return True if `module` can be imported."""
-    try:
-        importlib.import_module(module)
-    except Exception:
-        return False
-    return True
+def _error_factory(**kwargs) -> Exception:
+    return OptionalDependencyError(extra=kwargs["extra"], purpose=kwargs.get("purpose"))
 
 
-def require(
-    *,
-    module: str,
-    extra: str,
-    purpose: str | None = None,
-) -> Any:
+is_available = has_module
+_require_impl = make_optional_import(error_factory=_error_factory)
+
+
+def require(*, module: str, extra: str, purpose: str | None = None) -> Any:
     """Import `module` or raise OptionalDependencyError pointing to `extra`."""
-    try:
-        return importlib.import_module(module)
-    except ModuleNotFoundError as e:
-        raise OptionalDependencyError(extra=extra, purpose=purpose) from e
+    return _require_impl(module, extra=extra, purpose=purpose)

@@ -38,10 +38,6 @@ class TabularImputeStep:
         X_arr = np.asarray(X)
         X_fit = X_arr[idx]
 
-        # Check if X_fit contains NaNs
-        # ModSSC might load '?' as strings if not parsed correctly, or NaNs.
-        # SimpleImputer handles NaNs by default.
-
         self._imputer = pre.SimpleImputer(
             strategy=self.strategy, fill_value=self.fill_value, add_indicator=self.add_indicator
         )

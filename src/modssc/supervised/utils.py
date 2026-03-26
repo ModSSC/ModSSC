@@ -7,9 +7,9 @@ from typing import Any
 
 import numpy as np
 
-from modssc.numpy_utils import to_numpy as as_numpy
 from modssc.supervised.errors import SupervisedValidationError
 from modssc.supervised.optional import optional_import
+from modssc.utils.numpy import to_numpy as as_numpy
 
 
 def seed_everything(seed: int, *, deterministic: bool = True) -> None:

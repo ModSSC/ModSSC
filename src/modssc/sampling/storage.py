@@ -5,8 +5,8 @@ from pathlib import Path
 
 import numpy as np
 
-from modssc.io_utils import atomic_write_text as _atomic_write_text
 from modssc.sampling.result import SamplingResult
+from modssc.utils.io import atomic_write_text as _atomic_write_text
 
 
 def save_split(result: SamplingResult, out_dir: Path, *, overwrite: bool = False) -> Path:

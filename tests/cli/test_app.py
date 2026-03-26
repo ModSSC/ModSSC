@@ -160,3 +160,7 @@ def test_doctor_unavailable_without_hints(monkeypatch) -> None:
     res = runner.invoke(app_mod.app, ["doctor"])
     assert res.exit_code == 2
     assert "graph: unavailable" in res.stdout
+
+
+from ._cache_commands import *  # noqa: E402,F401,F403
+from ._datasets_app import *  # noqa: E402,F401,F403

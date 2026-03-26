@@ -1,266 +1,319 @@
 # Dataset: speechcommands
 
-## Percentage: p01
+## Regime: R1
 ```bash
-python -m bench.main --config bench/configs/best/p01/inductive/adamatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/adsh/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/co_training/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/comatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/daso/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/deep_co_training/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/defixmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/democratic_co_learning/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/fixmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/flexmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/free_match/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/mean_teacher/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/meta_pseudo_labels/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/mixmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/noisy_student/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/pi_model/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/pseudo_label/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/self_training/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/setred/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/simclr_v2/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/softmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/supervised/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/temporal_ensembling/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/tri_training/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/trinet/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/uda/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/vat/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/appnp/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/chebnet/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/dynamic_label_propagation/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/gat/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/gcn/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/gcnii/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/grafn/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/grand/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/graph_mincuts/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/graphhop/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/graphsage/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/h_gcn/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/label_propagation/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/label_spreading/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/laplace_learning/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/lazy_random_walk/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/n_gcn/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/p_laplace_learning/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/planetoid/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/poisson_learning/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/poisson_mbo/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/sgc/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/adamatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/adsh/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/co_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/comatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/daso/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/deep_co_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/defixmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/democratic_co_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/fixmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/flexmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/free_match/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/mean_teacher/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/meta_pseudo_labels/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/mixmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/noisy_student/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/pi_model/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/pseudo_label/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/self_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/setred/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/simclr_v2/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/softmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/supervised/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/temporal_ensembling/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/tri_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/trinet/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/uda/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/vat/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/appnp/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/chebnet/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/dynamic_label_propagation/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/gat/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/gcn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/gcnii/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/grafn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/grand/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/graph_mincuts/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/graphhop/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/graphsage/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/h_gcn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/label_propagation/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/label_spreading/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/laplace_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/lazy_random_walk/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/n_gcn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/p_laplace_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/planetoid/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/poisson_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/poisson_mbo/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/sgc/audio/speechcommands.yaml
 ```
 
-## Percentage: p02
+## Regime: R2
 ```bash
-python -m bench.main --config bench/configs/best/p02/inductive/adamatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/adsh/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/co_training/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/comatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/daso/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/deep_co_training/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/defixmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/democratic_co_learning/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/fixmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/flexmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/free_match/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/mean_teacher/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/meta_pseudo_labels/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/mixmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/noisy_student/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/pi_model/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/pseudo_label/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/self_training/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/setred/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/simclr_v2/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/softmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/supervised/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/temporal_ensembling/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/tri_training/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/trinet/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/uda/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/vat/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/appnp/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/chebnet/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/dynamic_label_propagation/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/gat/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/gcn/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/gcnii/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/grafn/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/grand/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/graph_mincuts/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/graphhop/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/graphsage/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/h_gcn/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/label_propagation/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/label_spreading/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/laplace_learning/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/lazy_random_walk/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/n_gcn/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/p_laplace_learning/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/planetoid/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/poisson_learning/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/poisson_mbo/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/sgc/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/adamatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/adsh/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/co_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/comatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/daso/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/deep_co_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/defixmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/democratic_co_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/fixmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/flexmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/free_match/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/mean_teacher/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/meta_pseudo_labels/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/mixmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/noisy_student/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/pi_model/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/pseudo_label/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/self_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/setred/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/simclr_v2/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/softmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/supervised/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/temporal_ensembling/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/tri_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/trinet/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/uda/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/vat/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/appnp/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/chebnet/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/dynamic_label_propagation/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/gat/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/gcn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/gcnii/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/grafn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/grand/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/graph_mincuts/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/graphhop/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/graphsage/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/h_gcn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/label_propagation/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/label_spreading/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/laplace_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/lazy_random_walk/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/n_gcn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/p_laplace_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/planetoid/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/poisson_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/poisson_mbo/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/sgc/audio/speechcommands.yaml
 ```
 
-## Percentage: p05
+## Regime: R3
 ```bash
-python -m bench.main --config bench/configs/best/p05/inductive/adamatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/adsh/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/co_training/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/comatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/daso/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/deep_co_training/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/defixmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/democratic_co_learning/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/fixmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/flexmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/free_match/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/mean_teacher/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/meta_pseudo_labels/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/mixmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/noisy_student/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/pi_model/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/pseudo_label/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/self_training/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/setred/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/simclr_v2/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/softmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/supervised/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/temporal_ensembling/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/tri_training/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/trinet/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/uda/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/vat/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/appnp/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/chebnet/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/dynamic_label_propagation/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/gat/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/gcn/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/gcnii/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/grafn/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/grand/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/graph_mincuts/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/graphhop/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/graphsage/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/h_gcn/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/label_propagation/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/label_spreading/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/laplace_learning/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/lazy_random_walk/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/n_gcn/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/p_laplace_learning/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/planetoid/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/poisson_learning/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/poisson_mbo/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/sgc/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/adamatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/adsh/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/co_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/comatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/daso/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/deep_co_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/defixmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/democratic_co_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/fixmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/flexmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/free_match/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/mean_teacher/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/meta_pseudo_labels/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/mixmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/noisy_student/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/pi_model/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/pseudo_label/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/self_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/setred/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/simclr_v2/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/softmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/supervised/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/temporal_ensembling/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/tri_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/trinet/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/uda/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/vat/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/appnp/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/chebnet/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/dynamic_label_propagation/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/gat/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/gcn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/gcnii/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/grafn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/grand/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/graph_mincuts/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/graphhop/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/graphsage/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/h_gcn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/label_propagation/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/label_spreading/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/laplace_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/lazy_random_walk/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/n_gcn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/p_laplace_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/planetoid/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/poisson_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/poisson_mbo/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/sgc/audio/speechcommands.yaml
 ```
 
-## Percentage: p10
+## Regime: R4
 ```bash
-python -m bench.main --config bench/configs/best/p10/inductive/adamatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/adsh/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/co_training/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/comatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/daso/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/deep_co_training/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/defixmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/democratic_co_learning/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/fixmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/flexmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/free_match/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/mean_teacher/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/meta_pseudo_labels/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/mixmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/noisy_student/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/pi_model/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/pseudo_label/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/self_training/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/setred/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/simclr_v2/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/softmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/supervised/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/temporal_ensembling/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/tri_training/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/trinet/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/uda/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/vat/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/appnp/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/chebnet/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/dynamic_label_propagation/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/gat/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/gcn/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/gcnii/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/grafn/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/grand/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/graph_mincuts/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/graphhop/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/graphsage/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/h_gcn/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/label_propagation/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/label_spreading/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/laplace_learning/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/lazy_random_walk/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/n_gcn/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/p_laplace_learning/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/planetoid/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/poisson_learning/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/poisson_mbo/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/sgc/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/adamatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/adsh/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/co_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/comatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/daso/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/deep_co_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/defixmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/democratic_co_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/fixmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/flexmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/free_match/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/mean_teacher/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/meta_pseudo_labels/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/mixmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/noisy_student/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/pi_model/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/pseudo_label/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/self_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/setred/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/simclr_v2/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/softmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/supervised/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/temporal_ensembling/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/tri_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/trinet/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/uda/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/vat/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/appnp/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/chebnet/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/dynamic_label_propagation/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/gat/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/gcn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/gcnii/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/grafn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/grand/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/graph_mincuts/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/graphhop/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/graphsage/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/h_gcn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/label_propagation/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/label_spreading/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/laplace_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/lazy_random_walk/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/n_gcn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/p_laplace_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/planetoid/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/poisson_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/poisson_mbo/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/sgc/audio/speechcommands.yaml
 ```
 
-## Percentage: p20
+## Regime: R5
 ```bash
-python -m bench.main --config bench/configs/best/p20/inductive/adamatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/adsh/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/co_training/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/comatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/daso/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/deep_co_training/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/defixmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/democratic_co_learning/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/fixmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/flexmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/free_match/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/mean_teacher/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/meta_pseudo_labels/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/mixmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/noisy_student/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/pi_model/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/pseudo_label/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/self_training/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/setred/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/simclr_v2/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/softmatch/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/supervised/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/temporal_ensembling/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/tri_training/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/trinet/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/uda/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/vat/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/appnp/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/chebnet/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/dynamic_label_propagation/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/gat/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/gcn/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/gcnii/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/grafn/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/grand/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/graph_mincuts/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/graphhop/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/graphsage/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/h_gcn/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/label_propagation/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/label_spreading/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/laplace_learning/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/lazy_random_walk/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/n_gcn/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/p_laplace_learning/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/planetoid/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/poisson_learning/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/poisson_mbo/audio/speechcommands.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/sgc/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/adamatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/adsh/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/co_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/comatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/daso/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/deep_co_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/defixmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/democratic_co_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/fixmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/flexmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/free_match/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/mean_teacher/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/meta_pseudo_labels/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/mixmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/noisy_student/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/pi_model/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/pseudo_label/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/self_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/setred/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/simclr_v2/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/softmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/supervised/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/temporal_ensembling/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/tri_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/trinet/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/uda/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/vat/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/appnp/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/chebnet/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/dynamic_label_propagation/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/gat/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/gcn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/gcnii/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/grafn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/grand/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/graph_mincuts/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/graphhop/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/graphsage/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/h_gcn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/label_propagation/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/label_spreading/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/laplace_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/lazy_random_walk/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/n_gcn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/p_laplace_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/planetoid/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/poisson_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/poisson_mbo/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/sgc/audio/speechcommands.yaml
+```
+
+## Regime: R6
+```bash
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/adamatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/adsh/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/co_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/comatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/daso/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/deep_co_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/defixmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/democratic_co_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/fixmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/flexmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/free_match/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/mean_teacher/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/meta_pseudo_labels/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/mixmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/noisy_student/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/pi_model/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/pseudo_label/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/self_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/setred/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/simclr_v2/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/softmatch/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/supervised/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/temporal_ensembling/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/tri_training/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/trinet/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/uda/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/vat/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/appnp/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/chebnet/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/dynamic_label_propagation/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/gat/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/gcn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/gcnii/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/grafn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/grand/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/graph_mincuts/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/graphhop/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/graphsage/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/h_gcn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/label_propagation/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/label_spreading/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/laplace_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/lazy_random_walk/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/n_gcn/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/p_laplace_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/planetoid/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/poisson_learning/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/poisson_mbo/audio/speechcommands.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/sgc/audio/speechcommands.yaml
 ```

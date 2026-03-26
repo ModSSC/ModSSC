@@ -238,12 +238,12 @@ exclude = [
   "/outputs",
   "/data",
   "/site",
-  "/docs/articles_codes",
+  "/docs/article_code",
 ]
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-addopts = "-q --cov=modssc --cov-report=term-missing --cov-fail-under=95 --timeout=300 --timeout-method=thread --strict-markers"
+addopts = "-q --cov=modssc --cov-report=term-missing --cov-fail-under=100 --timeout=300 --timeout-method=thread --strict-markers"
 testpaths = ["tests"]
 markers = [
   "slow: marks tests as slow (deselect with '-m \"not slow\"')",
@@ -259,7 +259,7 @@ filterwarnings = [
 ]
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 line-length = 100
 
 [tool.ruff.lint]

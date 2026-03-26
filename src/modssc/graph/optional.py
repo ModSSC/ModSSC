@@ -1,43 +1,27 @@
 from __future__ import annotations
 
-import importlib
-from typing import Any
+import importlib as _importlib
+
+from modssc.dependencies.optional import make_optional_import, make_optional_import_attr
 
 from .errors import OptionalDependencyError
 
-
-def optional_import(module: str, *, extra: str, purpose: str | None = None) -> Any:
-    """Import an optional dependency.
-
-    Parameters
-    ----------
-    module:
-        Module name, e.g. "scipy".
-    extra:
-        The extra name to suggest in error messages.
-    purpose:
-        Optional short description of why the dependency is needed (for error messages).
-
-    Returns
-    -------
-    Any
-        Imported module.
-
-    Raises
-    ------
-    OptionalDependencyError
-        If the module cannot be imported.
-    """
-    try:
-        return importlib.import_module(module)
-    except (ModuleNotFoundError, ImportError) as e:
-        raise OptionalDependencyError(extra=extra, purpose=purpose, message=str(e)) from e
+# Re-export `importlib` so existing tests and callers can monkeypatch the import
+# hook through this module path.
+importlib = _importlib
 
 
-def optional_import_attr(module: str, attr: str, *, extra: str, purpose: str | None = None) -> Any:
-    """Import an attribute from an optional dependency."""
-    mod = optional_import(module, extra=extra, purpose=purpose)
-    try:
-        return getattr(mod, attr)
-    except AttributeError as e:
-        raise OptionalDependencyError(extra=extra, purpose=purpose, message=str(e)) from e
+def _error_factory(**kwargs) -> Exception:
+    exc = kwargs["exc"]
+    return OptionalDependencyError(
+        extra=kwargs["extra"],
+        purpose=kwargs.get("purpose"),
+        message=str(exc),
+    )
+
+
+optional_import = make_optional_import(error_factory=_error_factory)
+optional_import_attr = make_optional_import_attr(
+    optional_import=optional_import,
+    error_factory=_error_factory,
+)

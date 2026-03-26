@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+import numpy as np
+
 from modssc.supervised.backends.torch.common import TorchSupportsProbaClassifierBase
 from modssc.supervised.base import FitResult
 from modssc.supervised.optional import optional_import
@@ -49,8 +51,31 @@ def _normalize_hidden_sizes(hidden_sizes: Any) -> tuple[int, ...] | None:
     raise ValueError("hidden_sizes must be an int or a sequence of ints.")
 
 
+def _coerce_graph_input(X: Any, torch, *, allow_feature_only: bool) -> tuple[Any, Any]:
+    if isinstance(X, dict):
+        missing = {"x", "edge_index"} - set(X)
+        if missing:
+            missing_keys = ", ".join(sorted(missing))
+            raise ValueError(f"TorchGraphSAGEClassifier requires X to define {missing_keys}.")
+        x_feat = torch.as_tensor(X["x"], dtype=torch.float32)
+        edge_index = torch.as_tensor(X["edge_index"], dtype=torch.long)
+    elif allow_feature_only and hasattr(X, "shape"):
+        x_feat = torch.as_tensor(X, dtype=torch.float32)
+        edge_index = torch.empty((2, 0), dtype=torch.long)
+    else:
+        raise ValueError(
+            "TorchGraphSAGEClassifier requires a dictionary with 'x' and 'edge_index' keys as X."
+        )
+
+    if int(x_feat.ndim) != 2:
+        raise ValueError("Node features must be a 2D array.")
+    if int(edge_index.ndim) != 2 or int(edge_index.shape[0]) != 2:
+        raise ValueError("edge_index must have shape (2, num_edges).")
+    return x_feat, edge_index
+
+
 class TorchGraphSAGEClassifier(TorchSupportsProbaClassifierBase):
-    """Inductive GraphSAGE classifier using neighbor sampling (Tabula Rasa context)."""
+    """Inductive GraphSAGE classifier for graph-structured inputs."""
 
     classifier_id = "graphsage_inductive"
     backend = "torch"
@@ -102,86 +127,37 @@ class TorchGraphSAGEClassifier(TorchSupportsProbaClassifierBase):
         self.num_neighbors = num_neighbors or [15, 10]
 
         self._model: Any | None = None
-        self._data: Any | None = None  # We need to hold reference to graph structure for inference
+        self._classes_t: Any | None = None
 
     def fit(self, X: Any, y: Any, **kwargs) -> FitResult:
-        # X here is expected to be a PyG Data object or similar dictionary containing adj details
-        # However, following ModSSC inductive contract, X might be node features and we need graph structure from context?
-        # BUT: Inductive methods in ModSSC usually receive just X (features).
-        # To handle graphs in inductive mode properly without breaking API, X should probably be passed as a dictionary containing 'x', 'edge_index', etc.
-        # OR we rely on the fact that for inductive graph benchmarks, we usually pass the whole graph structure implicitly.
-
-        torch, pyg = _torch_geometric()
+        torch, _ = _torch_geometric()
         seed_value = None if self.seed is None else int(self.seed)
         if seed_value is not None:
             seed_everything(seed_value, deterministic=True)
         from torch_geometric.data import Data
         from torch_geometric.nn import SAGEConv
 
-        # HACK: ModSSC inductive API usually passes X as numpy array of features.
-        # For GraphSAGE, we need the edge_index.
-        # We assume X contains 'graph_data' key if it comes from our custom preprocess,
-        # OR we might need to change how data is passed.
-        # Let's assume for this specific component that X is a dict with keys: x, edge_index, (optional edge_weight)
-        # If X is just array, we can't do graph convolution unless we assume it's fully connected (pointless) or structure is implicit.
-
-        if not isinstance(X, dict):
-            # Fallback/Error: If we just get features, we can't do graph learning.
-            # But wait, maybe we can assume X is the Data object itself if passed correctly?
-            raise ValueError(
-                "TorchGraphSAGEClassifier requires a dictionary with 'x' and 'edge_index' keys as X."
-            )
-
-        x_feat = torch.as_tensor(X["x"], dtype=torch.float32)
-        edge_index = torch.as_tensor(X["edge_index"], dtype=torch.long)
-
-        # y contains labels only for the training nodes (because of slice in method_inductive.py)
-        # This is tricky: NeighborLoader needs `data` (whole graph) and `input_nodes` (indices).
-        # We need to reconstruction the context.
-        # Ideally, `fit` receives the full graph structure + mask/indices.
-        # Since I cannot easily change the signature of fit(X, y), I'll assume X contains the GLOBAL graph data
-        # and GLOBAL indices for the training set are implied or passed somehow.
-
-        # SIMPLIFICATION FOR BENCHMARK:
-        # We assume X has: 'x' (all nodes), 'edge_index' (all edges), 'train_mask' (boolean mask for current X subset)
-        # Actually, standard ModSSC inductive cuts rows. slicing X rows breaks edge_index.
-        # So we MUST pass the full graph object in X, and `y` tells us which rows are labeled? No, y is just labels.
-
-        # New strategy: X is a PyG Data object representing the LOCAL subgraph available for training (inductive setting).
-        # If we are strictly inductive, the training graph is disjoint from test graph.
-        # So providing the whole training subgraph is correct.
+        x_feat, edge_index = _coerce_graph_input(X, torch, allow_feature_only=False)
 
         data = Data(x=x_feat, edge_index=edge_index)
         if "edge_weight" in X:
             data.edge_weight = torch.as_tensor(X["edge_weight"], dtype=torch.float32)
 
-        # y corresponds to all nodes in this subgraph X?
-        # If X is the training set features (sliced), then yes.
-        # But we need edge_index within this slice.
-        # Preprocess must ensure 'edge_index' is re-indexed to [0, len(X)].
-
         y_tensor = torch.as_tensor(y, dtype=torch.long)
-        data.y = y_tensor  # This assumes X covers exactly the labeled nodes + context nodes?
-        # In semi-supervised, we might have X_l and X_u. Inductive fit gets X_l + X_u usually?
-        # Standard fit(X, y) in sklearn gets only Labeled data.
-        # This breaks SSL. But `method_inductive` usually calls fit on labeled data only for the supervised baseline,
-        # OR the SSL method handles the split.
-
-        # If this is fulfilling the "classifier" role inside a SSL wrapper (e.g. SelfTraining),
-        # fit is called with Labeled data Only.
-        # This is problematic for GNNs: we need neighbors (unlabeled nodes) to convolve!
-        # PURE INDUCTIVE GNN requires that even labeled nodes have access to their local structure.
-
-        # Implementation Detail:
-        # We'll treat X as a mini-graph. If it's just isolated nodes (because we sliced only labeled rows), GAGE becomes MLP.
-        # For this to work "right", the upstream logic must pass a SubGraph including neighbors.
-        # Assuming for now X includes 'edge_index' connecting the rows of X.
+        if int(y_tensor.ndim) != 1:
+            raise ValueError("y must be a 1D array of node labels.")
+        if int(y_tensor.shape[0]) != int(x_feat.shape[0]):
+            raise ValueError("X['x'] and y must contain the same number of nodes.")
+        data.y = y_tensor
 
         num_classes = int(y_tensor.max().item()) + 1
 
         device = "cuda" if torch.cuda.is_available() and self.n_jobs != 0 else "cpu"
 
         data = data.to(device)
+        classes = torch.arange(num_classes, device=device, dtype=torch.long)
+        self._classes_t = classes
+        self.classes_ = classes.detach().cpu().numpy()
 
         activation = _resolve_activation(self.activation, torch)
 
@@ -221,17 +197,15 @@ class TorchGraphSAGEClassifier(TorchSupportsProbaClassifierBase):
         )
         criterion = torch.nn.CrossEntropyLoss()
 
-        # Full batch training on the provided subgraph for simplicity
-        # (NeighborLoader is better for large graphs, but let's start simple for "Tabula Rasa" proof)
+        # Train on the provided subgraph in full-batch mode.
         self._model.train()
         for _epoch in range(self.max_epochs):
             optimizer.zero_grad()
             out = self._model(data.x, data.edge_index)
-            loss = criterion(out, data.y)  # Assumes all nodes in X are labeled y
+            loss = criterion(out, data.y)
             loss.backward()
             optimizer.step()
 
-        self._data = data  # Store structure for transductive inference if needed, but here we expect X at predict time too
         return FitResult(
             n_samples=int(data.x.shape[0]),
             n_features=int(data.x.shape[1]),
@@ -239,25 +213,24 @@ class TorchGraphSAGEClassifier(TorchSupportsProbaClassifierBase):
         )
 
     def predict(self, X: Any) -> Any:
-        # X must be dict with x and edge_index
         probs = self.predict_proba(X)
         if hasattr(probs, "cpu"):  # Tensor
-            return probs.argmax(dim=1)
-        return probs.argmax(axis=1)
+            idx = probs.argmax(dim=1)
+            if self._classes_t is not None:
+                return self._classes_t[idx]
+            return idx
+        idx = probs.argmax(axis=1)
+        classes = getattr(self, "classes_", None)
+        if classes is not None:
+            return np.asarray(classes)[idx]
+        return idx
 
     def predict_proba(self, X: Any) -> Any:
         torch, _ = _torch_geometric()
 
-        if not isinstance(X, dict):
-            # If we receive plain array, we treat it as nodes without edges (MLP fallback behavior of SAGE with empty edge_index)
-            if hasattr(X, "shape"):  # numpy or tensor
-                x_feat = torch.as_tensor(X, dtype=torch.float32)
-                edge_index = torch.empty((2, 0), dtype=torch.long)
-            else:
-                raise ValueError("Invalid input X")
-        else:
-            x_feat = torch.as_tensor(X["x"], dtype=torch.float32)
-            edge_index = torch.as_tensor(X["edge_index"], dtype=torch.long)
+        if not isinstance(X, dict) and not hasattr(X, "shape"):
+            raise ValueError("Invalid input X")
+        x_feat, edge_index = _coerce_graph_input(X, torch, allow_feature_only=True)
 
         device = next(self._model.parameters()).device
         x_feat = x_feat.to(device)

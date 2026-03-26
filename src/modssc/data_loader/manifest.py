@@ -5,16 +5,16 @@ import json
 import sys
 from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from modssc.data_loader.json_utils import to_jsonable as _jsonable
+from modssc.data_loader.storage.json import to_jsonable as _jsonable
 from modssc.data_loader.types import DatasetIdentity, LoadedDataset
 
 
 def utc_now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def python_version() -> str:

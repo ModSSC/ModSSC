@@ -3,10 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from modssc.import_utils import load_object as _load_object
 from modssc.preprocess.catalog import BUILTIN_STEPS
 from modssc.preprocess.errors import PreprocessValidationError
 from modssc.preprocess.types import StepSpec
+from modssc.utils.imports import load_object as _load_object
 
 
 @dataclass

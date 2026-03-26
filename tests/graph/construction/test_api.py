@@ -148,3 +148,6 @@ def test_build_graph_warns_on_nonpositive_radius(monkeypatch, tmp_path) -> None:
         logger.propagate = prev_propagate
         for handler in handlers:
             logger.addHandler(handler)
+
+
+from ._build_graph import *  # noqa: E402,F401,F403

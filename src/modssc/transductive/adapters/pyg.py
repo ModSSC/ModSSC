@@ -5,7 +5,7 @@ from typing import Any
 
 import numpy as np
 
-from modssc.device import mps_is_available, resolve_device_name
+from modssc.runtime.device import mps_is_available, resolve_device_name
 
 from ..errors import OptionalDependencyError
 from ..optional import optional_import

@@ -1,266 +1,319 @@
 # Dataset: svhn
 
-## Percentage: p01
+## Regime: R1
 ```bash
-python -m bench.main --config bench/configs/best/p01/inductive/adamatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/adsh/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/co_training/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/comatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/daso/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/deep_co_training/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/defixmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/democratic_co_learning/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/fixmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/flexmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/free_match/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/mean_teacher/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/meta_pseudo_labels/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/mixmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/noisy_student/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/pi_model/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/pseudo_label/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/self_training/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/setred/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/simclr_v2/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/softmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/supervised/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/temporal_ensembling/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/tri_training/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/trinet/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/uda/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/vat/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/appnp/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/chebnet/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/dynamic_label_propagation/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/gat/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/gcn/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/gcnii/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/grafn/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/grand/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/graph_mincuts/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/graphhop/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/graphsage/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/h_gcn/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/label_propagation/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/label_spreading/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/laplace_learning/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/lazy_random_walk/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/n_gcn/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/p_laplace_learning/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/planetoid/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/poisson_learning/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/poisson_mbo/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/sgc/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/adamatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/adsh/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/co_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/comatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/daso/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/deep_co_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/defixmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/democratic_co_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/fixmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/flexmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/free_match/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/mean_teacher/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/meta_pseudo_labels/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/mixmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/noisy_student/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/pi_model/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/pseudo_label/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/self_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/setred/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/simclr_v2/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/softmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/supervised/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/temporal_ensembling/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/tri_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/trinet/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/uda/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/vat/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/appnp/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/chebnet/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/dynamic_label_propagation/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/gat/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/gcn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/gcnii/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/grafn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/grand/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/graph_mincuts/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/graphhop/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/graphsage/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/h_gcn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/label_propagation/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/label_spreading/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/laplace_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/lazy_random_walk/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/n_gcn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/p_laplace_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/planetoid/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/poisson_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/poisson_mbo/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/sgc/vision/svhn.yaml
 ```
 
-## Percentage: p02
+## Regime: R2
 ```bash
-python -m bench.main --config bench/configs/best/p02/inductive/adamatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/adsh/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/co_training/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/comatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/daso/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/deep_co_training/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/defixmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/democratic_co_learning/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/fixmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/flexmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/free_match/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/mean_teacher/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/meta_pseudo_labels/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/mixmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/noisy_student/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/pi_model/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/pseudo_label/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/self_training/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/setred/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/simclr_v2/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/softmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/supervised/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/temporal_ensembling/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/tri_training/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/trinet/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/uda/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/vat/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/appnp/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/chebnet/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/dynamic_label_propagation/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/gat/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/gcn/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/gcnii/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/grafn/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/grand/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/graph_mincuts/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/graphhop/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/graphsage/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/h_gcn/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/label_propagation/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/label_spreading/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/laplace_learning/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/lazy_random_walk/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/n_gcn/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/p_laplace_learning/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/planetoid/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/poisson_learning/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/poisson_mbo/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/sgc/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/adamatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/adsh/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/co_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/comatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/daso/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/deep_co_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/defixmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/democratic_co_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/fixmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/flexmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/free_match/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/mean_teacher/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/meta_pseudo_labels/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/mixmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/noisy_student/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/pi_model/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/pseudo_label/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/self_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/setred/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/simclr_v2/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/softmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/supervised/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/temporal_ensembling/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/tri_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/trinet/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/uda/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/vat/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/appnp/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/chebnet/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/dynamic_label_propagation/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/gat/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/gcn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/gcnii/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/grafn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/grand/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/graph_mincuts/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/graphhop/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/graphsage/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/h_gcn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/label_propagation/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/label_spreading/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/laplace_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/lazy_random_walk/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/n_gcn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/p_laplace_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/planetoid/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/poisson_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/poisson_mbo/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/sgc/vision/svhn.yaml
 ```
 
-## Percentage: p05
+## Regime: R3
 ```bash
-python -m bench.main --config bench/configs/best/p05/inductive/adamatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/adsh/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/co_training/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/comatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/daso/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/deep_co_training/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/defixmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/democratic_co_learning/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/fixmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/flexmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/free_match/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/mean_teacher/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/meta_pseudo_labels/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/mixmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/noisy_student/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/pi_model/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/pseudo_label/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/self_training/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/setred/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/simclr_v2/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/softmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/supervised/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/temporal_ensembling/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/tri_training/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/trinet/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/uda/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/vat/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/appnp/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/chebnet/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/dynamic_label_propagation/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/gat/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/gcn/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/gcnii/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/grafn/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/grand/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/graph_mincuts/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/graphhop/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/graphsage/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/h_gcn/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/label_propagation/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/label_spreading/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/laplace_learning/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/lazy_random_walk/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/n_gcn/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/p_laplace_learning/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/planetoid/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/poisson_learning/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/poisson_mbo/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/sgc/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/adamatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/adsh/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/co_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/comatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/daso/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/deep_co_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/defixmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/democratic_co_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/fixmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/flexmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/free_match/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/mean_teacher/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/meta_pseudo_labels/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/mixmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/noisy_student/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/pi_model/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/pseudo_label/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/self_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/setred/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/simclr_v2/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/softmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/supervised/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/temporal_ensembling/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/tri_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/trinet/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/uda/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/vat/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/appnp/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/chebnet/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/dynamic_label_propagation/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/gat/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/gcn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/gcnii/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/grafn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/grand/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/graph_mincuts/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/graphhop/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/graphsage/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/h_gcn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/label_propagation/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/label_spreading/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/laplace_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/lazy_random_walk/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/n_gcn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/p_laplace_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/planetoid/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/poisson_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/poisson_mbo/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/sgc/vision/svhn.yaml
 ```
 
-## Percentage: p10
+## Regime: R4
 ```bash
-python -m bench.main --config bench/configs/best/p10/inductive/adamatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/adsh/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/co_training/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/comatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/daso/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/deep_co_training/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/defixmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/democratic_co_learning/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/fixmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/flexmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/free_match/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/mean_teacher/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/meta_pseudo_labels/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/mixmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/noisy_student/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/pi_model/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/pseudo_label/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/self_training/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/setred/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/simclr_v2/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/softmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/supervised/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/temporal_ensembling/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/tri_training/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/trinet/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/uda/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/vat/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/appnp/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/chebnet/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/dynamic_label_propagation/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/gat/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/gcn/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/gcnii/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/grafn/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/grand/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/graph_mincuts/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/graphhop/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/graphsage/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/h_gcn/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/label_propagation/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/label_spreading/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/laplace_learning/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/lazy_random_walk/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/n_gcn/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/p_laplace_learning/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/planetoid/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/poisson_learning/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/poisson_mbo/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/sgc/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/adamatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/adsh/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/co_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/comatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/daso/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/deep_co_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/defixmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/democratic_co_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/fixmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/flexmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/free_match/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/mean_teacher/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/meta_pseudo_labels/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/mixmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/noisy_student/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/pi_model/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/pseudo_label/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/self_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/setred/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/simclr_v2/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/softmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/supervised/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/temporal_ensembling/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/tri_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/trinet/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/uda/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/vat/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/appnp/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/chebnet/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/dynamic_label_propagation/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/gat/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/gcn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/gcnii/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/grafn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/grand/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/graph_mincuts/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/graphhop/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/graphsage/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/h_gcn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/label_propagation/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/label_spreading/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/laplace_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/lazy_random_walk/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/n_gcn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/p_laplace_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/planetoid/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/poisson_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/poisson_mbo/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/sgc/vision/svhn.yaml
 ```
 
-## Percentage: p20
+## Regime: R5
 ```bash
-python -m bench.main --config bench/configs/best/p20/inductive/adamatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/adsh/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/co_training/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/comatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/daso/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/deep_co_training/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/defixmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/democratic_co_learning/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/fixmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/flexmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/free_match/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/mean_teacher/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/meta_pseudo_labels/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/mixmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/noisy_student/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/pi_model/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/pseudo_label/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/self_training/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/setred/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/simclr_v2/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/softmatch/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/supervised/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/temporal_ensembling/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/tri_training/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/trinet/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/uda/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/vat/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/appnp/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/chebnet/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/dynamic_label_propagation/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/gat/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/gcn/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/gcnii/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/grafn/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/grand/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/graph_mincuts/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/graphhop/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/graphsage/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/h_gcn/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/label_propagation/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/label_spreading/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/laplace_learning/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/lazy_random_walk/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/n_gcn/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/p_laplace_learning/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/planetoid/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/poisson_learning/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/poisson_mbo/vision/svhn.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/sgc/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/adamatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/adsh/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/co_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/comatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/daso/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/deep_co_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/defixmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/democratic_co_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/fixmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/flexmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/free_match/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/mean_teacher/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/meta_pseudo_labels/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/mixmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/noisy_student/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/pi_model/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/pseudo_label/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/self_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/setred/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/simclr_v2/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/softmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/supervised/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/temporal_ensembling/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/tri_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/trinet/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/uda/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/vat/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/appnp/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/chebnet/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/dynamic_label_propagation/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/gat/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/gcn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/gcnii/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/grafn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/grand/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/graph_mincuts/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/graphhop/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/graphsage/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/h_gcn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/label_propagation/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/label_spreading/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/laplace_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/lazy_random_walk/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/n_gcn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/p_laplace_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/planetoid/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/poisson_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/poisson_mbo/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/sgc/vision/svhn.yaml
+```
+
+## Regime: R6
+```bash
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/adamatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/adsh/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/co_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/comatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/daso/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/deep_co_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/defixmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/democratic_co_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/fixmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/flexmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/free_match/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/mean_teacher/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/meta_pseudo_labels/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/mixmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/noisy_student/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/pi_model/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/pseudo_label/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/self_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/setred/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/simclr_v2/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/softmatch/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/supervised/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/temporal_ensembling/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/tri_training/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/trinet/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/uda/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/vat/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/appnp/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/chebnet/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/dynamic_label_propagation/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/gat/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/gcn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/gcnii/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/grafn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/grand/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/graph_mincuts/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/graphhop/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/graphsage/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/h_gcn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/label_propagation/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/label_spreading/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/laplace_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/lazy_random_walk/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/n_gcn/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/p_laplace_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/planetoid/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/poisson_learning/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/poisson_mbo/vision/svhn.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/sgc/vision/svhn.yaml
 ```

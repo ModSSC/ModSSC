@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from modssc.torch_backend_common import make_dtype_from_spec, make_resolve_device, make_to_tensor
+from modssc.backends.torch_common import make_dtype_from_spec, make_resolve_device, make_to_tensor
 
 from ..errors import OptionalDependencyError
 from ..optional import import_torch

@@ -4,8 +4,10 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import numpy as np
+import pytest
 import torch
 
+from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.tri_training import TriTrainingMethod, TriTrainingSpec
 from modssc.inductive.types import DeviceSpec
 
@@ -100,3 +102,65 @@ def test_tri_training_alignment_branch_coverage_torch():
         X = torch.zeros(10, 5)
         # trigger alignment
         _ = model.predict_proba(X)
+
+
+def test_tri_training_valid_alignment():
+    """Test that TriTraining correctly aligns scores when classifiers have different class counts."""
+    model = TriTrainingMethod(TriTrainingSpec(classifier_backend="numpy"))
+    model._backend = "numpy"
+
+    clf1 = MagicMock()
+    clf1.classes_ = np.array([0, 1])
+    # Returns [0.8, 0.2] for class 0 and 1
+    clf1.predict_proba.return_value = np.array([[0.8, 0.2]])
+
+    clf2 = MagicMock()
+    clf2.classes_ = np.array([0, 1, 2])
+    # Returns [0.1, 0.1, 0.8] for class 0, 1, 2
+    clf2.predict_proba.return_value = np.array([[0.1, 0.1, 0.8]])
+
+    model._clfs = [clf1, clf2]
+
+    with patch(
+        "modssc.inductive.methods.tri_training.predict_scores",
+        side_effect=lambda clf, X, backend: clf.predict_proba(X),
+    ):
+        probs = model.predict_proba(np.array([[0]]))
+
+    assert probs.shape == (1, 3)
+    # Expected alignment:
+    # Clf1: [0.8, 0.2] -> [0.8, 0.2, 0.0]
+    # Clf2: [0.1, 0.1, 0.8] -> [0.1, 0.1, 0.8]
+    # Avg: [0.45, 0.15, 0.4]
+    np.testing.assert_allclose(probs, [[0.45, 0.15, 0.4]])
+
+
+def test_tri_training_validation_error_shape_mismatch():
+    """Test validation error when one classifier returned shape doesn't match its classes."""
+    model = TriTrainingMethod(TriTrainingSpec(classifier_backend="numpy"))
+    model._backend = "numpy"
+
+    clf1 = MagicMock()
+    clf1.classes_ = np.array([0, 1])
+    # Incorrect shape: 3 columns for 2 classes
+    clf1.predict_proba.return_value = np.zeros((10, 3))
+
+    clf2 = MagicMock()
+    clf2.classes_ = np.array([0, 1, 2])
+    clf2.predict_proba.return_value = np.zeros((10, 3))
+
+    model._clfs = [clf1, clf2]
+
+    with (
+        patch(
+            "modssc.inductive.methods.tri_training.predict_scores",
+            side_effect=lambda clf, X, backend: clf.predict_proba(X),
+        ),
+        pytest.raises(
+            InductiveValidationError, match="TriTraining classifiers disagree on class counts"
+        ),
+    ):
+        model.predict_proba(np.zeros((10, 5)))
+
+
+from ._tri_training_coverage import *  # noqa: E402,F401,F403

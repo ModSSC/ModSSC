@@ -7,11 +7,11 @@ from typing import Any
 
 import numpy as np
 
-from modssc.device import resolve_device_name
-from modssc.model_cache import ensure_torch_home, torchaudio_download_kwargs
+from modssc.cache.model import ensure_torch_home, torchaudio_download_kwargs
 from modssc.preprocess.errors import OptionalDependencyError
 from modssc.preprocess.numpy_adapter import to_numpy
 from modssc.preprocess.optional import require
+from modssc.runtime.device import resolve_device_name
 
 logger = logging.getLogger(__name__)
 

@@ -5,10 +5,10 @@ from typing import Any
 
 import numpy as np
 
-from modssc.device import mps_is_available, resolve_device_name
 from modssc.preprocess.errors import PreprocessValidationError
 from modssc.preprocess.optional import require
 from modssc.preprocess.store import ArtifactStore
+from modssc.runtime.device import mps_is_available, resolve_device_name
 
 
 def _resolve_device(torch, device: str) -> Any:

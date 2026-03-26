@@ -251,3 +251,6 @@ def test_result_inductive_valid():
     )
 
     res.validate(n_train=10, n_test=5, n_nodes=None)
+
+
+from ._result_properties import *  # noqa: E402,F401,F403

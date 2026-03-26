@@ -103,3 +103,6 @@ def test_dataset_identity_as_dict():
     )
     d = identity.as_dict()
     assert d["provider"] == "test"
+
+
+from ._fingerprint import *  # noqa: E402,F401,F403

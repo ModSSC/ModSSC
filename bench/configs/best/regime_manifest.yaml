@@ -1,0 +1,3666 @@
+datasets:
+  adult:
+    dataset: adult
+    dataset_id: adult
+    modality: tabular
+    status: ok
+    error: null
+    n_classes: 2
+    seeds:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    accepted_regimes:
+    - regime: R1
+      status: accepted
+      labels_per_class: 1
+      requested_total: 2
+      effective_counts:
+      - 2
+      - 2
+      - 2
+      - 2
+      - 2
+      unlabeled_counts:
+      - 35165
+      - 35165
+      - 35165
+      - 35165
+      - 35165
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted
+      labels_per_class: 3
+      requested_total: 6
+      effective_counts:
+      - 6
+      - 6
+      - 6
+      - 6
+      - 6
+      unlabeled_counts:
+      - 35161
+      - 35161
+      - 35161
+      - 35161
+      - 35161
+      source_legacy_regime: p01
+    - regime: R3
+      status: accepted
+      labels_per_class: 5
+      requested_total: 10
+      effective_counts:
+      - 10
+      - 10
+      - 10
+      - 10
+      - 10
+      unlabeled_counts:
+      - 35157
+      - 35157
+      - 35157
+      - 35157
+      - 35157
+      source_legacy_regime: p01
+    - regime: R4
+      status: accepted
+      labels_per_class: 10
+      requested_total: 20
+      effective_counts:
+      - 20
+      - 20
+      - 20
+      - 20
+      - 20
+      unlabeled_counts:
+      - 35147
+      - 35147
+      - 35147
+      - 35147
+      - 35147
+      source_legacy_regime: p01
+    - regime: R5
+      status: accepted
+      labels_per_class: 20
+      requested_total: 40
+      effective_counts:
+      - 40
+      - 40
+      - 40
+      - 40
+      - 40
+      unlabeled_counts:
+      - 35127
+      - 35127
+      - 35127
+      - 35127
+      - 35127
+      source_legacy_regime: p01
+    - regime: R6
+      status: accepted
+      labels_per_class: 50
+      requested_total: 100
+      effective_counts:
+      - 100
+      - 100
+      - 100
+      - 100
+      - 100
+      unlabeled_counts:
+      - 35067
+      - 35067
+      - 35067
+      - 35067
+      - 35067
+      source_legacy_regime: p01
+    excluded_regimes: []
+    legacy_regimes:
+      p01:
+        effective_counts:
+        - 352
+        - 352
+        - 352
+        - 352
+        - 352
+        train_counts:
+        - 35167
+        - 35167
+        - 35167
+        - 35167
+        - 35167
+        unlabeled_counts:
+        - 34815
+        - 34815
+        - 34815
+        - 34815
+        - 34815
+        effective_count_mean: 352.0
+      p02:
+        effective_counts:
+        - 703
+        - 703
+        - 703
+        - 703
+        - 703
+        train_counts:
+        - 35167
+        - 35167
+        - 35167
+        - 35167
+        - 35167
+        unlabeled_counts:
+        - 34464
+        - 34464
+        - 34464
+        - 34464
+        - 34464
+        effective_count_mean: 703.0
+      p05:
+        effective_counts:
+        - 1758
+        - 1758
+        - 1758
+        - 1758
+        - 1758
+        train_counts:
+        - 35167
+        - 35167
+        - 35167
+        - 35167
+        - 35167
+        unlabeled_counts:
+        - 33409
+        - 33409
+        - 33409
+        - 33409
+        - 33409
+        effective_count_mean: 1758.0
+      p10:
+        effective_counts:
+        - 3517
+        - 3517
+        - 3517
+        - 3517
+        - 3517
+        train_counts:
+        - 35167
+        - 35167
+        - 35167
+        - 35167
+        - 35167
+        unlabeled_counts:
+        - 31650
+        - 31650
+        - 31650
+        - 31650
+        - 31650
+        effective_count_mean: 3517.0
+      p20:
+        effective_counts:
+        - 7033
+        - 7033
+        - 7033
+        - 7033
+        - 7033
+        train_counts:
+        - 35167
+        - 35167
+        - 35167
+        - 35167
+        - 35167
+        unlabeled_counts:
+        - 28134
+        - 28134
+        - 28134
+        - 28134
+        - 28134
+        effective_count_mean: 7033.0
+    config_count: 306
+  ag_news:
+    dataset: ag_news
+    dataset_id: ag_news
+    modality: text
+    status: ok
+    error: null
+    n_classes: 4
+    seeds:
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    accepted_regimes:
+    - regime: R1
+      status: accepted
+      labels_per_class: 1
+      requested_total: 4
+      effective_counts:
+      - 4
+      - 4
+      - 4
+      - 4
+      - 4
+      unlabeled_counts:
+      - 107996
+      - 107996
+      - 107996
+      - 107996
+      - 107996
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted
+      labels_per_class: 3
+      requested_total: 12
+      effective_counts:
+      - 12
+      - 12
+      - 12
+      - 12
+      - 12
+      unlabeled_counts:
+      - 107988
+      - 107988
+      - 107988
+      - 107988
+      - 107988
+      source_legacy_regime: p01
+    - regime: R3
+      status: accepted
+      labels_per_class: 5
+      requested_total: 20
+      effective_counts:
+      - 20
+      - 20
+      - 20
+      - 20
+      - 20
+      unlabeled_counts:
+      - 107980
+      - 107980
+      - 107980
+      - 107980
+      - 107980
+      source_legacy_regime: p01
+    - regime: R4
+      status: accepted
+      labels_per_class: 10
+      requested_total: 40
+      effective_counts:
+      - 40
+      - 40
+      - 40
+      - 40
+      - 40
+      unlabeled_counts:
+      - 107960
+      - 107960
+      - 107960
+      - 107960
+      - 107960
+      source_legacy_regime: p01
+    - regime: R5
+      status: accepted
+      labels_per_class: 20
+      requested_total: 80
+      effective_counts:
+      - 80
+      - 80
+      - 80
+      - 80
+      - 80
+      unlabeled_counts:
+      - 107920
+      - 107920
+      - 107920
+      - 107920
+      - 107920
+      source_legacy_regime: p01
+    - regime: R6
+      status: accepted
+      labels_per_class: 50
+      requested_total: 200
+      effective_counts:
+      - 200
+      - 200
+      - 200
+      - 200
+      - 200
+      unlabeled_counts:
+      - 107800
+      - 107800
+      - 107800
+      - 107800
+      - 107800
+      source_legacy_regime: p01
+    excluded_regimes: []
+    legacy_regimes:
+      p01:
+        effective_counts:
+        - 1080
+        - 1080
+        - 1080
+        - 1080
+        - 1080
+        train_counts:
+        - 108000
+        - 108000
+        - 108000
+        - 108000
+        - 108000
+        unlabeled_counts:
+        - 106920
+        - 106920
+        - 106920
+        - 106920
+        - 106920
+        effective_count_mean: 1080.0
+      p02:
+        effective_counts:
+        - 2160
+        - 2160
+        - 2160
+        - 2160
+        - 2160
+        train_counts:
+        - 108000
+        - 108000
+        - 108000
+        - 108000
+        - 108000
+        unlabeled_counts:
+        - 105840
+        - 105840
+        - 105840
+        - 105840
+        - 105840
+        effective_count_mean: 2160.0
+      p05:
+        effective_counts:
+        - 5400
+        - 5400
+        - 5400
+        - 5400
+        - 5400
+        train_counts:
+        - 108000
+        - 108000
+        - 108000
+        - 108000
+        - 108000
+        unlabeled_counts:
+        - 102600
+        - 102600
+        - 102600
+        - 102600
+        - 102600
+        effective_count_mean: 5400.0
+      p10:
+        effective_counts:
+        - 10800
+        - 10800
+        - 10800
+        - 10800
+        - 10800
+        train_counts:
+        - 108000
+        - 108000
+        - 108000
+        - 108000
+        - 108000
+        unlabeled_counts:
+        - 97200
+        - 97200
+        - 97200
+        - 97200
+        - 97200
+        effective_count_mean: 10800.0
+      p20:
+        effective_counts:
+        - 21600
+        - 21600
+        - 21600
+        - 21600
+        - 21600
+        train_counts:
+        - 108000
+        - 108000
+        - 108000
+        - 108000
+        - 108000
+        unlabeled_counts:
+        - 86400
+        - 86400
+        - 86400
+        - 86400
+        - 86400
+        effective_count_mean: 21600.0
+    config_count: 294
+  amazon_polarity:
+    dataset: amazon_polarity
+    dataset_id: amazon_polarity
+    modality: text
+    status: ok
+    error: null
+    n_classes: 2
+    seeds:
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    accepted_regimes:
+    - regime: R1
+      status: accepted
+      labels_per_class: 1
+      requested_total: 2
+      effective_counts:
+      - 2
+      - 2
+      - 2
+      - 2
+      - 2
+      unlabeled_counts:
+      - 3239998
+      - 3239998
+      - 3239998
+      - 3239998
+      - 3239998
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted
+      labels_per_class: 3
+      requested_total: 6
+      effective_counts:
+      - 6
+      - 6
+      - 6
+      - 6
+      - 6
+      unlabeled_counts:
+      - 3239994
+      - 3239994
+      - 3239994
+      - 3239994
+      - 3239994
+      source_legacy_regime: p01
+    - regime: R3
+      status: accepted
+      labels_per_class: 5
+      requested_total: 10
+      effective_counts:
+      - 10
+      - 10
+      - 10
+      - 10
+      - 10
+      unlabeled_counts:
+      - 3239990
+      - 3239990
+      - 3239990
+      - 3239990
+      - 3239990
+      source_legacy_regime: p01
+    - regime: R4
+      status: accepted
+      labels_per_class: 10
+      requested_total: 20
+      effective_counts:
+      - 20
+      - 20
+      - 20
+      - 20
+      - 20
+      unlabeled_counts:
+      - 3239980
+      - 3239980
+      - 3239980
+      - 3239980
+      - 3239980
+      source_legacy_regime: p01
+    - regime: R5
+      status: accepted
+      labels_per_class: 20
+      requested_total: 40
+      effective_counts:
+      - 40
+      - 40
+      - 40
+      - 40
+      - 40
+      unlabeled_counts:
+      - 3239960
+      - 3239960
+      - 3239960
+      - 3239960
+      - 3239960
+      source_legacy_regime: p01
+    - regime: R6
+      status: accepted
+      labels_per_class: 50
+      requested_total: 100
+      effective_counts:
+      - 100
+      - 100
+      - 100
+      - 100
+      - 100
+      unlabeled_counts:
+      - 3239900
+      - 3239900
+      - 3239900
+      - 3239900
+      - 3239900
+      source_legacy_regime: p01
+    excluded_regimes: []
+    legacy_regimes:
+      p01:
+        effective_counts:
+        - 32400
+        - 32400
+        - 32400
+        - 32400
+        - 32400
+        train_counts:
+        - 3240000
+        - 3240000
+        - 3240000
+        - 3240000
+        - 3240000
+        unlabeled_counts:
+        - 3207600
+        - 3207600
+        - 3207600
+        - 3207600
+        - 3207600
+        effective_count_mean: 32400.0
+      p02:
+        effective_counts:
+        - 64800
+        - 64800
+        - 64800
+        - 64800
+        - 64800
+        train_counts:
+        - 3240000
+        - 3240000
+        - 3240000
+        - 3240000
+        - 3240000
+        unlabeled_counts:
+        - 3175200
+        - 3175200
+        - 3175200
+        - 3175200
+        - 3175200
+        effective_count_mean: 64800.0
+      p05:
+        effective_counts:
+        - 162000
+        - 162000
+        - 162000
+        - 162000
+        - 162000
+        train_counts:
+        - 3240000
+        - 3240000
+        - 3240000
+        - 3240000
+        - 3240000
+        unlabeled_counts:
+        - 3078000
+        - 3078000
+        - 3078000
+        - 3078000
+        - 3078000
+        effective_count_mean: 162000.0
+      p10:
+        effective_counts:
+        - 324000
+        - 324000
+        - 324000
+        - 324000
+        - 324000
+        train_counts:
+        - 3240000
+        - 3240000
+        - 3240000
+        - 3240000
+        - 3240000
+        unlabeled_counts:
+        - 2916000
+        - 2916000
+        - 2916000
+        - 2916000
+        - 2916000
+        effective_count_mean: 324000.0
+      p20:
+        effective_counts:
+        - 648000
+        - 648000
+        - 648000
+        - 648000
+        - 648000
+        train_counts:
+        - 3240000
+        - 3240000
+        - 3240000
+        - 3240000
+        - 3240000
+        unlabeled_counts:
+        - 2592000
+        - 2592000
+        - 2592000
+        - 2592000
+        - 2592000
+        effective_count_mean: 648000.0
+    config_count: 306
+  amazon_reviews_multi_en:
+    dataset: amazon_reviews_multi_en
+    dataset_id: amazon_reviews_multi_en
+    modality: text
+    status: fallback_unverified
+    error: 'DatasetNotCachedError: Dataset ''amazon_reviews_multi_en'' is not available
+      in the processed cache. Set download=True or run: modssc datasets download --dataset
+      <id>'
+    n_classes: 5
+    seeds:
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    accepted_regimes:
+    - regime: R1
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 1
+      requested_total: 5
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 3
+      requested_total: 15
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R3
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 5
+      requested_total: 25
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R4
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 10
+      requested_total: 50
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R5
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 20
+      requested_total: 100
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R6
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 50
+      requested_total: 250
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    excluded_regimes: []
+    legacy_regimes: {}
+    config_count: 294
+  breast_cancer:
+    dataset: breast_cancer
+    dataset_id: breast_cancer
+    modality: tabular
+    status: ok
+    error: null
+    n_classes: 2
+    seeds:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    accepted_regimes:
+    - regime: R1
+      status: accepted
+      labels_per_class: 1
+      requested_total: 2
+      effective_counts:
+      - 2
+      - 2
+      - 2
+      - 2
+      - 2
+      unlabeled_counts:
+      - 501
+      - 501
+      - 501
+      - 501
+      - 501
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted
+      labels_per_class: 3
+      requested_total: 6
+      effective_counts:
+      - 6
+      - 6
+      - 6
+      - 6
+      - 6
+      unlabeled_counts:
+      - 497
+      - 497
+      - 497
+      - 497
+      - 497
+      source_legacy_regime: p01
+    - regime: R3
+      status: accepted
+      labels_per_class: 5
+      requested_total: 10
+      effective_counts:
+      - 10
+      - 10
+      - 10
+      - 10
+      - 10
+      unlabeled_counts:
+      - 493
+      - 493
+      - 493
+      - 493
+      - 493
+      source_legacy_regime: p02
+    - regime: R4
+      status: accepted
+      labels_per_class: 10
+      requested_total: 20
+      effective_counts:
+      - 20
+      - 20
+      - 20
+      - 20
+      - 20
+      unlabeled_counts:
+      - 483
+      - 483
+      - 483
+      - 483
+      - 483
+      source_legacy_regime: p05
+    - regime: R5
+      status: accepted
+      labels_per_class: 20
+      requested_total: 40
+      effective_counts:
+      - 40
+      - 40
+      - 40
+      - 40
+      - 40
+      unlabeled_counts:
+      - 463
+      - 463
+      - 463
+      - 463
+      - 463
+      source_legacy_regime: p10
+    excluded_regimes: []
+    legacy_regimes:
+      p01:
+        effective_counts:
+        - 5
+        - 5
+        - 5
+        - 5
+        - 5
+        train_counts:
+        - 503
+        - 503
+        - 503
+        - 503
+        - 503
+        unlabeled_counts:
+        - 498
+        - 498
+        - 498
+        - 498
+        - 498
+        effective_count_mean: 5.0
+      p02:
+        effective_counts:
+        - 10
+        - 10
+        - 10
+        - 10
+        - 10
+        train_counts:
+        - 503
+        - 503
+        - 503
+        - 503
+        - 503
+        unlabeled_counts:
+        - 493
+        - 493
+        - 493
+        - 493
+        - 493
+        effective_count_mean: 10.0
+      p05:
+        effective_counts:
+        - 25
+        - 25
+        - 25
+        - 25
+        - 25
+        train_counts:
+        - 503
+        - 503
+        - 503
+        - 503
+        - 503
+        unlabeled_counts:
+        - 478
+        - 478
+        - 478
+        - 478
+        - 478
+        effective_count_mean: 25.0
+      p10:
+        effective_counts:
+        - 50
+        - 50
+        - 50
+        - 50
+        - 50
+        train_counts:
+        - 503
+        - 503
+        - 503
+        - 503
+        - 503
+        unlabeled_counts:
+        - 453
+        - 453
+        - 453
+        - 453
+        - 453
+        effective_count_mean: 50.0
+      p20:
+        effective_counts:
+        - 101
+        - 101
+        - 101
+        - 101
+        - 101
+        train_counts:
+        - 503
+        - 503
+        - 503
+        - 503
+        - 503
+        unlabeled_counts:
+        - 402
+        - 402
+        - 402
+        - 402
+        - 402
+        effective_count_mean: 101.0
+    config_count: 255
+  cifar10:
+    dataset: cifar10
+    dataset_id: cifar10
+    modality: vision
+    status: ok
+    error: null
+    n_classes: 10
+    seeds:
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    accepted_regimes:
+    - regime: R1
+      status: accepted
+      labels_per_class: 1
+      requested_total: 10
+      effective_counts:
+      - 10
+      - 10
+      - 10
+      - 10
+      - 10
+      unlabeled_counts:
+      - 44990
+      - 44990
+      - 44990
+      - 44990
+      - 44990
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted
+      labels_per_class: 3
+      requested_total: 30
+      effective_counts:
+      - 30
+      - 30
+      - 30
+      - 30
+      - 30
+      unlabeled_counts:
+      - 44970
+      - 44970
+      - 44970
+      - 44970
+      - 44970
+      source_legacy_regime: p01
+    - regime: R3
+      status: accepted
+      labels_per_class: 5
+      requested_total: 50
+      effective_counts:
+      - 50
+      - 50
+      - 50
+      - 50
+      - 50
+      unlabeled_counts:
+      - 44950
+      - 44950
+      - 44950
+      - 44950
+      - 44950
+      source_legacy_regime: p01
+    - regime: R4
+      status: accepted
+      labels_per_class: 10
+      requested_total: 100
+      effective_counts:
+      - 100
+      - 100
+      - 100
+      - 100
+      - 100
+      unlabeled_counts:
+      - 44900
+      - 44900
+      - 44900
+      - 44900
+      - 44900
+      source_legacy_regime: p01
+    - regime: R5
+      status: accepted
+      labels_per_class: 20
+      requested_total: 200
+      effective_counts:
+      - 200
+      - 200
+      - 200
+      - 200
+      - 200
+      unlabeled_counts:
+      - 44800
+      - 44800
+      - 44800
+      - 44800
+      - 44800
+      source_legacy_regime: p01
+    - regime: R6
+      status: accepted
+      labels_per_class: 50
+      requested_total: 500
+      effective_counts:
+      - 500
+      - 500
+      - 500
+      - 500
+      - 500
+      unlabeled_counts:
+      - 44500
+      - 44500
+      - 44500
+      - 44500
+      - 44500
+      source_legacy_regime: p01
+    excluded_regimes: []
+    legacy_regimes:
+      p01:
+        effective_counts:
+        - 450
+        - 450
+        - 450
+        - 450
+        - 450
+        train_counts:
+        - 45000
+        - 45000
+        - 45000
+        - 45000
+        - 45000
+        unlabeled_counts:
+        - 44550
+        - 44550
+        - 44550
+        - 44550
+        - 44550
+        effective_count_mean: 450.0
+      p02:
+        effective_counts:
+        - 900
+        - 900
+        - 900
+        - 900
+        - 900
+        train_counts:
+        - 45000
+        - 45000
+        - 45000
+        - 45000
+        - 45000
+        unlabeled_counts:
+        - 44100
+        - 44100
+        - 44100
+        - 44100
+        - 44100
+        effective_count_mean: 900.0
+      p05:
+        effective_counts:
+        - 2250
+        - 2250
+        - 2250
+        - 2250
+        - 2250
+        train_counts:
+        - 45000
+        - 45000
+        - 45000
+        - 45000
+        - 45000
+        unlabeled_counts:
+        - 42750
+        - 42750
+        - 42750
+        - 42750
+        - 42750
+        effective_count_mean: 2250.0
+      p10:
+        effective_counts:
+        - 4500
+        - 4500
+        - 4500
+        - 4500
+        - 4500
+        train_counts:
+        - 45000
+        - 45000
+        - 45000
+        - 45000
+        - 45000
+        unlabeled_counts:
+        - 40500
+        - 40500
+        - 40500
+        - 40500
+        - 40500
+        effective_count_mean: 4500.0
+      p20:
+        effective_counts:
+        - 9000
+        - 9000
+        - 9000
+        - 9000
+        - 9000
+        train_counts:
+        - 45000
+        - 45000
+        - 45000
+        - 45000
+        - 45000
+        unlabeled_counts:
+        - 36000
+        - 36000
+        - 36000
+        - 36000
+        - 36000
+        effective_count_mean: 9000.0
+    config_count: 294
+  cifar100:
+    dataset: cifar100
+    dataset_id: cifar100
+    modality: vision
+    status: ok
+    error: null
+    n_classes: 100
+    seeds:
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    accepted_regimes:
+    - regime: R1
+      status: accepted
+      labels_per_class: 1
+      requested_total: 100
+      effective_counts:
+      - 100
+      - 100
+      - 100
+      - 100
+      - 100
+      unlabeled_counts:
+      - 44900
+      - 44900
+      - 44900
+      - 44900
+      - 44900
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted
+      labels_per_class: 3
+      requested_total: 300
+      effective_counts:
+      - 300
+      - 300
+      - 300
+      - 300
+      - 300
+      unlabeled_counts:
+      - 44700
+      - 44700
+      - 44700
+      - 44700
+      - 44700
+      source_legacy_regime: p01
+    - regime: R3
+      status: accepted
+      labels_per_class: 5
+      requested_total: 500
+      effective_counts:
+      - 500
+      - 500
+      - 500
+      - 500
+      - 500
+      unlabeled_counts:
+      - 44500
+      - 44500
+      - 44500
+      - 44500
+      - 44500
+      source_legacy_regime: p01
+    - regime: R4
+      status: accepted
+      labels_per_class: 10
+      requested_total: 1000
+      effective_counts:
+      - 1000
+      - 1000
+      - 1000
+      - 1000
+      - 1000
+      unlabeled_counts:
+      - 44000
+      - 44000
+      - 44000
+      - 44000
+      - 44000
+      source_legacy_regime: p02
+    - regime: R5
+      status: accepted
+      labels_per_class: 20
+      requested_total: 2000
+      effective_counts:
+      - 2000
+      - 2000
+      - 2000
+      - 2000
+      - 2000
+      unlabeled_counts:
+      - 43000
+      - 43000
+      - 43000
+      - 43000
+      - 43000
+      source_legacy_regime: p05
+    excluded_regimes: []
+    legacy_regimes:
+      p01:
+        effective_counts:
+        - 450
+        - 450
+        - 450
+        - 450
+        - 450
+        train_counts:
+        - 45000
+        - 45000
+        - 45000
+        - 45000
+        - 45000
+        unlabeled_counts:
+        - 44550
+        - 44550
+        - 44550
+        - 44550
+        - 44550
+        effective_count_mean: 450.0
+      p02:
+        effective_counts:
+        - 900
+        - 900
+        - 900
+        - 900
+        - 900
+        train_counts:
+        - 45000
+        - 45000
+        - 45000
+        - 45000
+        - 45000
+        unlabeled_counts:
+        - 44100
+        - 44100
+        - 44100
+        - 44100
+        - 44100
+        effective_count_mean: 900.0
+      p05:
+        effective_counts:
+        - 2250
+        - 2250
+        - 2250
+        - 2250
+        - 2250
+        train_counts:
+        - 45000
+        - 45000
+        - 45000
+        - 45000
+        - 45000
+        unlabeled_counts:
+        - 42750
+        - 42750
+        - 42750
+        - 42750
+        - 42750
+        effective_count_mean: 2250.0
+      p10:
+        effective_counts:
+        - 4500
+        - 4500
+        - 4500
+        - 4500
+        - 4500
+        train_counts:
+        - 45000
+        - 45000
+        - 45000
+        - 45000
+        - 45000
+        unlabeled_counts:
+        - 40500
+        - 40500
+        - 40500
+        - 40500
+        - 40500
+        effective_count_mean: 4500.0
+      p20:
+        effective_counts:
+        - 9000
+        - 9000
+        - 9000
+        - 9000
+        - 9000
+        train_counts:
+        - 45000
+        - 45000
+        - 45000
+        - 45000
+        - 45000
+        unlabeled_counts:
+        - 36000
+        - 36000
+        - 36000
+        - 36000
+        - 36000
+        effective_count_mean: 9000.0
+    config_count: 245
+  citeseer:
+    dataset: citeseer
+    dataset_id: citeseer
+    modality: graph
+    status: ok
+    error: null
+    n_classes: 6
+    seeds:
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    accepted_regimes:
+    - regime: R1
+      status: accepted
+      labels_per_class: 1
+      requested_total: 6
+      effective_counts:
+      - 6
+      - 6
+      - 6
+      - 6
+      - 6
+      unlabeled_counts:
+      - 114
+      - 114
+      - 114
+      - 114
+      - 114
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted
+      labels_per_class: 3
+      requested_total: 18
+      effective_counts:
+      - 18
+      - 18
+      - 18
+      - 18
+      - 18
+      unlabeled_counts:
+      - 102
+      - 102
+      - 102
+      - 102
+      - 102
+      source_legacy_regime: p10
+    - regime: R3
+      status: accepted
+      labels_per_class: 5
+      requested_total: 30
+      effective_counts:
+      - 30
+      - 30
+      - 30
+      - 30
+      - 30
+      unlabeled_counts:
+      - 90
+      - 90
+      - 90
+      - 90
+      - 90
+      source_legacy_regime: p20
+    - regime: R4
+      status: accepted
+      labels_per_class: 10
+      requested_total: 60
+      effective_counts:
+      - 60
+      - 60
+      - 60
+      - 60
+      - 60
+      unlabeled_counts:
+      - 60
+      - 60
+      - 60
+      - 60
+      - 60
+      source_legacy_regime: p20
+    excluded_regimes:
+    - regime: R5
+      status: excluded
+      reason: no_unlabeled_pool
+      requested_total: 120
+      effective_counts:
+      - 120
+      - 120
+      - 120
+      - 120
+      - 120
+      unlabeled_counts:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+    legacy_regimes:
+      p01:
+        effective_counts:
+        - 6
+        - 6
+        - 6
+        - 6
+        - 6
+        train_counts:
+        - 120
+        - 120
+        - 120
+        - 120
+        - 120
+        unlabeled_counts:
+        - 114
+        - 114
+        - 114
+        - 114
+        - 114
+        effective_count_mean: 6.0
+      p02:
+        effective_counts:
+        - 6
+        - 6
+        - 6
+        - 6
+        - 6
+        train_counts:
+        - 120
+        - 120
+        - 120
+        - 120
+        - 120
+        unlabeled_counts:
+        - 114
+        - 114
+        - 114
+        - 114
+        - 114
+        effective_count_mean: 6.0
+      p05:
+        effective_counts:
+        - 6
+        - 6
+        - 6
+        - 6
+        - 6
+        train_counts:
+        - 120
+        - 120
+        - 120
+        - 120
+        - 120
+        unlabeled_counts:
+        - 114
+        - 114
+        - 114
+        - 114
+        - 114
+        effective_count_mean: 6.0
+      p10:
+        effective_counts:
+        - 12
+        - 12
+        - 12
+        - 12
+        - 12
+        train_counts:
+        - 120
+        - 120
+        - 120
+        - 120
+        - 120
+        unlabeled_counts:
+        - 108
+        - 108
+        - 108
+        - 108
+        - 108
+        effective_count_mean: 12.0
+      p20:
+        effective_counts:
+        - 24
+        - 24
+        - 24
+        - 24
+        - 24
+        train_counts:
+        - 120
+        - 120
+        - 120
+        - 120
+        - 120
+        unlabeled_counts:
+        - 96
+        - 96
+        - 96
+        - 96
+        - 96
+        effective_count_mean: 24.0
+    config_count: 196
+  cora:
+    dataset: cora
+    dataset_id: cora
+    modality: graph
+    status: ok
+    error: null
+    n_classes: 7
+    seeds:
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    accepted_regimes:
+    - regime: R1
+      status: accepted
+      labels_per_class: 1
+      requested_total: 7
+      effective_counts:
+      - 7
+      - 7
+      - 7
+      - 7
+      - 7
+      unlabeled_counts:
+      - 133
+      - 133
+      - 133
+      - 133
+      - 133
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted
+      labels_per_class: 3
+      requested_total: 21
+      effective_counts:
+      - 21
+      - 21
+      - 21
+      - 21
+      - 21
+      unlabeled_counts:
+      - 119
+      - 119
+      - 119
+      - 119
+      - 119
+      source_legacy_regime: p10
+    - regime: R3
+      status: accepted
+      labels_per_class: 5
+      requested_total: 35
+      effective_counts:
+      - 35
+      - 35
+      - 35
+      - 35
+      - 35
+      unlabeled_counts:
+      - 105
+      - 105
+      - 105
+      - 105
+      - 105
+      source_legacy_regime: p20
+    - regime: R4
+      status: accepted
+      labels_per_class: 10
+      requested_total: 70
+      effective_counts:
+      - 70
+      - 70
+      - 70
+      - 70
+      - 70
+      unlabeled_counts:
+      - 70
+      - 70
+      - 70
+      - 70
+      - 70
+      source_legacy_regime: p20
+    excluded_regimes:
+    - regime: R5
+      status: excluded
+      reason: no_unlabeled_pool
+      requested_total: 140
+      effective_counts:
+      - 140
+      - 140
+      - 140
+      - 140
+      - 140
+      unlabeled_counts:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+    legacy_regimes:
+      p01:
+        effective_counts:
+        - 7
+        - 7
+        - 7
+        - 7
+        - 7
+        train_counts:
+        - 140
+        - 140
+        - 140
+        - 140
+        - 140
+        unlabeled_counts:
+        - 133
+        - 133
+        - 133
+        - 133
+        - 133
+        effective_count_mean: 7.0
+      p02:
+        effective_counts:
+        - 7
+        - 7
+        - 7
+        - 7
+        - 7
+        train_counts:
+        - 140
+        - 140
+        - 140
+        - 140
+        - 140
+        unlabeled_counts:
+        - 133
+        - 133
+        - 133
+        - 133
+        - 133
+        effective_count_mean: 7.0
+      p05:
+        effective_counts:
+        - 7
+        - 7
+        - 7
+        - 7
+        - 7
+        train_counts:
+        - 140
+        - 140
+        - 140
+        - 140
+        - 140
+        unlabeled_counts:
+        - 133
+        - 133
+        - 133
+        - 133
+        - 133
+        effective_count_mean: 7.0
+      p10:
+        effective_counts:
+        - 14
+        - 14
+        - 14
+        - 14
+        - 14
+        train_counts:
+        - 140
+        - 140
+        - 140
+        - 140
+        - 140
+        unlabeled_counts:
+        - 126
+        - 126
+        - 126
+        - 126
+        - 126
+        effective_count_mean: 14.0
+      p20:
+        effective_counts:
+        - 28
+        - 28
+        - 28
+        - 28
+        - 28
+        train_counts:
+        - 140
+        - 140
+        - 140
+        - 140
+        - 140
+        unlabeled_counts:
+        - 112
+        - 112
+        - 112
+        - 112
+        - 112
+        effective_count_mean: 28.0
+    config_count: 196
+  dbpedia_14:
+    dataset: dbpedia_14
+    dataset_id: dbpedia_14
+    modality: text
+    status: ok
+    error: null
+    n_classes: 14
+    seeds:
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    accepted_regimes:
+    - regime: R1
+      status: accepted
+      labels_per_class: 1
+      requested_total: 14
+      effective_counts:
+      - 14
+      - 14
+      - 14
+      - 14
+      - 14
+      unlabeled_counts:
+      - 503986
+      - 503986
+      - 503986
+      - 503986
+      - 503986
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted
+      labels_per_class: 3
+      requested_total: 42
+      effective_counts:
+      - 42
+      - 42
+      - 42
+      - 42
+      - 42
+      unlabeled_counts:
+      - 503958
+      - 503958
+      - 503958
+      - 503958
+      - 503958
+      source_legacy_regime: p01
+    - regime: R3
+      status: accepted
+      labels_per_class: 5
+      requested_total: 70
+      effective_counts:
+      - 70
+      - 70
+      - 70
+      - 70
+      - 70
+      unlabeled_counts:
+      - 503930
+      - 503930
+      - 503930
+      - 503930
+      - 503930
+      source_legacy_regime: p01
+    - regime: R4
+      status: accepted
+      labels_per_class: 10
+      requested_total: 140
+      effective_counts:
+      - 140
+      - 140
+      - 140
+      - 140
+      - 140
+      unlabeled_counts:
+      - 503860
+      - 503860
+      - 503860
+      - 503860
+      - 503860
+      source_legacy_regime: p01
+    - regime: R5
+      status: accepted
+      labels_per_class: 20
+      requested_total: 280
+      effective_counts:
+      - 280
+      - 280
+      - 280
+      - 280
+      - 280
+      unlabeled_counts:
+      - 503720
+      - 503720
+      - 503720
+      - 503720
+      - 503720
+      source_legacy_regime: p01
+    - regime: R6
+      status: accepted
+      labels_per_class: 50
+      requested_total: 700
+      effective_counts:
+      - 700
+      - 700
+      - 700
+      - 700
+      - 700
+      unlabeled_counts:
+      - 503300
+      - 503300
+      - 503300
+      - 503300
+      - 503300
+      source_legacy_regime: p01
+    excluded_regimes: []
+    legacy_regimes:
+      p01:
+        effective_counts:
+        - 5040
+        - 5040
+        - 5040
+        - 5040
+        - 5040
+        train_counts:
+        - 504000
+        - 504000
+        - 504000
+        - 504000
+        - 504000
+        unlabeled_counts:
+        - 498960
+        - 498960
+        - 498960
+        - 498960
+        - 498960
+        effective_count_mean: 5040.0
+      p02:
+        effective_counts:
+        - 10080
+        - 10080
+        - 10080
+        - 10080
+        - 10080
+        train_counts:
+        - 504000
+        - 504000
+        - 504000
+        - 504000
+        - 504000
+        unlabeled_counts:
+        - 493920
+        - 493920
+        - 493920
+        - 493920
+        - 493920
+        effective_count_mean: 10080.0
+      p05:
+        effective_counts:
+        - 25200
+        - 25200
+        - 25200
+        - 25200
+        - 25200
+        train_counts:
+        - 504000
+        - 504000
+        - 504000
+        - 504000
+        - 504000
+        unlabeled_counts:
+        - 478800
+        - 478800
+        - 478800
+        - 478800
+        - 478800
+        effective_count_mean: 25200.0
+      p10:
+        effective_counts:
+        - 50400
+        - 50400
+        - 50400
+        - 50400
+        - 50400
+        train_counts:
+        - 504000
+        - 504000
+        - 504000
+        - 504000
+        - 504000
+        unlabeled_counts:
+        - 453600
+        - 453600
+        - 453600
+        - 453600
+        - 453600
+        effective_count_mean: 50400.0
+      p20:
+        effective_counts:
+        - 100800
+        - 100800
+        - 100800
+        - 100800
+        - 100800
+        train_counts:
+        - 504000
+        - 504000
+        - 504000
+        - 504000
+        - 504000
+        unlabeled_counts:
+        - 403200
+        - 403200
+        - 403200
+        - 403200
+        - 403200
+        effective_count_mean: 100800.0
+    config_count: 294
+  imdb:
+    dataset: imdb
+    dataset_id: imdb
+    modality: text
+    status: ok
+    error: null
+    n_classes: 2
+    seeds:
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    accepted_regimes:
+    - regime: R1
+      status: accepted
+      labels_per_class: 1
+      requested_total: 2
+      effective_counts:
+      - 2
+      - 2
+      - 2
+      - 2
+      - 2
+      unlabeled_counts:
+      - 22498
+      - 22498
+      - 22498
+      - 22498
+      - 22498
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted
+      labels_per_class: 3
+      requested_total: 6
+      effective_counts:
+      - 6
+      - 6
+      - 6
+      - 6
+      - 6
+      unlabeled_counts:
+      - 22494
+      - 22494
+      - 22494
+      - 22494
+      - 22494
+      source_legacy_regime: p01
+    - regime: R3
+      status: accepted
+      labels_per_class: 5
+      requested_total: 10
+      effective_counts:
+      - 10
+      - 10
+      - 10
+      - 10
+      - 10
+      unlabeled_counts:
+      - 22490
+      - 22490
+      - 22490
+      - 22490
+      - 22490
+      source_legacy_regime: p01
+    - regime: R4
+      status: accepted
+      labels_per_class: 10
+      requested_total: 20
+      effective_counts:
+      - 20
+      - 20
+      - 20
+      - 20
+      - 20
+      unlabeled_counts:
+      - 22480
+      - 22480
+      - 22480
+      - 22480
+      - 22480
+      source_legacy_regime: p01
+    - regime: R5
+      status: accepted
+      labels_per_class: 20
+      requested_total: 40
+      effective_counts:
+      - 40
+      - 40
+      - 40
+      - 40
+      - 40
+      unlabeled_counts:
+      - 22460
+      - 22460
+      - 22460
+      - 22460
+      - 22460
+      source_legacy_regime: p01
+    - regime: R6
+      status: accepted
+      labels_per_class: 50
+      requested_total: 100
+      effective_counts:
+      - 100
+      - 100
+      - 100
+      - 100
+      - 100
+      unlabeled_counts:
+      - 22400
+      - 22400
+      - 22400
+      - 22400
+      - 22400
+      source_legacy_regime: p01
+    excluded_regimes: []
+    legacy_regimes:
+      p01:
+        effective_counts:
+        - 225
+        - 225
+        - 225
+        - 225
+        - 225
+        train_counts:
+        - 22500
+        - 22500
+        - 22500
+        - 22500
+        - 22500
+        unlabeled_counts:
+        - 22275
+        - 22275
+        - 22275
+        - 22275
+        - 22275
+        effective_count_mean: 225.0
+      p02:
+        effective_counts:
+        - 450
+        - 450
+        - 450
+        - 450
+        - 450
+        train_counts:
+        - 22500
+        - 22500
+        - 22500
+        - 22500
+        - 22500
+        unlabeled_counts:
+        - 22050
+        - 22050
+        - 22050
+        - 22050
+        - 22050
+        effective_count_mean: 450.0
+      p05:
+        effective_counts:
+        - 1125
+        - 1125
+        - 1125
+        - 1125
+        - 1125
+        train_counts:
+        - 22500
+        - 22500
+        - 22500
+        - 22500
+        - 22500
+        unlabeled_counts:
+        - 21375
+        - 21375
+        - 21375
+        - 21375
+        - 21375
+        effective_count_mean: 1125.0
+      p10:
+        effective_counts:
+        - 2250
+        - 2250
+        - 2250
+        - 2250
+        - 2250
+        train_counts:
+        - 22500
+        - 22500
+        - 22500
+        - 22500
+        - 22500
+        unlabeled_counts:
+        - 20250
+        - 20250
+        - 20250
+        - 20250
+        - 20250
+        effective_count_mean: 2250.0
+      p20:
+        effective_counts:
+        - 4500
+        - 4500
+        - 4500
+        - 4500
+        - 4500
+        train_counts:
+        - 22500
+        - 22500
+        - 22500
+        - 22500
+        - 22500
+        unlabeled_counts:
+        - 18000
+        - 18000
+        - 18000
+        - 18000
+        - 18000
+        effective_count_mean: 4500.0
+    config_count: 306
+  iris:
+    dataset: iris
+    dataset_id: iris
+    modality: tabular
+    status: ok
+    error: null
+    n_classes: 3
+    seeds:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    accepted_regimes:
+    - regime: R1
+      status: accepted
+      labels_per_class: 1
+      requested_total: 3
+      effective_counts:
+      - 3
+      - 3
+      - 3
+      - 3
+      - 3
+      unlabeled_counts:
+      - 105
+      - 105
+      - 105
+      - 105
+      - 105
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted
+      labels_per_class: 3
+      requested_total: 9
+      effective_counts:
+      - 9
+      - 9
+      - 9
+      - 9
+      - 9
+      unlabeled_counts:
+      - 99
+      - 99
+      - 99
+      - 99
+      - 99
+      source_legacy_regime: p10
+    - regime: R3
+      status: accepted
+      labels_per_class: 5
+      requested_total: 15
+      effective_counts:
+      - 15
+      - 15
+      - 15
+      - 15
+      - 15
+      unlabeled_counts:
+      - 93
+      - 93
+      - 93
+      - 93
+      - 93
+      source_legacy_regime: p10
+    - regime: R4
+      status: accepted
+      labels_per_class: 10
+      requested_total: 30
+      effective_counts:
+      - 30
+      - 30
+      - 30
+      - 30
+      - 30
+      unlabeled_counts:
+      - 78
+      - 78
+      - 78
+      - 78
+      - 78
+      source_legacy_regime: p20
+    excluded_regimes: []
+    legacy_regimes:
+      p01:
+        effective_counts:
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        train_counts:
+        - 108
+        - 108
+        - 108
+        - 108
+        - 108
+        unlabeled_counts:
+        - 105
+        - 105
+        - 105
+        - 105
+        - 105
+        effective_count_mean: 3.0
+      p02:
+        effective_counts:
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        train_counts:
+        - 108
+        - 108
+        - 108
+        - 108
+        - 108
+        unlabeled_counts:
+        - 105
+        - 105
+        - 105
+        - 105
+        - 105
+        effective_count_mean: 3.0
+      p05:
+        effective_counts:
+        - 5
+        - 5
+        - 5
+        - 5
+        - 5
+        train_counts:
+        - 108
+        - 108
+        - 108
+        - 108
+        - 108
+        unlabeled_counts:
+        - 103
+        - 103
+        - 103
+        - 103
+        - 103
+        effective_count_mean: 5.0
+      p10:
+        effective_counts:
+        - 11
+        - 11
+        - 11
+        - 11
+        - 11
+        train_counts:
+        - 108
+        - 108
+        - 108
+        - 108
+        - 108
+        unlabeled_counts:
+        - 97
+        - 97
+        - 97
+        - 97
+        - 97
+        effective_count_mean: 11.0
+      p20:
+        effective_counts:
+        - 22
+        - 22
+        - 22
+        - 22
+        - 22
+        train_counts:
+        - 108
+        - 108
+        - 108
+        - 108
+        - 108
+        unlabeled_counts:
+        - 86
+        - 86
+        - 86
+        - 86
+        - 86
+        effective_count_mean: 22.0
+    config_count: 192
+  mnist:
+    dataset: mnist
+    dataset_id: mnist
+    modality: vision
+    status: ok
+    error: null
+    n_classes: 10
+    seeds:
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    accepted_regimes:
+    - regime: R1
+      status: accepted
+      labels_per_class: 1
+      requested_total: 10
+      effective_counts:
+      - 10
+      - 10
+      - 10
+      - 10
+      - 10
+      unlabeled_counts:
+      - 53990
+      - 53990
+      - 53990
+      - 53990
+      - 53990
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted
+      labels_per_class: 3
+      requested_total: 30
+      effective_counts:
+      - 30
+      - 30
+      - 30
+      - 30
+      - 30
+      unlabeled_counts:
+      - 53970
+      - 53970
+      - 53970
+      - 53970
+      - 53970
+      source_legacy_regime: p01
+    - regime: R3
+      status: accepted
+      labels_per_class: 5
+      requested_total: 50
+      effective_counts:
+      - 50
+      - 50
+      - 50
+      - 50
+      - 50
+      unlabeled_counts:
+      - 53950
+      - 53950
+      - 53950
+      - 53950
+      - 53950
+      source_legacy_regime: p01
+    - regime: R4
+      status: accepted
+      labels_per_class: 10
+      requested_total: 100
+      effective_counts:
+      - 100
+      - 100
+      - 100
+      - 100
+      - 100
+      unlabeled_counts:
+      - 53900
+      - 53900
+      - 53900
+      - 53900
+      - 53900
+      source_legacy_regime: p01
+    - regime: R5
+      status: accepted
+      labels_per_class: 20
+      requested_total: 200
+      effective_counts:
+      - 200
+      - 200
+      - 200
+      - 200
+      - 200
+      unlabeled_counts:
+      - 53800
+      - 53800
+      - 53800
+      - 53800
+      - 53800
+      source_legacy_regime: p01
+    - regime: R6
+      status: accepted
+      labels_per_class: 50
+      requested_total: 500
+      effective_counts:
+      - 500
+      - 500
+      - 500
+      - 500
+      - 500
+      unlabeled_counts:
+      - 53500
+      - 53500
+      - 53500
+      - 53500
+      - 53500
+      source_legacy_regime: p01
+    excluded_regimes: []
+    legacy_regimes:
+      p01:
+        effective_counts:
+        - 540
+        - 540
+        - 540
+        - 540
+        - 540
+        train_counts:
+        - 54000
+        - 54000
+        - 54000
+        - 54000
+        - 54000
+        unlabeled_counts:
+        - 53460
+        - 53460
+        - 53460
+        - 53460
+        - 53460
+        effective_count_mean: 540.0
+      p02:
+        effective_counts:
+        - 1080
+        - 1080
+        - 1080
+        - 1080
+        - 1080
+        train_counts:
+        - 54000
+        - 54000
+        - 54000
+        - 54000
+        - 54000
+        unlabeled_counts:
+        - 52920
+        - 52920
+        - 52920
+        - 52920
+        - 52920
+        effective_count_mean: 1080.0
+      p05:
+        effective_counts:
+        - 2700
+        - 2700
+        - 2700
+        - 2700
+        - 2700
+        train_counts:
+        - 54000
+        - 54000
+        - 54000
+        - 54000
+        - 54000
+        unlabeled_counts:
+        - 51300
+        - 51300
+        - 51300
+        - 51300
+        - 51300
+        effective_count_mean: 2700.0
+      p10:
+        effective_counts:
+        - 5400
+        - 5400
+        - 5400
+        - 5400
+        - 5400
+        train_counts:
+        - 54000
+        - 54000
+        - 54000
+        - 54000
+        - 54000
+        unlabeled_counts:
+        - 48600
+        - 48600
+        - 48600
+        - 48600
+        - 48600
+        effective_count_mean: 5400.0
+      p20:
+        effective_counts:
+        - 10800
+        - 10800
+        - 10800
+        - 10800
+        - 10800
+        train_counts:
+        - 54000
+        - 54000
+        - 54000
+        - 54000
+        - 54000
+        unlabeled_counts:
+        - 43200
+        - 43200
+        - 43200
+        - 43200
+        - 43200
+        effective_count_mean: 10800.0
+    config_count: 294
+  pubmed:
+    dataset: pubmed
+    dataset_id: pubmed
+    modality: graph
+    status: ok
+    error: null
+    n_classes: 3
+    seeds:
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    accepted_regimes:
+    - regime: R1
+      status: accepted
+      labels_per_class: 1
+      requested_total: 3
+      effective_counts:
+      - 3
+      - 3
+      - 3
+      - 3
+      - 3
+      unlabeled_counts:
+      - 57
+      - 57
+      - 57
+      - 57
+      - 57
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted
+      labels_per_class: 3
+      requested_total: 9
+      effective_counts:
+      - 9
+      - 9
+      - 9
+      - 9
+      - 9
+      unlabeled_counts:
+      - 51
+      - 51
+      - 51
+      - 51
+      - 51
+      source_legacy_regime: p10
+    - regime: R3
+      status: accepted
+      labels_per_class: 5
+      requested_total: 15
+      effective_counts:
+      - 15
+      - 15
+      - 15
+      - 15
+      - 15
+      unlabeled_counts:
+      - 45
+      - 45
+      - 45
+      - 45
+      - 45
+      source_legacy_regime: p20
+    - regime: R4
+      status: accepted
+      labels_per_class: 10
+      requested_total: 30
+      effective_counts:
+      - 30
+      - 30
+      - 30
+      - 30
+      - 30
+      unlabeled_counts:
+      - 30
+      - 30
+      - 30
+      - 30
+      - 30
+      source_legacy_regime: p20
+    excluded_regimes:
+    - regime: R5
+      status: excluded
+      reason: no_unlabeled_pool
+      requested_total: 60
+      effective_counts:
+      - 60
+      - 60
+      - 60
+      - 60
+      - 60
+      unlabeled_counts:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+    legacy_regimes:
+      p01:
+        effective_counts:
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        train_counts:
+        - 60
+        - 60
+        - 60
+        - 60
+        - 60
+        unlabeled_counts:
+        - 57
+        - 57
+        - 57
+        - 57
+        - 57
+        effective_count_mean: 3.0
+      p02:
+        effective_counts:
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        train_counts:
+        - 60
+        - 60
+        - 60
+        - 60
+        - 60
+        unlabeled_counts:
+        - 57
+        - 57
+        - 57
+        - 57
+        - 57
+        effective_count_mean: 3.0
+      p05:
+        effective_counts:
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        train_counts:
+        - 60
+        - 60
+        - 60
+        - 60
+        - 60
+        unlabeled_counts:
+        - 57
+        - 57
+        - 57
+        - 57
+        - 57
+        effective_count_mean: 3.0
+      p10:
+        effective_counts:
+        - 6
+        - 6
+        - 6
+        - 6
+        - 6
+        train_counts:
+        - 60
+        - 60
+        - 60
+        - 60
+        - 60
+        unlabeled_counts:
+        - 54
+        - 54
+        - 54
+        - 54
+        - 54
+        effective_count_mean: 6.0
+      p20:
+        effective_counts:
+        - 12
+        - 12
+        - 12
+        - 12
+        - 12
+        train_counts:
+        - 60
+        - 60
+        - 60
+        - 60
+        - 60
+        unlabeled_counts:
+        - 48
+        - 48
+        - 48
+        - 48
+        - 48
+        effective_count_mean: 12.0
+    config_count: 196
+  speechcommands:
+    dataset: speechcommands
+    dataset_id: speechcommands
+    modality: audio
+    status: ok
+    error: null
+    n_classes: 35
+    seeds:
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    accepted_regimes:
+    - regime: R1
+      status: accepted
+      labels_per_class: 1
+      requested_total: 35
+      effective_counts:
+      - 35
+      - 35
+      - 35
+      - 35
+      - 35
+      unlabeled_counts:
+      - 76324
+      - 76324
+      - 76324
+      - 76324
+      - 76324
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted
+      labels_per_class: 3
+      requested_total: 105
+      effective_counts:
+      - 105
+      - 105
+      - 105
+      - 105
+      - 105
+      unlabeled_counts:
+      - 76254
+      - 76254
+      - 76254
+      - 76254
+      - 76254
+      source_legacy_regime: p01
+    - regime: R3
+      status: accepted
+      labels_per_class: 5
+      requested_total: 175
+      effective_counts:
+      - 175
+      - 175
+      - 175
+      - 175
+      - 175
+      unlabeled_counts:
+      - 76184
+      - 76184
+      - 76184
+      - 76184
+      - 76184
+      source_legacy_regime: p01
+    - regime: R4
+      status: accepted
+      labels_per_class: 10
+      requested_total: 350
+      effective_counts:
+      - 350
+      - 350
+      - 350
+      - 350
+      - 350
+      unlabeled_counts:
+      - 76009
+      - 76009
+      - 76009
+      - 76009
+      - 76009
+      source_legacy_regime: p01
+    - regime: R5
+      status: accepted
+      labels_per_class: 20
+      requested_total: 700
+      effective_counts:
+      - 700
+      - 700
+      - 700
+      - 700
+      - 700
+      unlabeled_counts:
+      - 75659
+      - 75659
+      - 75659
+      - 75659
+      - 75659
+      source_legacy_regime: p01
+    - regime: R6
+      status: accepted
+      labels_per_class: 50
+      requested_total: 1750
+      effective_counts:
+      - 1750
+      - 1750
+      - 1750
+      - 1750
+      - 1750
+      unlabeled_counts:
+      - 74609
+      - 74609
+      - 74609
+      - 74609
+      - 74609
+      source_legacy_regime: p02
+    excluded_regimes: []
+    legacy_regimes:
+      p01:
+        effective_counts:
+        - 764
+        - 764
+        - 764
+        - 764
+        - 764
+        train_counts:
+        - 76359
+        - 76359
+        - 76359
+        - 76359
+        - 76359
+        unlabeled_counts:
+        - 75595
+        - 75595
+        - 75595
+        - 75595
+        - 75595
+        effective_count_mean: 764.0
+      p02:
+        effective_counts:
+        - 1527
+        - 1527
+        - 1527
+        - 1527
+        - 1527
+        train_counts:
+        - 76359
+        - 76359
+        - 76359
+        - 76359
+        - 76359
+        unlabeled_counts:
+        - 74832
+        - 74832
+        - 74832
+        - 74832
+        - 74832
+        effective_count_mean: 1527.0
+      p05:
+        effective_counts:
+        - 3818
+        - 3818
+        - 3818
+        - 3818
+        - 3818
+        train_counts:
+        - 76359
+        - 76359
+        - 76359
+        - 76359
+        - 76359
+        unlabeled_counts:
+        - 72541
+        - 72541
+        - 72541
+        - 72541
+        - 72541
+        effective_count_mean: 3818.0
+      p10:
+        effective_counts:
+        - 7636
+        - 7636
+        - 7636
+        - 7636
+        - 7636
+        train_counts:
+        - 76359
+        - 76359
+        - 76359
+        - 76359
+        - 76359
+        unlabeled_counts:
+        - 68723
+        - 68723
+        - 68723
+        - 68723
+        - 68723
+        effective_count_mean: 7636.0
+      p20:
+        effective_counts:
+        - 15272
+        - 15272
+        - 15272
+        - 15272
+        - 15272
+        train_counts:
+        - 76359
+        - 76359
+        - 76359
+        - 76359
+        - 76359
+        unlabeled_counts:
+        - 61087
+        - 61087
+        - 61087
+        - 61087
+        - 61087
+        effective_count_mean: 15272.0
+    config_count: 294
+  stl10:
+    dataset: stl10
+    dataset_id: stl10
+    modality: vision
+    status: fallback_unverified
+    error: 'DatasetNotCachedError: Dataset ''stl10'' is not available in the processed
+      cache. Set download=True or run: modssc datasets download --dataset <id>'
+    n_classes: 10
+    seeds:
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    accepted_regimes:
+    - regime: R1
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 1
+      requested_total: 10
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 3
+      requested_total: 30
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R3
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 5
+      requested_total: 50
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R4
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 10
+      requested_total: 100
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R5
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 20
+      requested_total: 200
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    excluded_regimes: []
+    legacy_regimes: {}
+    config_count: 245
+  svhn:
+    dataset: svhn
+    dataset_id: svhn
+    modality: vision
+    status: fallback_unverified
+    error: 'DatasetNotCachedError: Dataset ''svhn'' is not available in the processed
+      cache. Set download=True or run: modssc datasets download --dataset <id>'
+    n_classes: 10
+    seeds:
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    accepted_regimes:
+    - regime: R1
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 1
+      requested_total: 10
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 3
+      requested_total: 30
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R3
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 5
+      requested_total: 50
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R4
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 10
+      requested_total: 100
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R5
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 20
+      requested_total: 200
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R6
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 50
+      requested_total: 500
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    excluded_regimes: []
+    legacy_regimes: {}
+    config_count: 294
+  toy:
+    dataset: toy
+    dataset_id: toy
+    modality: tabular
+    status: ok
+    error: null
+    n_classes: 3
+    seeds:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    accepted_regimes:
+    - regime: R1
+      status: accepted
+      labels_per_class: 1
+      requested_total: 3
+      effective_counts:
+      - 3
+      - 3
+      - 3
+      - 3
+      - 3
+      unlabeled_counts:
+      - 40
+      - 40
+      - 40
+      - 40
+      - 40
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted
+      labels_per_class: 3
+      requested_total: 9
+      effective_counts:
+      - 9
+      - 9
+      - 9
+      - 9
+      - 9
+      unlabeled_counts:
+      - 34
+      - 34
+      - 34
+      - 34
+      - 34
+      source_legacy_regime: p20
+    - regime: R3
+      status: accepted
+      labels_per_class: 5
+      requested_total: 15
+      effective_counts:
+      - 15
+      - 15
+      - 15
+      - 15
+      - 15
+      unlabeled_counts:
+      - 28
+      - 28
+      - 28
+      - 28
+      - 28
+      source_legacy_regime: p20
+    - regime: R4
+      status: accepted
+      labels_per_class: 10
+      requested_total: 30
+      effective_counts:
+      - 30
+      - 30
+      - 30
+      - 30
+      - 30
+      unlabeled_counts:
+      - 13
+      - 13
+      - 13
+      - 13
+      - 13
+      source_legacy_regime: p20
+    excluded_regimes:
+    - regime: R5
+      status: excluded
+      reason: effective_budget_mismatch
+      requested_total: 60
+      effective_counts:
+      - 43
+      - 43
+      - 43
+      - 43
+      - 43
+      unlabeled_counts:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+    legacy_regimes:
+      p01:
+        effective_counts:
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        train_counts:
+        - 43
+        - 43
+        - 43
+        - 43
+        - 43
+        unlabeled_counts:
+        - 40
+        - 40
+        - 40
+        - 40
+        - 40
+        effective_count_mean: 3.0
+      p02:
+        effective_counts:
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        train_counts:
+        - 43
+        - 43
+        - 43
+        - 43
+        - 43
+        unlabeled_counts:
+        - 40
+        - 40
+        - 40
+        - 40
+        - 40
+        effective_count_mean: 3.0
+      p05:
+        effective_counts:
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        train_counts:
+        - 43
+        - 43
+        - 43
+        - 43
+        - 43
+        unlabeled_counts:
+        - 40
+        - 40
+        - 40
+        - 40
+        - 40
+        effective_count_mean: 3.0
+      p10:
+        effective_counts:
+        - 4
+        - 4
+        - 4
+        - 4
+        - 4
+        train_counts:
+        - 43
+        - 43
+        - 43
+        - 43
+        - 43
+        unlabeled_counts:
+        - 39
+        - 39
+        - 39
+        - 39
+        - 39
+        effective_count_mean: 4.0
+      p20:
+        effective_counts:
+        - 9
+        - 9
+        - 9
+        - 9
+        - 9
+        train_counts:
+        - 43
+        - 43
+        - 43
+        - 43
+        - 43
+        unlabeled_counts:
+        - 34
+        - 34
+        - 34
+        - 34
+        - 34
+        effective_count_mean: 9.0
+    config_count: 192
+  yelp_polarity:
+    dataset: yelp_polarity
+    dataset_id: yelp_polarity
+    modality: text
+    status: fallback_unverified
+    error: 'DatasetNotCachedError: Dataset ''yelp_polarity'' is not available in the
+      processed cache. Set download=True or run: modssc datasets download --dataset
+      <id>'
+    n_classes: 2
+    seeds:
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    accepted_regimes:
+    - regime: R1
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 1
+      requested_total: 2
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 3
+      requested_total: 6
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R3
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 5
+      requested_total: 10
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R4
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 10
+      requested_total: 20
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R5
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 20
+      requested_total: 40
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R6
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 50
+      requested_total: 100
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    excluded_regimes: []
+    legacy_regimes: {}
+    config_count: 306
+  yelp_review_full:
+    dataset: yelp_review_full
+    dataset_id: yelp_review_full
+    modality: text
+    status: fallback_unverified
+    error: 'DatasetNotCachedError: Dataset ''yelp_review_full'' is not available in
+      the processed cache. Set download=True or run: modssc datasets download --dataset
+      <id>'
+    n_classes: 5
+    seeds:
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    accepted_regimes:
+    - regime: R1
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 1
+      requested_total: 5
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 3
+      requested_total: 15
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R3
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 5
+      requested_total: 25
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R4
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 10
+      requested_total: 50
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    - regime: R5
+      status: accepted_unverified
+      validation: local_dataset_cache_missing
+      labels_per_class: 20
+      requested_total: 100
+      effective_counts: null
+      unlabeled_counts: null
+      source_legacy_regime: p01
+    excluded_regimes: []
+    legacy_regimes: {}
+    config_count: 245
+  yesno:
+    dataset: yesno
+    dataset_id: yesno
+    modality: audio
+    status: ok
+    error: null
+    n_classes: 2
+    seeds:
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    accepted_regimes:
+    - regime: R1
+      status: accepted
+      labels_per_class: 1
+      requested_total: 2
+      effective_counts:
+      - 2
+      - 2
+      - 2
+      - 2
+      - 2
+      unlabeled_counts:
+      - 41
+      - 41
+      - 41
+      - 41
+      - 41
+      source_legacy_regime: p01
+    - regime: R2
+      status: accepted
+      labels_per_class: 3
+      requested_total: 6
+      effective_counts:
+      - 6
+      - 6
+      - 6
+      - 6
+      - 6
+      unlabeled_counts:
+      - 37
+      - 37
+      - 37
+      - 37
+      - 37
+      source_legacy_regime: p10
+    - regime: R3
+      status: accepted
+      labels_per_class: 5
+      requested_total: 10
+      effective_counts:
+      - 10
+      - 10
+      - 10
+      - 10
+      - 10
+      unlabeled_counts:
+      - 33
+      - 33
+      - 33
+      - 33
+      - 33
+      source_legacy_regime: p20
+    - regime: R4
+      status: accepted
+      labels_per_class: 10
+      requested_total: 20
+      effective_counts:
+      - 20
+      - 20
+      - 20
+      - 20
+      - 20
+      unlabeled_counts:
+      - 23
+      - 23
+      - 23
+      - 23
+      - 23
+      source_legacy_regime: p20
+    - regime: R5
+      status: accepted
+      labels_per_class: 20
+      requested_total: 40
+      effective_counts:
+      - 40
+      - 40
+      - 40
+      - 40
+      - 40
+      unlabeled_counts:
+      - 3
+      - 3
+      - 3
+      - 3
+      - 3
+      source_legacy_regime: p20
+    excluded_regimes: []
+    legacy_regimes:
+      p01:
+        effective_counts:
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        train_counts:
+        - 43
+        - 43
+        - 43
+        - 43
+        - 43
+        unlabeled_counts:
+        - 41
+        - 41
+        - 41
+        - 41
+        - 41
+        effective_count_mean: 2.0
+      p02:
+        effective_counts:
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        train_counts:
+        - 43
+        - 43
+        - 43
+        - 43
+        - 43
+        unlabeled_counts:
+        - 41
+        - 41
+        - 41
+        - 41
+        - 41
+        effective_count_mean: 2.0
+      p05:
+        effective_counts:
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        train_counts:
+        - 43
+        - 43
+        - 43
+        - 43
+        - 43
+        unlabeled_counts:
+        - 41
+        - 41
+        - 41
+        - 41
+        - 41
+        effective_count_mean: 2.0
+      p10:
+        effective_counts:
+        - 4
+        - 4
+        - 4
+        - 4
+        - 4
+        train_counts:
+        - 43
+        - 43
+        - 43
+        - 43
+        - 43
+        unlabeled_counts:
+        - 39
+        - 39
+        - 39
+        - 39
+        - 39
+        effective_count_mean: 4.0
+      p20:
+        effective_counts:
+        - 9
+        - 9
+        - 9
+        - 9
+        - 9
+        train_counts:
+        - 43
+        - 43
+        - 43
+        - 43
+        - 43
+        unlabeled_counts:
+        - 34
+        - 34
+        - 34
+        - 34
+        - 34
+        effective_count_mean: 9.0
+    config_count: 255
+written_config_count: 5499

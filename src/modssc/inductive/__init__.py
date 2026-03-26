@@ -1,8 +1,7 @@
-"""Inductive semi-supervised learning (planned).
+"""Inductive semi-supervised learning.
 
-This package defines the interfaces and registry for inductive methods.
-The inductive brick is read-only with respect to input artifacts; any data
-modifications must be handled by upstream bricks.
+This package exposes inductive SSL datasets, registries, validation helpers,
+and method integrations used by the inductive brick.
 """
 
 from .adapters import NumpyDataset, TorchDataset, to_numpy_dataset, to_torch_dataset

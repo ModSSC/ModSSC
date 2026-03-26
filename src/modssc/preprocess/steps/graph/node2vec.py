@@ -5,7 +5,6 @@ from typing import Any
 
 import numpy as np
 
-from modssc.device import resolve_device_name
 from modssc.graph.featurization.node2vec import (
     _build_adjacency,
     _random_walks_node2vec,
@@ -15,6 +14,7 @@ from modssc.graph.featurization.node2vec import (
 from modssc.preprocess.errors import PreprocessValidationError
 from modssc.preprocess.optional import require
 from modssc.preprocess.store import ArtifactStore
+from modssc.runtime.device import resolve_device_name
 
 
 @dataclass

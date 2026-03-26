@@ -56,12 +56,18 @@ def to_numpy_dataset(data: InductiveDatasetLike) -> NumpyDataset:
     """Validate and wrap an inductive dataset backed by numpy arrays."""
     validate_inductive_dataset(data)
 
+    X_u = getattr(data, "X_u", None)
+    X_u_w = getattr(data, "X_u_w", None)
+    X_u_s = getattr(data, "X_u_s", None)
+    views = getattr(data, "views", None)
+    meta = getattr(data, "meta", None)
+
     X_l = _require_numpy(data.X_l, name="X_l")
     y_l = _require_numpy(data.y_l, name="y_l")
-    X_u = _require_numpy(data.X_u, name="X_u") if data.X_u is not None else None
-    X_u_w = _require_numpy(data.X_u_w, name="X_u_w") if data.X_u_w is not None else None
-    X_u_s = _require_numpy(data.X_u_s, name="X_u_s") if data.X_u_s is not None else None
-    views = _require_numpy_views(data.views)
+    X_u = _require_numpy(X_u, name="X_u") if X_u is not None else None
+    X_u_w = _require_numpy(X_u_w, name="X_u_w") if X_u_w is not None else None
+    X_u_s = _require_numpy(X_u_s, name="X_u_s") if X_u_s is not None else None
+    views = _require_numpy_views(views)
 
     return NumpyDataset(
         X_l=X_l,
@@ -70,5 +76,5 @@ def to_numpy_dataset(data: InductiveDatasetLike) -> NumpyDataset:
         X_u_w=X_u_w,
         X_u_s=X_u_s,
         views=views,
-        meta=data.meta,
+        meta=meta,
     )

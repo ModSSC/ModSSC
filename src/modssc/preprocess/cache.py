@@ -9,10 +9,10 @@ from typing import Any
 import numpy as np
 from platformdirs import user_cache_dir
 
-from modssc.device import mps_is_available
-from modssc.paths import default_local_cache_subdir
 from modssc.preprocess.errors import OptionalDependencyError, PreprocessCacheError
 from modssc.preprocess.fingerprint import stable_json_dumps
+from modssc.runtime.device import mps_is_available
+from modssc.runtime.paths import default_local_cache_subdir
 
 OBJECT_JSON_MAX_ITEMS = int(
     os.environ.get("MODSSC_PREPROCESS_CACHE_OBJECT_JSON_MAX_ITEMS", "10000")

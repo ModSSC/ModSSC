@@ -9,7 +9,7 @@ import typer
 from modssc.cli._utils import DatasetCacheOption, ensure_mapping, exit_with_error, load_yaml_or_json
 from modssc.data_loader import load_dataset
 from modssc.data_loader.errors import DataLoaderError
-from modssc.logging import LogLevelOption, add_log_level_callback, configure_logging
+from modssc.runtime.logging import LogLevelOption, add_log_level_callback, configure_logging
 from modssc.sampling.api import load_split, sample, save_split
 from modssc.sampling.plan import (
     SamplingPlan,

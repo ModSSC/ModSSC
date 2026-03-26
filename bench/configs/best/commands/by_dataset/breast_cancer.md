@@ -1,276 +1,276 @@
 # Dataset: breast_cancer
 
-## Percentage: p01
+## Regime: R1
 ```bash
-python -m bench.main --config bench/configs/best/p01/inductive/adamatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/adsh/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/co_training/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/comatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/daso/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/deep_co_training/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/defixmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/democratic_co_learning/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/fixmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/flexmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/free_match/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/mean_teacher/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/meta_pseudo_labels/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/mixmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/noisy_student/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/pi_model/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/pseudo_label/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/s4vm/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/self_training/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/setred/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/simclr_v2/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/softmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/supervised/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/temporal_ensembling/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/tri_training/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/trinet/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/uda/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/vat/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/appnp/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/chebnet/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/dynamic_label_propagation/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/gat/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/gcn/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/gcnii/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/grafn/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/grand/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/graph_mincuts/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/graphhop/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/graphsage/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/h_gcn/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/label_propagation/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/label_spreading/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/laplace_learning/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/lazy_random_walk/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/n_gcn/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/p_laplace_learning/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/planetoid/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/poisson_learning/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/poisson_mbo/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/sgc/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/tsvm/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/adamatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/adsh/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/co_training/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/comatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/daso/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/deep_co_training/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/defixmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/democratic_co_learning/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/fixmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/flexmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/free_match/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/mean_teacher/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/meta_pseudo_labels/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/mixmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/noisy_student/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/pi_model/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/pseudo_label/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/s4vm/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/self_training/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/setred/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/simclr_v2/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/softmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/supervised/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/temporal_ensembling/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/tri_training/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/trinet/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/uda/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/vat/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/appnp/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/chebnet/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/dynamic_label_propagation/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/gat/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/gcn/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/gcnii/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/grafn/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/grand/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/graph_mincuts/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/graphhop/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/graphsage/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/h_gcn/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/label_propagation/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/label_spreading/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/laplace_learning/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/lazy_random_walk/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/n_gcn/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/p_laplace_learning/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/planetoid/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/poisson_learning/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/poisson_mbo/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/sgc/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/tsvm/tabular/breast_cancer.yaml
 ```
 
-## Percentage: p02
+## Regime: R2
 ```bash
-python -m bench.main --config bench/configs/best/p02/inductive/adamatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/adsh/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/co_training/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/comatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/daso/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/deep_co_training/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/defixmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/democratic_co_learning/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/fixmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/flexmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/free_match/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/mean_teacher/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/meta_pseudo_labels/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/mixmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/noisy_student/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/pi_model/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/pseudo_label/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/s4vm/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/self_training/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/setred/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/simclr_v2/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/softmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/supervised/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/temporal_ensembling/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/tri_training/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/trinet/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/uda/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/vat/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/appnp/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/chebnet/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/dynamic_label_propagation/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/gat/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/gcn/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/gcnii/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/grafn/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/grand/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/graph_mincuts/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/graphhop/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/graphsage/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/h_gcn/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/label_propagation/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/label_spreading/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/laplace_learning/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/lazy_random_walk/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/n_gcn/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/p_laplace_learning/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/planetoid/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/poisson_learning/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/poisson_mbo/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/sgc/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/tsvm/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/adamatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/adsh/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/co_training/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/comatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/daso/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/deep_co_training/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/defixmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/democratic_co_learning/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/fixmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/flexmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/free_match/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/mean_teacher/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/meta_pseudo_labels/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/mixmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/noisy_student/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/pi_model/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/pseudo_label/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/s4vm/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/self_training/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/setred/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/simclr_v2/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/softmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/supervised/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/temporal_ensembling/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/tri_training/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/trinet/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/uda/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/vat/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/appnp/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/chebnet/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/dynamic_label_propagation/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/gat/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/gcn/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/gcnii/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/grafn/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/grand/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/graph_mincuts/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/graphhop/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/graphsage/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/h_gcn/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/label_propagation/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/label_spreading/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/laplace_learning/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/lazy_random_walk/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/n_gcn/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/p_laplace_learning/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/planetoid/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/poisson_learning/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/poisson_mbo/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/sgc/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/tsvm/tabular/breast_cancer.yaml
 ```
 
-## Percentage: p05
+## Regime: R3
 ```bash
-python -m bench.main --config bench/configs/best/p05/inductive/adamatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/adsh/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/co_training/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/comatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/daso/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/deep_co_training/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/defixmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/democratic_co_learning/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/fixmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/flexmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/free_match/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/mean_teacher/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/meta_pseudo_labels/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/mixmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/noisy_student/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/pi_model/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/pseudo_label/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/s4vm/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/self_training/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/setred/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/simclr_v2/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/softmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/supervised/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/temporal_ensembling/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/tri_training/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/trinet/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/uda/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/vat/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/appnp/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/chebnet/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/dynamic_label_propagation/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/gat/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/gcn/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/gcnii/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/grafn/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/grand/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/graph_mincuts/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/graphhop/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/graphsage/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/h_gcn/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/label_propagation/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/label_spreading/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/laplace_learning/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/lazy_random_walk/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/n_gcn/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/p_laplace_learning/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/planetoid/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/poisson_learning/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/poisson_mbo/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/sgc/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/tsvm/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/adamatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/adsh/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/co_training/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/comatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/daso/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/deep_co_training/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/defixmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/democratic_co_learning/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/fixmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/flexmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/free_match/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/mean_teacher/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/meta_pseudo_labels/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/mixmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/noisy_student/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/pi_model/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/pseudo_label/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/s4vm/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/self_training/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/setred/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/simclr_v2/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/softmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/supervised/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/temporal_ensembling/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/tri_training/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/trinet/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/uda/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/vat/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/appnp/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/chebnet/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/dynamic_label_propagation/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/gat/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/gcn/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/gcnii/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/grafn/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/grand/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/graph_mincuts/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/graphhop/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/graphsage/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/h_gcn/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/label_propagation/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/label_spreading/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/laplace_learning/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/lazy_random_walk/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/n_gcn/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/p_laplace_learning/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/planetoid/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/poisson_learning/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/poisson_mbo/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/sgc/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/tsvm/tabular/breast_cancer.yaml
 ```
 
-## Percentage: p10
+## Regime: R4
 ```bash
-python -m bench.main --config bench/configs/best/p10/inductive/adamatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/adsh/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/co_training/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/comatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/daso/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/deep_co_training/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/defixmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/democratic_co_learning/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/fixmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/flexmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/free_match/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/mean_teacher/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/meta_pseudo_labels/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/mixmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/noisy_student/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/pi_model/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/pseudo_label/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/s4vm/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/self_training/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/setred/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/simclr_v2/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/softmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/supervised/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/temporal_ensembling/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/tri_training/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/trinet/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/uda/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/vat/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/appnp/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/chebnet/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/dynamic_label_propagation/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/gat/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/gcn/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/gcnii/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/grafn/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/grand/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/graph_mincuts/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/graphhop/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/graphsage/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/h_gcn/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/label_propagation/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/label_spreading/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/laplace_learning/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/lazy_random_walk/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/n_gcn/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/p_laplace_learning/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/planetoid/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/poisson_learning/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/poisson_mbo/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/sgc/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/tsvm/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/adamatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/adsh/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/co_training/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/comatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/daso/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/deep_co_training/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/defixmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/democratic_co_learning/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/fixmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/flexmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/free_match/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/mean_teacher/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/meta_pseudo_labels/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/mixmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/noisy_student/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/pi_model/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/pseudo_label/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/s4vm/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/self_training/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/setred/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/simclr_v2/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/softmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/supervised/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/temporal_ensembling/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/tri_training/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/trinet/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/uda/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/vat/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/appnp/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/chebnet/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/dynamic_label_propagation/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/gat/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/gcn/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/gcnii/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/grafn/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/grand/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/graph_mincuts/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/graphhop/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/graphsage/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/h_gcn/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/label_propagation/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/label_spreading/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/laplace_learning/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/lazy_random_walk/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/n_gcn/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/p_laplace_learning/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/planetoid/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/poisson_learning/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/poisson_mbo/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/sgc/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/tsvm/tabular/breast_cancer.yaml
 ```
 
-## Percentage: p20
+## Regime: R5
 ```bash
-python -m bench.main --config bench/configs/best/p20/inductive/adamatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/adsh/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/co_training/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/comatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/daso/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/deep_co_training/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/defixmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/democratic_co_learning/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/fixmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/flexmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/free_match/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/mean_teacher/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/meta_pseudo_labels/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/mixmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/noisy_student/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/pi_model/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/pseudo_label/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/s4vm/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/self_training/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/setred/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/simclr_v2/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/softmatch/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/supervised/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/temporal_ensembling/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/tri_training/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/trinet/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/uda/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/vat/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/appnp/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/chebnet/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/dynamic_label_propagation/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/gat/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/gcn/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/gcnii/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/grafn/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/grand/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/graph_mincuts/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/graphhop/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/graphsage/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/h_gcn/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/label_propagation/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/label_spreading/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/laplace_learning/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/lazy_random_walk/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/n_gcn/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/p_laplace_learning/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/planetoid/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/poisson_learning/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/poisson_mbo/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/sgc/tabular/breast_cancer.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/tsvm/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/adamatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/adsh/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/co_training/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/comatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/daso/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/deep_co_training/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/defixmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/democratic_co_learning/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/fixmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/flexmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/free_match/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/mean_teacher/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/meta_pseudo_labels/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/mixmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/noisy_student/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/pi_model/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/pseudo_label/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/s4vm/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/self_training/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/setred/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/simclr_v2/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/softmatch/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/supervised/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/temporal_ensembling/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/tri_training/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/trinet/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/uda/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/vat/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/appnp/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/chebnet/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/dynamic_label_propagation/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/gat/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/gcn/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/gcnii/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/grafn/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/grand/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/graph_mincuts/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/graphhop/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/graphsage/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/h_gcn/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/label_propagation/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/label_spreading/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/laplace_learning/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/lazy_random_walk/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/n_gcn/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/p_laplace_learning/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/planetoid/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/poisson_learning/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/poisson_mbo/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/sgc/tabular/breast_cancer.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/tsvm/tabular/breast_cancer.yaml
 ```

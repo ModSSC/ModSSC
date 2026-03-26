@@ -174,3 +174,7 @@ def test_load_array_npy_mmap(tmp_path, monkeypatch):
     with patch("modssc.data_loader.storage.files.np.load", wraps=np.load) as mock_load:
         storage._load_array(tmp_path, {"format": "npy", "path": "test.npy"})
         mock_load.assert_called_with(path, allow_pickle=True, mmap_mode="r")
+
+
+from ._edges_masks import *  # noqa: E402,F401,F403
+from ._roundtrip import *  # noqa: E402,F401,F403

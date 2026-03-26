@@ -5,11 +5,11 @@ from typing import Any
 
 import numpy as np
 
-from modssc.device import resolve_device_name
-from modssc.model_cache import resolve_openclip_cache_dir
+from modssc.cache.model import resolve_openclip_cache_dir
 from modssc.preprocess.errors import OptionalDependencyError
 from modssc.preprocess.numpy_adapter import to_numpy
 from modssc.preprocess.optional import require
+from modssc.runtime.device import resolve_device_name
 
 
 @dataclass

@@ -7,7 +7,7 @@ from typing import Any, Literal
 
 import numpy as np
 
-from modssc.device import resolve_device_name
+from modssc.runtime.device import resolve_device_name
 from modssc.transductive.base import MethodInfo, TransductiveMethod
 from modssc.transductive.methods.classic.common import (
     build_affinity_matrix as _build_affinity_matrix,

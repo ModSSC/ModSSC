@@ -5,10 +5,10 @@ from typing import Any
 
 import numpy as np
 
-from modssc.device import resolve_device_name
 from modssc.preprocess.errors import PreprocessValidationError
 from modssc.preprocess.numpy_adapter import to_numpy
 from modssc.preprocess.optional import require
+from modssc.runtime.device import resolve_device_name
 from modssc.supervised.backends.torch import image_pretrained as image_pretrained_backend
 
 

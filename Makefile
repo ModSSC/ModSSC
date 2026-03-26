@@ -20,7 +20,7 @@ help:
 
 install-dev:
 	$(PYTHON) -m pip install --upgrade pip
-	$(PYTHON) -m pip install -e ".[dev]"
+	$(PYTHON) -m pip install -e ".[dev,full]"
 
 install-docs:
 	$(PYTHON) -m pip install --upgrade pip
@@ -50,4 +50,4 @@ check-dist:
 release-prep: build check-dist
 
 clean:
-	rm -rf dist build htmlcov .coverage .pytest_cache .ruff_cache cache artifacts data outputs runs site
+	rm -rf dist build htmlcov .coverage .pytest_cache .ruff_cache cache artifacts data outputs runs site logs_jeanzay audit_artifacts

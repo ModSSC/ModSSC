@@ -21,6 +21,41 @@ from .slicing import select_rows
 _LOGGER = logging.getLogger(__name__)
 
 
+def _prediction_distribution(y_pred: np.ndarray) -> dict[str, int]:
+    if y_pred.size == 0:
+        return {}
+    classes, counts = np.unique(y_pred, return_counts=True)
+    return {str(cls): int(count) for cls, count in zip(classes, counts, strict=True)}
+
+
+def _log_split_metrics(
+    *,
+    kind: str,
+    split: str,
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    metrics_out: Mapping[str, float],
+) -> None:
+    pred_dist = _prediction_distribution(y_pred)
+    n_pred_classes = len(pred_dist)
+    message = (
+        "Evaluation (%s) split=%s n=%s true_classes=%s pred_classes=%s pred_dist=%s metrics=%s"
+    )
+    args = (
+        kind,
+        split,
+        int(y_pred.size),
+        int(np.unique(y_true).size) if y_true.size else 0,
+        n_pred_classes,
+        pred_dist,
+        dict(metrics_out),
+    )
+    if y_pred.size > 0 and n_pred_classes <= 1:
+        _LOGGER.warning(message, *args)
+        return
+    _LOGGER.info(message, *args)
+
+
 def _split_data(
     pre: PreprocessResult,
     sampling: SamplingResult,
@@ -260,6 +295,13 @@ def evaluate_inductive(
         y_true = labels_1d(y)
         y_pred = predict_labels(scores_np)
         results[split] = compute_metrics(y_true, y_pred, metrics)
+        _log_split_metrics(
+            kind="inductive",
+            split=split,
+            y_true=y_true,
+            y_pred=y_pred,
+            metrics_out=results[split],
+        )
 
     _LOGGER.info("Evaluation (inductive) done: duration_s=%.3f", perf_counter() - start)
     return results
@@ -297,7 +339,16 @@ def evaluate_transductive(
                 "E_BENCH_EVAL_CONTRACT",
                 f"mask size mismatch for split '{split}': {mask.shape[0]} vs {y_true.shape[0]}",
             )
-        results[split] = compute_metrics(y_true[mask], y_pred_all[mask], metrics)
+        y_true_split = y_true[mask]
+        y_pred_split = y_pred_all[mask]
+        results[split] = compute_metrics(y_true_split, y_pred_split, metrics)
+        _log_split_metrics(
+            kind="transductive",
+            split=split,
+            y_true=y_true_split,
+            y_pred=y_pred_split,
+            metrics_out=results[split],
+        )
 
     _LOGGER.info("Evaluation (transductive) done: duration_s=%.3f", perf_counter() - start)
     return results

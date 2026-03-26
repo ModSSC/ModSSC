@@ -1,22 +1,22 @@
+"""Method registry for inductive SSL.
+
+This registry stores import strings and avoids importing optional heavyweight
+dependencies until a specific method is requested.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Literal
 
 from modssc.inductive.base import MethodInfo
-from modssc.registry_utils import (
+from modssc.utils.registry import (
     make_available_methods,
     make_debug_registry,
     make_get_method_class,
     make_get_method_info,
     make_register_method,
 )
-
-"""Method registry for inductive SSL.
-
-This registry stores import strings and avoids importing heavy dependencies
-until a specific method is requested.
-"""
 
 
 @dataclass(frozen=True)
@@ -35,6 +35,11 @@ def register_builtin_methods() -> None:
 
     This function is idempotent and safe to call multiple times.
     """
+    register_method(
+        "supervised",
+        "modssc.inductive.methods.supervised:SupervisedMethod",
+        status="implemented",
+    )
     register_method(
         "pseudo_label",
         "modssc.inductive.methods.pseudo_label:PseudoLabelMethod",

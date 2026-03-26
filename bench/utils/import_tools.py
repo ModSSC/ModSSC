@@ -3,10 +3,9 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import re
+import tomllib
 from pathlib import Path
 from typing import Any
-
-import tomllib
 
 _PACKAGE_ALIASES = {
     "scikit-learn": "sklearn",

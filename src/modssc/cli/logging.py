@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from modssc.logging import (
+from modssc.runtime.logging import (
     LogLevelOption,
     add_log_level_callback,
     configure_logging,

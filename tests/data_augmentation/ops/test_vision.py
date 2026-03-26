@@ -215,3 +215,6 @@ def test_vision_random_crop_pad(ctx, rng):
     arr = np.zeros((10, 10))
     out = op_padding.apply(arr, rng=rng, ctx=ctx)
     assert out.shape == (10, 10)
+
+
+from ._vision_numpy import *  # noqa: E402,F401,F403

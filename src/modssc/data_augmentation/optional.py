@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-from importlib import import_module
-from typing import Any
+from modssc.dependencies.optional import make_optional_import
 
 from .errors import OptionalDependencyError
 
 
-def optional_import(module: str, *, extra: str) -> Any:
-    """Import *module* or raise :class:`OptionalDependencyError` with the given extra name."""
-    try:
-        return import_module(module)
-    except Exception as e:  # pragma: no cover (import failures vary by env)
-        raise OptionalDependencyError(extra=extra) from e
+def _error_factory(**kwargs) -> Exception:
+    return OptionalDependencyError(extra=kwargs["extra"])
+
+
+optional_import = make_optional_import(error_factory=_error_factory)

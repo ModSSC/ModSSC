@@ -5,7 +5,7 @@ from typing import Any
 
 import numpy as np
 
-from modssc.numpy_utils import to_numpy as _as_numpy
+from modssc.utils.numpy import to_numpy as _as_numpy
 
 from .base import InductiveDatasetLike
 from .errors import InductiveValidationError
@@ -54,29 +54,34 @@ def validate_inductive_dataset(data: InductiveDatasetLike) -> None:
 
     X_l = _require_2d(data.X_l, name="X_l")
     _require_y(data.y_l, n=int(X_l.shape[0]))
+    X_u = getattr(data, "X_u", None)
+    X_u_w = getattr(data, "X_u_w", None)
+    X_u_s = getattr(data, "X_u_s", None)
+    views = getattr(data, "views", None)
+    meta = getattr(data, "meta", None)
 
     n_features = int(X_l.shape[1])
 
-    if data.X_u is not None:
-        X_u = _require_2d(data.X_u, name="X_u")
-        if int(X_u.shape[1]) != n_features:
+    if X_u is not None:
+        X_u_arr = _require_2d(X_u, name="X_u")
+        if int(X_u_arr.shape[1]) != n_features:
             raise InductiveValidationError("X_u must have the same feature dimension as X_l")
 
-    if data.X_u_w is not None:
-        X_u_w = _require_2d(data.X_u_w, name="X_u_w")
-        if int(X_u_w.shape[1]) != n_features:
+    if X_u_w is not None:
+        X_u_w_arr = _require_2d(X_u_w, name="X_u_w")
+        if int(X_u_w_arr.shape[1]) != n_features:
             raise InductiveValidationError("X_u_w must have the same feature dimension as X_l")
 
-    if data.X_u_s is not None:
-        X_u_s = _require_2d(data.X_u_s, name="X_u_s")
-        if int(X_u_s.shape[1]) != n_features:
+    if X_u_s is not None:
+        X_u_s_arr = _require_2d(X_u_s, name="X_u_s")
+        if int(X_u_s_arr.shape[1]) != n_features:
             raise InductiveValidationError("X_u_s must have the same feature dimension as X_l")
 
-    if data.X_u_w is not None and data.X_u_s is not None:
-        X_u_w = _as_numpy(data.X_u_w)
-        X_u_s = _as_numpy(data.X_u_s)
-        if X_u_w.shape[0] != X_u_s.shape[0]:
+    if X_u_w is not None and X_u_s is not None:
+        X_u_w_arr = _as_numpy(X_u_w)
+        X_u_s_arr = _as_numpy(X_u_s)
+        if X_u_w_arr.shape[0] != X_u_s_arr.shape[0]:
             raise InductiveValidationError("X_u_w and X_u_s must have the same number of rows")
 
-    _validate_views(data.views)
-    _validate_meta(data.meta)
+    _validate_views(views)
+    _validate_meta(meta)

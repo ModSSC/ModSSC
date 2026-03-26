@@ -10,11 +10,11 @@ from typing import Any
 import numpy as np
 
 from modssc.data_augmentation.utils import is_torch_tensor
-from modssc.device import resolve_device_name
 from modssc.inductive.deep import build_torch_bundle_from_classifier
 from modssc.inductive.registry import get_method_class, get_method_info
 from modssc.inductive.types import DeviceSpec, InductiveDataset
 from modssc.preprocess.types import PreprocessResult
+from modssc.runtime.device import resolve_device_name
 from modssc.sampling.result import SamplingResult
 from modssc.views.types import ViewsResult
 

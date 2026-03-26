@@ -69,7 +69,6 @@ def _fgsm_adversarial(
     if x_u is None:
         n_l = int(x_l["x"].shape[0]) if isinstance(x_l, dict) and "x" in x_l else int(x_l.shape[0])
         if n_l == 0:
-            # Logic for empty?
             pass
         x_all = x_l
     elif isinstance(x_u, dict) and "x" in x_u and int(x_u["x"].shape[0]) == 0:
@@ -84,7 +83,7 @@ def _fgsm_adversarial(
 
     if isinstance(x_all, dict):
         # Handle dictionary gradients manually
-        # This is a simplification: we only perturb 'x'
+        # Keep graph structure fixed and perturb node features only.
         x_adv_dict = {k: v for k, v in x_all.items()}
         x_adv_dict["x"] = x_adv_dict["x"].detach().clone().requires_grad_(True)
         x_adv = x_adv_dict
@@ -519,8 +518,6 @@ class DeepCoTrainingMethod(ArgmaxPredictMixin, InductiveMethod):
             for start in range(0, n_samples, batch_size):
                 end = min(start + batch_size, n_samples)
                 if isinstance(X, dict):
-                    # Proper slicing for geometric data if needed, or just dict slicing
-                    # Assuming deep_utils.slice_data is available and handles dicts/graphs
                     batch_idx = torch.arange(start, end, device=X["x"].device)
                     batch_X = slice_data(X, batch_idx)
                 else:

@@ -11,9 +11,9 @@ from typing import Any
 
 import numpy as np
 
-from modssc.data_loader.json_utils import mapping_to_jsonable as _jsonable_mapping
-from modssc.data_loader.json_utils import to_jsonable
 from modssc.data_loader.numpy_adapter import to_numpy
+from modssc.data_loader.storage.json import mapping_to_jsonable as _jsonable_mapping
+from modssc.data_loader.storage.json import to_jsonable
 from modssc.data_loader.types import LoadedDataset, Split
 
 

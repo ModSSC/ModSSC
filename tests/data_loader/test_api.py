@@ -388,3 +388,7 @@ def test_dataset_info_raises_unknown() -> None:
 
     with pytest.raises(UnknownDatasetError):
         api.dataset_info("invalid_dataset_id_and_not_a_uri")
+
+
+from ._api_end_to_end import *  # noqa: E402,F401,F403
+from ._api_meta import *  # noqa: E402,F401,F403

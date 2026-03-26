@@ -65,7 +65,7 @@ class TFDSProvider(BaseProvider):
         train_ds = tfds.load(
             full_name, split="train", as_supervised=as_supervised, data_dir=str(data_dir)
         )
-        # test split might not exist
+        # Some TFDS datasets do not expose a test split.
         try:
             test_ds = tfds.load(
                 full_name, split="test", as_supervised=as_supervised, data_dir=str(data_dir)

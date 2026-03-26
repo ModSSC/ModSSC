@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from modssc.import_utils import load_object as _load_object
 from modssc.preprocess.errors import PreprocessValidationError
 from modssc.preprocess.types import ModelSpec
+from modssc.utils.imports import load_object as _load_object
 
 BUILTIN_MODELS: tuple[ModelSpec, ...] = (
     # Stubs (no external downloads, used for tests and offline runs)

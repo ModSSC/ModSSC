@@ -419,7 +419,7 @@ class SimCLRv2Method(ArgmaxPredictMixin, InductiveMethod):
                     optimizer.step()
 
         if int(self.spec.distill_epochs) > 0 and finetune_bundle is not None:
-            if X_uw is None:
+            if X_uw is None:  # pragma: no cover - guarded by the earlier unlabeled-data validation
                 raise InductiveValidationError("SimCLRv2 distill requires unlabeled data.")
             student_bundle = self.spec.student_bundle
             if student_bundle is None:
