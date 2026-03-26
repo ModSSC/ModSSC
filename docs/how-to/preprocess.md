@@ -29,7 +29,7 @@ Common step IDs (examples):
 
 
 ## Copy-paste example
-Use the CLI when you want to run plan files from the terminal (`modssc preprocess` in [`src/modssc/cli/preprocess.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/cli/preprocess.py)), and use Python when you want to build and run plans in code (API in [`src/modssc/preprocess/api.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/preprocess/api.py)). <sup class="cite"><a href="#source-5">[5]</a><a href="#source-1">[1]</a></sup>
+Use the CLI when you want to run plan files from the terminal (`modssc preprocess` in [`src/modssc/cli/preprocess.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/cli/preprocess.py)), and use Python when you want to build and run plans in code through the public `modssc.preprocess` package API. The implementation is split between plan/catalog modules and internal service orchestration. <sup class="cite"><a href="#source-5">[5]</a><a href="#source-1">[1]</a></sup>
 
 Plan YAML (from [`bench/configs/experiments/toy_inductive.yaml`](https://github.com/ModSSC/ModSSC/blob/main/bench/configs/experiments/toy_inductive.yaml)): <sup class="cite"><a href="#source-7">[7]</a></sup>
 

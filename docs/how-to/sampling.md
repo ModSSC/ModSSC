@@ -22,7 +22,7 @@ If you are running the bench runner, embed the plan in the experiment config des
 
 
 ## Copy-paste example
-Use the CLI when you want terminal-driven split artifacts (`modssc sampling` in [`src/modssc/cli/sampling.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/cli/sampling.py)), and use Python when you want to generate splits inside a pipeline (API in [`src/modssc/sampling/api.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/sampling/api.py)). <sup class="cite"><a href="#source-5">[5]</a><a href="#source-1">[1]</a></sup>
+Use the CLI when you want terminal-driven split artifacts (`modssc sampling` in [`src/modssc/cli/sampling.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/cli/sampling.py)), and use Python when you want to generate splits inside a pipeline through the public `modssc.sampling` package API. The package facade delegates to plan, storage, and internal orchestration modules. <sup class="cite"><a href="#source-5">[5]</a><a href="#source-1">[1]</a></sup>
 
 Sample plan (from [`bench/configs/experiments/toy_inductive.yaml`](https://github.com/ModSSC/ModSSC/blob/main/bench/configs/experiments/toy_inductive.yaml)): <sup class="cite"><a href="#source-6">[6]</a></sup>
 

@@ -26,7 +26,7 @@ Use `providers` when you need to know which backends are wired up, and `list` wh
 
 
 ## Copy-paste example
-Use the CLI for quick inspection in the terminal (`modssc datasets` in [`src/modssc/cli/datasets.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/cli/datasets.py)), and use Python when you want dataset access inside a script (helpers in [`src/modssc/data_loader/api.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/data_loader/api.py)). <sup class="cite"><a href="#source-2">[2]</a><a href="#source-1">[1]</a></sup>
+Use the CLI for quick inspection in the terminal (`modssc datasets` in [`src/modssc/cli/datasets.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/cli/datasets.py)), and use Python when you want dataset access inside a script through the public `modssc.data_loader` package API. The implementation is organized across catalog, provider, storage, and internal service modules. <sup class="cite"><a href="#source-2">[2]</a><a href="#source-1">[1]</a></sup>
 
 CLI:
 

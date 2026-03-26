@@ -20,7 +20,7 @@ Use this for [transductive methods](../tutorials/transductive-toy.md) that requi
 
 
 ## Copy-paste example
-Use the CLI when you want to build graphs and views from the terminal (`modssc graph` in [`src/modssc/cli/graph.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/cli/graph.py)), and use Python when you want to embed graph construction in code (helpers in [`src/modssc/graph/construction/api.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/graph/construction/api.py)). <sup class="cite"><a href="#source-4">[4]</a><a href="#source-5">[5]</a></sup>
+Use the CLI when you want to build graphs and views from the terminal (`modssc graph` in [`src/modssc/cli/graph.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/cli/graph.py)), and use Python when you want to embed graph construction in code through the public `modssc.graph` package API. Graph construction and graph featurization are implemented in dedicated subpackages behind that facade. <sup class="cite"><a href="#source-4">[4]</a><a href="#source-5">[5]</a></sup>
 
 CLI (graph build):
 

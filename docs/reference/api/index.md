@@ -4,7 +4,7 @@ This page links to the Python API modules and helps you navigate the reference. 
 
 
 ## What it is for
-This section documents the public Python API across ModSSC bricks. Each page includes a short overview, runnable examples, and mkdocstrings output. <sup class="cite"><a href="#source-1">[1]</a></sup>
+This section documents the public Python API across ModSSC bricks. Each page includes a short overview, runnable examples, and mkdocstrings output. The reference targets stable package-level imports, while internal implementation packages are described separately in the [Architecture](../../development/architecture.md) page. <sup class="cite"><a href="#source-1">[1]</a></sup>
 
 
 ## Examples
@@ -26,7 +26,7 @@ from modssc.evaluation import evaluate
 print(evaluate(np.array([0, 1]), np.array([0, 1]), ["accuracy"]))
 ```
 
-These APIs are defined in [`src/modssc/data_loader/`](https://github.com/ModSSC/ModSSC/tree/main/src/modssc/data_loader) and [`src/modssc/evaluation/`](https://github.com/ModSSC/ModSSC/tree/main/src/modssc/evaluation). <sup class="cite"><a href="#source-2">[2]</a><a href="#source-3">[3]</a></sup>
+These APIs are exported from the package-level bricks under [`src/modssc/`](https://github.com/ModSSC/ModSSC/tree/main/src/modssc). Some bricks delegate orchestration to internal `services/`, `helpers/`, or `bundle_factories/` subpackages, but those internal directories are not treated as the primary public surface. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a><a href="#source-3">[3]</a></sup>
 
 
 ## Modules
@@ -41,8 +41,17 @@ These APIs are defined in [`src/modssc/data_loader/`](https://github.com/ModSSC/
 - [Transductive](transductive.md)
 - [Supervised](supervised.md)
 - [HPO](hpo.md)
-- [Logging](logging.md)
-- [Device](device.md)
+- [Runtime logging](logging.md)
+- [Runtime device](device.md)
+
+
+## Structure notes
+- Package pages such as `modssc.preprocess` and `modssc.sampling` document the public facade imported by user code.
+- Internal support packages such as `services/`, `helpers/`, `bundle_factories/`, `adapters/`, and backend-specific implementation packages are intentionally treated as implementation details.
+- Runtime support utilities now live under `modssc.runtime`, not at the package root.
+- Cache resolution helpers live under `modssc.cache`, and shared optional-dependency helpers live under `modssc.dependencies`.
+
+For the current repository layout, see [Architecture](../../development/architecture.md).
 
 <details class="sources" markdown="1">
 <summary>Sources</summary>

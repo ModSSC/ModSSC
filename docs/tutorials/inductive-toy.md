@@ -156,7 +156,7 @@ These outputs are written by the bench context and reporting orchestrator. <sup 
   <li id="source-14"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/preprocess/steps/core/ensure_2d.py"><code>src/modssc/preprocess/steps/core/ensure_2d.py</code></a></li>
   <li id="source-15"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/preprocess/steps/core/to_numpy.py"><code>src/modssc/preprocess/steps/core/to_numpy.py</code></a></li>
   <li id="source-16"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/inductive/methods/pseudo_label.py"><code>src/modssc/inductive/methods/pseudo_label.py</code></a></li>
-  <li id="source-17"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/logging.py"><code>src/modssc/logging.py</code></a></li>
+  <li id="source-17"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/runtime/logging.py"><code>src/modssc/runtime/logging.py</code></a></li>
   <li id="source-18"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/cli/app.py"><code>src/modssc/cli/app.py</code></a></li>
   <li id="source-19"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/inductive/types.py"><code>src/modssc/inductive/types.py</code></a></li>
   <li id="source-20"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/transductive/base.py"><code>src/modssc/transductive/base.py</code></a></li>

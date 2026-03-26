@@ -78,9 +78,10 @@ nav:
           - Transductive: reference/api/transductive.md
           - Supervised: reference/api/supervised.md
           - HPO: reference/api/hpo.md
-          - Logging: reference/api/logging.md
-          - Device: reference/api/device.md
+          - Runtime logging: reference/api/logging.md
+          - Runtime device: reference/api/device.md
   - Development:
+      - Architecture: development/architecture.md
       - Contributing and development: development/contributing.md
       - Release process: development/release-process.md
 

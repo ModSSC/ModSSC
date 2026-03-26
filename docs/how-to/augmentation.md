@@ -20,7 +20,7 @@ Use this when your method expects stochastic augmentations (FixMatch-style, stro
 
 
 ## Copy-paste example
-Use the CLI when you want to inspect ops quickly (`modssc augmentation` in [`src/modssc/cli/augmentation.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/cli/augmentation.py)), and use Python when you want to build pipelines in code (API in [`src/modssc/data_augmentation/api.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/data_augmentation/api.py)). <sup class="cite"><a href="#source-4">[4]</a><a href="#source-1">[1]</a></sup>
+Use the CLI when you want to inspect ops quickly (`modssc augmentation` in [`src/modssc/cli/augmentation.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/cli/augmentation.py)), and use Python when you want to build pipelines in code through the public `modssc.data_augmentation` package API. Operation discovery and lazy registration are handled behind that facade. <sup class="cite"><a href="#source-4">[4]</a><a href="#source-1">[1]</a></sup>
 
 CLI:
 

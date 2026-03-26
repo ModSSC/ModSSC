@@ -33,7 +33,7 @@ plan = ViewsPlan(
 )
 ```
 
-The view plan schema is defined in [`src/modssc/views/plan.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/views/plan.py). <sup class="cite"><a href="#source-2">[2]</a></sup>
+The view plan schema is defined in [`src/modssc/views/plan.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/views/plan.py). The public facade remains `modssc.views`, while internal orchestration is split into dedicated support modules. <sup class="cite"><a href="#source-2">[2]</a></sup>
 
 
 ## API reference

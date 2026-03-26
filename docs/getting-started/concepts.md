@@ -30,6 +30,15 @@ Transductive methods operate on a fixed graph over all nodes and accept `NodeDat
 - **Benchmark configs:** end-to-end experiment configuration for reproducible runs. <sup class="cite"><a href="#source-22">[22]</a><a href="#source-23">[23]</a></sup>
 
 
+## Code layout in practice
+- The top-level brick packages (`modssc.data_loader`, `modssc.preprocess`, `modssc.sampling`, `modssc.views`, `modssc.graph`, and others) are the public Python entrypoints.
+- Runtime-facing utilities now live under `modssc.runtime`.
+- Cache and optional-dependency support code now lives under `modssc.cache` and `modssc.dependencies`.
+- Several bricks use internal support directories such as `services/`, `helpers/`, `adapters/`, or `bundle_factories/`; those folders explain implementation structure, not additional public import paths.
+
+For the current repository layout, see the [Architecture](../development/architecture.md) page.
+
+
 ## Small illustrative examples
 Inductive dataset payload (labeled + unlabeled):
 

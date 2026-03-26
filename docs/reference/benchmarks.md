@@ -68,6 +68,14 @@ The `--log-level` flag is defined on the bench CLI entry point. <sup class="cite
 The bench entry point and example configs are in [`bench/main.py`](https://github.com/ModSSC/ModSSC/blob/main/bench/main.py) and [`bench/configs/experiments/`](https://github.com/ModSSC/ModSSC/tree/main/bench/configs/experiments). <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a></sup>
 
 
+## Repository layout
+- [`bench/configs/experiments/`](https://github.com/ModSSC/ModSSC/tree/main/bench/configs/experiments) contains authored example configs, tutorial configs, and smaller runnable templates.
+- [`bench/configs/best/`](https://github.com/ModSSC/ModSSC/tree/main/bench/configs/best) contains curated benchmark suites and generated command listings for larger runs.
+- [`bench/slurm/`](https://github.com/ModSSC/ModSSC/tree/main/bench/slurm) contains cluster launchers and deployment-oriented job structure.
+
+The docs use these directories for different purposes and should not present them as one single config bucket.
+
+
 ## Cache behavior in multi-seed runs
 For multi-seed sweeps, keep one shared cache root and let fingerprints isolate seed-dependent artifacts:
 

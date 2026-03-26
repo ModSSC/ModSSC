@@ -6,7 +6,11 @@ Start with where files live, then how they are loaded, then the schema blocks yo
 
 
 ## Where configs live
-- Benchmark experiment configs: [`bench/configs/experiments/`](https://github.com/ModSSC/ModSSC/tree/main/bench/configs/experiments) (templates, toy configs, best/smoke configs). <sup class="cite"><a href="#source-1">[1]</a></sup>
+- Authored benchmark examples and templates: [`bench/configs/experiments/`](https://github.com/ModSSC/ModSSC/tree/main/bench/configs/experiments). <sup class="cite"><a href="#source-1">[1]</a></sup>
+
+- Curated benchmark suites and command listings: [`bench/configs/best/`](https://github.com/ModSSC/ModSSC/tree/main/bench/configs/best).
+
+- Cluster launchers and Jean Zay deployment helpers: [`bench/slurm/`](https://github.com/ModSSC/ModSSC/tree/main/bench/slurm).
 
 - Graph specs and preprocessing plans are embedded inside experiment configs when enabled. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a></sup>
 
@@ -73,7 +77,7 @@ Top-level keys and their required fields are defined in [`bench/schema.py`](http
 
 - `sampling`: `seed`, `plan` (sampling plan mapping). <sup class="cite"><a href="#source-2">[2]</a></sup>
 
-- `preprocess`: `seed`, `fit_on`, [`cache`](https://github.com/ModSSC/ModSSC/tree/main/cache), `plan` (preprocess plan mapping). <sup class="cite"><a href="#source-2">[2]</a></sup>
+- `preprocess`: `seed`, `fit_on`, `cache` (boolean), `plan` (preprocess plan mapping). <sup class="cite"><a href="#source-2">[2]</a></sup>
 
 - `method`: `kind` (inductive|transductive), `id`, `device`, `params`, optional `model`. <sup class="cite"><a href="#source-2">[2]</a></sup>
 

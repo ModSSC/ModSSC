@@ -41,7 +41,7 @@ res, _ = sample(ds, plan=plan, seed=0, dataset_fingerprint=str(ds.meta["dataset_
 print(res.stats)
 ```
 
-The benchmark command and the toy config live in [`bench/main.py`](https://github.com/ModSSC/ModSSC/blob/main/bench/main.py) and [`bench/configs/experiments/toy_inductive.yaml`](https://github.com/ModSSC/ModSSC/blob/main/bench/configs/experiments/toy_inductive.yaml). The sampling API is defined in [`src/modssc/sampling/api.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/sampling/api.py) and [`src/modssc/sampling/plan.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/sampling/plan.py). <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a><a href="#source-3">[3]</a><a href="#source-4">[4]</a></sup>
+The benchmark command and the toy config live in [`bench/main.py`](https://github.com/ModSSC/ModSSC/blob/main/bench/main.py) and [`bench/configs/experiments/toy_inductive.yaml`](https://github.com/ModSSC/ModSSC/blob/main/bench/configs/experiments/toy_inductive.yaml). The sampling API is exposed through the public `modssc.sampling` package and built around plan plus storage primitives such as [`src/modssc/sampling/plan.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/sampling/plan.py). <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a><a href="#source-3">[3]</a><a href="#source-4">[4]</a></sup>
 
 
 ## What you should see

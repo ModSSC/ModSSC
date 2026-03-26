@@ -27,7 +27,7 @@ print(available_providers())
 print(dataset_info("toy").as_dict())
 ```
 
-The public API is exported from [`src/modssc/data_loader/__init__.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/data_loader/__init__.py). <sup class="cite"><a href="#source-3">[3]</a></sup>
+The public API is exported from [`src/modssc/data_loader/__init__.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/data_loader/__init__.py). Provider resolution, cache layout, manifests, and orchestration are implemented in dedicated subpackages such as `catalog/`, `providers/`, `storage/`, and internal `services/`. <sup class="cite"><a href="#source-3">[3]</a></sup>
 
 
 ## API reference
