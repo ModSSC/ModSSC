@@ -233,7 +233,7 @@ path = "src/modssc/__about__.py"
 exclude = [
   "/bench",
   "/runs",
-  "/cache",
+  "/modssc_cache",
   "/artifacts",
   "/outputs",
   "/data",
