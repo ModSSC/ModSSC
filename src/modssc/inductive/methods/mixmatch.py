@@ -101,6 +101,74 @@ def _forward_head(bundle: TorchModelBundle, *, features: Any) -> Any:
         ) from exc
 
 
+def _bundle_prefers_manifold_mixup(bundle: TorchModelBundle) -> bool:
+    meta = bundle.meta or {}
+    if not isinstance(meta, Mapping):
+        return False
+    return bool(meta.get("prefer_manifold_mixup"))
+
+
+def _bundle_supports_discrete_inputs(bundle: TorchModelBundle) -> bool:
+    meta = bundle.meta or {}
+    if isinstance(meta, Mapping) and meta.get("input_space") == "token_ids":
+        return True
+    model = bundle.model
+    get_emb_fn = getattr(model, "get_input_embeddings", None)
+    if callable(get_emb_fn):
+        return True
+    if hasattr(model, "module"):
+        return callable(getattr(model.module, "get_input_embeddings", None))
+    return False
+
+
+def _ensure_mixmatch_tensor_input(
+    x: Any,
+    *,
+    name: str,
+    allow_discrete: bool,
+) -> None:
+    torch = optional_import("torch", extra="inductive-torch")
+    if allow_discrete:
+        if isinstance(x, dict):
+            ensure_float_tensor(x, name=name)
+            return
+        if not isinstance(x, torch.Tensor):
+            raise InductiveValidationError(f"{name} must be a torch.Tensor.")
+        valid = {
+            torch.float32,
+            torch.float64,
+            torch.int8,
+            torch.int16,
+            torch.int32,
+            torch.int64,
+            torch.uint8,
+        }
+        if x.dtype not in valid:
+            raise InductiveValidationError(
+                f"{name} must be floating point or integer token ids for embedding-based models."
+            )
+        return
+    ensure_float_tensor(x, name=name)
+
+
+def _forward_features(bundle: TorchModelBundle, X: Any) -> Any:
+    torch = optional_import("torch", extra="inductive-torch")
+    meta = bundle.meta or {}
+    if isinstance(meta, Mapping):
+        forward = meta.get("forward_features") or meta.get("feature_extractor")
+        if callable(forward):
+            features = forward(X)
+            if not isinstance(features, torch.Tensor):
+                raise InductiveValidationError(
+                    "mixup_manifold forward_features must return torch.Tensor."
+                )
+            return features
+    out = bundle.model(X)
+    if isinstance(out, tuple) and len(out) > 1 and isinstance(out[1], torch.Tensor):
+        return out[1]
+    return extract_features(out)
+
+
 @dataclass(frozen=True)
 class MixMatchSpec:
     """Specification for MixMatch (torch-only)."""
@@ -183,10 +251,6 @@ class MixMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         if int(get_torch_len(X_u_w)) != int(get_torch_len(X_u_s)):
             raise InductiveValidationError("X_u_w and X_u_s must have the same number of rows.")
 
-        ensure_float_tensor(X_l, name="X_l")
-        ensure_float_tensor(X_u_w, name="X_u_w")
-        ensure_float_tensor(X_u_s, name="X_u_s")
-
         if y_l.dtype != torch.int64:
             raise InductiveValidationError("y_l must be int64 for torch cross entropy.")
 
@@ -196,6 +260,10 @@ class MixMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         model = bundle.model
         optimizer = bundle.optimizer
         ensure_model_device(model, device=get_torch_device(X_l))
+        use_manifold_mixup = bool(self.spec.mixup_manifold) or _bundle_prefers_manifold_mixup(
+            bundle
+        )
+        allow_discrete_inputs = use_manifold_mixup and _bundle_supports_discrete_inputs(bundle)
 
         if int(self.spec.batch_size) <= 0:
             raise InductiveValidationError("batch_size must be >= 1.")
@@ -209,6 +277,10 @@ class MixMatchMethod(TorchBundlePredictMixin, InductiveMethod):
             raise InductiveValidationError("mixup_alpha must be >= 0.")
         if float(self.spec.unsup_warm_up) < 0:
             raise InductiveValidationError("unsup_warm_up must be >= 0.")
+
+        _ensure_mixmatch_tensor_input(X_l, name="X_l", allow_discrete=allow_discrete_inputs)
+        _ensure_mixmatch_tensor_input(X_u_w, name="X_u_w", allow_discrete=allow_discrete_inputs)
+        _ensure_mixmatch_tensor_input(X_u_s, name="X_u_s", allow_discrete=allow_discrete_inputs)
 
         steps_l = num_batches(int(get_torch_len(X_l)), int(self.spec.batch_size))
         steps_u = num_batches(int(get_torch_len(X_u_w)), int(self.spec.batch_size))
@@ -269,14 +341,11 @@ class MixMatchMethod(TorchBundlePredictMixin, InductiveMethod):
                 )
                 targets = torch.cat([y_lb_onehot, pseudo_u, pseudo_u], dim=0)
 
-                if bool(self.spec.mixup_manifold):
+                if use_manifold_mixup:
                     with freeze_batchnorm(model, enabled=freeze_bn):
-                        out_lb = model(x_lb)
-                        out_uw = model(x_uw)
-                        out_us = model(x_us)
-                    feat_lb = extract_features(out_lb)
-                    feat_uw = extract_features(out_uw)
-                    feat_us = extract_features(out_us)
+                        feat_lb = _forward_features(bundle, x_lb)
+                        feat_uw = _forward_features(bundle, x_uw)
+                        feat_us = _forward_features(bundle, x_us)
                     inputs = torch.cat([feat_lb, feat_uw, feat_us], dim=0)
                     mixed_x, mixed_y = _mixup(
                         inputs, targets, alpha=float(self.spec.mixup_alpha), generator=gen_l

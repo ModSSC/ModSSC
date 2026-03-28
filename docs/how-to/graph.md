@@ -1,10 +1,10 @@
-# How to build graphs and graph views
+# How to build graphs and views
 
-Use this recipe when you need a graph for transductive methods or want graph-derived feature views. The steps match the CLI commands and the Python snippet uses the same specs. For a full run, see the [transductive tutorial](../tutorials/transductive-toy.md).
+Use these guidelines when you need a graph for transductive methods or want graph-derived feature views. The steps match the CLI commands and the Python snippet uses the same specifications. For a full run, see the [transductive tutorial](../tutorials/transductive-toy.md).
 
 
 ## Problem statement
-You want to build a similarity graph from feature vectors and optionally derive graph-based views (attribute, diffusion, structural). <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a></sup> Start with a simple kNN spec and refine it as you evaluate methods.
+You want to build a similarity graph from feature vectors and optionally derive graph-based views (attribute, diffusion, structural). <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a></sup> Start with a simple kNN specification and refine it as you evaluate methods.
 
 
 ## When to use
@@ -66,7 +66,7 @@ Graph CLI options and specs are defined in [`src/modssc/cli/graph.py`](https://g
 
 ## Related links
 - [Configuration reference](../reference/configuration.md)
-- [Transductive tutorial](../tutorials/transductive-toy.md)
+- [Transductive tutorial: toy label propagation](../tutorials/transductive-toy.md)
 - [Catalogs and registries](../reference/catalogs.md)
 
 <details class="sources" markdown="1">

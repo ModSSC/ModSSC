@@ -7,6 +7,8 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
+from modssc.utils.imports import load_object as _load_object
+
 _PACKAGE_ALIASES = {
     "scikit-learn": "sklearn",
     "torch-geometric": "torch_geometric",
@@ -19,14 +21,7 @@ _PACKAGE_ALIASES = {
 
 
 def load_object(path: str) -> Any:
-    if ":" not in path:
-        raise ValueError(f"Invalid import path: {path!r}")
-    module_name, qualname = path.split(":", 1)
-    module = importlib.import_module(module_name)
-    obj: Any = module
-    for part in qualname.split("."):
-        obj = getattr(obj, part)
-    return obj
+    return _load_object(path, error_prefix="Invalid import path")
 
 
 def _find_pyproject(start: Path | None = None) -> Path | None:
@@ -68,6 +63,8 @@ def _pkg_to_import(pkg: str) -> str:
 def check_extra_installed(extra: str, *, pyproject_path: Path | None = None) -> list[str]:
     pyproject = pyproject_path or _find_pyproject()
     optional_deps = _read_optional_deps(pyproject)
+    if extra not in optional_deps:
+        raise ValueError(f"Unknown optional dependency extra: {extra!r}")
     packages = optional_deps.get(extra, [])
     missing: list[str] = []
     for spec in packages:

@@ -48,7 +48,7 @@ The benchmark command and the toy config live in [`bench/main.py`](https://githu
 For the benchmark run, a timestamped folder is created under [`runs/`](https://github.com/ModSSC/ModSSC/tree/main/runs) containing:
 - `config.yaml` (copied config)
 - `run.json` (metrics + metadata)
-- `error.txt` (only if failed)
+- `error.txt` (only if the run fails)
 
 These outputs are written by the bench runner and context utilities. <sup class="cite"><a href="#source-5">[5]</a><a href="#source-6">[6]</a><a href="#source-7">[7]</a><a href="#source-8">[8]</a></sup>
 
@@ -57,10 +57,14 @@ For the Python snippet, you should see a stats dictionary printed to stdout. The
 
 
 ## Next steps
+- [Choose your path](choose-your-path.md)
+- [Optional extras and platform support](extras-and-platforms.md)
 - [Inductive tutorial](../tutorials/inductive-toy.md)
 - [Transductive tutorial](../tutorials/transductive-toy.md)
-- [Sampling how-to](../how-to/sampling.md)
-- [Preprocess how-to](../how-to/preprocess.md)
+- [Create and reuse sampling splits](../how-to/sampling.md)
+- [Run preprocessing plans](../how-to/preprocess.md)
+- [Example scripts](../examples/index.md)
+- [Notebook tour](../notebooks/index.md)
 
 ## Troubleshooting
 !!! warning
@@ -69,6 +73,8 @@ For the Python snippet, you should see a stats dictionary printed to stdout. The
 
 !!! tip
     Use `modssc doctor` to see which CLI bricks are available and which extras are missing. <sup class="cite"><a href="#source-11">[11]</a></sup>
+
+If you want a symptom-driven route instead of a workflow page, use [Common errors and where to go](../how-to/common-errors.md).
 
 
 <details class="sources" markdown="1">

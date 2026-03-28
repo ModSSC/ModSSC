@@ -104,6 +104,11 @@ supervised-torch = [
   "torch",
 ]
 
+supervised-torch-geometric = [
+  "torch",
+  "torch-geometric",
+]
+
 vision = [
   "torch",
   "torchvision",

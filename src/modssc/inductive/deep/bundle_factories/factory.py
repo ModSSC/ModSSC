@@ -630,6 +630,7 @@ def _build_lstm_bundle(
                 bidirectional=bidirectional,
             )
             d_out = hidden_dim * 2 if bidirectional else hidden_dim
+            self.dropout = torch.nn.Dropout(dropout)
             self.fc = torch.nn.Linear(d_out, num_classes)
 
         def get_input_embeddings(self, x):
@@ -662,11 +663,28 @@ def _build_lstm_bundle(
                 return logits, h
             return logits
 
+    def _forward_features(model: Any, x: Any):
+        emb = model.get_input_embeddings(x) if not (x.ndim == 3 and x.shape[-1] == embed_dim) else x
+        model.lstm.flatten_parameters()
+        _, (h_n, _) = model.lstm(emb)
+        if bidirectional:
+            return torch.cat([h_n[-2], h_n[-1]], dim=1)
+        return h_n[-1]
+
+    def _forward_head(model: Any, features: Any):
+        return model.fc(model.dropout(features))
+
     torch.manual_seed(int(seed))
     model = _LSTMClassifier().to(sample.device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
     ema_model = _maybe_ema(model, enabled=ema)
-    return TorchModelBundle(model=model, optimizer=optimizer, ema_model=ema_model)
+    meta = {
+        "input_space": "token_ids",
+        "prefer_manifold_mixup": True,
+        "forward_features": lambda x, model=model: _forward_features(model, x),
+        "forward_head": lambda features, model=model: _forward_head(model, features),
+    }
+    return TorchModelBundle(model=model, optimizer=optimizer, ema_model=ema_model, meta=meta)
 
 
 def _build_graphsage_bundle(

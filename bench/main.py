@@ -97,7 +97,13 @@ def _graph_sampling_to_inductive(sampling: SamplingResult) -> SamplingResult:
 
 
 def _check_extra(extra: str) -> None:
-    missing = check_extra_installed(extra)
+    try:
+        missing = check_extra_installed(extra)
+    except ValueError as exc:
+        raise BenchConfigError(
+            str(exc),
+            code="E_BENCH_DEPENDENCY_UNKNOWN_EXTRA",
+        ) from exc
     if missing:
         raise BenchConfigError(
             f"Missing optional dependency for extra '{extra}': {sorted(set(missing))}",

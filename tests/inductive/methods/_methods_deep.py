@@ -2133,6 +2133,49 @@ def test_mixmatch_forward_head_meta():
     assert int(out2.shape[0]) == int(features.shape[0])
 
 
+def test_mixmatch_embedding_bundle_auto_manifold():
+    class _TokenNet(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.embedding = torch.nn.Embedding(16, 4)
+            self.fc = torch.nn.Linear(4, 2)
+
+        def get_input_embeddings(self, x):
+            return self.embedding(x.to(dtype=torch.long))
+
+        def forward(self, x, only_fc: bool = False):
+            if only_fc:
+                return self.fc(x)
+            emb = x if x.ndim == 3 else self.get_input_embeddings(x)
+            feat = emb.mean(dim=1)
+            return self.fc(feat)
+
+    model = _TokenNet()
+
+    def _forward_features(x):
+        emb = model.get_input_embeddings(x) if x.ndim == 2 else x
+        return emb.mean(dim=1)
+
+    bundle = TorchModelBundle(
+        model=model,
+        optimizer=torch.optim.SGD(model.parameters(), lr=0.1),
+        meta={
+            "input_space": "token_ids",
+            "prefer_manifold_mixup": True,
+            "forward_features": _forward_features,
+            "forward_head": lambda feat: model.fc(feat),
+        },
+    )
+    X_l = torch.tensor([[1, 2, 0], [2, 3, 0], [5, 6, 0], [6, 7, 0]], dtype=torch.int64)
+    y_l = torch.tensor([0, 0, 1, 1], dtype=torch.int64)
+    X_u = torch.tensor([[1, 3, 0], [5, 7, 0]], dtype=torch.int64)
+    data = DummyDataset(X_l=X_l, y_l=y_l, X_u=X_u, X_u_w=X_u.clone(), X_u_s=X_u.clone())
+    method = MixMatchMethod(MixMatchSpec(model_bundle=bundle, batch_size=2, max_epochs=1))
+    method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
+    proba = method.predict_proba(X_l)
+    assert proba.shape == (4, 2)
+
+
 def test_mixmatch_logits_errors():
     data = make_torch_ssl_dataset()
     bundle = _make_bundle_for(_ConditionalClasses())

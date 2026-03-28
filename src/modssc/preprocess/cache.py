@@ -13,6 +13,7 @@ from modssc.preprocess.errors import OptionalDependencyError, PreprocessCacheErr
 from modssc.preprocess.fingerprint import stable_json_dumps
 from modssc.runtime.device import mps_is_available
 from modssc.runtime.paths import default_local_cache_subdir
+from modssc.utils.io import resolve_relative_path
 
 OBJECT_JSON_MAX_ITEMS = int(
     os.environ.get("MODSSC_PREPROCESS_CACHE_OBJECT_JSON_MAX_ITEMS", "10000")
@@ -173,7 +174,10 @@ def _load_value(path: Path, desc: dict[str, Any]) -> Any:
     rel = desc.get("path")
     if not isinstance(rel, str):
         raise PreprocessCacheError("Invalid cache manifest entry: missing 'path'")
-    fp = path / rel
+    try:
+        fp = resolve_relative_path(path, rel, purpose="preprocess cache value path")
+    except ValueError as e:
+        raise PreprocessCacheError(str(e)) from e
     if t == "npy":
         allow_pickle = bool(desc.get("allow_pickle", False))
         mmap_mode = None
@@ -202,7 +206,10 @@ def _load_value(path: Path, desc: dict[str, Any]) -> Any:
         return torch.as_tensor(arr, device=device, dtype=dtype)
     if t == "torch_pt":
         torch = _require_torch()
-        obj = torch.load(fp, map_location="cpu")
+        try:
+            obj = torch.load(fp, map_location="cpu", weights_only=True)
+        except TypeError:
+            obj = torch.load(fp, map_location="cpu")
         device_str = str(desc.get("device") or "")
         if device_str:
             return obj.to(_resolve_cache_device(torch, device_str))

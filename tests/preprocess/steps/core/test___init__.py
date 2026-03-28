@@ -81,6 +81,8 @@ def test_core_resolve_device_and_dtype() -> None:
     assert core_to_torch._resolve_dtype(torch, "auto") is None
     assert core_to_torch._resolve_dtype(torch, "float32") == torch.float32
     assert core_to_torch._resolve_dtype(torch, "float64") == torch.float64
+    assert core_to_torch._resolve_dtype(torch, "int32") == torch.int32
+    assert core_to_torch._resolve_dtype(torch, "int64") == torch.int64
 
     with pytest.raises(PreprocessValidationError, match="Unknown dtype"):
         core_to_torch._resolve_dtype(torch, "bad")
@@ -98,6 +100,20 @@ def test_core_to_torch_transform(monkeypatch: pytest.MonkeyPatch) -> None:
     val = out["features.X"]
     assert val["device"] == "device:cpu"
     assert val["dtype"] == fake_torch.float32
+
+
+def test_core_to_torch_transform_int64(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_torch = FakeTorch()
+    monkeypatch.setattr(core_to_torch, "require", lambda **_: fake_torch)
+
+    store = ArtifactStore()
+    store.set("features.X", [[1, 2], [3, 4]])
+    step = core_to_torch.ToTorchStep(device="cpu", dtype="int64")
+    out = step.transform(store, rng=np.random.default_rng(0))
+
+    val = out["features.X"]
+    assert val["device"] == "device:cpu"
+    assert val["dtype"] == fake_torch.int64
 
 
 def test_core_to_torch_transform_custom_key(monkeypatch: pytest.MonkeyPatch) -> None:

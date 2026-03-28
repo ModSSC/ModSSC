@@ -45,21 +45,32 @@ extra_javascript:
 nav:
   - Home: index.md
   - Getting started:
+      - Choose your path: getting-started/choose-your-path.md
       - Installation: getting-started/installation.md
+      - Optional extras and platform support: getting-started/extras-and-platforms.md
       - Quickstart: getting-started/quickstart.md
       - Concepts: getting-started/concepts.md
+      - Glossary: getting-started/glossary.md
   - Tutorials:
-      - Inductive tutorial: tutorials/inductive-toy.md
-      - Transductive tutorial: tutorials/transductive-toy.md
+      - "Inductive tutorial: toy pseudo-label run": tutorials/inductive-toy.md
+      - "Transductive tutorial: toy label propagation": tutorials/transductive-toy.md
   - How-to guides:
       - Manage datasets: how-to/datasets.md
-      - Create sampling splits: how-to/sampling.md
+      - Create and reuse sampling splits: how-to/sampling.md
       - Run preprocessing plans: how-to/preprocess.md
       - Use data augmentation: how-to/augmentation.md
       - Build graphs and views: how-to/graph.md
       - Generate multi-view features: how-to/views.md
       - Compute evaluation metrics: how-to/evaluation.md
       - Run hyperparameter search: how-to/hpo.md
+      - Bench config cookbook: how-to/bench-cookbook.md
+      - Reproducibility: how-to/reproducibility.md
+      - Common errors and where to go: how-to/common-errors.md
+      - Troubleshooting: how-to/troubleshooting.md
+  - Examples:
+      - Example scripts: examples/index.md
+  - Notebooks:
+      - Notebook tour: notebooks/index.md
   - Reference:
       - CLI reference: reference/cli.md
       - Catalogs and registries: reference/catalogs.md
@@ -101,6 +112,9 @@ plugins:
       toc_depth: 2
       exclude:
         - index.md
+
+exclude_docs: |
+  article_code/**
 
 markdown_extensions:
   - admonition

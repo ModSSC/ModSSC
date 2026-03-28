@@ -13,7 +13,7 @@ This walkthrough uses the bench runner because it validates a single YAML config
 
 
 ## Prerequisites
-- Python 3.11+ with ModSSC installed from source (bench runner is in the repo). <sup class="cite"><a href="#source-4">[4]</a><a href="#source-5">[5]</a></sup>
+- Python 3.11+ with ModSSC installed from source (the bench runner is in the repository). <sup class="cite"><a href="#source-4">[4]</a><a href="#source-5">[5]</a></sup>
 
 - No extra dependencies are required for the toy dataset and numpy backends used here. <sup class="cite"><a href="#source-2">[2]</a><a href="#source-6">[6]</a></sup>
 
@@ -24,7 +24,7 @@ This walkthrough uses the bench runner because it validates a single YAML config
 - Toy dataset definition: [`src/modssc/data_loader/catalog/toy.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/data_loader/catalog/toy.py)
 
 ## Step by step commands
-1) Install the repo in editable mode:
+1) Install the repository in editable mode:
 
 ```bash
 python -m pip install -e "."

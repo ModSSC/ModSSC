@@ -4,7 +4,7 @@ This guide focuses on the benchmark runner search workflow so you can sweep meth
 
 
 ## Problem statement
-You want to run grid or random search over method parameters using the benchmark runner. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a></sup> The search space only touches `method.params.*`, so data, sampling, and preprocessing stay fixed while you compare trials. <sup class="cite"><a href="#source-1">[1]</a></sup>
+You want to run grid or random search over method parameters using the benchmark runner. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a></sup> The search space only handles `method.params.*`, so data, sampling, and preprocessing stay fixed while you compare trials. <sup class="cite"><a href="#source-1">[1]</a></sup>
 
 
 ## When to use

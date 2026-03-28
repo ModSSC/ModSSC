@@ -1,13 +1,53 @@
 # CLI reference
 
-This page is the authoritative CLI reference for ModSSC commands and options. For registry lists and IDs, see [Catalogs and registries](catalogs.md).
+Use this reference when you already know you want the terminal interface and need the exact command surface. For IDs and registry lookups, continue with [Catalogs and registries](catalogs.md).
 
-Each command section below follows the same pattern (purpose, syntax, options, examples), so you can skim and copy quickly. Use the navigation to jump to the brick you need.
+
+## What it is for
+ModSSC exposes a root CLI plus brick-specific entry points for datasets, sampling, preprocess, graphs, augmentation, evaluation, and method registries. The commands are implemented as Typer apps and grouped so you can inspect one subsystem without importing Python manually. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a><a href="#source-3">[3]</a></sup>
+
+
+## When to use
+- Use `modssc` when you want one entry point with shared logging, `doctor`, and access to every brick.
+- Use the direct entry points when you want shorter commands in shell scripts or when a workflow only touches one subsystem.
+- Use the Python API instead when you need in-process objects, custom control flow, or notebook-friendly inspection.
+
+
+## Minimal examples
+Start with the root help and the environment diagnostic:
+
+```bash
+modssc --help
+modssc doctor --json
+```
+
+Then move to the brick you need:
+
+```bash
+modssc datasets list
+modssc preprocess steps list
+modssc inductive methods list --available-only
+```
+
+
+## Command map
+
+| Command | Use it for | First next page |
+| --- | --- | --- |
+| `modssc doctor` | inspect installed bricks and missing extras | [Optional extras and platform support](../getting-started/extras-and-platforms.md) |
+| `modssc datasets ...` | list, inspect, download, and cache datasets | [Manage datasets](../how-to/datasets.md) |
+| `modssc sampling ...` | create and validate split artifacts | [Create and reuse sampling splits](../how-to/sampling.md) |
+| `modssc preprocess ...` | inspect steps/models and run preprocess plans | [Run preprocessing plans](../how-to/preprocess.md) |
+| `modssc graph ...` | build graphs and graph-derived views | [Build graphs and views](../how-to/graph.md) |
+| `modssc augmentation ...` | inspect augmentation ops | [Use data augmentation](../how-to/augmentation.md) |
+| `modssc evaluation ...` | list metrics and score predictions | [Compute evaluation metrics](../how-to/evaluation.md) |
+| `modssc inductive ...` | inspect inductive methods | [Inductive tutorial](../tutorials/inductive-toy.md) |
+| `modssc transductive ...` | inspect transductive methods | [Transductive tutorial](../tutorials/transductive-toy.md) |
+| `modssc supervised ...` | inspect supervised baselines | [Catalogs and registries](catalogs.md) |
 
 
 ## How the CLI is installed and invoked
-The CLI entry points are defined in [`pyproject.toml`](https://github.com/ModSSC/ModSSC/blob/main/pyproject.toml) and implemented as Typer apps in [`src/modssc/cli/`](https://github.com/ModSSC/ModSSC/tree/main/src/modssc/cli). <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a></sup>
-
+The CLI entry points are declared in [`pyproject.toml`](https://github.com/ModSSC/ModSSC/blob/main/pyproject.toml) and implemented in [`src/modssc/cli/`](https://github.com/ModSSC/ModSSC/tree/main/src/modssc/cli). <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a></sup>
 
 Primary entry point:
 
@@ -16,9 +56,7 @@ modssc --help
 modssc --version
 ```
 
-Direct entry points (also declared in [`pyproject.toml`](https://github.com/ModSSC/ModSSC/blob/main/pyproject.toml)): <sup class="cite"><a href="#source-1">[1]</a></sup>
-
-Use `modssc` when you want a single entry point with shared logging and `doctor`. Use the direct entry points when you prefer shorter commands or want to scope scripts to a single brick. Both map to the same Typer apps. For lists of datasets, steps, methods, and metrics, see [Catalogs and registries](catalogs.md). <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a><a href="#source-3">[3]</a></sup>
+Direct entry points:
 
 ```bash
 modssc-datasets --help
@@ -31,14 +69,16 @@ modssc-augmentation --help
 modssc-evaluation --help
 ```
 
+Use `modssc` when you want one command namespace with shared logging and `doctor`. Use the direct entry points when you prefer smaller wrappers around the same Typer apps. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a><a href="#source-3">[3]</a></sup>
+
+
 ## Commands and subcommands
 ### modssc
 - Purpose: Root CLI that wires all bricks and provides `doctor` and `--version`. <sup class="cite"><a href="#source-3">[3]</a></sup>
-
 - Syntax: `modssc [--version] [--log-level <level>] <command> [OPTIONS]`
 - Options:
-  - `--version`: print the package version and exit.
-  - `--log-level` / `--log`: logging level (none, basic, detailed).
+  - `--version`: print the package version and exit
+  - `--log-level` / `--log`: logging level (`none`, `basic`, `detailed`)
 - Examples:
 
 ```bash
@@ -48,10 +88,9 @@ modssc --log-level detailed datasets list
 
 ### modssc doctor
 - Purpose: Report which optional CLI bricks are available and which extras are missing. <sup class="cite"><a href="#source-3">[3]</a></sup>
-
 - Syntax: `modssc doctor [--json]`
 - Options:
-  - `--json`: emit machine-readable JSON.
+  - `--json`: emit machine-readable JSON
 - Examples:
 
 ```bash
@@ -61,22 +100,21 @@ modssc doctor --json
 
 ### modssc datasets
 - Purpose: List, inspect, and download datasets plus manage cache. <sup class="cite"><a href="#source-4">[4]</a></sup>
-
 - Syntax: `modssc datasets <providers|list|info|download|cache> [OPTIONS]`
 - Options (selected):
   - `list --modalities <modality>`
   - `info --dataset <id>`
-  - `download --dataset <id> | --all` plus `--force`, `--cache-dir`, `--skip-cached`, `--modalities`.
+  - `download --dataset <id> | --all` plus `--force`, `--cache-dir`, `--ignore-missing-extras/--no-ignore-missing-extras`, `--skip-cached`, `--modalities`
 - Examples:
 
 ```bash
 modssc datasets list
 modssc datasets info --dataset toy
+modssc datasets download --dataset toy
 ```
 
 ### modssc datasets cache
 - Purpose: Inspect and clean the dataset cache. <sup class="cite"><a href="#source-4">[4]</a></sup>
-
 - Syntax: `modssc datasets cache <ls|purge|gc> [OPTIONS]`
 - Options:
   - `ls --cache-dir <path>`
@@ -91,7 +129,6 @@ modssc datasets cache purge toy
 
 ### modssc sampling
 - Purpose: Create and inspect deterministic SSL splits. <sup class="cite"><a href="#source-5">[5]</a></sup>
-
 - Syntax: `modssc sampling <create|show|validate> [OPTIONS]`
 - Options:
   - `create --dataset <id> --plan <file> --out <dir> [--seed <n>] [--overwrite]`
@@ -106,7 +143,6 @@ modssc sampling show splits/toy
 
 ### modssc preprocess
 - Purpose: Run preprocessing plans and inspect registries. <sup class="cite"><a href="#source-6">[6]</a></sup>
-
 - Syntax: `modssc preprocess <steps|models|run> [OPTIONS]`
 - Options:
   - `steps list [--json]`
@@ -123,12 +159,10 @@ modssc preprocess run --plan preprocess_plan.yaml --dataset toy
 
 ### modssc graph
 - Purpose: Build graphs and graph-derived views; inspect caches. <sup class="cite"><a href="#source-7">[7]</a></sup>
-
 - Syntax: `modssc graph <build|views|cache> [OPTIONS]`
-- Options (build):
+- Options (build, selected):
   - `--dataset <id>`
-  - `--spec <file>` (optional; full spec supports symmetrize/weights/normalize/self_loops). <sup class="cite"><a href="#source-8">[8]</a></sup>
-
+  - `--spec <file>` for a full graph spec <sup class="cite"><a href="#source-8">[8]</a></sup>
   - `--scheme knn|epsilon|anchor`, `--metric cosine|euclidean`, `--k`, `--radius`, `--backend auto|numpy|sklearn|faiss`
   - `--chunk-size`, `--n-anchors`, `--anchors-k`, `--anchors-method`, `--candidate-limit`
   - `--faiss-exact`, `--faiss-hnsw-m`, `--faiss-ef-search`, `--faiss-ef-construction`
@@ -137,16 +171,15 @@ modssc preprocess run --plan preprocess_plan.yaml --dataset toy
 
 ```bash
 modssc graph build --dataset toy --scheme knn --metric euclidean --k 8
-modssc graph views build --dataset toy --views attr diffusion
+modssc graph views build --dataset toy --views attr --views diffusion
 ```
 
 ### modssc graph views
 - Purpose: Build graph-derived views and inspect the views cache. <sup class="cite"><a href="#source-7">[7]</a></sup>
-
 - Syntax: `modssc graph views <build|cache-ls> [OPTIONS]`
 - Options (build, selected):
   - `--dataset <id>`
-  - `--views <name>` (repeatable; attr, diffusion, struct)
+  - `--views <name>` (repeatable; `attr`, `diffusion`, `struct`)
   - `--diffusion-steps`, `--diffusion-alpha`
   - `--struct-method`, `--struct-dim`, `--walk-length`, `--num-walks-per-node`, `--window-size`, `--p`, `--q`
   - `--scheme`, `--metric`, `--k-graph`, `--radius`
@@ -159,7 +192,6 @@ modssc graph views cache-ls
 
 ### modssc graph cache
 - Purpose: Inspect or purge graph caches. <sup class="cite"><a href="#source-7">[7]</a></sup>
-
 - Syntax: `modssc graph cache <ls|purge>`
 - Examples:
 
@@ -170,7 +202,6 @@ modssc graph cache purge
 
 ### modssc augmentation
 - Purpose: List augmentation ops and inspect defaults. <sup class="cite"><a href="#source-9">[9]</a></sup>
-
 - Syntax: `modssc augmentation <list|info> [OPTIONS]`
 - Options:
   - `list [--modality <modality>]`
@@ -184,7 +215,6 @@ modssc augmentation info text.word_dropout --as-json
 
 ### modssc evaluation
 - Purpose: List metrics and compute scores from `.npy` files. <sup class="cite"><a href="#source-10">[10]</a></sup>
-
 - Syntax: `modssc evaluation <list|compute> [OPTIONS]`
 - Options:
   - `list [--json]`
@@ -198,7 +228,6 @@ modssc evaluation compute --y-true y_true.npy --y-pred y_pred.npy --metric accur
 
 ### modssc inductive
 - Purpose: Inspect inductive method registry. <sup class="cite"><a href="#source-11">[11]</a></sup>
-
 - Syntax: `modssc inductive methods <list|info> [OPTIONS]`
 - Options:
   - `list [--all/--available-only]`
@@ -212,7 +241,6 @@ modssc inductive methods info pseudo_label
 
 ### modssc transductive
 - Purpose: Inspect transductive method registry. <sup class="cite"><a href="#source-12">[12]</a></sup>
-
 - Syntax: `modssc transductive methods <list|info> [OPTIONS]`
 - Options:
   - `list [--all/--available-only]`
@@ -226,7 +254,6 @@ modssc transductive methods info label_propagation
 
 ### modssc supervised
 - Purpose: List supervised baselines and their backends. <sup class="cite"><a href="#source-13">[13]</a></sup>
-
 - Syntax: `modssc supervised <list|info> [OPTIONS]`
 - Options:
   - `list [--available-only] [--json]`
@@ -238,10 +265,20 @@ modssc supervised list --available-only
 modssc supervised info logreg
 ```
 
+
+## Common mistakes
+- Running `python -m bench.main ...` after a PyPI-only install and expecting `bench/` assets to exist locally. Use a source checkout for repository assets.
+- Expecting `modssc datasets download --dataset <id>` to ignore missing extras automatically. The ignore flag exists, but you should still treat a missing extra as a dependency problem to resolve intentionally.
+- Looking for dataset IDs, step IDs, or method IDs in this page alone. Use [Catalogs and registries](catalogs.md) for the full lists.
+- Treating `modssc doctor` as a full environment validator. It reports available bricks and missing extras, but it does not validate your benchmark config semantics.
+
+
 ## Related links
 - [Catalogs and registries](catalogs.md)
-- [Dataset how-to](../how-to/datasets.md)
-- [Preprocess how-to](../how-to/preprocess.md)
+- [Common errors and where to go](../how-to/common-errors.md)
+- [Manage datasets](../how-to/datasets.md)
+- [Run preprocessing plans](../how-to/preprocess.md)
+- [Troubleshooting](../how-to/troubleshooting.md)
 
 <details class="sources" markdown="1">
 <summary>Sources</summary>

@@ -1,6 +1,6 @@
 # How to generate multi-view features
 
-Multi-view methods expect multiple feature sets for the same samples. This recipe shows how to define and generate those views, and it includes a bench config excerpt for reference. For an end-to-end example, see the [inductive tutorial](../tutorials/inductive-toy.md).
+Multi-view methods expect multiple feature sets for the same samples. This guide shows how to define and generate those views, and it includes a bench config excerpt for reference. For an end-to-end example, see the [inductive tutorial](../tutorials/inductive-toy.md).
 
 
 ## Problem statement
@@ -65,8 +65,8 @@ The view plan schema is defined in [`src/modssc/views/plan.py`](https://github.c
 
 
 ## Related links
-- [Inductive tutorial](../tutorials/inductive-toy.md)
-- [Preprocess how-to](preprocess.md)
+- [Inductive tutorial: toy pseudo-label run](../tutorials/inductive-toy.md)
+- [Run preprocessing plans](preprocess.md)
 - [Configuration reference](../reference/configuration.md)
 
 <details class="sources" markdown="1">

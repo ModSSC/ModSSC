@@ -11,10 +11,12 @@ from typing import Any
 
 import numpy as np
 
+from modssc.data_loader.errors import ManifestError
 from modssc.data_loader.numpy_adapter import to_numpy
 from modssc.data_loader.storage.json import mapping_to_jsonable as _jsonable_mapping
 from modssc.data_loader.storage.json import to_jsonable
 from modssc.data_loader.types import LoadedDataset, Split
+from modssc.utils.io import resolve_relative_path
 
 
 def _jsonable(obj: Any) -> Any:
@@ -135,23 +137,38 @@ class FileStorage:
             return {"format": "jsonl.gz", "path": path.name}
 
         path = root / f"{stem}.npy"
-        np.save(path, arr, allow_pickle=bool(arr.dtype == object))
-        return {"format": "npy", "path": path.name}
+        allow_pickle = bool(arr.dtype == object)
+        np.save(path, arr, allow_pickle=allow_pickle)
+        info: dict[str, Any] = {"format": "npy", "path": path.name}
+        if allow_pickle:
+            info["allow_pickle"] = True
+        return info
 
     def _load_array(self, root: Path, info: Mapping[str, Any]) -> np.ndarray:
         fmt = info["format"]
-        path = root / info["path"]
+        rel = info.get("path")
+        if not isinstance(rel, str):
+            raise ManifestError("Invalid dataset cache entry: missing 'path'")
+        try:
+            path = resolve_relative_path(root, rel, purpose="dataset cache array path")
+        except ValueError as e:
+            raise ManifestError(str(e)) from e
         if fmt == "jsonl.gz":
             items = _read_jsonl_gz(path)
             return np.asarray(items, dtype=object)
         if fmt == "npy":
+            allow_pickle = bool(info.get("allow_pickle", False))
             mmap_mode = None
             # Default to 64MB threshold to match preprocess cache
             threshold = int(
                 os.environ.get("MODSSC_DATA_LOADER_MMAP_THRESHOLD", str(64 * 1024 * 1024))
             )
-            with contextlib.suppress(OSError):
-                if path.stat().st_size >= threshold:
-                    mmap_mode = "r"
-            return np.load(path, allow_pickle=True, mmap_mode=mmap_mode)
+            if not allow_pickle:
+                with contextlib.suppress(OSError):
+                    if path.stat().st_size >= threshold:
+                        mmap_mode = "r"
+            try:
+                return np.load(path, allow_pickle=allow_pickle, mmap_mode=mmap_mode)
+            except ValueError as e:
+                raise ManifestError(f"Failed to load cached array: {path}") from e
         raise ValueError(f"Unknown array format: {fmt!r}")

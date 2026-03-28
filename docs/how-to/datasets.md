@@ -1,10 +1,10 @@
 # How to manage datasets
 
-Need to figure out which dataset IDs exist and how to manage their caches? This recipe walks you through discovery, metadata inspection, and cache management with CLI and Python examples side by side. If ModSSC is not installed yet, start with [Installation](../getting-started/installation.md).
+If you need to figure out which dataset IDs exist and how to manage their caches, this page walks you through discovery, metadata inspection, and cache management with CLI and Python examples side by side. If ModSSC is not installed yet, start with [Installation](../getting-started/installation.md).
 
 
 ## Problem statement
-You want to list, inspect, and download datasets that ModSSC can load, and understand where they are cached. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a><a href="#source-3">[3]</a></sup> Once you pick a dataset key, continue with [sampling](sampling.md) and [preprocess](preprocess.md) to shape the data for a run.
+You want to list, inspect, and download datasets that ModSSC can load, and understand where they are cached. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a><a href="#source-3">[3]</a></sup> Once you pick a dataset key, continue with [sampling](sampling.md) and [preprocessing](preprocess.md) to shape the data for a run.
 
 
 ## When to use
@@ -16,7 +16,7 @@ Use `providers` when you need to know which backends are wired up, and `list` wh
 ## Steps
 1) List providers and dataset keys. <sup class="cite"><a href="#source-2">[2]</a></sup>
 
-2) Inspect a dataset spec (modality, provider, required extra). <sup class="cite"><a href="#source-6">[6]</a><a href="#source-2">[2]</a></sup>
+2) Inspect a dataset specification (modality, provider, required extra). <sup class="cite"><a href="#source-6">[6]</a><a href="#source-2">[2]</a></sup>
 
 3) Download a dataset into the local cache. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a></sup>
 
@@ -54,13 +54,13 @@ _ = download_dataset("toy")
 
 
 !!! tip
-  Override the dataset cache directory with `MODSSC_CACHE_DIR` if you want to store datasets outside the repo or default user cache. For a single root across caches, you can set `MODSSC_CACHE_ROOT`. For bench YAML configs, you can also set `MODSSC_DATASET_CACHE_DIR` and reference it in `dataset.cache_dir`. <sup class="cite"><a href="#source-3">[3]</a></sup>
+  Override the dataset cache directory with `MODSSC_CACHE_DIR` if you want to store datasets outside the repository or default user cache. For a single root across caches, you can set `MODSSC_CACHE_ROOT`. For bench YAML configs, you can also set `MODSSC_DATASET_CACHE_DIR` and reference it in `dataset.cache_dir`. <sup class="cite"><a href="#source-3">[3]</a></sup>
 
 
 ## Related links
 - [Configuration reference](../reference/configuration.md)
-- [Sampling how-to](sampling.md)
-- [Preprocess how-to](preprocess.md)
+- [Create and reuse sampling splits](sampling.md)
+- [Run preprocessing plans](preprocess.md)
 - [Catalogs and registries](../reference/catalogs.md)
 
 <details class="sources" markdown="1">

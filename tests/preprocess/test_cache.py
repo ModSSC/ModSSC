@@ -310,6 +310,22 @@ def test_load_value_npy_allow_pickle(tmp_path):
     assert val.tolist() == arr.tolist()
 
 
+def test_load_value_rejects_absolute_path(tmp_path):
+    p = tmp_path / "data.npy"
+    np.save(p, np.array([1]))
+
+    with pytest.raises(PreprocessCacheError, match="must be relative"):
+        _load_value(tmp_path, {"type": "npy", "path": str(p.resolve())})
+
+
+def test_load_value_rejects_parent_escape(tmp_path):
+    outside = tmp_path.parent / "data.npy"
+    np.save(outside, np.array([1]))
+
+    with pytest.raises(PreprocessCacheError, match="escapes"):
+        _load_value(tmp_path, {"type": "npy", "path": "../data.npy"})
+
+
 def test_cache_manager_roundtrip(tmp_path):
     cm = CacheManager(root=tmp_path, dataset_fingerprint="ds1")
 

@@ -5,10 +5,10 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import numpy as np
-import pytest
 
 from modssc.sampling.api import load_split, sample
 from modssc.sampling.plan import (
+    HoldoutSplitSpec,
     ImbalanceSpec,
     KFoldSplitSpec,
     LabelingSpec,
@@ -43,16 +43,37 @@ def test_sample_inductive_official_kfold():
     assert res.refs["test"] == "test"
 
 
-def test_sample_inductive_override_official_error():
-    """Test _sample_inductive raises NotImplementedError for override_official."""
+def test_sample_inductive_override_official_uses_user_split():
+    """Test override_official ignores provider test and applies the user split on train."""
     ds = make_toy_dataset(n=100, with_test=True)
     plan = SamplingPlan(
         split=KFoldSplitSpec(k=5, fold=0),
         labeling=LabelingSpec(),
         policy=SamplingPolicy(respect_official_test=True, allow_override_official=True),
     )
-    with pytest.raises(NotImplementedError, match="override_official is not implemented"):
-        sample(ds, plan=plan, seed=0, dataset_fingerprint="fp", save=False)
+    res, _ = sample(ds, plan=plan, seed=0, dataset_fingerprint="fp", save=False)
+
+    assert res.refs["test"] == "train"
+    assert res.indices["test"].size > 0
+    assert res.stats["policy"]["allow_override_official"] is True
+    assert res.stats["policy"]["official_test_ignored"] is True
+
+
+def test_sample_inductive_override_official_holdout_uses_user_split():
+    """Test override_official on holdout split reuses train as the split source."""
+    ds = make_toy_dataset(n=100, with_test=True)
+    plan = SamplingPlan(
+        split=HoldoutSplitSpec(test_fraction=0.2, val_fraction=0.1),
+        labeling=LabelingSpec(),
+        policy=SamplingPolicy(respect_official_test=True, allow_override_official=True),
+    )
+    res, _ = sample(ds, plan=plan, seed=0, dataset_fingerprint="fp", save=False)
+
+    assert res.refs["train"] == "train"
+    assert res.refs["val"] == "train"
+    assert res.refs["test"] == "train"
+    assert res.indices["test"].size > 0
+    assert res.stats["policy"]["official_test_ignored"] is True
 
 
 def test_sample_inductive_imbalance_labeled():

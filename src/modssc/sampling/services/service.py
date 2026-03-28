@@ -259,7 +259,31 @@ def _sample_inductive(
             train_idx = parts["train"]
             val_idx = parts["val"]
         else:
-            raise NotImplementedError("override_official is not implemented in the current API")
+            rng = np.random.default_rng(seed_split)
+            if isinstance(plan.split, HoldoutSplitSpec):
+                parts = make_holdout_split(
+                    n_samples=n_train,
+                    y=y_train,
+                    test_fraction=float(plan.split.test_fraction),
+                    val_fraction=float(plan.split.val_fraction),
+                    stratify=bool(plan.split.stratify),
+                    rng=rng,
+                )
+            else:
+                parts = make_kfold_split(
+                    n_samples=n_train,
+                    y=y_train,
+                    k=int(plan.split.k),
+                    fold=int(plan.split.fold),
+                    stratify=bool(plan.split.stratify),
+                    shuffle=bool(plan.split.shuffle),
+                    val_fraction=float(plan.split.val_fraction),
+                    rng=rng,
+                )
+            train_idx = parts["train"]
+            val_idx = parts["val"]
+            test_idx = parts["test"]
+            test_ref = "train"
     else:
         rng = np.random.default_rng(seed_split)
         if isinstance(plan.split, HoldoutSplitSpec):
@@ -323,7 +347,13 @@ def _sample_inductive(
 
     policy_info = {
         "respect_official_test": bool(plan.policy.respect_official_test),
+        "allow_override_official": bool(plan.policy.allow_override_official),
         "has_official_test": bool(has_official_test),
+        "official_test_ignored": bool(
+            has_official_test
+            and plan.policy.respect_official_test
+            and plan.policy.allow_override_official
+        ),
         "test_ref": test_ref,
     }
     stats = build_inductive_stats(

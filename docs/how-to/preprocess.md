@@ -71,8 +71,8 @@ print(result.preprocess_fingerprint)
 
 ## Related links
 - [Configuration reference](../reference/configuration.md)
-- [Data augmentation how-to](augmentation.md)
-- [Graph how-to](graph.md)
+- [How to use data augmentation](augmentation.md)
+- [How to build graphs and views](graph.md)
 - [Catalogs and registries](../reference/catalogs.md)
 
 <details class="sources" markdown="1">

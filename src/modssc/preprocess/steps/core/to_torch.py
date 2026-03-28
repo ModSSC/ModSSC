@@ -34,6 +34,10 @@ def _resolve_dtype(torch, dtype: str | None):
         return torch.float32
     if dtype == "float64":
         return torch.float64
+    if dtype == "int32":
+        return torch.int32
+    if dtype == "int64":
+        return torch.int64
     raise PreprocessValidationError(f"Unknown dtype: {dtype!r}")
 
 

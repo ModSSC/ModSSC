@@ -7,7 +7,7 @@ from typer.testing import CliRunner
 
 from modssc.cli import datasets as datasets_mod
 from modssc.cli.datasets import app
-from modssc.data_loader.errors import DataLoaderError
+from modssc.data_loader.errors import DataLoaderError, OptionalDependencyError
 
 runner = CliRunner()
 
@@ -102,6 +102,28 @@ def test_download_handles_data_loader_error() -> None:
         result = runner.invoke(app, ["download", "--dataset", "toy"])
     assert result.exit_code == 2
     assert "boom" in result.output
+
+
+def test_download_dataset_skips_missing_extra_by_default() -> None:
+    with patch(
+        "modssc.cli.datasets.api.download_dataset",
+        side_effect=OptionalDependencyError(extra="vision", purpose="download"),
+    ):
+        result = runner.invoke(app, ["download", "--dataset", "toy"])
+
+    assert result.exit_code == 0
+    assert "Skipped toy:" in result.output
+
+
+def test_download_dataset_can_fail_on_missing_extra_when_requested() -> None:
+    with patch(
+        "modssc.cli.datasets.api.download_dataset",
+        side_effect=OptionalDependencyError(extra="vision", purpose="download"),
+    ):
+        result = runner.invoke(app, ["download", "--dataset", "toy", "--no-ignore-missing-extras"])
+
+    assert result.exit_code == 2
+    assert "vision" in result.output
 
 
 def test_providers_with_log_level() -> None:

@@ -91,3 +91,7 @@ class BaseSupervisedClassifier:
         if self.classes_ is None:
             raise RuntimeError("Model is not fitted (classes_ is None)")
         return self.classes_[np.asarray(y_enc, dtype=np.int64)]
+
+    @property
+    def classes_t_(self) -> Any | None:
+        return getattr(self, "_classes_t", None)

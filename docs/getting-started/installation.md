@@ -10,7 +10,7 @@ ModSSC requires Python 3.11 or newer. <sup class="cite"><a href="#source-1">[1]<
 ## Install from PyPI
 Install the core library and CLI tools from PyPI.
 
-Choose this if you only need the packaged library and CLI. The benchmark runner lives in `bench/` and is not shipped to PyPI. <sup class="cite"><a href="#source-2">[2]</a></sup>
+Choose this if you only need the packaged library and CLI. The benchmark runner is located in `bench/` and is not shipped to PyPI. <sup class="cite"><a href="#source-2">[2]</a></sup>
 
 This package name and entry points are declared in project metadata. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a></sup>
 
@@ -58,6 +58,8 @@ The CLI version flag is implemented in [`src/modssc/cli/app.py`](https://github.
     For a full-feature installation (datasets, preprocess encoders, torch backends), use the `full` extra: `python -m pip install "modssc[full]"`. <sup class="cite"><a href="#source-1">[1]</a></sup>
 
 ## Related links
+- [Choose your path](choose-your-path.md)
+- [Optional extras and platform support](extras-and-platforms.md)
 - [Quickstart](quickstart.md)
 - [Concepts](concepts.md)
 - [Catalogs and registries](../reference/catalogs.md)

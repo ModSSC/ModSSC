@@ -4,7 +4,7 @@ This is an end-to-end transductive walkthrough with graph construction and label
 
 
 ## Goal
-Run a full transductive SSL experiment on the toy dataset using a graph construction spec and label propagation. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a><a href="#source-3">[3]</a></sup>
+Run a full transductive SSL experiment on the toy dataset using a graph construction specification and label propagation. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a><a href="#source-3">[3]</a></sup>
 
 ## Why this tutorial
 Use this tutorial when your method expects a graph and node masks (`NodeDatasetLike`) and you plan to run a graph construction step. If you only need feature matrices without a graph, use the [inductive tutorial](inductive-toy.md) instead. <sup class="cite"><a href="#source-14">[14]</a></sup>
@@ -13,7 +13,7 @@ This walkthrough uses the bench runner because it validates a single YAML config
 
 
 ## Prerequisites
-- Python 3.11+ with ModSSC installed from source (bench runner is in the repo). <sup class="cite"><a href="#source-4">[4]</a><a href="#source-5">[5]</a></sup>
+- Python 3.11+ with ModSSC installed from source (the bench runner is in the repository). <sup class="cite"><a href="#source-4">[4]</a><a href="#source-5">[5]</a></sup>
 
 - No extra dependencies are required for the toy dataset and numpy graph backend. <sup class="cite"><a href="#source-2">[2]</a><a href="#source-6">[6]</a></sup>
 
@@ -21,10 +21,10 @@ This walkthrough uses the bench runner because it validates a single YAML config
 ## Files used
 - Benchmark entry point: [`bench/main.py`](https://github.com/ModSSC/ModSSC/blob/main/bench/main.py)
 - Experiment config: [`bench/configs/experiments/toy_transductive.yaml`](https://github.com/ModSSC/ModSSC/blob/main/bench/configs/experiments/toy_transductive.yaml)
-- Graph spec schema: [`src/modssc/graph/specs.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/graph/specs.py)
+- Graph specification schema: [`src/modssc/graph/specs.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/graph/specs.py)
 
 ## Step by step commands
-1) Install the repo in editable mode:
+1) Install the repository in editable mode:
 
 ```bash
 python -m pip install -e "."
@@ -137,7 +137,7 @@ Graph artifacts are cached when `graph.cache: true` is set. The cache layout is 
 
 
 !!! tip
-    Use `modssc graph build --help` to see graph options and validate the spec. <sup class="cite"><a href="#source-13">[13]</a></sup>
+    Use `modssc graph build --help` to see graph options and validate the specification. <sup class="cite"><a href="#source-13">[13]</a></sup>
 
 ## Related links
 - [Concepts](../getting-started/concepts.md)
