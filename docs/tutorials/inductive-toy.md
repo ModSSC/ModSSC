@@ -101,7 +101,7 @@ evaluation:
 ```
 
 ## Expected outputs and where they appear
-A new run directory is created under [`runs/`](https://github.com/ModSSC/ModSSC/tree/main/runs) with:
+A new run directory is created under the configured `run.output_dir` (here `runs/`) with:
 - `config.yaml` (config snapshot)
 - `run.json` (metrics and metadata)
 - `error.txt` (if the run fails)
@@ -123,7 +123,7 @@ These outputs are written by the bench context and reporting orchestrator. <sup 
 
 ## Common pitfalls and troubleshooting
 !!! warning
-    If the run fails because [`runs/`](https://github.com/ModSSC/ModSSC/tree/main/runs) already contains a folder with the same name and timestamp collision, delete the old folder and rerun. The run directory is created with `exist_ok=False`. <sup class="cite"><a href="#source-7">[7]</a></sup>
+    If the run fails because the configured `run.output_dir` already contains a folder with the same name and a timestamp collision, delete the old folder and rerun. The run directory is created with `exist_ok=False`. <sup class="cite"><a href="#source-7">[7]</a></sup>
 
 
 !!! tip

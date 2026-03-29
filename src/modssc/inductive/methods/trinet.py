@@ -282,22 +282,27 @@ def _train_head(
             shared_model.eval()
         head_model.train()
         for x_batch, y_batch in iter_batches:
-            freeze_bn = int(get_torch_len(x_batch)) < 2
+            x_eff = x_batch
+            y_eff = y_batch
+            if int(get_torch_len(x_batch)) == 1:
+                x_eff = concat_data([x_batch, x_batch])
+                y_eff = torch.cat([y_batch, y_batch], dim=0)
+            freeze_bn = int(get_torch_len(x_eff)) < 2
             with (
                 freeze_batchnorm(shared_model, enabled=freeze_bn),
                 freeze_batchnorm(head_model, enabled=freeze_bn),
             ):
                 if update_shared:
-                    feats = _forward_shared(shared_bundle, x_batch)
+                    feats = _forward_shared(shared_bundle, x_eff)
                 else:
                     with torch.no_grad():
-                        feats = _forward_shared(shared_bundle, x_batch)
+                        feats = _forward_shared(shared_bundle, x_eff)
                 logits = _forward_head(head_bundle, feats)
                 if int(logits.ndim) != 2:
                     raise InductiveValidationError("Head logits must be 2D (batch, classes).")
-                if int(logits.shape[0]) != int(y_batch.shape[0]):
+                if int(logits.shape[0]) != int(y_eff.shape[0]):
                     raise InductiveValidationError("Logits batch size does not match targets.")
-                loss = _soft_cross_entropy(logits, y_batch)
+                loss = _soft_cross_entropy(logits, y_eff)
                 opt_head.zero_grad()
                 if update_shared:
                     opt_shared.zero_grad()
@@ -387,6 +392,7 @@ class TriNetMethod(ArgmaxPredictMixin, InductiveMethod):
             None
         )
         self._backend: str | None = None
+        self.device: str | None = None
 
     def fit(self, data: Any, *, device: DeviceSpec, seed: int = 0) -> TriNetMethod:
         start = perf_counter()
@@ -591,6 +597,7 @@ class TriNetMethod(ArgmaxPredictMixin, InductiveMethod):
         self._shared_bundle = shared_bundle
         self._head_bundles = head_bundles
         self._backend = backend
+        self.device = str(get_torch_device(X_l))
         logger.info("Finished %s.fit in %.3fs", self.info.method_id, perf_counter() - start)
         return self
 
@@ -611,18 +618,47 @@ class TriNetMethod(ArgmaxPredictMixin, InductiveMethod):
         shared_model.eval()
         for model in head_models:
             model.eval()
+        batch_size = int(self.spec.batch_size)
+        n_samples = int(X["x"].shape[0]) if isinstance(X, dict) else int(X.shape[0])
+        averaged_batches = []
         with torch.no_grad():
-            feats = _forward_shared(self._shared_bundle, X)
-            probs = []
-            for bundle in self._head_bundles:
-                logits = _forward_head(bundle, feats)
-                if int(logits.ndim) != 2:
-                    raise InductiveValidationError("Head logits must be 2D (batch, classes).")
-                probs.append(torch.softmax(logits, dim=1))
-            n_classes = {int(p.shape[1]) for p in probs}
-            if len(n_classes) != 1:
-                raise InductiveValidationError("TriNet heads disagree on class count.")
-            avg = torch.mean(torch.stack(probs, dim=0), dim=0)
+            for start in range(0, n_samples, batch_size):
+                end = min(start + batch_size, n_samples)
+                if isinstance(X, dict):
+                    idx = torch.arange(start, end, device=X["x"].device)
+                    batch_X = slice_data(X, idx)
+                else:
+                    batch_X = X[start:end]
+                feats = _forward_shared(self._shared_bundle, batch_X)
+                probs = []
+                for bundle in self._head_bundles:
+                    logits = _forward_head(bundle, feats)
+                    if int(logits.ndim) != 2:
+                        raise InductiveValidationError("Head logits must be 2D (batch, classes).")
+                    probs.append(torch.softmax(logits, dim=1))
+                n_classes = {int(p.shape[1]) for p in probs}
+                if len(n_classes) != 1:
+                    raise InductiveValidationError("TriNet heads disagree on class count.")
+                averaged_batches.append(torch.mean(torch.stack(probs, dim=0), dim=0))
+            if not averaged_batches:
+                if isinstance(X, dict):
+                    empty_idx = torch.arange(0, 0, device=X["x"].device)
+                    empty_X = slice_data(X, empty_idx)
+                else:
+                    empty_X = X[:0]
+                feats = _forward_shared(self._shared_bundle, empty_X)
+                probs = []
+                for bundle in self._head_bundles:
+                    logits = _forward_head(bundle, feats)
+                    if int(logits.ndim) != 2:
+                        raise InductiveValidationError("Head logits must be 2D (batch, classes).")
+                    probs.append(torch.softmax(logits, dim=1))
+                n_classes = {int(p.shape[1]) for p in probs}
+                if len(n_classes) != 1:
+                    raise InductiveValidationError("TriNet heads disagree on class count.")
+                avg = torch.mean(torch.stack(probs, dim=0), dim=0)
+            else:
+                avg = torch.cat(averaged_batches, dim=0)
         if was_shared:
             shared_model.train()
         for model, was in zip(head_models, was_heads, strict=True):

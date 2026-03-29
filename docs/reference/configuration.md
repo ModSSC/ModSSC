@@ -45,7 +45,7 @@ The bench entry point, schema, and YAML loader are implemented in [`bench/main.p
 ## Where configs live
 - Authored benchmark examples and templates: [`bench/configs/experiments/`](https://github.com/ModSSC/ModSSC/tree/main/bench/configs/experiments). <sup class="cite"><a href="#source-1">[1]</a></sup>
 - Curated benchmark suites and command listings: [`bench/configs/best/`](https://github.com/ModSSC/ModSSC/tree/main/bench/configs/best).
-- Cluster launchers and Jean Zay deployment helpers: [`bench/slurm/`](https://github.com/ModSSC/ModSSC/tree/main/bench/slurm).
+- Cluster launchers and deployment helpers may also exist under local `bench/` subdirectories such as `bench/slurm/`, but those operational assets are not part of the stable public documentation contract.
 - Brick-level plan files can also live outside `bench/`, but they must still satisfy the same schema objects described below.
 
 

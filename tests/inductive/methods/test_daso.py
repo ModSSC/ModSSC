@@ -136,6 +136,18 @@ class _VarShapeNet(torch.nn.Module):
         return {"logits": logits, "feat": feat}
 
 
+class _OffsetFeatNet(torch.nn.Module):
+    def __init__(self, offset: float) -> None:
+        super().__init__()
+        self.offset = float(offset)
+        self.dummy = torch.nn.Parameter(torch.zeros(1))
+
+    def forward(self, x):
+        feat = x + self.offset
+        logits = torch.zeros((int(x.shape[0]), 2), device=x.device)
+        return {"logits": logits, "feat": feat}
+
+
 def _make_base_spec(model: torch.nn.Module, *, ema: bool = False, **overrides) -> DASOSpec:
     base = DASOSpec(
         model_bundle=_make_bundle(model, ema=ema),
@@ -234,6 +246,16 @@ def test_daso_forward_helpers_and_ema_checks():
     assert torch.allclose(feats_meta, x + 1.0)
     feats_ema = daso._forward_features(bundle_meta, x, model_override=_DASONet())
     assert feats_ema.shape == (2, 2)
+
+    student = _OffsetFeatNet(offset=1.0)
+    teacher = _OffsetFeatNet(offset=5.0)
+    bundle_override = TorchModelBundle(
+        model=student,
+        optimizer=torch.optim.SGD(student.parameters(), lr=0.1),
+        meta={"forward_features": lambda t, model=student: t + model.offset},
+    )
+    feats_override = daso._forward_features(bundle_override, x, model_override=teacher)
+    assert torch.allclose(feats_override, x + 5.0)
 
     with pytest.raises(InductiveValidationError, match="ema_model must be distinct"):
         daso._check_ema(bundle.model, bundle.model)
@@ -353,6 +375,66 @@ def test_daso_forward_features_meta_errors_and_tuple_path():
     x = torch.randn(2, 2)
     feats = daso._forward_features(bundle_tuple, x)
     assert torch.allclose(feats, x + 1.0)
+
+
+def test_daso_call_feature_extractor_and_model_override_fallbacks():
+    x = torch.randn(2, 2)
+
+    out = daso._call_feature_extractor(torch.relu, x)
+    assert torch.allclose(out, torch.relu(x))
+
+    def _plain_forward(arg):
+        return arg + 1.0
+
+    class _BoomSignature:
+        def __call__(self, arg):
+            return arg + 2.0
+
+    boom = _BoomSignature()
+    original_signature = daso.inspect.signature
+    try:
+        daso.inspect.signature = lambda fn: (
+            (_ for _ in ()).throw(TypeError("boom")) if fn is boom else original_signature(fn)
+        )
+        out_boom = daso._call_feature_extractor(boom, x, model_override=object())
+    finally:
+        daso.inspect.signature = original_signature
+    assert torch.allclose(out_boom, x + 2.0)
+
+    class _ValueErrorSignature:
+        def __call__(self, arg):
+            return arg + 3.0
+
+    bad_value = _ValueErrorSignature()
+    try:
+        daso.inspect.signature = lambda fn: (
+            (_ for _ in ()).throw(ValueError("boom")) if fn is bad_value else original_signature(fn)
+        )
+        out_value = daso._call_feature_extractor(bad_value, x, model_override=object())
+    finally:
+        daso.inspect.signature = original_signature
+    assert torch.allclose(out_value, x + 3.0)
+
+    out_plain = daso._call_feature_extractor(_plain_forward, x, model_override=object())
+    assert torch.allclose(out_plain, x + 1.0)
+
+    model_non_mapping = _TupleNet()
+    bundle_non_mapping = TorchModelBundle(
+        model=model_non_mapping,
+        optimizer=torch.optim.SGD(model_non_mapping.parameters(), lr=0.1),
+        meta=["not-a-mapping"],
+    )
+    feats = daso._forward_features(bundle_non_mapping, x, model_override=_TupleNet())
+    assert feats.shape == (2, 2)
+
+    model_bad_override = _DASONet()
+    bundle_bad_override = TorchModelBundle(
+        model=model_bad_override,
+        optimizer=torch.optim.SGD(model_bad_override.parameters(), lr=0.1),
+        meta={"forward_features": lambda _x, **_kwargs: "bad"},
+    )
+    with pytest.raises(InductiveValidationError, match="forward_features must return"):
+        daso._forward_features(bundle_bad_override, x, model_override=_DASONet())
 
 
 def test_daso_fit_paths():

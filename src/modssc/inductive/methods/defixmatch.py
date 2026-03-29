@@ -17,7 +17,6 @@ from modssc.inductive.methods.deep_utils import (
     ensure_model_device,
     extract_logits,
     get_torch_device,
-    get_torch_feature_dim,
     get_torch_len,
     get_torch_ndim,
     num_batches,
@@ -36,6 +35,15 @@ logger = logging.getLogger(__name__)
 
 
 _sharpen = sharpen_probs
+
+
+def _non_batch_shape(x: Any) -> tuple[int, ...]:
+    torch = optional_import("torch", extra="inductive-torch")
+    if isinstance(x, dict):
+        x = x.get("x")
+    if not isinstance(x, torch.Tensor):
+        raise InductiveValidationError("Expected torch.Tensor inputs for shape checks.")
+    return tuple(int(dim) for dim in x.shape[1:])
 
 
 @dataclass(frozen=True)
@@ -135,10 +143,12 @@ class DeFixMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         ensure_float_tensor(X_l_s, name="X_l_s")
 
         if int(get_torch_ndim(X_l_s)) < 2:
-            raise InductiveValidationError("X_l_s must be at least 2D (n, d).")
+            raise InductiveValidationError("X_l_s must be at least 2D.")
+        if int(get_torch_ndim(X_l_s)) != int(get_torch_ndim(X_l)):
+            raise InductiveValidationError("X_l_s must have the same rank as X_l.")
         if int(get_torch_len(X_l_s)) != int(get_torch_len(X_l)):
             raise InductiveValidationError("X_l_s must have the same number of rows as X_l.")
-        if int(get_torch_feature_dim(X_l_s)) != int(get_torch_feature_dim(X_l)):
+        if _non_batch_shape(X_l_s) != _non_batch_shape(X_l):
             raise InductiveValidationError("X_l_s must have the same feature dimension as X_l.")
 
         if y_l.dtype != torch.int64:

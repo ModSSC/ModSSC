@@ -78,6 +78,19 @@ class _DropoutHead(torch.nn.Module):
         return self.fc(self.dropout(x))
 
 
+class _RecordingShared(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc = torch.nn.Linear(2, 2)
+        self.batch_sizes: list[int] = []
+
+    def forward(self, x):
+        if isinstance(x, dict):
+            x = x["x"]
+        self.batch_sizes.append(int(x.shape[0]))
+        return self.fc(x)
+
+
 def test_trinet_forward_helpers():
     x = torch.randn(2, 2)
 
@@ -370,6 +383,28 @@ def test_trinet_train_head_paths():
             epochs=1,
             seed=4,
         )
+
+
+def test_trinet_train_head_duplicates_singleton_batches():
+    shared_model = _RecordingShared()
+    shared = _make_bundle(shared_model)
+    head = _make_head_bundle()
+    X = torch.randn(3, 2)
+    labels = torch.tensor([0, 1, 0], dtype=torch.int64)
+    targets = trinet._one_hot(labels, n_classes=2)
+
+    trinet._train_head(
+        X,
+        targets,
+        shared_bundle=shared,
+        head_bundle=head,
+        update_shared=True,
+        batch_size=2,
+        epochs=1,
+        seed=0,
+    )
+
+    assert 1 not in shared_model.batch_sizes
 
 
 def test_trinet_validate_bundle_set():
@@ -671,6 +706,7 @@ def test_trinet_predict_proba_eval_models():
     heads = (_make_head_bundle(), _make_head_bundle(), _make_head_bundle())
     spec = _valid_spec(shared, heads)
     method = TriNetMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
+    assert method.device == "cpu"
     method._shared_bundle.model.eval()
     for bundle in method._head_bundles:
         bundle.model.eval()
@@ -703,3 +739,42 @@ def test_trinet_predict_proba_errors(monkeypatch):
     method._head_bundles = mismatch_heads
     with pytest.raises(InductiveValidationError, match="heads disagree on class count"):
         method.predict_proba(torch.randn(2, 2))
+
+
+def test_trinet_predict_proba_dict_and_empty_paths():
+    recording = _RecordingShared()
+    shared = _make_bundle(recording)
+    heads = (_make_head_bundle(), _make_head_bundle(), _make_head_bundle())
+    method = TriNetMethod(TriNetSpec(shared_bundle=shared, head_bundles=heads, batch_size=2))
+    method._shared_bundle = shared
+    method._head_bundles = heads
+    method._backend = "torch"
+
+    proba = method.predict_proba({"x": torch.zeros((3, 2), dtype=torch.float32)})
+    assert proba.shape == (3, 2)
+    assert recording.batch_sizes == [2, 1]
+
+    empty = method.predict_proba({"x": torch.zeros((0, 2), dtype=torch.float32)})
+    assert empty.shape == (0, 2)
+
+    mismatch_heads = (_make_head_bundle(), _make_head_bundle(n_classes=3), _make_head_bundle())
+    method._head_bundles = mismatch_heads
+    with pytest.raises(InductiveValidationError, match="heads disagree on class count"):
+        method.predict_proba({"x": torch.zeros((0, 2), dtype=torch.float32)})
+
+
+def test_trinet_predict_proba_empty_tensor_paths():
+    shared = _make_bundle(_RecordingShared())
+    heads = (_make_head_bundle(), _make_head_bundle(), _make_head_bundle())
+    method = TriNetMethod(TriNetSpec(shared_bundle=shared, head_bundles=heads, batch_size=2))
+    method._shared_bundle = shared
+    method._head_bundles = heads
+    method._backend = "torch"
+
+    proba = method.predict_proba(torch.zeros((0, 2), dtype=torch.float32))
+    assert proba.shape == (0, 2)
+
+    bad_head = _make_bundle(_BadLogits1D())
+    method._head_bundles = (bad_head, heads[1], heads[2])
+    with pytest.raises(InductiveValidationError, match="Head logits must be 2D"):
+        method.predict_proba(torch.zeros((0, 2), dtype=torch.float32))

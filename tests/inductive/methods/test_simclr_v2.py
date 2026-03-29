@@ -64,6 +64,17 @@ class _MetaNet(torch.nn.Module):
         return {"feat": feat, "proj": proj, "logits": logits}
 
 
+class _CountingMetaNet(_MetaNet):
+    def __init__(self, n_classes: int = 2) -> None:
+        super().__init__(n_classes=n_classes)
+        self.batch_sizes: list[int] = []
+
+    def forward(self, x):
+        x_in = x["x"] if isinstance(x, dict) else x
+        self.batch_sizes.append(int(x_in.shape[0]))
+        return super().forward(x)
+
+
 class _BadLogits1D(torch.nn.Module):
     def __init__(self) -> None:
         super().__init__()
@@ -304,6 +315,7 @@ def test_simclr_v2_fit_pretrain_finetune_and_distill_without_student() -> None:
 
     method = SimCLRv2Method(spec).fit(data, device=DeviceSpec(device="cpu"), seed=1)
     assert method._bundle is finetune_bundle
+    assert method.device == "cpu"
 
     proba = method.predict_proba(data.X_l)
     assert proba.shape == (4, 2)
@@ -572,3 +584,31 @@ def test_simclr_v2_predict_proba_tensor_and_dict_inputs() -> None:
     proba_dict = method.predict_proba({"x": torch.zeros((0, 2), dtype=torch.float32)})
     assert proba_dict.shape == (0, 2)
     assert bundle.model.training is False
+
+
+def test_simclr_v2_predict_proba_batches_large_inputs() -> None:
+    method = SimCLRv2Method(SimCLRv2Spec(batch_size=2))
+    model = _CountingMetaNet()
+    method._bundle = _make_bundle(model)
+    method._backend = "torch"
+
+    proba = method.predict_proba(torch.zeros((5, 2), dtype=torch.float32))
+    assert proba.shape == (5, 2)
+    assert model.batch_sizes == [2, 2, 1]
+
+
+def test_simclr_v2_predict_proba_dict_batches_and_empty_error_paths() -> None:
+    method = SimCLRv2Method(SimCLRv2Spec(batch_size=2))
+    model = _CountingMetaNet()
+    method._bundle = _make_bundle(model)
+    method._backend = "torch"
+
+    proba = method.predict_proba({"x": torch.zeros((3, 2), dtype=torch.float32)})
+    assert proba.shape == (3, 2)
+    assert model.batch_sizes == [2, 1]
+
+    bad = SimCLRv2Method(SimCLRv2Spec(batch_size=2))
+    bad._bundle = _make_bundle(_BadLogits1D())
+    bad._backend = "torch"
+    with pytest.raises(InductiveValidationError, match="Model logits must be 2D"):
+        bad.predict_proba(torch.zeros((0, 2), dtype=torch.float32))

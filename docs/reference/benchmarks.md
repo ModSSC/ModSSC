@@ -40,7 +40,7 @@ python -m bench.main --config bench/configs/experiments/toy_inductive.yaml --num
 ## Repository layout
 - [`bench/configs/experiments/`](https://github.com/ModSSC/ModSSC/tree/main/bench/configs/experiments): authored examples, tutorial configs, and runnable templates
 - [`bench/configs/best/`](https://github.com/ModSSC/ModSSC/tree/main/bench/configs/best): curated benchmark suites and command listings
-- [`bench/slurm/`](https://github.com/ModSSC/ModSSC/tree/main/bench/slurm): cluster launchers and deployment-oriented job structure
+- local `bench/` deployment helpers such as `bench/slurm/`: cluster launchers and job structure for internal or site-specific environments
 
 These directories serve different audiences. Do not treat them as one undifferentiated config bucket.
 
@@ -106,7 +106,7 @@ Practical rules:
 
 
 ## How outputs are stored
-Each run writes a timestamped directory under [`runs/`](https://github.com/ModSSC/ModSSC/tree/main/runs) with:
+Each run writes a timestamped directory under the configured `run.output_dir` (commonly `runs/`) with:
 - `config.yaml`
 - `run.json`
 - `error.txt` on failure only

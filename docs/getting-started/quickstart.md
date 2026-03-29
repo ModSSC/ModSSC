@@ -45,7 +45,7 @@ The benchmark command and the toy config live in [`bench/main.py`](https://githu
 
 
 ## What you should see
-For the benchmark run, a timestamped folder is created under [`runs/`](https://github.com/ModSSC/ModSSC/tree/main/runs) containing:
+For the benchmark run, a timestamped folder is created under the configured `run.output_dir` (for example `runs/`) containing:
 - `config.yaml` (copied config)
 - `run.json` (metrics + metadata)
 - `error.txt` (only if the run fails)

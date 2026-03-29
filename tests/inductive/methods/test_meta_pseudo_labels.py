@@ -29,6 +29,20 @@ class _LinearNet(torch.nn.Module):
         return self.fc(x)
 
 
+class _FlattenNet(torch.nn.Module):
+    def __init__(self, in_shape: tuple[int, int, int] = (3, 4, 4), n_classes: int = 2) -> None:
+        super().__init__()
+        in_dim = 1
+        for dim in in_shape:
+            in_dim *= int(dim)
+        self.fc = torch.nn.Linear(in_dim, n_classes, bias=False)
+
+    def forward(self, x):
+        if isinstance(x, dict):
+            x = x["x"]
+        return self.fc(x.reshape(int(x.shape[0]), -1))
+
+
 class _BadLogits1D(torch.nn.Module):
     def __init__(self) -> None:
         super().__init__()
@@ -68,6 +82,14 @@ def _make_dataset(*, views: dict | None = None) -> InductiveDataset:
         X_u_s=base.X_u_s,
         views=views,
     )
+
+
+def _make_image_dataset(*, views: dict | None = None) -> InductiveDataset:
+    X_l = torch.randn((4, 3, 4, 4), dtype=torch.float32)
+    y_l = torch.tensor([0, 1, 0, 1], dtype=torch.int64)
+    X_u_w = torch.randn((4, 3, 4, 4), dtype=torch.float32)
+    X_u_s = torch.randn((4, 3, 4, 4), dtype=torch.float32)
+    return InductiveDataset(X_l=X_l, y_l=y_l, X_u_w=X_u_w, X_u_s=X_u_s, views=views)
 
 
 def test_meta_pseudo_labels_helper_losses():
@@ -161,6 +183,23 @@ def test_meta_pseudo_labels_fit_variants():
     MetaPseudoLabelsMethod(spec2).fit(data, device=DeviceSpec(device="cpu"), seed=1)
 
 
+def test_meta_pseudo_labels_fit_variants_image_inputs():
+    data = _make_image_dataset(views={"X_l_s": torch.randn((4, 3, 4, 4), dtype=torch.float32)})
+    spec = MetaPseudoLabelsSpec(
+        teacher_bundle=_make_bundle(_FlattenNet()),
+        student_bundle=_make_bundle(_FlattenNet()),
+        batch_size=2,
+        max_epochs=1,
+        uda_weight=0.0,
+        mpl_weight=0.0,
+        init_teacher_from_student=False,
+    )
+    method = MetaPseudoLabelsMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
+    proba = method.predict_proba(data.X_l)
+    assert method.device == "cpu"
+    assert proba.shape == (4, 2)
+
+
 def test_meta_pseudo_labels_fit_views_fallback():
     data = _make_dataset(views={"X_l_strong": torch.ones((4, 2))})
     spec = MetaPseudoLabelsSpec(
@@ -249,7 +288,7 @@ def test_meta_pseudo_labels_fit_dataset_validation_errors():
         X_u_s=base.X_u_s,
         views={"X_l_s": torch.zeros((4, 2, 1))},
     )
-    with pytest.raises(InductiveValidationError, match="X_l_s must be 2D"):
+    with pytest.raises(InductiveValidationError, match="same rank as X_l"):
         MetaPseudoLabelsMethod(spec).fit(bad_x_l_s, device=DeviceSpec(device="cpu"))
 
     bad_x_l_s_rows = InductiveDataset(
@@ -269,7 +308,7 @@ def test_meta_pseudo_labels_fit_dataset_validation_errors():
         X_u_s=base.X_u_s,
         views={"X_l_s": torch.zeros((4, 3))},
     )
-    with pytest.raises(InductiveValidationError, match="same feature dimension"):
+    with pytest.raises(InductiveValidationError, match="same non-batch shape"):
         MetaPseudoLabelsMethod(spec).fit(bad_x_l_s_dim, device=DeviceSpec(device="cpu"))
 
     bad_dtype = InductiveDataset(
@@ -546,3 +585,55 @@ def test_meta_pseudo_labels_predict_proba_keeps_eval_state():
     proba = method.predict_proba(torch.zeros((2, 2)))
     assert proba.shape == (2, 2)
     assert bundle.model.training is False
+
+
+def test_meta_pseudo_labels_non_batch_shape_and_dict_predict_paths():
+    class _DictLinearNet(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.fc = torch.nn.Linear(2, 2, bias=False)
+
+        def forward(self, x):
+            if isinstance(x, dict):
+                x = x["x"]
+            return self.fc(x)
+
+    x = torch.randn((4, 2), dtype=torch.float32)
+    assert mpl._non_batch_shape({"x": x}) == (2,)
+
+    with pytest.raises(InductiveValidationError, match="Expected torch.Tensor inputs"):
+        mpl._non_batch_shape({"x": [1, 2, 3]})
+
+    method = MetaPseudoLabelsMethod(MetaPseudoLabelsSpec(batch_size=2))
+    method._student_bundle = _make_bundle(_DictLinearNet())
+    method._backend = "torch"
+    proba = method.predict_proba({"x": torch.zeros((3, 2), dtype=torch.float32)})
+    assert proba.shape == (3, 2)
+
+
+def test_meta_pseudo_labels_predict_proba_empty_dict_bad_logits():
+    class _BadDictLogits1D(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.dummy = torch.nn.Parameter(torch.zeros(1))
+
+        def forward(self, x):
+            if isinstance(x, dict):
+                x = x["x"]
+            return torch.zeros((int(x.shape[0]),), device=x.device)
+
+    method = MetaPseudoLabelsMethod(MetaPseudoLabelsSpec(batch_size=2))
+    method._student_bundle = _make_bundle(_BadDictLogits1D())
+    method._backend = "torch"
+    with pytest.raises(InductiveValidationError, match="Model logits must be 2D"):
+        method.predict_proba({"x": torch.zeros((0, 2), dtype=torch.float32)})
+
+
+def test_meta_pseudo_labels_predict_proba_empty_tensor_path():
+    method = MetaPseudoLabelsMethod(MetaPseudoLabelsSpec(batch_size=2))
+    method._student_bundle = _make_bundle(_LinearNet())
+    method._backend = "torch"
+
+    proba = method.predict_proba(torch.zeros((0, 2), dtype=torch.float32))
+
+    assert proba.shape == (0, 2)

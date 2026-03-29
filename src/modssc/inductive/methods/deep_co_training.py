@@ -18,6 +18,7 @@ from modssc.inductive.methods.deep_utils import (
     ensure_model_device,
     extract_logits,
     freeze_batchnorm,
+    get_torch_device,
     num_batches,
     slice_data,
 )
@@ -189,6 +190,7 @@ class DeepCoTrainingMethod(ArgmaxPredictMixin, InductiveMethod):
         self._bundle1: TorchModelBundle | None = None
         self._bundle2: TorchModelBundle | None = None
         self._backend: str | None = None
+        self.device: str | None = None
 
     def _check_models(self, model1: Any, model2: Any) -> None:
         if model1 is model2:
@@ -488,6 +490,7 @@ class DeepCoTrainingMethod(ArgmaxPredictMixin, InductiveMethod):
         self._bundle1 = bundle1
         self._bundle2 = bundle2
         self._backend = backend
+        self.device = str(get_torch_device(X_l))
         logger.info("Finished %s.fit in %.3fs", self.info.method_id, perf_counter() - start)
         return self
 
@@ -531,9 +534,19 @@ class DeepCoTrainingMethod(ArgmaxPredictMixin, InductiveMethod):
 
                 all_logits1.append(l1)
                 all_logits2.append(l2)
-
-            logits1 = torch.cat(all_logits1, dim=0)
-            logits2 = torch.cat(all_logits2, dim=0)
+            if not all_logits1:
+                if isinstance(X, dict):
+                    empty_idx = torch.arange(0, 0, device=X["x"].device)
+                    empty_X = slice_data(X, empty_idx)
+                else:
+                    empty_X = X[:0]
+                logits1 = extract_logits(model1(empty_X))
+                logits2 = extract_logits(model2(empty_X))
+                if int(logits1.ndim) != 2 or int(logits2.ndim) != 2:
+                    raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+            else:
+                logits1 = torch.cat(all_logits1, dim=0)
+                logits2 = torch.cat(all_logits2, dim=0)
 
             if int(logits1.shape[1]) != int(logits2.shape[1]):
                 raise InductiveValidationError("Models must agree on class count.")

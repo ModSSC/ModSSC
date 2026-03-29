@@ -117,7 +117,7 @@ evaluation:
 ```
 
 ## Expected outputs and where they appear
-A run directory is created under [`runs/`](https://github.com/ModSSC/ModSSC/tree/main/runs) with the config snapshot and the `run.json` summary. <sup class="cite"><a href="#source-7">[7]</a><a href="#source-8">[8]</a></sup>
+A run directory is created under the configured `run.output_dir` (here `runs/`) with the config snapshot and the `run.json` summary. <sup class="cite"><a href="#source-7">[7]</a><a href="#source-8">[8]</a></sup>
 
 
 Graph artifacts are cached when `graph.cache: true` is set. The cache layout is managed by `modssc.graph.cache.GraphCache`. <sup class="cite"><a href="#source-9">[9]</a><a href="#source-2">[2]</a></sup>

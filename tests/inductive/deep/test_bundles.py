@@ -811,6 +811,21 @@ def test_build_lstm_bundle_meta_feature_and_head_paths() -> None:
     uni_feats = unidirectional.meta["forward_features"](sample)
     assert uni_feats.shape == (2, 3)
 
+    with_ema = bundles._build_lstm_bundle(
+        sample,
+        num_classes=2,
+        params={"vocab_size": 10, "embed_dim": 5, "hidden_dim": 4, "bidirectional": True},
+        seed=0,
+        ema=True,
+    )
+    assert with_ema.ema_model is not None
+    assert "forward_features_ema" in with_ema.meta
+    assert "forward_head_ema" in with_ema.meta
+    ema_feats = with_ema.meta["forward_features_ema"](sample)
+    ema_logits = with_ema.meta["forward_head_ema"](ema_feats)
+    assert ema_feats.shape == (2, 8)
+    assert ema_logits.shape == (2, 2)
+
 
 def _install_fake_tg_nn(monkeypatch, *, with_sage: bool):
     nn_mod = types.ModuleType("torch_geometric.nn")

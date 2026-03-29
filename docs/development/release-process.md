@@ -10,7 +10,7 @@ Release tags follow semantic versioning in the form `vX.Y.Z`. The version source
 ## What CI does on push to main and on tag
 - `CI` workflow runs lint, tests, and build on pushes and PRs. <sup class="cite"><a href="#source-3">[3]</a></sup>
 
-- [`Docs`](https://github.com/ModSSC/ModSSC/tree/main/Docs) workflow builds and deploys the MkDocs site on pushes to `main` and on release tags. <sup class="cite"><a href="#source-4">[4]</a></sup>
+- `Docs` workflow builds and deploys the MkDocs site on pushes to `main` and on release tags. <sup class="cite"><a href="#source-4">[4]</a></sup>
 
 - `Release` workflow builds sdist/wheel on tag releases and creates GitHub releases. <sup class="cite"><a href="#source-5">[5]</a></sup>
 

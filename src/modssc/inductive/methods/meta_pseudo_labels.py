@@ -16,7 +16,6 @@ from modssc.inductive.methods.deep_utils import (
     ensure_model_device,
     extract_logits,
     get_torch_device,
-    get_torch_feature_dim,
     get_torch_len,
     get_torch_ndim,
     num_batches,
@@ -31,6 +30,15 @@ from modssc.inductive.optional import optional_import
 from modssc.inductive.types import DeviceSpec
 
 logger = logging.getLogger(__name__)
+
+
+def _non_batch_shape(x: Any) -> tuple[int, ...]:
+    torch = optional_import("torch", extra="inductive-torch")
+    if isinstance(x, dict):
+        x = x.get("x")
+    if not isinstance(x, torch.Tensor):
+        raise InductiveValidationError("Expected torch.Tensor inputs for shape checks.")
+    return tuple(int(dim) for dim in x.shape[1:])
 
 
 def _soft_cross_entropy(target_probs: Any, logits: Any) -> Any:
@@ -102,6 +110,7 @@ class MetaPseudoLabelsMethod(ArgmaxPredictMixin, InductiveMethod):
         self._teacher_bundle: TorchModelBundle | None = None
         self._student_bundle: TorchModelBundle | None = None
         self._backend: str | None = None
+        self.device: str | None = None
 
     def _check_models(self, teacher: Any, student: Any) -> None:
         if teacher is student:
@@ -214,12 +223,12 @@ class MetaPseudoLabelsMethod(ArgmaxPredictMixin, InductiveMethod):
         ensure_float_tensor(X_u_s, name="X_u_s")
         ensure_float_tensor(X_l_s, name="X_l_s")
 
-        if int(get_torch_ndim(X_l_s)) != 2:
-            raise InductiveValidationError("X_l_s must be 2D.")
+        if int(get_torch_ndim(X_l_s)) != int(get_torch_ndim(X_l)):
+            raise InductiveValidationError("X_l_s must have the same rank as X_l.")
         if int(get_torch_len(X_l_s)) != int(get_torch_len(X_l)):
             raise InductiveValidationError("X_l_s must have the same number of rows as X_l.")
-        if int(get_torch_feature_dim(X_l_s)) != int(get_torch_feature_dim(X_l)):
-            raise InductiveValidationError("X_l_s must have the same feature dimension as X_l.")
+        if _non_batch_shape(X_l_s) != _non_batch_shape(X_l):
+            raise InductiveValidationError("X_l_s must have the same non-batch shape as X_l.")
 
         if y_l.dtype != torch.int64:
             raise InductiveValidationError("y_l must be int64 for torch cross entropy.")
@@ -384,6 +393,7 @@ class MetaPseudoLabelsMethod(ArgmaxPredictMixin, InductiveMethod):
         self._teacher_bundle = teacher_bundle
         self._student_bundle = student_bundle
         self._backend = backend
+        self.device = str(get_torch_device(X_l))
         logger.info("Finished %s.fit in %.3fs", self.info.method_id, perf_counter() - start)
         return self
 
@@ -402,10 +412,32 @@ class MetaPseudoLabelsMethod(ArgmaxPredictMixin, InductiveMethod):
         student = self._student_bundle.model
         was_training = student.training
         student.eval()
+        batch_size = int(self.spec.batch_size)
+        n_samples = int(X["x"].shape[0]) if isinstance(X, dict) else int(X.shape[0])
+        all_logits = []
         with torch.no_grad():
-            logits = extract_logits(student(X))
-            if int(logits.ndim) != 2:
-                raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+            for start in range(0, n_samples, batch_size):
+                end = min(start + batch_size, n_samples)
+                if isinstance(X, dict):
+                    idx = torch.arange(start, end, device=X["x"].device)
+                    batch_X = slice_data(X, idx)
+                else:
+                    batch_X = X[start:end]
+                logits = extract_logits(student(batch_X))
+                if int(logits.ndim) != 2:
+                    raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+                all_logits.append(logits)
+            if not all_logits:
+                if isinstance(X, dict):
+                    empty_idx = torch.arange(0, 0, device=X["x"].device)
+                    empty_X = slice_data(X, empty_idx)
+                else:
+                    empty_X = X[:0]
+                logits = extract_logits(student(empty_X))
+                if int(logits.ndim) != 2:
+                    raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+            else:
+                logits = torch.cat(all_logits, dim=0)
             proba = torch.softmax(logits, dim=1)
         if was_training:
             student.train()

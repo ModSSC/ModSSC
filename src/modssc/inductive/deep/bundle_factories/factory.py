@@ -684,6 +684,9 @@ def _build_lstm_bundle(
         "forward_features": lambda x, model=model: _forward_features(model, x),
         "forward_head": lambda features, model=model: _forward_head(model, features),
     }
+    if ema_model is not None:
+        meta["forward_features_ema"] = lambda x, model=ema_model: _forward_features(model, x)
+        meta["forward_head_ema"] = lambda features, model=ema_model: _forward_head(model, features)
     return TorchModelBundle(model=model, optimizer=optimizer, ema_model=ema_model, meta=meta)
 
 
