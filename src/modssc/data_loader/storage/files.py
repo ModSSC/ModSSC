@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import gzip
 import json
+import logging
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -17,6 +18,8 @@ from modssc.data_loader.storage.json import mapping_to_jsonable as _jsonable_map
 from modssc.data_loader.storage.json import to_jsonable
 from modssc.data_loader.types import LoadedDataset, Split
 from modssc.utils.io import resolve_relative_path
+
+logger = logging.getLogger(__name__)
 
 
 def _jsonable(obj: Any) -> Any:
@@ -170,5 +173,13 @@ class FileStorage:
             try:
                 return np.load(path, allow_pickle=allow_pickle, mmap_mode=mmap_mode)
             except ValueError as e:
+                if (
+                    not allow_pickle
+                    and "Object arrays cannot be loaded when allow_pickle=False" in str(e)
+                ):
+                    logger.warning(
+                        "Loading legacy object dataset cache with allow_pickle=True: %s", path
+                    )
+                    return np.load(path, allow_pickle=True, mmap_mode=None)
                 raise ManifestError(f"Failed to load cached array: {path}") from e
         raise ValueError(f"Unknown array format: {fmt!r}")

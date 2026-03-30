@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,7 +14,7 @@ from modssc.preprocess.errors import OptionalDependencyError, PreprocessCacheErr
 from modssc.preprocess.fingerprint import stable_json_dumps
 from modssc.runtime.device import mps_is_available
 from modssc.runtime.paths import default_local_cache_subdir
-from modssc.utils.io import resolve_relative_path
+from modssc.utils.io import atomic_write_text, resolve_relative_path
 
 OBJECT_JSON_MAX_ITEMS = int(
     os.environ.get("MODSSC_PREPROCESS_CACHE_OBJECT_JSON_MAX_ITEMS", "10000")
@@ -24,6 +25,7 @@ MMAP_THRESHOLD_BYTES = int(
 
 CACHE_ENV = "MODSSC_PREPROCESS_CACHE_DIR"
 CACHE_ROOT_ENV = "MODSSC_CACHE_ROOT"
+logger = logging.getLogger(__name__)
 
 
 def default_cache_dir() -> Path:
@@ -92,7 +94,7 @@ def _save_json(path: Path, payload: Any, *, extra: dict[str, Any] | None = None)
     import json
 
     path_json = path.with_suffix(".json")
-    path_json.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    atomic_write_text(path_json, json.dumps(payload, ensure_ascii=False))
     desc: dict[str, Any] = {"type": "json", "path": path_json.name}
     if extra:
         desc.update(extra)
@@ -287,8 +289,17 @@ class CacheManager:
         step_root = self.step_dir(step_fingerprint)
         step_root.mkdir(parents=True, exist_ok=True)
         manifest_path = step_root / "manifest.json"
-
-        payload = json_load(manifest_path.read_text()) if manifest_path.exists() else dict(manifest)
+        payload = dict(manifest)
+        if manifest_path.exists():
+            try:
+                payload = json_load(manifest_path.read_text(encoding="utf-8"))
+            except PreprocessCacheError as e:
+                logger.warning(
+                    "Resetting corrupt preprocess manifest: step=%s split=%s error=%s",
+                    step_fingerprint,
+                    split,
+                    e,
+                )
 
         # Keep metadata fresh (but never drop already-written saved entries).
         for k, v in manifest.items():
@@ -297,7 +308,7 @@ class CacheManager:
 
         payload.setdefault("saved", {})
         payload["saved"][split] = saved
-        manifest_path.write_text(stable_json_dumps(payload))
+        atomic_write_text(manifest_path, stable_json_dumps(payload))
 
     def load_step_outputs(self, *, step_fingerprint: str, split: str) -> dict[str, Any]:
         step_root = self.step_dir(step_fingerprint)
@@ -321,7 +332,10 @@ class CacheManager:
 def json_load(text: str) -> dict[str, Any]:
     import json
 
-    obj = json.loads(text)
+    try:
+        obj = json.loads(text)
+    except json.JSONDecodeError as e:
+        raise PreprocessCacheError("Invalid JSON manifest") from e
     if not isinstance(obj, dict):
         raise PreprocessCacheError("Invalid JSON manifest (expected object)")
     return obj

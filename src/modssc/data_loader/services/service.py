@@ -13,6 +13,7 @@ from modssc.data_loader import cache
 from modssc.data_loader.catalog import DATASET_CATALOG
 from modssc.data_loader.errors import (
     DatasetNotCachedError,
+    ManifestError,
     OptionalDependencyError,
     UnknownDatasetError,
 )
@@ -217,18 +218,19 @@ def load_dataset(
     logger.debug("Dataset resolved_kwargs: %s", dict(identity.resolved_kwargs))
 
     if not force and cache.is_cached(layout, fp):
-        ds = _load_processed(layout, fp)
-        n_train, n_classes = _split_stats(ds.train)
-        n_test, _ = _split_stats(ds.test)
-        logger.info(
-            "Dataset cached: id=%s train=%s test=%s n_classes=%s duration_s=%.3f",
-            dataset_id,
-            n_train,
-            n_test,
-            n_classes,
-            perf_counter() - start,
-        )
-        return dataset_to_numpy(ds, allow_object=allow_object) if as_numpy else ds
+        ds = _load_processed_or_purge(layout, fp, dataset_id=dataset_id)
+        if ds is not None:
+            n_train, n_classes = _split_stats(ds.train)
+            n_test, _ = _split_stats(ds.test)
+            logger.info(
+                "Dataset cached: id=%s train=%s test=%s n_classes=%s duration_s=%.3f",
+                dataset_id,
+                n_train,
+                n_test,
+                n_classes,
+                perf_counter() - start,
+            )
+            return dataset_to_numpy(ds, allow_object=allow_object) if as_numpy else ds
 
     if not download:
         raise DatasetNotCachedError(dataset_id)
@@ -263,15 +265,16 @@ def download_dataset(
     fp = identity.fingerprint(schema_version=SCHEMA_VERSION)
 
     if not force and cache.is_cached(layout, fp):
-        ds = _load_processed(layout, fp)
-        logger.info(
-            "Dataset cached: id=%s provider=%s fingerprint=%s duration_s=%.3f",
-            dataset_id,
-            identity.provider,
-            fp,
-            perf_counter() - start,
-        )
-        return dataset_to_numpy(ds, allow_object=allow_object) if as_numpy else ds
+        ds = _load_processed_or_purge(layout, fp, dataset_id=dataset_id)
+        if ds is not None:
+            logger.info(
+                "Dataset cached: id=%s provider=%s fingerprint=%s duration_s=%.3f",
+                dataset_id,
+                identity.provider,
+                fp,
+                perf_counter() - start,
+            )
+            return dataset_to_numpy(ds, allow_object=allow_object) if as_numpy else ds
 
     ds = _download_and_store(layout, identity, force=force)
     logger.info(
@@ -433,11 +436,15 @@ def _download_and_store(
     fp = identity.fingerprint(schema_version=SCHEMA_VERSION)
 
     if not force and cache.is_cached(layout, fp):
-        return _load_processed(layout, fp)
+        ds = _load_processed_or_purge(layout, fp, dataset_id=identity.dataset_id)
+        if ds is not None:
+            return ds
 
     with cache.cache_lock(layout, fp):
         if not force and cache.is_cached(layout, fp):
-            return _load_processed(layout, fp)
+            ds = _load_processed_or_purge(layout, fp, dataset_id=identity.dataset_id)
+            if ds is not None:
+                return ds
 
         provider = create_provider(identity.provider)
         raw_dir = layout.raw_dir(identity.provider, identity.dataset_id, identity.version)
@@ -481,6 +488,22 @@ def _download_and_store(
             fp,
         )
         return ds
+
+
+def _load_processed_or_purge(
+    layout: cache.CacheLayout, fingerprint: str, *, dataset_id: str
+) -> LoadedDataset | None:
+    try:
+        return _load_processed(layout, fingerprint)
+    except ManifestError as e:
+        logger.warning(
+            "Purging corrupt cached dataset: id=%s fingerprint=%s error=%s",
+            dataset_id,
+            fingerprint,
+            e,
+        )
+        cache.purge_fingerprint(layout, fingerprint)
+        return None
 
 
 def _load_processed(layout: cache.CacheLayout, fingerprint: str) -> LoadedDataset:

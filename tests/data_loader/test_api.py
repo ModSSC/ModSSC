@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 import modssc.data_loader.api as api
-from modssc.data_loader.errors import DatasetNotCachedError, OptionalDependencyError
+from modssc.data_loader.errors import DatasetNotCachedError, ManifestError, OptionalDependencyError
 from modssc.data_loader.types import DatasetIdentity, LoadedDataset, Split
 
 
@@ -98,6 +98,39 @@ def test_load_dataset_returns_cached_directly(tmp_path) -> None:
 
     ds = api.load_dataset("toy", cache_dir=tmp_path, force=False, download=False)
     assert ds.train is not None
+
+
+def test_load_dataset_purges_corrupt_cache_and_redownloads(monkeypatch, tmp_path) -> None:
+    api.download_dataset("toy", cache_dir=tmp_path, force=True)
+    layout = api._layout(tmp_path)
+    identity = api._resolve_identity(api.DatasetRequest(id="toy", options={}))
+    fp = identity.fingerprint(schema_version=api.SCHEMA_VERSION)
+
+    load_calls = {"count": 0}
+    original_load_processed = api._load_processed
+
+    def flaky_load(*args, **kwargs):
+        load_calls["count"] += 1
+        if load_calls["count"] == 1:
+            raise ManifestError("broken cache")
+        return original_load_processed(*args, **kwargs)
+
+    purged: list[str] = []
+    original_purge = api.cache.purge_fingerprint
+
+    def tracking_purge(layout_arg, fingerprint):
+        purged.append(fingerprint)
+        return original_purge(layout_arg, fingerprint)
+
+    monkeypatch.setattr(api, "_load_processed", flaky_load)
+    monkeypatch.setattr(api.cache, "purge_fingerprint", tracking_purge)
+
+    ds = api.load_dataset("toy", cache_dir=tmp_path, force=False, download=True)
+
+    assert ds.train is not None
+    assert load_calls["count"] == 1
+    assert purged == [fp]
+    assert layout.processed_dir(fp).is_dir()
 
 
 def test_download_all_populates_downloaded(tmp_path) -> None:

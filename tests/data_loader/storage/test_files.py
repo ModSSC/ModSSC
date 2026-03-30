@@ -189,6 +189,18 @@ def test_save_array_marks_pickle_explicitly(tmp_path):
     assert loaded.tolist() == arr.tolist()
 
 
+def test_load_array_legacy_object_npy_without_manifest_pickle_flag(tmp_path):
+    storage = FileStorage()
+    arr = np.asarray([{"a": 1}, {"b": 2}], dtype=object)
+    path = tmp_path / "legacy.npy"
+    np.save(path, arr, allow_pickle=True)
+
+    loaded = storage._load_array(tmp_path, {"format": "npy", "path": "legacy.npy"})
+
+    assert loaded.dtype == object
+    assert loaded.tolist() == arr.tolist()
+
+
 def test_load_array_rejects_absolute_path(tmp_path):
     storage = FileStorage()
     path = tmp_path / "data.npy"
