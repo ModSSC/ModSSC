@@ -7,10 +7,10 @@ from typing import Any, Literal
 
 import numpy as np
 
-from modssc.device import resolve_device_name
-from modssc.numpy_utils import to_numpy as _as_numpy
+from modssc.runtime.device import resolve_device_name
 from modssc.transductive.optional import optional_import
 from modssc.transductive.validation import validate_node_dataset
+from modssc.utils.numpy import to_numpy as _as_numpy
 
 # Optional dependency (keeps core import lightweight).
 #

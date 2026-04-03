@@ -1,23 +1,22 @@
+"""Method registry for transductive node classification.
+
+This registry stores import strings rather than importing methods eagerly, so
+optional heavyweight dependencies stay out of the core import path.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Literal
 
-from modssc.registry_utils import (
+from modssc.transductive.base import MethodInfo
+from modssc.utils.registry import (
     make_available_methods,
     make_debug_registry,
     make_get_method_class,
     make_get_method_info,
     make_register_method,
 )
-from modssc.transductive.base import MethodInfo
-
-"""Method registry for transductive node classification.
-
-This registry stores *import strings* rather than importing methods eagerly.
-This keeps optional heavyweight dependencies (e.g. torch) out of the core
-import path.
-"""
 
 
 @dataclass(frozen=True)

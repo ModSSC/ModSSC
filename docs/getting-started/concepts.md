@@ -1,6 +1,6 @@
 # Concepts
 
-This page introduces the key ideas and vocabulary used throughout the docs. For runnable examples, go to the [inductive tutorial](../tutorials/inductive-toy.md) or [transductive tutorial](../tutorials/transductive-toy.md).
+This page introduces the key ideas and vocabulary used throughout the documentation. For runnable examples, go to the [inductive tutorial](../tutorials/inductive-toy.md) or [transductive tutorial](../tutorials/transductive-toy.md).
 
 
 ## Problem framing
@@ -8,26 +8,35 @@ ModSSC targets semi-supervised classification, where a small labeled set and a l
 
 
 ## Inductive vs transductive in this project
-Inductive methods operate on feature matrices and labeled/unlabeled splits, without requiring a graph. The inductive brick lives in [`src/modssc/inductive/`](https://github.com/ModSSC/ModSSC/tree/main/src/modssc/inductive) and validates `InductiveDataset` inputs. <sup class="cite"><a href="#source-4">[4]</a><a href="#source-5">[5]</a><a href="#source-1">[1]</a></sup>
+Inductive methods operate on feature matrices and labeled/unlabeled splits, without requiring a graph. The inductive brick is located in [`src/modssc/inductive/`](https://github.com/ModSSC/ModSSC/tree/main/src/modssc/inductive) and validates `InductiveDataset` inputs. <sup class="cite"><a href="#source-4">[4]</a><a href="#source-5">[5]</a><a href="#source-1">[1]</a></sup>
 
 
-Transductive methods operate on a fixed graph over all nodes and accept `NodeDataset`-like objects with a graph and optional masks. Sampling outputs for graph datasets use masks like train/val/test/labeled/unlabeled. The transductive brick lives in [`src/modssc/transductive/`](https://github.com/ModSSC/ModSSC/tree/main/src/modssc/transductive), and graph utilities are in [`src/modssc/graph/`](https://github.com/ModSSC/ModSSC/tree/main/src/modssc/graph). <sup class="cite"><a href="#source-2">[2]</a><a href="#source-6">[6]</a><a href="#source-7">[7]</a><a href="#source-8">[8]</a></sup>
+Transductive methods operate on a fixed graph over all nodes and accept `NodeDataset`-like objects with a graph and optional masks. Sampling outputs for graph datasets use masks like train/val/test/labeled/unlabeled. The transductive brick is located in [`src/modssc/transductive/`](https://github.com/ModSSC/ModSSC/tree/main/src/modssc/transductive), and graph utilities are in [`src/modssc/graph/`](https://github.com/ModSSC/ModSSC/tree/main/src/modssc/graph). <sup class="cite"><a href="#source-2">[2]</a><a href="#source-6">[6]</a><a href="#source-7">[7]</a><a href="#source-8">[8]</a></sup>
 
 
 ## Key abstractions in this codebase
 - **Dataset catalog and providers:** curated dataset keys and provider URIs for downloading and caching. <sup class="cite"><a href="#source-9">[9]</a><a href="#source-10">[10]</a><a href="#source-11">[11]</a></sup>
 
-- **Sampling plans:** deterministic split + labeling specs that produce reproducible indices/masks. <sup class="cite"><a href="#source-12">[12]</a><a href="#source-13">[13]</a></sup>
+- **Sampling plans:** deterministic split + labeling specifications that produce reproducible indices/masks. <sup class="cite"><a href="#source-12">[12]</a><a href="#source-13">[13]</a></sup>
 
 - **Preprocess plans:** ordered steps that transform raw datasets into feature representations. <sup class="cite"><a href="#source-14">[14]</a><a href="#source-15">[15]</a></sup>
 
-- **Graph specs and views:** graph construction specs and view generation (attr/diffusion/struct). <sup class="cite"><a href="#source-16">[16]</a><a href="#source-17">[17]</a></sup>
+- **Graph specs and views:** graph construction specifications and view generation (`attr`/`diffusion`/`struct`). <sup class="cite"><a href="#source-16">[16]</a><a href="#source-17">[17]</a></sup>
 
 - **View plans:** multi-view feature generation for methods like co-training. <sup class="cite"><a href="#source-18">[18]</a><a href="#source-19">[19]</a></sup>
 
 - **Registries:** method registries for inductive and transductive algorithms. <sup class="cite"><a href="#source-20">[20]</a><a href="#source-21">[21]</a></sup>
 
-- **Benchmark configs:** end-to-end experiment configuration for reproducible runs. <sup class="cite"><a href="#source-22">[22]</a><a href="#source-23">[23]</a></sup>
+- **Benchmark configurations:** end-to-end experiment configuration for reproducible runs. <sup class="cite"><a href="#source-22">[22]</a><a href="#source-23">[23]</a></sup>
+
+
+## Code layout in practice
+- The top-level brick packages (`modssc.data_loader`, `modssc.preprocess`, `modssc.sampling`, `modssc.views`, `modssc.graph`, and others) are the public Python entrypoints.
+- Runtime-facing utilities now live under `modssc.runtime`.
+- Cache and optional-dependency support code now lives under `modssc.cache` and `modssc.dependencies`.
+- Several bricks use internal support directories such as `services/`, `helpers/`, `adapters/`, or `bundle_factories/`; those folders explain implementation structure, not additional public import paths.
+
+For the current repository layout, see the [Architecture](../development/architecture.md) page.
 
 
 ## Small illustrative examples

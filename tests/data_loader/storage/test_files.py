@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 
 import modssc.data_loader.storage.files as storage_files
+from modssc.data_loader.errors import ManifestError
 from modssc.data_loader.storage.files import FileStorage, _is_str_object_array, _jsonable
 
 
@@ -173,4 +174,71 @@ def test_load_array_npy_mmap(tmp_path, monkeypatch):
 
     with patch("modssc.data_loader.storage.files.np.load", wraps=np.load) as mock_load:
         storage._load_array(tmp_path, {"format": "npy", "path": "test.npy"})
-        mock_load.assert_called_with(path, allow_pickle=True, mmap_mode="r")
+        mock_load.assert_called_with(path, allow_pickle=False, mmap_mode="r")
+
+
+def test_save_array_marks_pickle_explicitly(tmp_path):
+    storage = FileStorage()
+    arr = np.asarray([{"a": 1}], dtype=object)
+
+    info = storage._save_array(tmp_path, "obj", arr)
+
+    assert info["allow_pickle"] is True
+    loaded = storage._load_array(tmp_path, info)
+    assert loaded.dtype == object
+    assert loaded.tolist() == arr.tolist()
+
+
+def test_load_array_legacy_object_npy_without_manifest_pickle_flag(tmp_path):
+    storage = FileStorage()
+    arr = np.asarray([{"a": 1}, {"b": 2}], dtype=object)
+    path = tmp_path / "legacy.npy"
+    np.save(path, arr, allow_pickle=True)
+
+    loaded = storage._load_array(tmp_path, {"format": "npy", "path": "legacy.npy"})
+
+    assert loaded.dtype == object
+    assert loaded.tolist() == arr.tolist()
+
+
+def test_load_array_rejects_absolute_path(tmp_path):
+    storage = FileStorage()
+    path = tmp_path / "data.npy"
+    np.save(path, np.array([1]))
+
+    with pytest.raises(ManifestError, match="must be relative"):
+        storage._load_array(tmp_path, {"format": "npy", "path": str(path.resolve())})
+
+
+def test_load_array_rejects_parent_escape(tmp_path):
+    storage = FileStorage()
+    outside = tmp_path.parent / "outside.npy"
+    np.save(outside, np.array([1]))
+
+    with pytest.raises(ManifestError, match="escapes"):
+        storage._load_array(tmp_path, {"format": "npy", "path": "../outside.npy"})
+
+
+def test_load_array_rejects_missing_path_entry(tmp_path):
+    storage = FileStorage()
+
+    with pytest.raises(ManifestError, match="missing 'path'"):
+        storage._load_array(tmp_path, {"format": "npy"})
+
+
+def test_load_array_wraps_numpy_load_errors(tmp_path, monkeypatch):
+    storage = FileStorage()
+    path = tmp_path / "broken.npy"
+    np.save(path, np.array([1]))
+
+    def boom(*args, **kwargs):
+        raise ValueError("bad cache")
+
+    monkeypatch.setattr(storage_files.np, "load", boom)
+
+    with pytest.raises(ManifestError, match="Failed to load cached array"):
+        storage._load_array(tmp_path, {"format": "npy", "path": "broken.npy"})
+
+
+from ._edges_masks import *  # noqa: E402,F401,F403
+from ._roundtrip import *  # noqa: E402,F401,F403

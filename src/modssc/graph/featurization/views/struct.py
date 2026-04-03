@@ -7,7 +7,7 @@ from typing import Literal
 
 import numpy as np
 
-from modssc.seed_utils import mix_seed32 as _derive_seed
+from modssc.utils.seed import mix_seed32 as _derive_seed
 
 from ...optional import optional_import
 

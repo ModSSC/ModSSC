@@ -230,6 +230,25 @@ def test_save_step_outputs_manifest_update(tmp_path):
     assert "test" in data["saved"]
 
 
+def test_save_step_outputs_recovers_corrupt_manifest(tmp_path):
+    cm = CacheManager(root=tmp_path, dataset_fingerprint="ds")
+    step_dir = cm.step_dir("step1")
+    step_dir.mkdir(parents=True)
+    (step_dir / "manifest.json").write_text('{"saved": {}}{"saved": {}}', encoding="utf-8")
+
+    cm.save_step_outputs(
+        step_fingerprint="step1",
+        split="train",
+        produced={"value": np.array([1, 2, 3])},
+        manifest={"a": 1},
+    )
+
+    data = json.loads((step_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert data["a"] == 1
+    assert "train" in data["saved"]
+    assert "value" in data["saved"]["train"]
+
+
 def test_load_step_outputs_missing_manifest(tmp_path):
     cm = CacheManager(root=tmp_path, dataset_fingerprint="ds")
     with pytest.raises(PreprocessCacheError, match="Missing cache manifest"):
@@ -255,6 +274,11 @@ def test_load_step_outputs_invalid_structure(tmp_path):
 def test_json_load_not_dict():
     with pytest.raises(PreprocessCacheError, match="Invalid JSON manifest"):
         json_load("[1, 2]")
+
+
+def test_json_load_invalid_syntax():
+    with pytest.raises(PreprocessCacheError, match="Invalid JSON manifest"):
+        json_load('{"a": 1}{"b": 2}')
 
 
 def test_load_value_json(tmp_path):
@@ -308,6 +332,22 @@ def test_load_value_npy_allow_pickle(tmp_path):
     val = _load_value(tmp_path, {"type": "npy", "path": "data.npy", "allow_pickle": True})
     assert val.dtype == object
     assert val.tolist() == arr.tolist()
+
+
+def test_load_value_rejects_absolute_path(tmp_path):
+    p = tmp_path / "data.npy"
+    np.save(p, np.array([1]))
+
+    with pytest.raises(PreprocessCacheError, match="must be relative"):
+        _load_value(tmp_path, {"type": "npy", "path": str(p.resolve())})
+
+
+def test_load_value_rejects_parent_escape(tmp_path):
+    outside = tmp_path.parent / "data.npy"
+    np.save(outside, np.array([1]))
+
+    with pytest.raises(PreprocessCacheError, match="escapes"):
+        _load_value(tmp_path, {"type": "npy", "path": "../data.npy"})
 
 
 def test_cache_manager_roundtrip(tmp_path):

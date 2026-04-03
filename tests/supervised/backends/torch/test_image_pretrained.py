@@ -634,6 +634,31 @@ def test_image_pretrained_freeze_backbone_false(monkeypatch) -> None:
     clf.fit(X, y)
 
 
+def test_image_pretrained_singleton_batch_keeps_eval_model(monkeypatch) -> None:
+    class DummyModel(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.conv = torch.nn.Conv2d(3, 4, kernel_size=1)
+            self.fc = torch.nn.Linear(4, 2)
+
+        def forward(self, x):
+            x = self.conv(x)
+            x = x.mean(dim=(2, 3))
+            return self.fc(x)
+
+    monkeypatch.setattr(ip, "_load_model", lambda *_args, **_kwargs: DummyModel().eval())
+
+    X = torch.randn(3, 1, 2, 2)
+    y = torch.tensor([0, 1, 0], dtype=torch.int64)
+    clf = ip.TorchImagePretrainedClassifier(
+        weights=None, max_epochs=1, batch_size=2, freeze_backbone=False
+    )
+    monkeypatch.setattr(clf, "_set_train_mode", lambda: None)
+    clf.fit(X, y)
+    assert clf._model is not None
+    assert clf._model.training is False
+
+
 def test_image_pretrained_scores_validation(monkeypatch) -> None:
     class DummyModel(torch.nn.Module):
         def __init__(self):

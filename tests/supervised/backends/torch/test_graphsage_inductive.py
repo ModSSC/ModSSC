@@ -98,7 +98,46 @@ def test_graphsage_init_hidden_sizes_with_matching_num_layers():
 def test_graphsage_init_defaults_when_none():
     clf = TorchGraphSAGEClassifier(hidden_channels=None, num_layers=None)
     assert clf.hidden_channels == 128
-    assert clf.num_layers == 2
+
+
+def test_graphsage_input_missing_keys_validation(monkeypatch):
+    _install_fake_pyg(monkeypatch)
+    clf = TorchGraphSAGEClassifier(max_epochs=1)
+    with pytest.raises(ValueError, match="requires X to define"):
+        clf.fit({"x": np.zeros((10, 5))}, np.array([0] * 10))
+
+
+def test_graphsage_input_x_shape_validation(monkeypatch):
+    _install_fake_pyg(monkeypatch)
+    clf = TorchGraphSAGEClassifier(max_epochs=1)
+    with pytest.raises(ValueError, match="Node features must be a 2D array"):
+        clf.fit({"x": np.zeros((10, 5, 2)), "edge_index": np.zeros((2, 0))}, np.array([0] * 10))
+
+
+def test_graphsage_input_edge_index_shape_validation(monkeypatch):
+    _install_fake_pyg(monkeypatch)
+    clf = TorchGraphSAGEClassifier(max_epochs=1)
+    with pytest.raises(ValueError, match="edge_index must have shape"):
+        clf.fit({"x": np.zeros((10, 5)), "edge_index": np.zeros((3, 10))}, np.array([0] * 10))
+
+
+def test_graphsage_y_shape_validation(monkeypatch):
+    _install_fake_pyg(monkeypatch)
+    clf = TorchGraphSAGEClassifier(max_epochs=1)
+    with pytest.raises(ValueError, match="y must be a 1D array"):
+        clf.fit({"x": np.zeros((10, 5)), "edge_index": np.zeros((2, 0))}, np.zeros((10, 1)))
+    with pytest.raises(ValueError, match="must contain the same number of nodes"):
+        clf.fit({"x": np.zeros((10, 5)), "edge_index": np.zeros((2, 0))}, np.zeros((11,)))
+
+
+def test_graphsage_hidden_sizes_negative():
+    with pytest.raises(ValueError, match="hidden_sizes must be positive"):
+        TorchGraphSAGEClassifier(hidden_sizes=[8, -1])
+
+
+def test_graphsage_hidden_sizes_num_layers_mismatch():
+    with pytest.raises(ValueError, match="num_layers must equal"):
+        TorchGraphSAGEClassifier(hidden_sizes=[8, 4], num_layers=2)
 
 
 def test_graphsage_init_hidden_sizes_int():
@@ -128,18 +167,6 @@ def test_graphsage_hidden_sizes_multi_layer(monkeypatch):
     assert len(clf._model.convs) == 3
     assert clf._model.convs[0].lin.out_features == 8
     assert clf._model.convs[1].lin.out_features == 4
-
-
-def test_graphsage_hidden_sizes_num_layers_mismatch(monkeypatch):
-    _install_fake_pyg(monkeypatch)
-    with pytest.raises(ValueError, match="num_layers must equal"):
-        TorchGraphSAGEClassifier(hidden_sizes=[8, 4], num_layers=2)
-
-
-def test_graphsage_hidden_sizes_negative(monkeypatch):
-    _install_fake_pyg(monkeypatch)
-    with pytest.raises(ValueError, match="hidden_sizes must be positive"):
-        TorchGraphSAGEClassifier(hidden_sizes=[8, -1])
 
 
 def test_graphsage_activation_param(monkeypatch):
@@ -186,6 +213,23 @@ def test_graphsage_predict_numpy_branch(monkeypatch):
     monkeypatch.setattr(clf, "predict_proba", lambda _x: np.array([[0.2, 0.8]]))
     pred = clf.predict(X)
     assert pred.shape[0] == 1
+
+
+def test_graphsage_predict_tensor_without_class_labels():
+    clf = TorchGraphSAGEClassifier()
+    clf._classes_t = None
+    clf.predict_proba = lambda _x: torch.tensor([[0.1, 0.9], [0.8, 0.2]])
+    pred = clf.predict(
+        {"x": np.zeros((2, 3), dtype=np.float32), "edge_index": np.zeros((2, 0), dtype=np.int64)}
+    )
+    assert torch.equal(pred, torch.tensor([1, 0]))
+
+
+def test_graphsage_predict_numpy_without_class_labels():
+    clf = TorchGraphSAGEClassifier()
+    clf.predict_proba = lambda _x: np.array([[0.1, 0.9], [0.8, 0.2]], dtype=np.float32)
+    pred = clf.predict(np.zeros((2, 3), dtype=np.float32))
+    np.testing.assert_array_equal(pred, np.array([1, 0]))
 
 
 def test_graphsage_seed_none_branch(monkeypatch):

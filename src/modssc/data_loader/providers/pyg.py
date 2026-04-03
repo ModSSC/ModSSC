@@ -57,7 +57,7 @@ class PyGProvider(BaseProvider):
             dataset_id=cls_name,
             version=None,
             modality="graph",
-            task="node_classification",  # Default assumption, might need refinement
+            task="node_classification",
             required_extra=self.required_extra,
             resolved_kwargs=resolved_kwargs,
         )

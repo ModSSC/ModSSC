@@ -5,7 +5,7 @@ from typing import Literal
 
 import numpy as np
 
-from modssc.numpy_utils import to_numpy as _to_numpy
+from modssc.utils.numpy import to_numpy as _to_numpy
 
 try:
     import torch

@@ -9,7 +9,7 @@ import typer
 
 from modssc.cli._utils import exit_with_error
 from modssc.evaluation import evaluate, list_metrics
-from modssc.logging import LogLevelOption, add_log_level_callback, configure_logging
+from modssc.runtime.logging import LogLevelOption, add_log_level_callback, configure_logging
 
 app = typer.Typer(help="Metrics and evaluation tools.")
 add_log_level_callback(app)

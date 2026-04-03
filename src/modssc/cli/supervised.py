@@ -4,7 +4,7 @@ import json
 
 import typer
 
-from modssc.logging import LogLevelOption, add_log_level_callback, configure_logging
+from modssc.runtime.logging import LogLevelOption, add_log_level_callback, configure_logging
 from modssc.supervised import available_classifiers, classifier_info
 
 app = typer.Typer(help="Supervised baselines (kNN, SVM, logistic regression).")

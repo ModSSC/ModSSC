@@ -6,8 +6,9 @@ This package provides the math and integration layer:
 - generic solvers (fixed point, conjugate gradient)
 - PyG adapter (optional)
 - strict input validation
-
-Algorithms (Label Propagation, Poisson Learning, GNNs, etc.) are added in later waves.
+- classic label diffusion methods
+- PDE-inspired methods
+- GNN-based transductive methods
 """
 
 from .errors import OptionalDependencyError, TransductiveValidationError

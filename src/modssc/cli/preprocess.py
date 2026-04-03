@@ -12,10 +12,10 @@ import yaml
 from modssc.cli._utils import DatasetCacheOption, exit_with_error
 from modssc.data_loader import load_dataset
 from modssc.data_loader.errors import DataLoaderError
-from modssc.logging import LogLevelOption, add_log_level_callback, configure_logging
 from modssc.preprocess import available_models, available_steps, model_info, preprocess, step_info
 from modssc.preprocess.errors import PreprocessError
 from modssc.preprocess.plan import load_plan
+from modssc.runtime.logging import LogLevelOption, add_log_level_callback, configure_logging
 
 app = typer.Typer(help="Preprocessing pipelines (deterministic, cacheable).")
 add_log_level_callback(app)

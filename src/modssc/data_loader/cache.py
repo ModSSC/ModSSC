@@ -14,8 +14,8 @@ from platformdirs import user_cache_dir
 
 from modssc.data_loader.errors import ManifestError
 from modssc.data_loader.manifest import Manifest, read_manifest
-from modssc.io_utils import atomic_write_text as _atomic_write_text
-from modssc.paths import default_local_cache_subdir
+from modssc.runtime.paths import default_local_cache_subdir
+from modssc.utils.io import atomic_write_text as _atomic_write_text
 
 CACHE_ENV = "MODSSC_CACHE_DIR"
 CACHE_ROOT_ENV = "MODSSC_CACHE_ROOT"

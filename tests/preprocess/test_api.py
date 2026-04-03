@@ -815,7 +815,7 @@ def test_preprocess_incomplete_cache_falls_back():
     assert step_instance.transform.call_count == 2
 
 
-def test_preprocess_purge_unused_artifacts(caplog):
+def test_preprocess_purge_unused_artifacts():
     train = Split(X=np.array([[1]]), y=np.array([0]))
     test = Split(X=np.array([[2]]), y=np.array([1]))
     ds = LoadedDataset(train=train, test=test, meta={"dataset_fingerprint": "fp"})
@@ -837,13 +837,18 @@ def test_preprocess_purge_unused_artifacts(caplog):
     ]
     registry.instantiate.return_value = step_instance
 
-    with caplog.at_level("DEBUG", logger="modssc.preprocess.api"):
+    with (
+        patch("modssc.preprocess.api.logger.info"),
+        patch("modssc.preprocess.api.logger.isEnabledFor", return_value=True),
+        patch("modssc.preprocess.api.logger.debug") as mock_debug,
+    ):
         res = preprocess(ds, plan, registry=registry, cache=False, purge_unused_artifacts=True)
     assert res.train_artifacts.keys() == ["raw.X", "raw.y"]
     assert "features.X" not in res.train_artifacts
     assert res.test_artifacts is not None
     assert res.test_artifacts.keys() == ["raw.X", "raw.y"]
     assert "features.X" not in res.test_artifacts
+    mock_debug.assert_any_call("Preprocess purge keep keys (step 0): %s", ["raw.X", "raw.y"])
 
 
 def test_preprocess_purge_unused_artifacts_train_only():

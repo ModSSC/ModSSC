@@ -8,7 +8,7 @@ from dataclasses import asdict
 import typer
 
 from modssc.cli._utils import exit_with_error
-from modssc.logging import LogLevelOption, add_log_level_callback, configure_logging
+from modssc.runtime.logging import LogLevelOption, add_log_level_callback, configure_logging
 from modssc.transductive import registry as transductive_registry
 
 app = typer.Typer(help="Transductive SSL methods.")

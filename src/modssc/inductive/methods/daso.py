@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import inspect
 import logging
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -34,6 +35,21 @@ from modssc.inductive.optional import optional_import
 from modssc.inductive.types import DeviceSpec
 
 logger = logging.getLogger(__name__)
+
+
+def _call_feature_extractor(forward: Any, X: Any, *, model_override: Any | None = None) -> Any:
+    if model_override is None:
+        return forward(X)
+    try:
+        signature = inspect.signature(forward)
+    except (TypeError, ValueError):
+        return forward(X)
+    accepts_model = "model" in signature.parameters or any(
+        param.kind == inspect.Parameter.VAR_KEYWORD for param in signature.parameters.values()
+    )
+    if accepts_model:
+        return forward(X, model=model_override)
+    return forward(X)
 
 
 def _flatten_features(features: Any, *, name: str, batch: int | None = None) -> Any:
@@ -113,20 +129,27 @@ def _forward_features(
     torch = optional_import("torch", extra="inductive-torch")
     model = model_override or bundle.model
     meta = bundle.meta or {}
-    if model_override is None and isinstance(meta, Mapping):
-        forward = meta.get("forward_features") or meta.get("feature_extractor")
-        if callable(forward):
-            feats = forward(X)
-            if not isinstance(feats, torch.Tensor):
-                raise InductiveValidationError("forward_features must return torch.Tensor.")
-            return feats
-    if model_override is not None and isinstance(meta, Mapping):
-        forward = meta.get("forward_features_ema") or meta.get("feature_extractor_ema")
-        if callable(forward):
-            feats = forward(X)
-            if not isinstance(feats, torch.Tensor):
-                raise InductiveValidationError("forward_features_ema must return torch.Tensor.")
-            return feats
+    if isinstance(meta, Mapping):
+        if model_override is None:
+            forward = meta.get("forward_features") or meta.get("feature_extractor")
+            if callable(forward):
+                feats = _call_feature_extractor(forward, X)
+                if not isinstance(feats, torch.Tensor):
+                    raise InductiveValidationError("forward_features must return torch.Tensor.")
+                return feats
+        else:
+            forward = meta.get("forward_features_ema") or meta.get("feature_extractor_ema")
+            if callable(forward):
+                feats = _call_feature_extractor(forward, X, model_override=model_override)
+                if not isinstance(feats, torch.Tensor):
+                    raise InductiveValidationError("forward_features_ema must return torch.Tensor.")
+                return feats
+            forward = meta.get("forward_features") or meta.get("feature_extractor")
+            if callable(forward):
+                feats = _call_feature_extractor(forward, X, model_override=model_override)
+                if not isinstance(feats, torch.Tensor):
+                    raise InductiveValidationError("forward_features must return torch.Tensor.")
+                return feats
 
     out = model(X)
     if isinstance(out, Mapping) and "feat" in out:

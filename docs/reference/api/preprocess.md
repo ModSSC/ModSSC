@@ -29,7 +29,10 @@ print(available_steps())
 print(step_info("core.ensure_2d"))
 ```
 
-The step catalog is defined in [`src/modssc/preprocess/catalog.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/preprocess/catalog.py). <sup class="cite"><a href="#source-3">[3]</a></sup>
+The step catalog is defined in [`src/modssc/preprocess/catalog.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/preprocess/catalog.py). The package-level API remains `modssc.preprocess`, while internal orchestration is split between plan/catalog modules and internal service modules. <sup class="cite"><a href="#source-3">[3]</a></sup>
+
+!!! warning
+    Preprocess cache artifacts are intended for trusted local reuse only. Do not reuse manifests or cached tensor files from untrusted sources.
 
 
 ## API reference

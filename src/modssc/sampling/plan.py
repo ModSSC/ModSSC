@@ -11,6 +11,8 @@ class SamplingPolicy:
 
     - respect_official_test: if dataset.test exists, keep it as the test set
     - use_official_graph_masks: if graph dataset provides masks, use them as train/val/test masks
+    - allow_override_official: if True, user-defined split parameters take precedence and
+      inductive sampling ignores provider test partitions instead of erroring
     """
 
     respect_official_test: bool = True

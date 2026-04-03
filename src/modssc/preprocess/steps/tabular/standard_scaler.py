@@ -33,13 +33,8 @@ class TabularStandardScalerStep:
             raise
 
         X = get_X(store)
-        # Verify it is 2D, or rely on scalar to handle it?
-        # Typically ensure_2d runs before this.
-
         idx = np.asarray(fit_indices, dtype=np.int64)
-        # Using numpy slicing. X could be a list if ensuring 2d didn't happen
-        # But get_X usually returns the raw object.
-        # It's safer to ensure array.
+        # Normalize to an ndarray to support NumPy indexing consistently.
         X_arr = np.asarray(X)
         X_fit = X.iloc[idx].to_numpy() if hasattr(X, "iloc") else X_arr[idx]
 

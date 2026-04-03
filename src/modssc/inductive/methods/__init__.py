@@ -1,59 +1,51 @@
 """Inductive methods (classic and deep baselines)."""
 
-from .adamatch import AdaMatchMethod
-from .adsh import ADSHMethod
-from .co_training import CoTrainingMethod
-from .comatch import CoMatchMethod
-from .daso import DASOMethod
-from .deep_co_training import DeepCoTrainingMethod
-from .defixmatch import DeFixMatchMethod
-from .democratic_co_learning import DemocraticCoLearningMethod
-from .fixmatch import FixMatchMethod
-from .flexmatch import FlexMatchMethod
-from .free_match import FreeMatchMethod
-from .mean_teacher import MeanTeacherMethod
-from .meta_pseudo_labels import MetaPseudoLabelsMethod
-from .mixmatch import MixMatchMethod
-from .noisy_student import NoisyStudentMethod
-from .pi_model import PiModelMethod
-from .pseudo_label import PseudoLabelMethod
-from .s4vm import S4VMMethod
-from .self_training import SelfTrainingMethod
-from .setred import SetredMethod
-from .simclr_v2 import SimCLRv2Method
-from .softmatch import SoftMatchMethod
-from .temporal_ensembling import TemporalEnsemblingMethod
-from .tri_training import TriTrainingMethod
-from .trinet import TriNetMethod
-from .uda import UDAMethod
-from .vat import VATMethod
+from __future__ import annotations
 
-__all__ = [
-    "CoTrainingMethod",
-    "CoMatchMethod",
-    "DeepCoTrainingMethod",
-    "AdaMatchMethod",
-    "ADSHMethod",
-    "DemocraticCoLearningMethod",
-    "DeFixMatchMethod",
-    "DASOMethod",
-    "FixMatchMethod",
-    "FlexMatchMethod",
-    "FreeMatchMethod",
-    "MeanTeacherMethod",
-    "MetaPseudoLabelsMethod",
-    "MixMatchMethod",
-    "NoisyStudentMethod",
-    "PiModelMethod",
-    "PseudoLabelMethod",
-    "SetredMethod",
-    "SelfTrainingMethod",
-    "S4VMMethod",
-    "SimCLRv2Method",
-    "SoftMatchMethod",
-    "TemporalEnsemblingMethod",
-    "TriNetMethod",
-    "TriTrainingMethod",
-    "UDAMethod",
-    "VATMethod",
-]
+from modssc.utils.imports import load_object
+
+_EXPORTS = {
+    "AdaMatchMethod": "modssc.inductive.methods.adamatch:AdaMatchMethod",
+    "ADSHMethod": "modssc.inductive.methods.adsh:ADSHMethod",
+    "CoTrainingMethod": "modssc.inductive.methods.co_training:CoTrainingMethod",
+    "CoMatchMethod": "modssc.inductive.methods.comatch:CoMatchMethod",
+    "DASOMethod": "modssc.inductive.methods.daso:DASOMethod",
+    "DeepCoTrainingMethod": "modssc.inductive.methods.deep_co_training:DeepCoTrainingMethod",
+    "DeFixMatchMethod": "modssc.inductive.methods.defixmatch:DeFixMatchMethod",
+    "DemocraticCoLearningMethod": (
+        "modssc.inductive.methods.democratic_co_learning:DemocraticCoLearningMethod"
+    ),
+    "FixMatchMethod": "modssc.inductive.methods.fixmatch:FixMatchMethod",
+    "FlexMatchMethod": "modssc.inductive.methods.flexmatch:FlexMatchMethod",
+    "FreeMatchMethod": "modssc.inductive.methods.free_match:FreeMatchMethod",
+    "MeanTeacherMethod": "modssc.inductive.methods.mean_teacher:MeanTeacherMethod",
+    "MetaPseudoLabelsMethod": (
+        "modssc.inductive.methods.meta_pseudo_labels:MetaPseudoLabelsMethod"
+    ),
+    "MixMatchMethod": "modssc.inductive.methods.mixmatch:MixMatchMethod",
+    "NoisyStudentMethod": "modssc.inductive.methods.noisy_student:NoisyStudentMethod",
+    "PiModelMethod": "modssc.inductive.methods.pi_model:PiModelMethod",
+    "PseudoLabelMethod": "modssc.inductive.methods.pseudo_label:PseudoLabelMethod",
+    "S4VMMethod": "modssc.inductive.methods.s4vm:S4VMMethod",
+    "SelfTrainingMethod": "modssc.inductive.methods.self_training:SelfTrainingMethod",
+    "SetredMethod": "modssc.inductive.methods.setred:SetredMethod",
+    "SimCLRv2Method": "modssc.inductive.methods.simclr_v2:SimCLRv2Method",
+    "SoftMatchMethod": "modssc.inductive.methods.softmatch:SoftMatchMethod",
+    "TemporalEnsemblingMethod": (
+        "modssc.inductive.methods.temporal_ensembling:TemporalEnsemblingMethod"
+    ),
+    "TriNetMethod": "modssc.inductive.methods.trinet:TriNetMethod",
+    "TriTrainingMethod": "modssc.inductive.methods.tri_training:TriTrainingMethod",
+    "UDAMethod": "modssc.inductive.methods.uda:UDAMethod",
+    "VATMethod": "modssc.inductive.methods.vat:VATMethod",
+}
+
+__all__ = sorted(_EXPORTS)
+
+
+def __getattr__(name: str):
+    try:
+        import_path = _EXPORTS[name]
+    except KeyError as exc:
+        raise AttributeError(name) from exc
+    return load_object(import_path)

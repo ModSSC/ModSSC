@@ -13,7 +13,7 @@ This walkthrough uses the bench runner because it validates a single YAML config
 
 
 ## Prerequisites
-- Python 3.11+ with ModSSC installed from source (bench runner is in the repo). <sup class="cite"><a href="#source-4">[4]</a><a href="#source-5">[5]</a></sup>
+- Python 3.11+ with ModSSC installed from source (the bench runner is in the repository). <sup class="cite"><a href="#source-4">[4]</a><a href="#source-5">[5]</a></sup>
 
 - No extra dependencies are required for the toy dataset and numpy backends used here. <sup class="cite"><a href="#source-2">[2]</a><a href="#source-6">[6]</a></sup>
 
@@ -24,7 +24,7 @@ This walkthrough uses the bench runner because it validates a single YAML config
 - Toy dataset definition: [`src/modssc/data_loader/catalog/toy.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/data_loader/catalog/toy.py)
 
 ## Step by step commands
-1) Install the repo in editable mode:
+1) Install the repository in editable mode:
 
 ```bash
 python -m pip install -e "."
@@ -101,7 +101,7 @@ evaluation:
 ```
 
 ## Expected outputs and where they appear
-A new run directory is created under [`runs/`](https://github.com/ModSSC/ModSSC/tree/main/runs) with:
+A new run directory is created under the configured `run.output_dir` (here `runs/`) with:
 - `config.yaml` (config snapshot)
 - `run.json` (metrics and metadata)
 - `error.txt` (if the run fails)
@@ -123,7 +123,7 @@ These outputs are written by the bench context and reporting orchestrator. <sup 
 
 ## Common pitfalls and troubleshooting
 !!! warning
-    If the run fails because [`runs/`](https://github.com/ModSSC/ModSSC/tree/main/runs) already contains a folder with the same name and timestamp collision, delete the old folder and rerun. The run directory is created with `exist_ok=False`. <sup class="cite"><a href="#source-7">[7]</a></sup>
+    If the run fails because the configured `run.output_dir` already contains a folder with the same name and a timestamp collision, delete the old folder and rerun. The run directory is created with `exist_ok=False`. <sup class="cite"><a href="#source-7">[7]</a></sup>
 
 
 !!! tip
@@ -156,7 +156,7 @@ These outputs are written by the bench context and reporting orchestrator. <sup 
   <li id="source-14"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/preprocess/steps/core/ensure_2d.py"><code>src/modssc/preprocess/steps/core/ensure_2d.py</code></a></li>
   <li id="source-15"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/preprocess/steps/core/to_numpy.py"><code>src/modssc/preprocess/steps/core/to_numpy.py</code></a></li>
   <li id="source-16"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/inductive/methods/pseudo_label.py"><code>src/modssc/inductive/methods/pseudo_label.py</code></a></li>
-  <li id="source-17"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/logging.py"><code>src/modssc/logging.py</code></a></li>
+  <li id="source-17"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/runtime/logging.py"><code>src/modssc/runtime/logging.py</code></a></li>
   <li id="source-18"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/cli/app.py"><code>src/modssc/cli/app.py</code></a></li>
   <li id="source-19"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/inductive/types.py"><code>src/modssc/inductive/types.py</code></a></li>
   <li id="source-20"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/transductive/base.py"><code>src/modssc/transductive/base.py</code></a></li>

@@ -19,8 +19,11 @@ Pick the path that fits your goal: learn the concepts, run examples, or dive int
 ### Docs and reference
 
 - **Documentation**: [overview and concepts](https://modssc.github.io/ModSSC).
+- **Choose your path**: [pick the right entrypoint](https://modssc.github.io/ModSSC/getting-started/choose-your-path).
 - **Getting started**: [install and first run](https://modssc.github.io/ModSSC/getting-started/installation).
+- **Extras and platforms**: [choose optional dependencies](https://modssc.github.io/ModSSC/getting-started/extras-and-platforms).
 - **CLI and API reference**: [full command and API list](https://modssc.github.io/ModSSC/reference/cli).
+- **Troubleshooting**: [common failures and fixes](https://modssc.github.io/ModSSC/how-to/troubleshooting).
 
 If you use benchmark configs with environment placeholders, set `MODSSC_OUTPUT_DIR`, `MODSSC_DATASET_CACHE_DIR`, and `MODSSC_PREPROCESS_CACHE_DIR` before running. See the [Configuration reference](https://modssc.github.io/ModSSC/reference/configuration) for examples.
 
@@ -28,6 +31,8 @@ If you use benchmark configs with environment placeholders, set `MODSSC_OUTPUT_D
 
 - **Examples**: small scripts in [examples/](examples/).
 - **Notebooks**: interactive demos in [notebooks/](notebooks/).
+- **Examples guide**: [script index and recommendations](https://modssc.github.io/ModSSC/examples/).
+- **Notebook tour**: [interactive entrypoints by topic](https://modssc.github.io/ModSSC/notebooks/).
 
 ### Research and articles
 

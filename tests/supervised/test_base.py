@@ -150,3 +150,10 @@ def test_predict_scores_from_proba_mixin_delegates():
 
     scores = Clf().predict_scores(None)
     np.testing.assert_array_equal(scores, np.array([[0.2, 0.8]], dtype=np.float32))
+
+
+def test_base_classes_t_property():
+    clf = ConcreteClassifier()
+    assert clf.classes_t_ is None
+    clf._classes_t = "sentinel"
+    assert clf.classes_t_ == "sentinel"

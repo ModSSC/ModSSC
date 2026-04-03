@@ -9,8 +9,8 @@ from typing import Any
 
 import numpy as np
 
-from modssc.device import resolve_device_name
 from modssc.graph.artifacts import GraphArtifact, NodeDataset
+from modssc.runtime.device import resolve_device_name
 from modssc.transductive.registry import get_method_class, get_method_info
 
 from ..errors import BenchRuntimeError

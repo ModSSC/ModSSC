@@ -125,6 +125,12 @@ def to_torch_dataset(
     """
     if data is None:
         raise InductiveValidationError("data must not be None.")
+    X_u = getattr(data, "X_u", None)
+    X_u_w = getattr(data, "X_u_w", None)
+    X_u_s = getattr(data, "X_u_s", None)
+    views = getattr(data, "views", None)
+    meta = getattr(data, "meta", None)
+
     X_l = _require_tensor(data.X_l, name="X_l")
     y_l = _require_tensor(data.y_l, name="y_l")
     _check_2d(X_l, name="X_l")
@@ -141,9 +147,9 @@ def to_torch_dataset(
 
     _check_y(y_l, n=int(get_len(X_l)))
 
-    X_u = _require_tensor(data.X_u, name="X_u") if data.X_u is not None else None
-    X_u_w = _require_tensor(data.X_u_w, name="X_u_w") if data.X_u_w is not None else None
-    X_u_s = _require_tensor(data.X_u_s, name="X_u_s") if data.X_u_s is not None else None
+    X_u = _require_tensor(X_u, name="X_u") if X_u is not None else None
+    X_u_w = _require_tensor(X_u_w, name="X_u_w") if X_u_w is not None else None
+    X_u_s = _require_tensor(X_u_s, name="X_u_s") if X_u_s is not None else None
 
     n_features = int(get_features(X_l))
     if X_u is not None:
@@ -158,7 +164,7 @@ def to_torch_dataset(
     if X_u_w is not None and X_u_s is not None and int(get_len(X_u_w)) != int(get_len(X_u_s)):
         raise InductiveValidationError("X_u_w and X_u_s must have the same number of rows")
 
-    views = _require_views(data.views)
+    views = _require_views(views)
 
     tensors = [X_l, y_l, X_u, X_u_w, X_u_s]
     if views:
@@ -169,15 +175,22 @@ def to_torch_dataset(
 
     if device is not None and device.device != "auto":
         expected = torch_backend.resolve_device(device)
-        for t in tensors:
-            if t is None:
-                continue
-            if t.device != expected:
+
+        def _check_expected_device(obj: Any) -> None:
+            if obj is None:
+                return
+            if isinstance(obj, dict):
+                for value in obj.values():
+                    _check_expected_device(value)
+                return
+            if obj.device != expected:
                 raise InductiveValidationError(
-                    f"Tensor device mismatch: expected {expected}, got {t.device}"
+                    f"Tensor device mismatch: expected {expected}, got {obj.device}"
                 )
 
-    meta = data.meta
+        for t in tensors:
+            _check_expected_device(t)
+
     if isinstance(meta, Mapping):
         meta = dict(meta)
         torch = _torch()

@@ -5,7 +5,7 @@ from typing import Any
 
 import numpy as np
 
-from modssc.numpy_utils import to_numpy
+from modssc.utils.numpy import to_numpy
 
 from .types import Backend
 

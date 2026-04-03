@@ -214,6 +214,7 @@ class SimCLRv2Method(ArgmaxPredictMixin, InductiveMethod):
         self.spec = spec or SimCLRv2Spec()
         self._bundle: TorchModelBundle | None = None
         self._backend: str | None = None
+        self.device: str | None = None
 
     def fit(self, data: Any, *, device: DeviceSpec, seed: int = 0) -> SimCLRv2Method:
         start = perf_counter()
@@ -419,7 +420,7 @@ class SimCLRv2Method(ArgmaxPredictMixin, InductiveMethod):
                     optimizer.step()
 
         if int(self.spec.distill_epochs) > 0 and finetune_bundle is not None:
-            if X_uw is None:
+            if X_uw is None:  # pragma: no cover - guarded by the earlier unlabeled-data validation
                 raise InductiveValidationError("SimCLRv2 distill requires unlabeled data.")
             student_bundle = self.spec.student_bundle
             if student_bundle is None:
@@ -540,6 +541,7 @@ class SimCLRv2Method(ArgmaxPredictMixin, InductiveMethod):
 
         self._bundle = final_bundle
         self._backend = backend
+        self.device = str(get_torch_device(X_l))
         logger.info("Finished %s.fit in %.3fs", self.info.method_id, perf_counter() - start)
         return self
 
@@ -556,10 +558,32 @@ class SimCLRv2Method(ArgmaxPredictMixin, InductiveMethod):
         model = self._bundle.model
         was_training = model.training
         model.eval()
+        batch_size = int(self.spec.batch_size)
+        n_samples = int(X["x"].shape[0]) if isinstance(X, dict) else int(X.shape[0])
+        all_logits = []
         with torch.no_grad():
-            logits = _forward_logits(model, self._bundle.meta, X)
-            if int(logits.ndim) != 2:
-                raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+            for start in range(0, n_samples, batch_size):
+                end = min(start + batch_size, n_samples)
+                if isinstance(X, dict):
+                    idx = torch.arange(start, end, device=X["x"].device)
+                    batch_X = slice_data(X, idx)
+                else:
+                    batch_X = X[start:end]
+                logits = _forward_logits(model, self._bundle.meta, batch_X)
+                if int(logits.ndim) != 2:
+                    raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+                all_logits.append(logits)
+            if not all_logits:
+                if isinstance(X, dict):
+                    empty_idx = torch.arange(0, 0, device=X["x"].device)
+                    empty_X = slice_data(X, empty_idx)
+                else:
+                    empty_X = X[:0]
+                logits = _forward_logits(model, self._bundle.meta, empty_X)
+                if int(logits.ndim) != 2:
+                    raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+            else:
+                logits = torch.cat(all_logits, dim=0)
             proba = torch.softmax(logits, dim=1)
         if was_training:
             model.train()

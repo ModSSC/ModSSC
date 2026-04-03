@@ -276,3 +276,7 @@ def test_make_kfold_split_empty():
     assert split["test"].size == 0
     assert split["val"].size == 0
     assert split["train"].size == 0
+
+
+from ._splitters_holdout import *  # noqa: E402,F401,F403
+from ._splitters_kfold import *  # noqa: E402,F401,F403

@@ -81,3 +81,45 @@ def test_torch_numpy_proba_predict_mixin_array_fallback():
 
     pred = _Cls().predict(np.zeros((2, 3), dtype=np.float32))
     assert np.array_equal(pred, np.asarray([1, 0], dtype=np.int64))
+
+
+def test_torch_numpy_proba_predict_mixin_numpy_array_branch():
+    class _Cls(TorchNumpyProbaPredictMixin):
+        def predict_proba(self, X):  # noqa: ARG002
+            return np.asarray([[0.1, 0.9], [0.8, 0.2]], dtype=np.float32)
+
+    pred = _Cls().predict(np.zeros((2, 3), dtype=np.float32))
+    assert np.array_equal(pred, np.asarray([1, 0], dtype=np.int64))
+
+
+def test_torch_numpy_proba_predict_mixin_cpu_numpy_conversion_branch():
+    class _Idx:
+        def cpu(self):
+            return self
+
+        def numpy(self):
+            return np.asarray([1, 0], dtype=np.int64)
+
+    class _TorchLikeProbs:
+        def argmax(self, *, dim=None, axis=None):
+            assert dim == 1
+            assert axis is None
+            return _Idx()
+
+    class _Cls(TorchNumpyProbaPredictMixin):
+        def predict_proba(self, X):  # noqa: ARG002
+            return _TorchLikeProbs()
+
+    pred = _Cls().predict(np.zeros((2, 3), dtype=np.float32))
+    assert np.array_equal(pred, np.asarray([1, 0], dtype=np.int64))
+
+
+def test_torch_numpy_proba_classifier_base_supports_proba_and_predict():
+    class _Cls(TorchNumpyProbaClassifierBase):
+        def predict_proba(self, X):  # noqa: ARG002
+            return np.asarray([[0.3, 0.7]], dtype=np.float32)
+
+    clf = _Cls()
+    assert clf.supports_proba is True
+    pred = clf.predict(np.zeros((1, 2), dtype=np.float32))
+    assert np.array_equal(pred, np.asarray([1], dtype=np.int64))

@@ -9,7 +9,7 @@ from typing import Any
 
 import yaml
 
-from modssc.paths import default_local_cache_root
+from modssc.runtime.paths import default_local_cache_root
 
 _PLACEHOLDER_RE = re.compile(
     r"(?<![$\\])\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))"

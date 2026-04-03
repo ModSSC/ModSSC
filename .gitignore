@@ -35,11 +35,11 @@ site/
 docs/article_code/
 
 # Local artifacts, caches, runs
-data/
-outputs/
-runs/
-artifacts/
-cache/
+/data/
+/outputs/
+/runs/
+/artifacts/
+/cache/
 modssc_cache/*
 !modssc_cache/.gitkeep
 !modssc_cache/datasets/
@@ -60,11 +60,15 @@ modssc_cache/graph_views/*
 !modssc_cache/graph_views/.gitkeep
 modssc_cache/splits/*
 !modssc_cache/splits/.gitkeep
-log/
+/log/
 coverage.xml
-analysis/
-dev_wip/
-bench/configs/experiments/article/README.md
-bench/configs/experiments/best/
-bench/configs/experiments/smoke/
-bench/slurm/
+/analysis/
+/dev_wip/
+/logs_jeanzay/
+/audit_artifacts/
+/bench/generated/
+bench/configs/experiments/
+bench/configs/benchmarks/
+bench/configs/analysis/
+bench/configs/article/
+bench/slurm

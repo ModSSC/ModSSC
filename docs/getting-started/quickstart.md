@@ -41,14 +41,14 @@ res, _ = sample(ds, plan=plan, seed=0, dataset_fingerprint=str(ds.meta["dataset_
 print(res.stats)
 ```
 
-The benchmark command and the toy config live in [`bench/main.py`](https://github.com/ModSSC/ModSSC/blob/main/bench/main.py) and [`bench/configs/experiments/toy_inductive.yaml`](https://github.com/ModSSC/ModSSC/blob/main/bench/configs/experiments/toy_inductive.yaml). The sampling API is defined in [`src/modssc/sampling/api.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/sampling/api.py) and [`src/modssc/sampling/plan.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/sampling/plan.py). <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a><a href="#source-3">[3]</a><a href="#source-4">[4]</a></sup>
+The benchmark command and the toy config live in [`bench/main.py`](https://github.com/ModSSC/ModSSC/blob/main/bench/main.py) and [`bench/configs/experiments/toy_inductive.yaml`](https://github.com/ModSSC/ModSSC/blob/main/bench/configs/experiments/toy_inductive.yaml). The sampling API is exposed through the public `modssc.sampling` package and built around plan plus storage primitives such as [`src/modssc/sampling/plan.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/sampling/plan.py). <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a><a href="#source-3">[3]</a><a href="#source-4">[4]</a></sup>
 
 
 ## What you should see
-For the benchmark run, a timestamped folder is created under [`runs/`](https://github.com/ModSSC/ModSSC/tree/main/runs) containing:
+For the benchmark run, a timestamped folder is created under the configured `run.output_dir` (for example `runs/`) containing:
 - `config.yaml` (copied config)
 - `run.json` (metrics + metadata)
-- `error.txt` (only if failed)
+- `error.txt` (only if the run fails)
 
 These outputs are written by the bench runner and context utilities. <sup class="cite"><a href="#source-5">[5]</a><a href="#source-6">[6]</a><a href="#source-7">[7]</a><a href="#source-8">[8]</a></sup>
 
@@ -57,10 +57,14 @@ For the Python snippet, you should see a stats dictionary printed to stdout. The
 
 
 ## Next steps
+- [Choose your path](choose-your-path.md)
+- [Optional extras and platform support](extras-and-platforms.md)
 - [Inductive tutorial](../tutorials/inductive-toy.md)
 - [Transductive tutorial](../tutorials/transductive-toy.md)
-- [Sampling how-to](../how-to/sampling.md)
-- [Preprocess how-to](../how-to/preprocess.md)
+- [Create and reuse sampling splits](../how-to/sampling.md)
+- [Run preprocessing plans](../how-to/preprocess.md)
+- [Example scripts](../examples/index.md)
+- [Notebook tour](../notebooks/index.md)
 
 ## Troubleshooting
 !!! warning
@@ -69,6 +73,8 @@ For the Python snippet, you should see a stats dictionary printed to stdout. The
 
 !!! tip
     Use `modssc doctor` to see which CLI bricks are available and which extras are missing. <sup class="cite"><a href="#source-11">[11]</a></sup>
+
+If you want a symptom-driven route instead of a workflow page, use [Common errors and where to go](../how-to/common-errors.md).
 
 
 <details class="sources" markdown="1">

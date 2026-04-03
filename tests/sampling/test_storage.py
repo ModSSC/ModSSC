@@ -71,3 +71,6 @@ def test_load_split_extra_keys():
         assert "val" in result.masks
         assert len(result.indices) == 1
         assert len(result.masks) == 1
+
+
+from ._storage_roundtrip import *  # noqa: E402,F401,F403

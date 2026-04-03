@@ -1,266 +1,213 @@
 # Dataset: cora
 
-## Percentage: p01
+## Regime: R1
 ```bash
-python -m bench.main --config bench/configs/best/p01/inductive/adamatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/adsh/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/co_training/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/comatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/daso/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/deep_co_training/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/defixmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/democratic_co_learning/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/fixmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/flexmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/free_match/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/mean_teacher/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/meta_pseudo_labels/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/mixmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/noisy_student/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/pi_model/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/pseudo_label/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/self_training/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/setred/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/simclr_v2/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/softmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/supervised/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/temporal_ensembling/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/tri_training/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/trinet/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/uda/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/vat/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/appnp/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/chebnet/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/dynamic_label_propagation/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/gat/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/gcn/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/gcnii/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/grafn/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/grand/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/graph_mincuts/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/graphhop/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/graphsage/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/h_gcn/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/label_propagation/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/label_spreading/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/laplace_learning/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/lazy_random_walk/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/n_gcn/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/p_laplace_learning/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/planetoid/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/poisson_learning/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/poisson_mbo/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/sgc/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/adamatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/adsh/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/co_training/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/comatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/daso/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/deep_co_training/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/defixmatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/democratic_co_learning/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/fixmatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/flexmatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/free_match/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/mean_teacher/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/meta_pseudo_labels/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/mixmatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/noisy_student/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/pi_model/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/pseudo_label/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/self_training/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/setred/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/simclr_v2/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/softmatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/supervised/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/temporal_ensembling/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/tri_training/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/trinet/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/uda/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/vat/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/appnp/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/chebnet/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/dynamic_label_propagation/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/gat/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/gcn/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/gcnii/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/grafn/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/grand/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/graph_mincuts/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/graphhop/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/graphsage/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/h_gcn/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/label_propagation/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/label_spreading/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/laplace_learning/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/lazy_random_walk/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/n_gcn/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/p_laplace_learning/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/planetoid/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/poisson_learning/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/poisson_mbo/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/sgc/graph/cora.yaml
 ```
 
-## Percentage: p02
+## Regime: R2
 ```bash
-python -m bench.main --config bench/configs/best/p02/inductive/adamatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/adsh/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/co_training/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/comatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/daso/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/deep_co_training/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/defixmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/democratic_co_learning/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/fixmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/flexmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/free_match/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/mean_teacher/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/meta_pseudo_labels/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/mixmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/noisy_student/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/pi_model/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/pseudo_label/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/self_training/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/setred/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/simclr_v2/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/softmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/supervised/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/temporal_ensembling/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/tri_training/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/trinet/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/uda/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/vat/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/appnp/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/chebnet/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/dynamic_label_propagation/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/gat/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/gcn/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/gcnii/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/grafn/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/grand/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/graph_mincuts/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/graphhop/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/graphsage/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/h_gcn/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/label_propagation/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/label_spreading/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/laplace_learning/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/lazy_random_walk/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/n_gcn/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/p_laplace_learning/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/planetoid/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/poisson_learning/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/poisson_mbo/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/sgc/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/adamatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/adsh/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/co_training/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/comatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/daso/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/deep_co_training/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/defixmatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/democratic_co_learning/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/fixmatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/flexmatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/free_match/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/mean_teacher/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/meta_pseudo_labels/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/mixmatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/noisy_student/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/pi_model/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/pseudo_label/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/self_training/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/setred/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/simclr_v2/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/softmatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/supervised/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/temporal_ensembling/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/tri_training/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/trinet/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/uda/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/vat/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/appnp/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/chebnet/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/dynamic_label_propagation/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/gat/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/gcn/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/gcnii/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/grafn/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/grand/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/graph_mincuts/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/graphhop/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/graphsage/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/h_gcn/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/label_propagation/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/label_spreading/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/laplace_learning/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/lazy_random_walk/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/n_gcn/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/p_laplace_learning/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/planetoid/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/poisson_learning/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/poisson_mbo/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/sgc/graph/cora.yaml
 ```
 
-## Percentage: p05
+## Regime: R3
 ```bash
-python -m bench.main --config bench/configs/best/p05/inductive/adamatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/adsh/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/co_training/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/comatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/daso/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/deep_co_training/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/defixmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/democratic_co_learning/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/fixmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/flexmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/free_match/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/mean_teacher/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/meta_pseudo_labels/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/mixmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/noisy_student/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/pi_model/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/pseudo_label/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/self_training/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/setred/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/simclr_v2/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/softmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/supervised/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/temporal_ensembling/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/tri_training/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/trinet/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/uda/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/vat/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/appnp/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/chebnet/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/dynamic_label_propagation/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/gat/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/gcn/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/gcnii/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/grafn/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/grand/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/graph_mincuts/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/graphhop/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/graphsage/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/h_gcn/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/label_propagation/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/label_spreading/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/laplace_learning/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/lazy_random_walk/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/n_gcn/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/p_laplace_learning/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/planetoid/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/poisson_learning/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/poisson_mbo/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/sgc/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/adamatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/adsh/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/co_training/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/comatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/daso/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/deep_co_training/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/defixmatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/democratic_co_learning/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/fixmatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/flexmatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/free_match/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/mean_teacher/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/meta_pseudo_labels/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/mixmatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/noisy_student/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/pi_model/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/pseudo_label/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/self_training/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/setred/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/simclr_v2/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/softmatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/supervised/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/temporal_ensembling/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/tri_training/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/trinet/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/uda/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/vat/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/appnp/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/chebnet/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/dynamic_label_propagation/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/gat/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/gcn/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/gcnii/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/grafn/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/grand/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/graph_mincuts/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/graphhop/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/graphsage/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/h_gcn/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/label_propagation/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/label_spreading/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/laplace_learning/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/lazy_random_walk/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/n_gcn/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/p_laplace_learning/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/planetoid/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/poisson_learning/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/poisson_mbo/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/sgc/graph/cora.yaml
 ```
 
-## Percentage: p10
+## Regime: R4
 ```bash
-python -m bench.main --config bench/configs/best/p10/inductive/adamatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/adsh/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/co_training/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/comatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/daso/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/deep_co_training/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/defixmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/democratic_co_learning/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/fixmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/flexmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/free_match/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/mean_teacher/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/meta_pseudo_labels/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/mixmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/noisy_student/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/pi_model/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/pseudo_label/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/self_training/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/setred/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/simclr_v2/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/softmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/supervised/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/temporal_ensembling/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/tri_training/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/trinet/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/uda/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/vat/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/appnp/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/chebnet/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/dynamic_label_propagation/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/gat/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/gcn/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/gcnii/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/grafn/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/grand/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/graph_mincuts/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/graphhop/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/graphsage/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/h_gcn/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/label_propagation/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/label_spreading/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/laplace_learning/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/lazy_random_walk/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/n_gcn/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/p_laplace_learning/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/planetoid/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/poisson_learning/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/poisson_mbo/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/sgc/graph/cora.yaml
-```
-
-## Percentage: p20
-```bash
-python -m bench.main --config bench/configs/best/p20/inductive/adamatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/adsh/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/co_training/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/comatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/daso/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/deep_co_training/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/defixmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/democratic_co_learning/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/fixmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/flexmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/free_match/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/mean_teacher/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/meta_pseudo_labels/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/mixmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/noisy_student/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/pi_model/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/pseudo_label/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/self_training/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/setred/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/simclr_v2/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/softmatch/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/supervised/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/temporal_ensembling/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/tri_training/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/trinet/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/uda/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/vat/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/appnp/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/chebnet/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/dynamic_label_propagation/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/gat/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/gcn/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/gcnii/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/grafn/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/grand/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/graph_mincuts/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/graphhop/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/graphsage/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/h_gcn/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/label_propagation/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/label_spreading/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/laplace_learning/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/lazy_random_walk/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/n_gcn/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/p_laplace_learning/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/planetoid/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/poisson_learning/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/poisson_mbo/graph/cora.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/sgc/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/adamatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/adsh/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/co_training/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/comatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/daso/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/deep_co_training/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/defixmatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/democratic_co_learning/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/fixmatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/flexmatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/free_match/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/mean_teacher/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/meta_pseudo_labels/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/mixmatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/noisy_student/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/pi_model/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/pseudo_label/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/self_training/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/setred/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/simclr_v2/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/softmatch/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/supervised/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/temporal_ensembling/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/tri_training/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/trinet/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/uda/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/vat/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/appnp/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/chebnet/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/dynamic_label_propagation/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/gat/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/gcn/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/gcnii/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/grafn/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/grand/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/graph_mincuts/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/graphhop/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/graphsage/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/h_gcn/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/label_propagation/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/label_spreading/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/laplace_learning/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/lazy_random_walk/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/n_gcn/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/p_laplace_learning/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/planetoid/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/poisson_learning/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/poisson_mbo/graph/cora.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/sgc/graph/cora.yaml
 ```

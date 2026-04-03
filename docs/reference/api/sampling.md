@@ -30,7 +30,7 @@ loaded = load_split(out_dir)
 print(loaded.split_fingerprint)
 ```
 
-Plan and storage helpers are defined in [`src/modssc/sampling/plan.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/sampling/plan.py) and [`src/modssc/sampling/storage.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/sampling/storage.py). <sup class="cite"><a href="#source-3">[3]</a><a href="#source-2">[2]</a></sup>
+Plan and storage helpers are defined in [`src/modssc/sampling/plan.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/sampling/plan.py) and [`src/modssc/sampling/storage.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/sampling/storage.py). The user-facing import remains `modssc.sampling`, while sampling orchestration is organized behind internal support modules. <sup class="cite"><a href="#source-3">[3]</a><a href="#source-2">[2]</a></sup>
 
 
 ## API reference

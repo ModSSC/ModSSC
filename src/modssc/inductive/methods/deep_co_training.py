@@ -18,6 +18,7 @@ from modssc.inductive.methods.deep_utils import (
     ensure_model_device,
     extract_logits,
     freeze_batchnorm,
+    get_torch_device,
     num_batches,
     slice_data,
 )
@@ -69,7 +70,6 @@ def _fgsm_adversarial(
     if x_u is None:
         n_l = int(x_l["x"].shape[0]) if isinstance(x_l, dict) and "x" in x_l else int(x_l.shape[0])
         if n_l == 0:
-            # Logic for empty?
             pass
         x_all = x_l
     elif isinstance(x_u, dict) and "x" in x_u and int(x_u["x"].shape[0]) == 0:
@@ -84,7 +84,7 @@ def _fgsm_adversarial(
 
     if isinstance(x_all, dict):
         # Handle dictionary gradients manually
-        # This is a simplification: we only perturb 'x'
+        # Keep graph structure fixed and perturb node features only.
         x_adv_dict = {k: v for k, v in x_all.items()}
         x_adv_dict["x"] = x_adv_dict["x"].detach().clone().requires_grad_(True)
         x_adv = x_adv_dict
@@ -190,6 +190,7 @@ class DeepCoTrainingMethod(ArgmaxPredictMixin, InductiveMethod):
         self._bundle1: TorchModelBundle | None = None
         self._bundle2: TorchModelBundle | None = None
         self._backend: str | None = None
+        self.device: str | None = None
 
     def _check_models(self, model1: Any, model2: Any) -> None:
         if model1 is model2:
@@ -489,6 +490,7 @@ class DeepCoTrainingMethod(ArgmaxPredictMixin, InductiveMethod):
         self._bundle1 = bundle1
         self._bundle2 = bundle2
         self._backend = backend
+        self.device = str(get_torch_device(X_l))
         logger.info("Finished %s.fit in %.3fs", self.info.method_id, perf_counter() - start)
         return self
 
@@ -519,8 +521,6 @@ class DeepCoTrainingMethod(ArgmaxPredictMixin, InductiveMethod):
             for start in range(0, n_samples, batch_size):
                 end = min(start + batch_size, n_samples)
                 if isinstance(X, dict):
-                    # Proper slicing for geometric data if needed, or just dict slicing
-                    # Assuming deep_utils.slice_data is available and handles dicts/graphs
                     batch_idx = torch.arange(start, end, device=X["x"].device)
                     batch_X = slice_data(X, batch_idx)
                 else:
@@ -534,9 +534,19 @@ class DeepCoTrainingMethod(ArgmaxPredictMixin, InductiveMethod):
 
                 all_logits1.append(l1)
                 all_logits2.append(l2)
-
-            logits1 = torch.cat(all_logits1, dim=0)
-            logits2 = torch.cat(all_logits2, dim=0)
+            if not all_logits1:
+                if isinstance(X, dict):
+                    empty_idx = torch.arange(0, 0, device=X["x"].device)
+                    empty_X = slice_data(X, empty_idx)
+                else:
+                    empty_X = X[:0]
+                logits1 = extract_logits(model1(empty_X))
+                logits2 = extract_logits(model2(empty_X))
+                if int(logits1.ndim) != 2 or int(logits2.ndim) != 2:
+                    raise InductiveValidationError("Model logits must be 2D (batch, classes).")
+            else:
+                logits1 = torch.cat(all_logits1, dim=0)
+                logits2 = torch.cat(all_logits2, dim=0)
 
             if int(logits1.shape[1]) != int(logits2.shape[1]):
                 raise InductiveValidationError("Models must agree on class count.")

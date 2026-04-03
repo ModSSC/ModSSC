@@ -61,8 +61,6 @@ class LogMelSpectrogramStep:
         spec = mel_transform(waveforms)
         log_spec = amplitude_to_db(spec)
 
-        # Output shape: (N, 1, n_mels, T_spec) -> Squeeze channel if preferred?
-        # CNN usually takes (N, C, H, W). Here we can treat n_mels as H, time as W. C=1.
-        # Let's keep C=1: (N, 1, n_mels, T)
+        # Keep the channel dimension for CNN-style inputs: (N, 1, n_mels, T).
 
         return {"features.X": log_spec.numpy()}

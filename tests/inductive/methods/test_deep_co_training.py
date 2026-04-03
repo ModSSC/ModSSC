@@ -20,6 +20,20 @@ class _LinearLogits(torch.nn.Module):
         return self.fc(x)
 
 
+class _ImageLogits(torch.nn.Module):
+    def __init__(self, in_shape: tuple[int, int, int] = (3, 4, 4), n_classes: int = 2) -> None:
+        super().__init__()
+        in_dim = 1
+        for dim in in_shape:
+            in_dim *= int(dim)
+        self.fc = torch.nn.Linear(in_dim, n_classes, bias=False)
+
+    def forward(self, x):
+        if isinstance(x, dict):
+            x = x["x"]
+        return self.fc(x.reshape(int(x.shape[0]), -1))
+
+
 class _BadLogits1D(torch.nn.Module):
     def __init__(self) -> None:
         super().__init__()
@@ -590,6 +604,7 @@ def test_deep_co_training_fit_predict_roundtrip() -> None:
     spec = _make_valid_spec()
     method = dct.DeepCoTrainingMethod(spec)
     method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
+    assert method.device == "cpu"
 
     model1 = method._bundle1.model
     model2 = method._bundle2.model
@@ -602,6 +617,25 @@ def test_deep_co_training_fit_predict_roundtrip() -> None:
     assert int(pred.shape[0]) == int(data.X_l.shape[0])
     assert model1.training is True
     assert model2.training is True
+
+
+def test_deep_co_training_fit_predict_roundtrip_image_inputs() -> None:
+    X_l = torch.randn((4, 3, 4, 4), dtype=torch.float32)
+    y_l = torch.tensor([0, 1, 0, 1], dtype=torch.int64)
+    X_u = torch.randn((4, 3, 4, 4), dtype=torch.float32)
+    data = DummyDataset(X_l=X_l, y_l=y_l, X_u=X_u)
+
+    spec = _make_valid_spec(
+        model1=_ImageLogits(),
+        model2=_ImageLogits(),
+        batch_size=2,
+        max_epochs=1,
+    )
+    method = dct.DeepCoTrainingMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=0)
+
+    proba = method.predict_proba(X_l)
+    assert method.device == "cpu"
+    assert proba.shape == (4, 2)
 
 
 def test_deep_co_training_fgsm_adversarial_dict_clip():
@@ -768,3 +802,30 @@ def test_deep_co_training_predict_proba_dict_input():
     X = {"x": torch.zeros((2, 2), dtype=torch.float32)}
     proba = method.predict_proba(X)
     assert int(proba.shape[0]) == 2
+
+
+def test_deep_co_training_predict_proba_empty_inputs_cover_empty_branches():
+    class _DictLinear(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.fc = torch.nn.Linear(2, 2, bias=False)
+
+        def forward(self, x):
+            if isinstance(x, dict):
+                x = x["x"]
+            return self.fc(x)
+
+    method = dct.DeepCoTrainingMethod()
+    method._bundle1 = _make_bundle(_DictLinear())
+    method._bundle2 = _make_bundle(_DictLinear())
+    method._backend = "torch"
+
+    proba_dict = method.predict_proba({"x": torch.zeros((0, 2), dtype=torch.float32)})
+    assert proba_dict.shape == (0, 2)
+
+    method_bad = dct.DeepCoTrainingMethod()
+    method_bad._bundle1 = _make_bundle(_BadLogits1D())
+    method_bad._bundle2 = _make_bundle(_BadLogits1D())
+    method_bad._backend = "torch"
+    with pytest.raises(InductiveValidationError, match="Model logits must be 2D"):
+        method_bad.predict_proba(torch.zeros((0, 2), dtype=torch.float32))

@@ -1,266 +1,319 @@
 # Dataset: ag_news
 
-## Percentage: p01
+## Regime: R1
 ```bash
-python -m bench.main --config bench/configs/best/p01/inductive/adamatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/adsh/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/co_training/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/comatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/daso/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/deep_co_training/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/defixmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/democratic_co_learning/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/fixmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/flexmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/free_match/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/mean_teacher/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/meta_pseudo_labels/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/mixmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/noisy_student/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/pi_model/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/pseudo_label/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/self_training/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/setred/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/simclr_v2/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/softmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/supervised/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/temporal_ensembling/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/tri_training/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/trinet/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/uda/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/inductive/vat/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/appnp/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/chebnet/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/dynamic_label_propagation/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/gat/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/gcn/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/gcnii/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/grafn/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/grand/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/graph_mincuts/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/graphhop/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/graphsage/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/h_gcn/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/label_propagation/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/label_spreading/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/laplace_learning/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/lazy_random_walk/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/n_gcn/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/p_laplace_learning/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/planetoid/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/poisson_learning/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/poisson_mbo/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p01/transductive/sgc/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/adamatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/adsh/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/co_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/comatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/daso/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/deep_co_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/defixmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/democratic_co_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/fixmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/flexmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/free_match/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/mean_teacher/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/meta_pseudo_labels/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/mixmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/noisy_student/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/pi_model/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/pseudo_label/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/self_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/setred/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/simclr_v2/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/softmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/supervised/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/temporal_ensembling/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/tri_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/trinet/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/uda/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/inductive/vat/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/appnp/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/chebnet/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/dynamic_label_propagation/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/gat/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/gcn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/gcnii/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/grafn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/grand/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/graph_mincuts/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/graphhop/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/graphsage/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/h_gcn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/label_propagation/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/label_spreading/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/laplace_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/lazy_random_walk/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/n_gcn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/p_laplace_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/planetoid/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/poisson_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/poisson_mbo/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/sgc/text/ag_news.yaml
 ```
 
-## Percentage: p02
+## Regime: R2
 ```bash
-python -m bench.main --config bench/configs/best/p02/inductive/adamatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/adsh/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/co_training/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/comatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/daso/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/deep_co_training/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/defixmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/democratic_co_learning/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/fixmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/flexmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/free_match/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/mean_teacher/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/meta_pseudo_labels/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/mixmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/noisy_student/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/pi_model/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/pseudo_label/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/self_training/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/setred/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/simclr_v2/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/softmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/supervised/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/temporal_ensembling/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/tri_training/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/trinet/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/uda/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/inductive/vat/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/appnp/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/chebnet/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/dynamic_label_propagation/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/gat/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/gcn/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/gcnii/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/grafn/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/grand/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/graph_mincuts/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/graphhop/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/graphsage/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/h_gcn/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/label_propagation/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/label_spreading/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/laplace_learning/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/lazy_random_walk/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/n_gcn/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/p_laplace_learning/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/planetoid/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/poisson_learning/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/poisson_mbo/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p02/transductive/sgc/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/adamatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/adsh/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/co_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/comatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/daso/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/deep_co_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/defixmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/democratic_co_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/fixmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/flexmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/free_match/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/mean_teacher/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/meta_pseudo_labels/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/mixmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/noisy_student/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/pi_model/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/pseudo_label/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/self_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/setred/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/simclr_v2/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/softmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/supervised/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/temporal_ensembling/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/tri_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/trinet/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/uda/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/inductive/vat/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/appnp/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/chebnet/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/dynamic_label_propagation/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/gat/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/gcn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/gcnii/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/grafn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/grand/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/graph_mincuts/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/graphhop/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/graphsage/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/h_gcn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/label_propagation/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/label_spreading/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/laplace_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/lazy_random_walk/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/n_gcn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/p_laplace_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/planetoid/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/poisson_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/poisson_mbo/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/sgc/text/ag_news.yaml
 ```
 
-## Percentage: p05
+## Regime: R3
 ```bash
-python -m bench.main --config bench/configs/best/p05/inductive/adamatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/adsh/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/co_training/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/comatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/daso/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/deep_co_training/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/defixmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/democratic_co_learning/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/fixmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/flexmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/free_match/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/mean_teacher/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/meta_pseudo_labels/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/mixmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/noisy_student/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/pi_model/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/pseudo_label/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/self_training/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/setred/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/simclr_v2/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/softmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/supervised/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/temporal_ensembling/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/tri_training/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/trinet/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/uda/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/inductive/vat/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/appnp/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/chebnet/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/dynamic_label_propagation/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/gat/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/gcn/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/gcnii/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/grafn/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/grand/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/graph_mincuts/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/graphhop/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/graphsage/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/h_gcn/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/label_propagation/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/label_spreading/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/laplace_learning/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/lazy_random_walk/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/n_gcn/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/p_laplace_learning/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/planetoid/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/poisson_learning/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/poisson_mbo/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p05/transductive/sgc/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/adamatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/adsh/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/co_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/comatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/daso/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/deep_co_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/defixmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/democratic_co_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/fixmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/flexmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/free_match/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/mean_teacher/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/meta_pseudo_labels/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/mixmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/noisy_student/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/pi_model/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/pseudo_label/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/self_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/setred/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/simclr_v2/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/softmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/supervised/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/temporal_ensembling/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/tri_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/trinet/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/uda/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/inductive/vat/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/appnp/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/chebnet/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/dynamic_label_propagation/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/gat/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/gcn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/gcnii/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/grafn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/grand/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/graph_mincuts/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/graphhop/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/graphsage/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/h_gcn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/label_propagation/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/label_spreading/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/laplace_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/lazy_random_walk/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/n_gcn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/p_laplace_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/planetoid/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/poisson_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/poisson_mbo/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/sgc/text/ag_news.yaml
 ```
 
-## Percentage: p10
+## Regime: R4
 ```bash
-python -m bench.main --config bench/configs/best/p10/inductive/adamatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/adsh/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/co_training/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/comatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/daso/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/deep_co_training/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/defixmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/democratic_co_learning/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/fixmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/flexmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/free_match/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/mean_teacher/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/meta_pseudo_labels/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/mixmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/noisy_student/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/pi_model/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/pseudo_label/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/self_training/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/setred/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/simclr_v2/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/softmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/supervised/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/temporal_ensembling/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/tri_training/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/trinet/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/uda/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/inductive/vat/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/appnp/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/chebnet/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/dynamic_label_propagation/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/gat/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/gcn/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/gcnii/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/grafn/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/grand/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/graph_mincuts/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/graphhop/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/graphsage/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/h_gcn/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/label_propagation/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/label_spreading/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/laplace_learning/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/lazy_random_walk/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/n_gcn/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/p_laplace_learning/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/planetoid/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/poisson_learning/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/poisson_mbo/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p10/transductive/sgc/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/adamatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/adsh/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/co_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/comatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/daso/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/deep_co_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/defixmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/democratic_co_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/fixmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/flexmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/free_match/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/mean_teacher/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/meta_pseudo_labels/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/mixmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/noisy_student/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/pi_model/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/pseudo_label/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/self_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/setred/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/simclr_v2/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/softmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/supervised/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/temporal_ensembling/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/tri_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/trinet/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/uda/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/inductive/vat/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/appnp/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/chebnet/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/dynamic_label_propagation/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/gat/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/gcn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/gcnii/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/grafn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/grand/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/graph_mincuts/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/graphhop/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/graphsage/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/h_gcn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/label_propagation/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/label_spreading/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/laplace_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/lazy_random_walk/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/n_gcn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/p_laplace_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/planetoid/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/poisson_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/poisson_mbo/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/sgc/text/ag_news.yaml
 ```
 
-## Percentage: p20
+## Regime: R5
 ```bash
-python -m bench.main --config bench/configs/best/p20/inductive/adamatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/adsh/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/co_training/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/comatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/daso/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/deep_co_training/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/defixmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/democratic_co_learning/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/fixmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/flexmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/free_match/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/mean_teacher/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/meta_pseudo_labels/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/mixmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/noisy_student/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/pi_model/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/pseudo_label/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/self_training/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/setred/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/simclr_v2/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/softmatch/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/supervised/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/temporal_ensembling/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/tri_training/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/trinet/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/uda/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/inductive/vat/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/appnp/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/chebnet/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/dynamic_label_propagation/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/gat/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/gcn/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/gcnii/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/grafn/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/grand/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/graph_mincuts/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/graphhop/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/graphsage/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/h_gcn/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/label_propagation/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/label_spreading/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/laplace_learning/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/lazy_random_walk/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/n_gcn/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/p_laplace_learning/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/planetoid/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/poisson_learning/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/poisson_mbo/text/ag_news.yaml
-python -m bench.main --config bench/configs/best/p20/transductive/sgc/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/adamatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/adsh/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/co_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/comatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/daso/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/deep_co_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/defixmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/democratic_co_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/fixmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/flexmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/free_match/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/mean_teacher/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/meta_pseudo_labels/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/mixmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/noisy_student/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/pi_model/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/pseudo_label/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/self_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/setred/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/simclr_v2/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/softmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/supervised/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/temporal_ensembling/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/tri_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/trinet/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/uda/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/inductive/vat/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/appnp/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/chebnet/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/dynamic_label_propagation/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/gat/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/gcn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/gcnii/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/grafn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/grand/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/graph_mincuts/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/graphhop/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/graphsage/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/h_gcn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/label_propagation/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/label_spreading/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/laplace_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/lazy_random_walk/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/n_gcn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/p_laplace_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/planetoid/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/poisson_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/poisson_mbo/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R5/transductive/sgc/text/ag_news.yaml
+```
+
+## Regime: R6
+```bash
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/adamatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/adsh/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/co_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/comatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/daso/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/deep_co_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/defixmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/democratic_co_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/fixmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/flexmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/free_match/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/mean_teacher/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/meta_pseudo_labels/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/mixmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/noisy_student/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/pi_model/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/pseudo_label/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/self_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/setred/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/simclr_v2/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/softmatch/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/supervised/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/temporal_ensembling/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/tri_training/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/trinet/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/uda/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/inductive/vat/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/appnp/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/chebnet/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/dynamic_label_propagation/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/gat/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/gcn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/gcnii/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/grafn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/grand/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/graph_mincuts/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/graphhop/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/graphsage/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/h_gcn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/label_propagation/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/label_spreading/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/laplace_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/lazy_random_walk/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/n_gcn/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/p_laplace_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/planetoid/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/poisson_learning/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/poisson_mbo/text/ag_news.yaml
+python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R6/transductive/sgc/text/ag_news.yaml
 ```

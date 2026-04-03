@@ -1,10 +1,10 @@
 # How to use data augmentation
 
-This page focuses on training-time augmentation plans and how to inspect available ops. If you are looking for feature engineering and caching that happens before training, see [Preprocess how-to](preprocess.md).
+This guide focuses on training-time augmentation plans and how to inspect available operations. If you are looking for feature engineering and caching that happens before training, see [Run preprocessing plans](preprocess.md).
 
 
 ## Problem statement
-You want to apply deterministic, training-time augmentations to inputs for SSL methods (for example, weak/strong views). <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a></sup> Keeping augmentations separate makes it easier to swap them without touching cached preprocessing. <sup class="cite"><a href="#source-7">[7]</a><a href="#source-8">[8]</a></sup>
+You want to apply deterministic, training-time augmentations to inputs for SSL methods (for example, weak/strong views). <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a></sup> Keeping augmentations separate makes it easier to swap them without changing cached preprocessing. <sup class="cite"><a href="#source-7">[7]</a><a href="#source-8">[8]</a></sup>
 
 
 ## When to use
@@ -12,7 +12,7 @@ Use this when your method expects stochastic augmentations (FixMatch-style, stro
 
 
 ## Steps
-1) Inspect available ops for your modality. <sup class="cite"><a href="#source-3">[3]</a><a href="#source-4">[4]</a></sup>
+1) Inspect available operations for your modality. <sup class="cite"><a href="#source-3">[3]</a><a href="#source-4">[4]</a></sup>
 
 2) Define an `AugmentationPlan` (list of ops + params). <sup class="cite"><a href="#source-2">[2]</a></sup>
 
@@ -20,7 +20,7 @@ Use this when your method expects stochastic augmentations (FixMatch-style, stro
 
 
 ## Copy-paste example
-Use the CLI when you want to inspect ops quickly (`modssc augmentation` in [`src/modssc/cli/augmentation.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/cli/augmentation.py)), and use Python when you want to build pipelines in code (API in [`src/modssc/data_augmentation/api.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/data_augmentation/api.py)). <sup class="cite"><a href="#source-4">[4]</a><a href="#source-1">[1]</a></sup>
+Use the CLI when you want to inspect operations quickly (`modssc augmentation` in [`src/modssc/cli/augmentation.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/cli/augmentation.py)), and use Python when you want to build pipelines in code through the public `modssc.data_augmentation` package API. Operation discovery and lazy registration are handled behind that facade. <sup class="cite"><a href="#source-4">[4]</a><a href="#source-1">[1]</a></sup>
 
 CLI:
 
@@ -50,7 +50,7 @@ aug_x = pipeline(x, ctx=ctx)
 print(aug_x.shape)
 ```
 
-Ops and plan mechanics are defined in [`src/modssc/data_augmentation/ops/`](https://github.com/ModSSC/ModSSC/tree/main/src/modssc/data_augmentation/ops) and [`src/modssc/data_augmentation/api.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/data_augmentation/api.py). <sup class="cite"><a href="#source-6">[6]</a><a href="#source-1">[1]</a></sup>
+Augmentation operations and plan mechanics are defined in [`src/modssc/data_augmentation/ops/`](https://github.com/ModSSC/ModSSC/tree/main/src/modssc/data_augmentation/ops) and [`src/modssc/data_augmentation/api.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/data_augmentation/api.py). <sup class="cite"><a href="#source-6">[6]</a><a href="#source-1">[1]</a></sup>
 
 
 ## Pitfalls
@@ -64,7 +64,7 @@ Ops and plan mechanics are defined in [`src/modssc/data_augmentation/ops/`](http
 
 ## Related links
 - [Configuration reference](../reference/configuration.md)
-- [Inductive tutorial](../tutorials/inductive-toy.md)
+- [Inductive tutorial: toy pseudo-label run](../tutorials/inductive-toy.md)
 - [Catalogs and registries](../reference/catalogs.md)
 
 <details class="sources" markdown="1">

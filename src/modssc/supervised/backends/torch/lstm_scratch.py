@@ -6,9 +6,10 @@ from typing import Any
 import numpy as np
 
 from modssc.supervised.backends.torch.common import (
-    TorchNumpyProbaClassifierBase,
+    TorchScoresClassifierBase,
 )
 from modssc.supervised.base import FitResult
+from modssc.supervised.errors import SupervisedValidationError
 from modssc.supervised.optional import optional_import
 from modssc.supervised.utils import seed_everything
 
@@ -19,7 +20,7 @@ def _torch():
     return optional_import("torch", extra="supervised-torch", feature="supervised:lstm_scratch")
 
 
-class TorchLSTMClassifier(TorchNumpyProbaClassifierBase):
+class TorchLSTMClassifier(TorchScoresClassifierBase):
     """LSTM classifier for token sequence features (Tabula Rasa context)."""
 
     classifier_id = "lstm_scratch"
@@ -54,6 +55,45 @@ class TorchLSTMClassifier(TorchNumpyProbaClassifierBase):
         self.max_epochs = int(max_epochs)
 
         self._model: Any | None = None
+        self._classes_t: Any | None = None
+
+    def _prepare_X(self, X: Any, torch) -> Any:
+        if hasattr(X, "to_dense"):
+            X = X.to_dense()
+        if not isinstance(X, torch.Tensor):
+            X = torch.as_tensor(np.asarray(X), dtype=torch.long)
+        else:
+            X = X.to(dtype=torch.long)
+        if X.ndim != 2:
+            raise SupervisedValidationError("X must be 2D token ids for TorchLSTMClassifier.")
+        if int(X.shape[0]) == 0:
+            raise SupervisedValidationError("X must be non-empty.")
+        return X
+
+    def _prepare_y(self, y: Any, torch) -> Any:
+        if not isinstance(y, torch.Tensor):
+            y = torch.as_tensor(np.asarray(y), dtype=torch.long)
+        else:
+            y = y.to(dtype=torch.long)
+        if y.ndim != 1:
+            y = y.view(-1)
+        if int(y.shape[0]) == 0:
+            raise SupervisedValidationError("y must be non-empty.")
+        return y
+
+    def _fit_device(self, X_raw: Any, y_raw: Any, torch) -> Any:
+        if (
+            isinstance(X_raw, torch.Tensor)
+            and isinstance(y_raw, torch.Tensor)
+            and X_raw.device != y_raw.device
+        ):
+            raise SupervisedValidationError("X and y must be on the same device.")
+        for tensor in (X_raw, y_raw):
+            if isinstance(tensor, torch.Tensor):
+                return tensor.device
+        if torch.cuda.is_available() and self.n_jobs != 0:
+            return torch.device("cuda")
+        return torch.device("cpu")
 
     def fit(self, X: Any, y: Any) -> FitResult:
         torch = _torch()
@@ -61,23 +101,20 @@ class TorchLSTMClassifier(TorchNumpyProbaClassifierBase):
         if seed_value is not None:
             seed_everything(seed_value, deterministic=True)
 
-        # Ensure input is LongTensor (batch, seq_len)
-        if hasattr(X, "to_dense"):  # sparse handling if needed (unlikely for input_ids)
-            X = X.to_dense()
+        X_raw = X
+        y_raw = y
+        X = self._prepare_X(X, torch)
+        y = self._prepare_y(y, torch)
+        if int(X.shape[0]) != int(y.shape[0]):
+            raise SupervisedValidationError("X and y must have matching first dimension.")
 
-        if not isinstance(X, torch.Tensor):
-            X = torch.as_tensor(np.asarray(X), dtype=torch.long)
-        else:
-            X = X.long()
-
-        if not isinstance(y, torch.Tensor):
-            y = torch.as_tensor(np.asarray(y), dtype=torch.long)
-
-        # Detect device
-        device = "cuda" if torch.cuda.is_available() and self.n_jobs != 0 else "cpu"
+        device = self._fit_device(X_raw, y_raw, torch)
 
         # Model definition
-        num_classes = int(y.max().item()) + 1
+        classes, y_enc = torch.unique(y, sorted=True, return_inverse=True)
+        num_classes = int(classes.numel())
+        self._classes_t = classes.to(device)
+        self.classes_ = classes.detach().cpu().numpy()
 
         class LSTMModel(torch.nn.Module):
             def __init__(self, vocab_size, embed_dim, hidden_dim, num_layers, num_classes, dropout):
@@ -112,14 +149,14 @@ class TorchLSTMClassifier(TorchNumpyProbaClassifierBase):
         )
         self._model.to(device)
         X = X.to(device)
-        y = y.to(device)
+        y_enc = y_enc.to(device)
 
         optimizer = torch.optim.Adam(
             self._model.parameters(), lr=self.lr, weight_decay=self.weight_decay
         )
         criterion = torch.nn.CrossEntropyLoss()
 
-        dataset = torch.utils.data.TensorDataset(X, y)
+        dataset = torch.utils.data.TensorDataset(X, y_enc)
         generator = None
         if seed_value is not None:
             generator = torch.Generator().manual_seed(seed_value)
@@ -147,19 +184,19 @@ class TorchLSTMClassifier(TorchNumpyProbaClassifierBase):
         )
         return self._fit_result
 
-    def predict_proba(self, X: Any) -> Any:
+    def _scores(self, X: Any):
         torch = _torch()
-        if not isinstance(X, torch.Tensor):
-            X = torch.as_tensor(np.asarray(X), dtype=torch.long)
-        else:
-            X = X.long()
+        if self._model is None or self._classes_t is None:
+            raise RuntimeError("Model is not fitted")
+        input_is_tensor = isinstance(X, torch.Tensor)
+        X = self._prepare_X(X, torch)
 
         device = next(self._model.parameters()).device
+        if input_is_tensor and X.device != device:
+            raise SupervisedValidationError("X must be on the same device as the model.")
         X = X.to(device)
 
         self._model.eval()
         with torch.no_grad():
             logits = self._model(X)
-            probs = torch.softmax(logits, dim=1)
-
-        return probs.cpu().numpy()
+            return torch.softmax(logits, dim=1)

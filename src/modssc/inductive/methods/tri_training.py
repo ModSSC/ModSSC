@@ -279,7 +279,7 @@ class TriTrainingMethod(InductiveMethod):
     def predict_proba(self, X: Any) -> np.ndarray:
         if not self._clfs:
             raise RuntimeError("TriTrainingMethod is not fitted yet. Call fit() first.")
-        backend = self._backend or detect_backend(X)
+        backend = detect_backend(X)
         if self._backend is not None and backend != self._backend:
             raise InductiveValidationError("predict_proba input backend mismatch.")
 
@@ -292,20 +292,49 @@ class TriTrainingMethod(InductiveMethod):
         shapes = [s.shape[1] for s in scores_list]
         distinct_shapes = set(shapes)
 
-        if len(distinct_shapes) > 1:
-            # Check if we can align using classes_ attribute
-            has_classes = [hasattr(clf, "classes_") for clf in self._clfs]
-            if not all(has_classes):
+        def _resolve_score_classes(clf: Any, scores: Any) -> np.ndarray | None:
+            classes = getattr(clf, "classes_", None)
+            if classes is None:
+                classes = getattr(clf, "classes_t_", None)
+            if classes is None:
+                return None
+            if hasattr(classes, "detach"):
+                classes_arr = classes.detach().cpu().numpy()
+            else:
+                classes_arr = np.asarray(classes)
+            if classes_arr.ndim != 1 or int(classes_arr.shape[0]) != int(scores.shape[1]):
+                raise InductiveValidationError(
+                    "TriTraining classifiers disagree on class counts "
+                    f"{shapes}, and one classifier exposes incompatible class labels "
+                    f"with shape {tuple(classes_arr.shape)} for {scores.shape[1]} score columns."
+                )
+            return classes_arr
+
+        class_labels = [
+            _resolve_score_classes(clf, scores)
+            for clf, scores in zip(self._clfs, scores_list, strict=False)
+        ]
+        labels_available = [classes is not None for classes in class_labels]
+        should_align = len(distinct_shapes) > 1
+        if all(labels_available):
+            ref_classes = class_labels[0]
+            should_align = should_align or any(
+                not np.array_equal(classes, ref_classes) for classes in class_labels[1:]
+            )
+
+        if should_align:
+            if not all(labels_available):
                 raise InductiveValidationError(
                     f"TriTraining classifiers disagree on class counts {shapes}, "
-                    "and not all classifiers expose the 'classes_' attribute to allow alignment. "
+                    "and not all classifiers expose non-null, score-aligned class labels "
+                    "via 'classes_' or 'classes_t_' to allow alignment. "
                     "Cannot safely merge predictions."
                 )
 
             # Align based on classes_
             all_classes_set = set()
-            for clf in self._clfs:
-                all_classes_set.update(clf.classes_.tolist())
+            for classes in class_labels:
+                all_classes_set.update(classes.tolist())
 
             sorted_classes = sorted(list(all_classes_set))
             global_map = {c: i for i, c in enumerate(sorted_classes)}
@@ -313,10 +342,10 @@ class TriTrainingMethod(InductiveMethod):
 
             aligned_scores = []
             if backend == "numpy":
-                for clf, s in zip(self._clfs, scores_list, strict=False):
+                for classes, s in zip(class_labels, scores_list, strict=False):
                     target = np.zeros((s.shape[0], final_n_classes), dtype=s.dtype)
                     # Map local columns to global columns
-                    for local_idx, cls_label in enumerate(clf.classes_):
+                    for local_idx, cls_label in enumerate(classes):
                         global_idx = global_map[cls_label]
                         target[:, global_idx] = s[:, local_idx]
                     aligned_scores.append(target)
@@ -324,13 +353,11 @@ class TriTrainingMethod(InductiveMethod):
                 avg = np.mean(np.stack(aligned_scores, axis=0), axis=0)
             else:
                 torch = optional_import("torch", extra="inductive-torch")
-                for clf, s in zip(self._clfs, scores_list, strict=False):
+                for classes, s in zip(class_labels, scores_list, strict=False):
                     target = torch.zeros(
                         (s.shape[0], final_n_classes), dtype=s.dtype, device=s.device
                     )
-                    for local_idx, cls_label in enumerate(clf.classes_):
-                        # Assuming classes_ is numpy or list even for torch backend wrappers
-                        # Convert to python generic for safety
+                    for local_idx, cls_label in enumerate(classes):
                         val = cls_label.item() if hasattr(cls_label, "item") else cls_label
                         global_idx = global_map[val]
                         target[:, global_idx] = s[:, local_idx]
@@ -363,7 +390,7 @@ class TriTrainingMethod(InductiveMethod):
 
     def predict(self, X: Any) -> np.ndarray:
         proba = self.predict_proba(X)
-        backend = self._backend or detect_backend(X)
+        backend = detect_backend(X)
         if backend == "numpy":
             idx = proba.argmax(axis=1)
             classes = getattr(self._clfs[0], "classes_", None)

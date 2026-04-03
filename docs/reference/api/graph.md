@@ -32,7 +32,7 @@ views = graph_to_views(node_ds, spec=fspec, seed=0, cache=False)
 print(list(views.views.keys()))
 ```
 
-Specs and artifacts are defined in [`src/modssc/graph/specs.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/graph/specs.py) and [`src/modssc/graph/artifacts.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/graph/artifacts.py). <sup class="cite"><a href="#source-3">[3]</a><a href="#source-4">[4]</a></sup>
+Specs and artifacts are defined in [`src/modssc/graph/specs.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/graph/specs.py) and [`src/modssc/graph/artifacts.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/graph/artifacts.py). The `modssc.graph` package is the public surface, while construction and featurization are implemented in dedicated subpackages. <sup class="cite"><a href="#source-3">[3]</a><a href="#source-4">[4]</a></sup>
 
 
 ## API reference

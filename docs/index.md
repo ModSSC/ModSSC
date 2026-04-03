@@ -22,15 +22,26 @@ ModSSC is a modular framework for semi-supervised classification across heteroge
 
 - CLI tools for datasets, sampling, preprocessing, graphs, augmentation, and evaluation. <sup class="cite"><a href="#source-2">[2]</a><a href="#source-3">[3]</a></sup>
 
-- Benchmark runner with YAML experiment configs (GitHub-only, not shipped to PyPI). <sup class="cite"><a href="#source-17">[17]</a><a href="#source-2">[2]</a></sup>
+- Benchmark runner with YAML experiment configs (repository-only, not shipped to PyPI). <sup class="cite"><a href="#source-17">[17]</a><a href="#source-2">[2]</a></sup>
 
 
 ## Quickstart links
+- [Choose your path](getting-started/choose-your-path.md)
 - [Installation](getting-started/installation.md)
+- [Optional extras and platform support](getting-started/extras-and-platforms.md)
 - [Quickstart](getting-started/quickstart.md)
 - [Concepts](getting-started/concepts.md)
+- [Glossary](getting-started/glossary.md)
 - [Inductive tutorial](tutorials/inductive-toy.md)
 - [Transductive tutorial](tutorials/transductive-toy.md)
+
+## Hands-on resources
+- [Example scripts](examples/index.md)
+- [Notebook tour](notebooks/index.md)
+- [Bench config cookbook](how-to/bench-cookbook.md)
+- [Reproducibility](how-to/reproducibility.md)
+- [Common errors and where to go](how-to/common-errors.md)
+- [Troubleshooting](how-to/troubleshooting.md)
 
 ## Version
 Current version is `1.0.1`, sourced from [`src/modssc/__about__.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/__about__.py) and referenced by the Hatch version config in [`pyproject.toml`](https://github.com/ModSSC/ModSSC/blob/main/pyproject.toml). <sup class="cite"><a href="#source-18">[18]</a><a href="#source-2">[2]</a></sup>

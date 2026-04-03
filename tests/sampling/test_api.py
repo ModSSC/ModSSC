@@ -223,3 +223,9 @@ def test_warn_on_sampling_stats_inductive_non_dict_classes(caplog) -> None:
     )
     with caplog.at_level("WARNING"):
         _warn_on_sampling_stats(result)
+
+
+from ._api_cache_heuristic import *  # noqa: E402,F401,F403
+from ._api_complex import *  # noqa: E402,F401,F403
+from ._api_graph import *  # noqa: E402,F401,F403
+from ._api_inductive import *  # noqa: E402,F401,F403

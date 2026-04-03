@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from modssc.import_utils import load_object as _load_object
 from modssc.supervised.errors import OptionalDependencyError, UnknownBackendError
-from modssc.supervised.optional import has_module
+from modssc.supervised.optional import has_module, module_for_extra
 from modssc.supervised.registry import get_backend_spec, get_spec, iter_specs
 from modssc.supervised.types import ClassifierRuntime
+from modssc.utils.imports import load_object as _load_object
 
 
 def _normalize_classifier_params(classifier_id: str, params: dict[str, Any]) -> dict[str, Any]:
@@ -45,15 +45,7 @@ def available_classifiers(*, available_only: bool = False) -> list[dict[str, Any
                 if extra is None:
                     backends[b] = bs
                     continue
-                extra_to_module = {
-                    "sklearn": "sklearn",
-                    "vision": "torchvision",
-                    "audio": "torchaudio",
-                    "preprocess-text": "transformers",
-                }
-                module = extra_to_module.get(extra, extra)
-                if extra.endswith("-torch"):
-                    module = "torch"
+                module = module_for_extra(str(extra))
                 if has_module(module):
                     backends[b] = bs
             d["backends"] = backends
@@ -94,9 +86,7 @@ def create_classifier(
             if bs.required_extra is None:
                 chosen_backend = b
                 break
-            module = "sklearn" if bs.required_extra == "sklearn" else bs.required_extra
-            if bs.required_extra and bs.required_extra.endswith("-torch"):
-                module = "torch"
+            module = module_for_extra(str(bs.required_extra))
             if has_module(module):
                 chosen_backend = b
                 break

@@ -5,10 +5,10 @@ from typing import Any
 
 import numpy as np
 
-from modssc.device import resolve_device_name
-from modssc.model_cache import resolve_hf_local_files_only, resolve_sentence_transformers_cache
+from modssc.cache.model import resolve_hf_local_files_only, resolve_sentence_transformers_cache
 from modssc.preprocess.errors import OptionalDependencyError
 from modssc.preprocess.optional import require
+from modssc.runtime.device import resolve_device_name
 
 
 @dataclass

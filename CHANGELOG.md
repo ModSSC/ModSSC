@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on "Keep a Changelog", and this project adheres to Semantic Versioning.
 
+## 1.1
+- Reorganized internal module boundaries around services, helpers, runtime utilities, and registry data while preserving public entry points.
+- Aligned lazy registries, optional dependency handling, tooling, and the source/test mirror, with the full suite back at 100% coverage.
+
 ## 1.0.1
 - Fixed the torchvision image encoder so batched grayscale arrays shaped `(N, H, W)` are handled as batches instead of being misread as a single sample.
 

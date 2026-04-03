@@ -5,7 +5,7 @@ import logging
 from time import perf_counter
 from typing import Any
 
-from modssc.model_cache import ensure_torch_home
+from modssc.cache.model import ensure_torch_home
 from modssc.supervised.backends.torch.common import (
     TorchScoresClassifierBase,
     make_softmax_scores_method,
@@ -342,12 +342,29 @@ class TorchImagePretrainedClassifier(TorchScoresClassifierBase):
         )
 
         n = int(X4.shape[0])
+        warned_singleton_batch = False
         for _epoch in range(int(self.max_epochs)):
             self._set_train_mode()
             order = torch.randperm(n, device=X4.device)
             for i in range(0, n, int(self.batch_size)):
                 idx = order[i : i + int(self.batch_size)]
-                logits = model(X4[idx].to(dtype=torch.float32))
+                batch = X4[idx].to(dtype=torch.float32)
+                if int(idx.numel()) == 1 and not self.freeze_backbone:
+                    if not warned_singleton_batch:
+                        logger.warning(
+                            "image_pretrained.fit encountered a singleton batch; "
+                            "using eval-mode forward pass to avoid batch-norm failure"
+                        )
+                        warned_singleton_batch = True
+                    was_training = bool(model.training)
+                    model.eval()
+                    try:
+                        logits = model(batch)
+                    finally:
+                        if was_training:
+                            model.train()
+                else:
+                    logits = model(batch)
                 loss = torch.nn.functional.cross_entropy(logits, y_enc[idx].to(torch.long))
                 optimizer.zero_grad()
                 loss.backward()

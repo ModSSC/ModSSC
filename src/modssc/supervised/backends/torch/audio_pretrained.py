@@ -4,7 +4,7 @@ import logging
 from time import perf_counter
 from typing import Any
 
-from modssc.model_cache import ensure_torch_home, torchaudio_download_kwargs
+from modssc.cache.model import ensure_torch_home, torchaudio_download_kwargs
 from modssc.supervised.backends.torch.common import TorchScoresClassifierBase
 from modssc.supervised.base import FitResult
 from modssc.supervised.errors import SupervisedValidationError

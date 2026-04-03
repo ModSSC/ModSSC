@@ -5,11 +5,11 @@ from typing import Any
 
 import numpy as np
 
-from modssc.device import resolve_device_name
 from modssc.preprocess.errors import PreprocessValidationError
 from modssc.preprocess.optional import require
 from modssc.preprocess.steps.base import get_X
 from modssc.preprocess.store import ArtifactStore
+from modssc.runtime.device import resolve_device_name
 
 
 def _ensure_2d(X: np.ndarray) -> np.ndarray:

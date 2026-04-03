@@ -50,3 +50,6 @@ def test_info_without_doc(monkeypatch):
     result = runner.invoke(app, ["info", "x"])
     assert result.exit_code == 0
     assert "Defaults:" in result.stdout
+
+
+from ._augmentation_module import *  # noqa: E402,F401,F403

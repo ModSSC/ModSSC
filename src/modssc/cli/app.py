@@ -8,7 +8,7 @@ from typing import Any
 import typer
 
 from modssc.__about__ import __version__
-from modssc.logging import LogLevelOption, configure_logging, resolve_log_level
+from modssc.runtime.logging import LogLevelOption, configure_logging, resolve_log_level
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
 

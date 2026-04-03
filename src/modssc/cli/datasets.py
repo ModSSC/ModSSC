@@ -8,8 +8,8 @@ import typer
 
 from modssc.cli._utils import exit_with_error
 from modssc.data_loader import api
-from modssc.data_loader.errors import DataLoaderError
-from modssc.logging import LogLevelOption, add_log_level_callback, configure_logging
+from modssc.data_loader.errors import DataLoaderError, OptionalDependencyError
+from modssc.runtime.logging import LogLevelOption, add_log_level_callback, configure_logging
 
 app = typer.Typer(help="Dataset commands (download, cache, info).")
 add_log_level_callback(app)
@@ -67,7 +67,9 @@ def download(
     all: bool = typer.Option(False, "--all"),  # noqa: B008
     force: bool = typer.Option(False, "--force"),  # noqa: B008
     cache_dir: Path | None = typer.Option(None, "--cache-dir", "--dataset-cache-dir"),  # noqa: B008
-    ignore_missing_extras: bool = typer.Option(True, "--ignore-missing-extras"),  # noqa: B008
+    ignore_missing_extras: bool = typer.Option(  # noqa: B008
+        True, "--ignore-missing-extras/--no-ignore-missing-extras"
+    ),
     skip_cached: bool = typer.Option(False, "--skip-cached"),  # noqa: B008
     modalities: list[str] | None = typer.Option(None, "--modalities"),  # noqa: B008
     log_level: LogLevelOption = None,
@@ -100,7 +102,13 @@ def download(
         if dataset_id is None:
             exit_with_error("Provide --dataset or use --all")
 
-        api.download_dataset(dataset_id, cache_dir=cache_dir, force=force)
+        try:
+            api.download_dataset(dataset_id, cache_dir=cache_dir, force=force)
+        except OptionalDependencyError as exc:
+            if not ignore_missing_extras:
+                raise
+            typer.echo(f"Skipped {dataset_id}: {exc}")
+            return
         typer.echo(f"Downloaded: {dataset_id}")
 
     except DataLoaderError as exc:

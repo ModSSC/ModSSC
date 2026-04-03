@@ -123,6 +123,7 @@ class RunConfig:
     fail_fast: bool = True
     log_level: str | None = None
     benchmark_mode: bool = False
+    allow_custom_factories: bool = False
 
 
 @dataclass(frozen=True)
@@ -274,7 +275,16 @@ class ExperimentConfig:
         run = _as_mapping(data.get("run", {}), name="run")
         _check_unknown(
             run,
-            {"name", "seed", "seeds", "output_dir", "fail_fast", "log_level", "benchmark_mode"},
+            {
+                "name",
+                "seed",
+                "seeds",
+                "output_dir",
+                "fail_fast",
+                "log_level",
+                "benchmark_mode",
+                "allow_custom_factories",
+            },
             name="run",
         )
         benchmark_mode = _optional_bool(run, "benchmark_mode", default=False)
@@ -292,6 +302,7 @@ class ExperimentConfig:
             fail_fast=fail_fast,
             log_level=_optional_str(run, "log_level"),
             benchmark_mode=benchmark_mode,
+            allow_custom_factories=_optional_bool(run, "allow_custom_factories", default=False),
         )
 
         limits_cfg = None
@@ -430,6 +441,12 @@ class ExperimentConfig:
             if not has_factory and not has_classifier:
                 raise BenchConfigError("method.model must define factory or classifier_id")
             if has_factory:
+                if not run_cfg.allow_custom_factories:
+                    raise BenchConfigError(
+                        "method.model.factory requires run.allow_custom_factories=true; "
+                        "only enable this for trusted configs",
+                        code="E_BENCH_CUSTOM_FACTORY_DISABLED",
+                    )
                 _check_unknown(model_map, {"factory", "params"}, name="method.model")
                 model_cfg = ModelConfig(
                     factory=_require_str(model_map, "factory", name="method.model"),

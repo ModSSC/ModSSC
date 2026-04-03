@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from modssc.dependency_errors import PackageOptionalDependencyMessageMixin
+from modssc.dependencies.errors import PackageOptionalDependencyMessageMixin
 
 
 @dataclass(frozen=True)

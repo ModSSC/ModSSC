@@ -48,6 +48,7 @@ def select_labeled(
         raise ValueError(f"Unknown labeling mode: {spec.mode!r}")
 
     target = max(0, min(int(train_idx.size), target))
+    requested_target = int(target)
     min_per_class = int(spec.min_per_class)
 
     # allocation per class
@@ -117,6 +118,20 @@ def select_labeled(
     labeled = (
         np.sort(np.concatenate(labeled_parts)) if labeled_parts else np.asarray([], dtype=np.int64)
     )
+
+    if int(labeled.size) != requested_target:
+        logger.warning(
+            "Labeling target adjusted: requested=%s effective=%s mode=%s strategy=%s "
+            "min_per_class=%s n_classes=%s train=%s per_class=%s",
+            requested_target,
+            int(labeled.size),
+            spec.mode,
+            spec.strategy,
+            min_per_class,
+            n_classes,
+            int(train_idx.size),
+            {str(cls): int(n_sel) for cls, n_sel in zip(classes, per_class, strict=True)},
+        )
 
     # final guard
     if labeled.size > train_idx.size:

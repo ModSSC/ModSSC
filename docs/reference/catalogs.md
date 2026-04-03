@@ -1,14 +1,51 @@
 # Catalogs and registries
 
-This reference collects registry-backed catalogs (datasets, steps, methods, metrics) and shows how to query them.
+Use this reference when you need stable IDs for configs or when you want to inspect the registry-backed surfaces exposed by ModSSC. For execution workflows, continue with the matching how-to page.
 
 
-## What this page is
-ModSSC exposes registry-backed lists for datasets, preprocess steps/models, augmentation ops, methods, and metrics through CLI commands and Python APIs. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a><a href="#source-3">[3]</a><a href="#source-4">[4]</a><a href="#source-5">[5]</a><a href="#source-6">[6]</a></sup>
+## What it is for
+ModSSC exposes registry-backed catalogs for datasets, providers, preprocess steps and models, augmentation ops, methods, and evaluation metrics through both CLI commands and Python APIs. These registries are the source of truth for IDs and metadata such as modality, availability, and `required_extra`. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a><a href="#source-3">[3]</a><a href="#source-4">[4]</a><a href="#source-5">[5]</a><a href="#source-6">[6]</a></sup>
 
-Use this page when you need IDs for configs or when you want to check optional dependencies. Dataset specs and preprocess registries expose `required_extra`, and `modssc doctor` reports missing CLI bricks. <sup class="cite"><a href="#source-7">[7]</a><a href="#source-8">[8]</a><a href="#source-9">[9]</a><a href="#source-10">[10]</a></sup>
 
-Use the CLI blocks for quick terminal inspection, and use the Python blocks when you want registry metadata inside a script.
+## When to use
+- Use this page when writing configs and you need exact IDs.
+- Use it when you want to check whether a dataset, step, model, or method requires an optional extra.
+- Use the how-to guides instead when you want end-to-end workflow instructions rather than registry inspection.
+
+
+## Minimal examples
+CLI inspection:
+
+```bash
+modssc datasets providers
+modssc preprocess steps list
+modssc inductive methods list --available-only
+modssc evaluation list
+```
+
+Python inspection:
+
+```python
+from modssc.data_loader import available_datasets, available_providers, dataset_info
+
+print(available_providers())
+print(available_datasets())
+print(dataset_info("toy").as_dict())
+```
+
+
+## Registry map
+
+| Registry | Typical question | Primary entry point |
+| --- | --- | --- |
+| datasets and providers | which dataset IDs or providers exist | `modssc datasets ...` |
+| preprocess steps | which step IDs can I put in a plan | `modssc preprocess steps ...` |
+| preprocess models | which pretrained encoders are available | `modssc preprocess models ...` |
+| augmentation ops | which augmentation ops exist for a modality | `modssc augmentation ...` |
+| inductive methods | which inductive SSL methods are available | `modssc inductive methods ...` |
+| transductive methods | which graph-based methods are available | `modssc transductive methods ...` |
+| evaluation metrics | which metric names are valid | `modssc evaluation ...` |
+
 
 ## Datasets and providers
 Use providers to understand which backends are available, and use dataset keys when wiring configs or CLI commands. Dataset info includes modality and `required_extra`. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-7">[7]</a><a href="#source-11">[11]</a></sup>
@@ -26,12 +63,13 @@ modssc datasets info --dataset toy
 Python:
 
 ```python
-from modssc.data_loader import available_datasets, dataset_info, provider_names
+from modssc.data_loader import available_datasets, available_providers, dataset_info
 
-print(provider_names())
+print(available_providers())
 print(available_datasets())
 print(dataset_info("toy").as_dict())
 ```
+
 
 ## Preprocess steps
 Steps are registered in the preprocess catalog and surfaced through the CLI and registry helpers. Use `step_info` to check `required_extra` before you add a step to a plan. <sup class="cite"><a href="#source-2">[2]</a><a href="#source-8">[8]</a><a href="#source-12">[12]</a></sup>
@@ -54,6 +92,7 @@ print(available_steps())
 print(step_info("core.ensure_2d"))
 ```
 
+
 ## Pretrained models
 Pretrained encoder models are listed by the preprocess model registry. Use the CLI for quick inspection or the Python helpers when you need the metadata in code. <sup class="cite"><a href="#source-2">[2]</a><a href="#source-9">[9]</a></sup>
 
@@ -74,6 +113,7 @@ from modssc.preprocess import available_models, model_info
 print(available_models(modality="text"))
 print(model_info("stub:text"))
 ```
+
 
 ## Augmentation ops
 Augmentation operations are registered in the augmentation registry and can be listed or inspected from the CLI. <sup class="cite"><a href="#source-3">[3]</a><a href="#source-13">[13]</a></sup>
@@ -96,10 +136,11 @@ print(available_ops(modality="text"))
 print(op_info("text.word_dropout"))
 ```
 
+
 ## Methods
 Inductive and transductive registries expose method IDs. Use `--available-only` if you want to exclude planned or unresolvable methods. <sup class="cite"><a href="#source-4">[4]</a><a href="#source-5">[5]</a><a href="#source-14">[14]</a><a href="#source-15">[15]</a></sup>
 
-CLI: inductive/transductive CLIs in [`src/modssc/cli/inductive.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/cli/inductive.py) and [`src/modssc/cli/transductive.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/cli/transductive.py). Python: registries in [`src/modssc/inductive/registry.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/inductive/registry.py) and [`src/modssc/transductive/registry.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/transductive/registry.py). <sup class="cite"><a href="#source-4">[4]</a><a href="#source-5">[5]</a><a href="#source-14">[14]</a><a href="#source-15">[15]</a></sup>
+CLI: inductive and transductive CLIs in [`src/modssc/cli/inductive.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/cli/inductive.py) and [`src/modssc/cli/transductive.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/cli/transductive.py). Python: registries in [`src/modssc/inductive/registry.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/inductive/registry.py) and [`src/modssc/transductive/registry.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/transductive/registry.py). <sup class="cite"><a href="#source-4">[4]</a><a href="#source-5">[5]</a><a href="#source-14">[14]</a><a href="#source-15">[15]</a></sup>
 
 CLI:
 
@@ -117,6 +158,7 @@ from modssc.transductive import registry as transductive_registry
 print(inductive_registry.available_methods())
 print(transductive_registry.available_methods())
 ```
+
 
 ## Evaluation metrics
 Metric names are listed by the evaluation module and exposed in the CLI. <sup class="cite"><a href="#source-6">[6]</a><a href="#source-16">[16]</a></sup>
@@ -137,11 +179,22 @@ from modssc.evaluation import list_metrics
 print(list_metrics())
 ```
 
+
+## Common mistakes
+- Looking for method, step, or dataset IDs in tutorial pages instead of querying the registries directly.
+- Ignoring `required_extra` and then discovering a dependency problem only at run time.
+- Assuming `available-only` means “recommended”. It only means the dependency checks pass.
+- Treating registry availability as equivalent to successful execution on your machine. Some backends still have platform-specific constraints.
+
+
 ## Related links
-- [Dataset how-to](../how-to/datasets.md)
-- [Preprocess how-to](../how-to/preprocess.md)
-- [Data augmentation how-to](../how-to/augmentation.md)
-- [Evaluation how-to](../how-to/evaluation.md)
+- [CLI reference](cli.md)
+- [Glossary](../getting-started/glossary.md)
+- [Common errors and where to go](../how-to/common-errors.md)
+- [Manage datasets](../how-to/datasets.md)
+- [Run preprocessing plans](../how-to/preprocess.md)
+- [Use data augmentation](../how-to/augmentation.md)
+- [Compute evaluation metrics](../how-to/evaluation.md)
 
 <details class="sources" markdown="1">
 <summary>Sources</summary>

@@ -12,7 +12,7 @@ from typing import Any
 import numpy as np
 from platformdirs import user_cache_dir
 
-from modssc.paths import default_local_cache_subdir
+from modssc.runtime.paths import default_local_cache_subdir
 
 from .artifacts import DatasetViews, GraphArtifact
 

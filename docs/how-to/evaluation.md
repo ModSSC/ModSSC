@@ -1,10 +1,10 @@
 # How to compute evaluation metrics
 
-Use this recipe to list metrics and compute them from predictions or score matrices. It shows both CLI and Python options, with [Catalogs and registries](../reference/catalogs.md) linked for the full metric list.
+Use this guide to list metrics and compute them from predictions or score matrices. It shows both CLI and Python options, with [Catalogs and registries](../reference/catalogs.md) linked for the full metric list.
 
 
 ## Problem statement
-You need consistent accuracy and F1 metrics for model outputs. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a></sup> Use the metric IDs from this page in configs or scripts so results are comparable.
+You need consistent accuracy and F1 metrics for model outputs. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a></sup> Use the metric IDs from this page in configs or scripts so that results are comparable.
 
 
 ## When to use

@@ -583,6 +583,17 @@ def test_build_torch_bundle_from_classifier(monkeypatch) -> None:
     )
     out_log = logreg_features.model(sample)
     assert torch.allclose(out_log["feat"], sample)
+    lstm_bundle = bundles.build_torch_bundle_from_classifier(
+        classifier_id="lstm_scratch",
+        classifier_backend="torch",
+        classifier_params={"vocab_size": 8},
+        sample=torch.randint(0, 3, (2, 4), dtype=torch.int64),
+        num_classes=2,
+        ema=False,
+    )
+    assert callable(lstm_bundle.meta["forward_features"])
+    assert callable(lstm_bundle.meta["forward_head"])
+    assert lstm_bundle.meta["prefer_manifold_mixup"] is True
     assert isinstance(
         bundles.build_torch_bundle_from_classifier(
             classifier_id="image_cnn",
@@ -770,6 +781,50 @@ def test_build_lstm_bundle_hidden_size_alias_and_features():
     )
     out = bundle2.model(sample)
     assert out.shape == (2, 2)
+
+
+def test_build_lstm_bundle_meta_feature_and_head_paths() -> None:
+    sample = torch.tensor([[1, 2, 0], [2, 3, 0]], dtype=torch.int64)
+
+    bidirectional = bundles._build_lstm_bundle(
+        sample,
+        num_classes=2,
+        params={"vocab_size": 10, "embed_dim": 5, "hidden_dim": 4, "bidirectional": True},
+        seed=0,
+        ema=False,
+    )
+    bidir_feats_ids = bidirectional.meta["forward_features"](sample)
+    bidir_emb = bidirectional.model.get_input_embeddings(sample)
+    bidir_feats_emb = bidirectional.meta["forward_features"](bidir_emb)
+    assert bidir_feats_ids.shape == (2, 8)
+    assert bidir_feats_emb.shape == (2, 8)
+    bidir_logits = bidirectional.meta["forward_head"](bidir_feats_ids)
+    assert bidir_logits.shape == (2, 2)
+
+    unidirectional = bundles._build_lstm_bundle(
+        sample,
+        num_classes=2,
+        params={"vocab_size": 10, "embed_dim": 5, "hidden_dim": 3, "bidirectional": False},
+        seed=0,
+        ema=False,
+    )
+    uni_feats = unidirectional.meta["forward_features"](sample)
+    assert uni_feats.shape == (2, 3)
+
+    with_ema = bundles._build_lstm_bundle(
+        sample,
+        num_classes=2,
+        params={"vocab_size": 10, "embed_dim": 5, "hidden_dim": 4, "bidirectional": True},
+        seed=0,
+        ema=True,
+    )
+    assert with_ema.ema_model is not None
+    assert "forward_features_ema" in with_ema.meta
+    assert "forward_head_ema" in with_ema.meta
+    ema_feats = with_ema.meta["forward_features_ema"](sample)
+    ema_logits = with_ema.meta["forward_head_ema"](ema_feats)
+    assert ema_feats.shape == (2, 8)
+    assert ema_logits.shape == (2, 2)
 
 
 def _install_fake_tg_nn(monkeypatch, *, with_sage: bool):

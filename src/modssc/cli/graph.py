@@ -12,7 +12,7 @@ from modssc.graph import GraphBuilderSpec, GraphFeaturizerSpec, build_graph, gra
 from modssc.graph.artifacts import NodeDataset
 from modssc.graph.cache import GraphCache, ViewsCache
 from modssc.graph.errors import GraphError, GraphValidationError
-from modssc.logging import LogLevelOption, add_log_level_callback, configure_logging
+from modssc.runtime.logging import LogLevelOption, add_log_level_callback, configure_logging
 
 app = typer.Typer(add_completion=False, no_args_is_help=True, help="Graph utilities.")
 add_log_level_callback(app)
