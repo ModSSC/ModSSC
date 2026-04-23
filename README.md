@@ -44,10 +44,10 @@ If you use benchmark configs with environment placeholders, set `MODSSC_OUTPUT_D
 If you use ModSSC in research, please cite:
 
 ```bibtex
-@misc{barbaux2025modsscmodularframeworksemisupervised,
+@misc{barbaux2026modsscmodularframeworksemisupervised,
       title={ModSSC: A Modular Framework for Semi-Supervised Classification on Heterogeneous Data},
-      author={Melvin Barbaux},
-      year={2025},
+      author={Melvin Barbaux and Samia Boukir},
+      year={2026},
       eprint={2512.13228},
       archivePrefix={arXiv},
       primaryClass={cs.LG},
