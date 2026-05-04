@@ -46,6 +46,89 @@ def _spec_from_dict(obj: Mapping[str, Any]) -> GraphBuilderSpec:
     return GraphBuilderSpec.from_dict(dict(obj))
 
 
+def _connected_component_stats(graph: GraphArtifact) -> dict[str, Any]:
+    n_nodes = int(graph.n_nodes)
+    if n_nodes <= 0:
+        return {"connected_components": 0, "largest_component_fraction": 0.0}
+
+    edge_index = np.asarray(graph.edge_index, dtype=np.int64)
+    if edge_index.size == 0:
+        return {
+            "connected_components": n_nodes,
+            "largest_component_fraction": 1.0 / float(n_nodes),
+        }
+
+    try:
+        from scipy.sparse import coo_matrix
+        from scipy.sparse.csgraph import connected_components
+
+        data = np.ones(int(edge_index.shape[1]), dtype=np.int8)
+        adj = coo_matrix((data, (edge_index[0], edge_index[1])), shape=(n_nodes, n_nodes))
+        n_components, labels = connected_components(
+            adj,
+            directed=False,
+            return_labels=True,
+        )
+        counts = np.bincount(labels, minlength=int(n_components))
+        largest = int(counts.max()) if counts.size else 0
+        return {
+            "connected_components": int(n_components),
+            "largest_component_fraction": float(largest / float(n_nodes)),
+        }
+    except Exception:
+        parent = np.arange(n_nodes, dtype=np.int64)
+        size = np.ones(n_nodes, dtype=np.int64)
+
+        def find(x: int) -> int:
+            while int(parent[x]) != x:
+                parent[x] = parent[int(parent[x])]
+                x = int(parent[x])
+            return x
+
+        def union(a: int, b: int) -> None:
+            ra = find(a)
+            rb = find(b)
+            if ra == rb:
+                return
+            if int(size[ra]) < int(size[rb]):
+                ra, rb = rb, ra
+            parent[rb] = ra
+            size[ra] += size[rb]
+
+        for src, dst in edge_index.T:
+            union(int(src), int(dst))
+
+        roots = np.asarray([find(i) for i in range(n_nodes)], dtype=np.int64)
+        _, inverse = np.unique(roots, return_inverse=True)
+        counts = np.bincount(inverse)
+        largest = int(counts.max()) if counts.size else 0
+        return {
+            "connected_components": int(counts.size),
+            "largest_component_fraction": float(largest / float(n_nodes)),
+        }
+
+
+def summarize_graph(graph: GraphArtifact, spec_dict: Mapping[str, Any] | None) -> dict[str, Any]:
+    spec = dict(spec_dict or {})
+    weights = spec.get("weights") if isinstance(spec.get("weights"), Mapping) else {}
+    info: dict[str, Any] = {
+        "n_nodes": int(graph.n_nodes),
+        "n_edges": int(graph.n_edges),
+        "directed": bool(graph.directed),
+        "k": spec.get("k"),
+        "metric": spec.get("metric"),
+        "scheme": spec.get("scheme"),
+        "symmetrize": spec.get("symmetrize"),
+        "weights": dict(weights),
+        "normalize": spec.get("normalize"),
+        "self_loops": spec.get("self_loops"),
+        "backend": spec.get("backend"),
+        "feature_field": spec.get("feature_field"),
+    }
+    info.update(_connected_component_stats(graph))
+    return info
+
+
 def build(
     pre: PreprocessResult,
     *,

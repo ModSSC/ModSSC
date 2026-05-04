@@ -786,10 +786,12 @@ def _run_experiment_single(
                 cache_dir=cfg.graph.cache_dir,
                 include_test=use_test,
             )
+            graph_info = graph_orch.summarize_graph(graph, cfg.graph.spec)
             artifacts["graph"] = {
                 "seed": graph_seed,
                 "fingerprint": graph.meta.get("fingerprint"),
                 "spec": cfg.graph.spec,
+                "info": graph_info,
             }
             resolution["backend"]["resolved"]["graph"] = cfg.graph.spec.get("backend")
         elif dataset_has_graph:
@@ -801,11 +803,13 @@ def _run_experiment_single(
                 )
             n_nodes = int(pre.dataset.train.y.shape[0])
             graph = transductive_orch.graph_from_dataset(pre.dataset, n_nodes)
+            graph_info = graph_orch.summarize_graph(graph, None)
             artifacts["graph"] = {
                 "seed": None,
                 "fingerprint": graph.meta.get("fingerprint"),
                 "spec": None,
                 "source": "dataset",
+                "info": graph_info,
             }
             resolution["backend"]["resolved"]["graph"] = "dataset"
 

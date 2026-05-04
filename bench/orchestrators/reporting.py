@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Mapping
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
@@ -15,6 +16,148 @@ from ..schema import ExperimentConfig
 from ..utils.io import write_json
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _detect_gpu_device() -> str:
+    try:
+        import torch  # type: ignore
+    except Exception:
+        return "Unknown"
+
+    try:
+        if not torch.cuda.is_available():
+            return "CPU"
+        device_count = int(torch.cuda.device_count())
+        if device_count > 1:
+            names = [str(torch.cuda.get_device_name(index)) for index in range(device_count)]
+            return ", ".join(names)
+        return str(torch.cuda.get_device_name(torch.cuda.current_device()))
+    except Exception:
+        return "Unknown"
+
+
+def _hardware_mismatch_reason(
+    *,
+    gpu_device: str,
+    hardware_profile: str | None,
+    resolved_device: str | None,
+) -> str | None:
+    gpu_lower = str(gpu_device or "").lower()
+    resolved_lower = str(resolved_device or "").lower()
+
+    if resolved_lower.startswith("cuda") and gpu_lower == "cpu":
+        return "resolved device is cuda but detected GPU is CPU"
+
+    profile = str(hardware_profile or "").strip().lower()
+    if profile and profile not in {"auto", "none", "default", "unknown", "cpu", "cuda"}:
+        if not gpu_lower or gpu_lower == "unknown":
+            return "specific hardware profile requested but GPU name is unavailable"
+        if profile not in gpu_lower:
+            return f"profile {hardware_profile} not found in detected GPU {gpu_device}"
+
+    return None
+
+
+def _build_run_info(
+    *,
+    ctx: RunContext,
+    cfg: ExperimentConfig,
+    artifacts: dict[str, Any],
+) -> dict[str, Any]:
+    method_block = artifacts.get("method", {})
+    method_device = method_block.get("device", {}) if isinstance(method_block, Mapping) else {}
+    resolved_device = method_device.get("resolved") if isinstance(method_device, Mapping) else None
+    hardware_profile = cfg.limits.profile if cfg.limits is not None else None
+    gpu_device = _detect_gpu_device()
+    mismatch_reason = _hardware_mismatch_reason(
+        gpu_device=gpu_device,
+        hardware_profile=hardware_profile,
+        resolved_device=resolved_device,
+    )
+    try:
+        started_at = datetime.fromisoformat(str(ctx.started_at))
+        elapsed_seconds = (datetime.now(UTC) - started_at).total_seconds()
+    except Exception:
+        elapsed_seconds = 0.0
+    return {
+        "run_time_seconds": float(max(0.0, elapsed_seconds)),
+        "device_requested": (
+            method_device.get("requested") if isinstance(method_device, Mapping) else None
+        ),
+        "device_resolved": resolved_device,
+        "gpu_device": gpu_device,
+        "limits_profile": hardware_profile,
+        "hardware_profile": hardware_profile,
+        "hardware_mismatch": mismatch_reason is not None,
+        "hardware_mismatch_reason": mismatch_reason,
+    }
+
+
+def _class_counts(stats: Any, split: str) -> dict[str, int] | None:
+    if not isinstance(stats, Mapping):
+        return None
+    block = stats.get(split)
+    if not isinstance(block, Mapping):
+        return None
+    classes = block.get("classes")
+    if not isinstance(classes, Mapping):
+        return None
+    out: dict[str, int] = {}
+    for key, value in classes.items():
+        if isinstance(value, bool):
+            continue
+        if isinstance(value, int | float):
+            out[str(key)] = int(value)
+    return out
+
+
+def _effective_n_classes(stats: Any) -> int | None:
+    classes: set[str] = set()
+    for split in ("train", "val", "test", "train_labeled"):
+        counts = _class_counts(stats, split)
+        if counts:
+            classes.update(counts.keys())
+    return len(classes) if classes else None
+
+
+def _uniform_count(counts: dict[str, int] | None) -> int | None:
+    if not counts:
+        return None
+    values = {int(v) for v in counts.values()}
+    if len(values) != 1:
+        return None
+    return int(next(iter(values)))
+
+
+def _build_task_info(*, cfg: ExperimentConfig, artifacts: dict[str, Any]) -> dict[str, Any]:
+    sampling = artifacts.get("sampling")
+    stats = sampling.get("stats") if isinstance(sampling, Mapping) else None
+    train_labeled_counts = _class_counts(stats, "train_labeled")
+    test_counts = _class_counts(stats, "test")
+    train_counts = _class_counts(stats, "train")
+    n_classes = _effective_n_classes(stats)
+    return {
+        "dataset_id": cfg.dataset.id,
+        "method_id": cfg.method.method_id,
+        "method_kind": cfg.method.kind,
+        "n_classes": n_classes,
+        "effective_n_classes": n_classes,
+        "class_filter": cfg.dataset.options.get("class_filter"),
+        "train_labeled_per_class": _uniform_count(train_labeled_counts),
+        "class_counts_train_labeled": train_labeled_counts,
+        "class_counts_train": train_counts,
+        "class_counts_test": test_counts,
+    }
+
+
+def _build_graph_info(*, artifacts: dict[str, Any]) -> dict[str, Any] | None:
+    graph = artifacts.get("graph")
+    if not isinstance(graph, Mapping):
+        return None
+    info = graph.get("info")
+    if not isinstance(info, Mapping):
+        return None
+    return dict(info)
 
 
 def write_run_summary(
@@ -35,6 +178,9 @@ def write_run_summary(
 ) -> None:
     start = perf_counter()
     finished_at = datetime.now(UTC).isoformat()
+    run_info = _build_run_info(ctx=ctx, cfg=cfg, artifacts=artifacts)
+    task_info = _build_task_info(cfg=cfg, artifacts=artifacts)
+    graph_info = _build_graph_info(artifacts=artifacts)
     payload = {
         "run": {
             "name": ctx.name,
@@ -51,6 +197,9 @@ def write_run_summary(
         "resolution": resolution,
         "protocol": protocol,
         "versions": versions,
+        "run_info": run_info,
+        "task_info": task_info,
+        "graph_info": graph_info,
         "config": {
             "run": asdict(cfg.run),
             "dataset": asdict(cfg.dataset),
@@ -137,6 +286,9 @@ def write_seed_sweep_summary(
                 "run_json": str(run_json_path),
                 "error_code": run_block.get("error_code"),
                 "error": report.get("error"),
+                "run_info": report.get("run_info"),
+                "task_info": report.get("task_info"),
+                "graph_info": report.get("graph_info"),
                 "metrics": metrics,
             }
         )
@@ -169,6 +321,43 @@ def write_seed_sweep_summary(
     else:
         status = "failed"
 
+    runtime_values = [
+        float(report["run_info"]["run_time_seconds"])
+        for report in reports
+        if isinstance(report.get("run_info"), Mapping)
+        and isinstance(report["run_info"].get("run_time_seconds"), int | float)
+    ]
+    gpu_devices = sorted(
+        {
+            str(report["run_info"].get("gpu_device"))
+            for report in reports
+            if isinstance(report.get("run_info"), Mapping) and report["run_info"].get("gpu_device")
+        }
+    )
+    hardware_mismatch_count = sum(
+        1
+        for report in reports
+        if isinstance(report.get("run_info"), Mapping)
+        and report["run_info"].get("hardware_mismatch") is True
+    )
+    run_info: dict[str, Any] = {
+        "gpu_devices": gpu_devices,
+        "gpu_device": (
+            gpu_devices[0] if len(gpu_devices) == 1 else ("Mixed" if gpu_devices else None)
+        ),
+        "hardware_mismatch": hardware_mismatch_count > 0,
+        "hardware_mismatch_count": hardware_mismatch_count,
+    }
+    if runtime_values:
+        run_info["run_time_seconds"] = {
+            "count": len(runtime_values),
+            "mean": float(fmean(runtime_values)),
+            "std": float(pstdev(runtime_values)) if len(runtime_values) > 1 else 0.0,
+            "min": float(min(runtime_values)),
+            "max": float(max(runtime_values)),
+            "values": [float(v) for v in runtime_values],
+        }
+
     payload = {
         "sweep": {
             "base_name": str(base_name),
@@ -183,6 +372,7 @@ def write_seed_sweep_summary(
             "aggregated_at": datetime.now(UTC).isoformat(),
         },
         "metrics": aggregated_metrics,
+        "run_info": run_info,
         "runs": run_entries,
     }
 
