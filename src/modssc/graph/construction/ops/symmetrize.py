@@ -4,7 +4,7 @@ from typing import Literal
 
 import numpy as np
 
-SymmetrizeMode = Literal["none", "or", "mutual"]
+SymmetrizeMode = Literal["none", "or", "mutual", "mean"]
 
 
 def symmetrize_edges(
@@ -25,12 +25,13 @@ def symmetrize_edges(
     ------------------
     If both directions exist, the undirected weight is the average of the two.
     If only one direction exists and mode is "or", the existing weight is used for both
-    directions.
+    directions. If mode is "mean", missing reverse edges are treated as weight zero,
+    matching `(W + W.T) / 2` for directed KNN weights.
     """
     if mode == "none":
         return edge_index, edge_weight
 
-    if mode not in ("or", "mutual"):
+    if mode not in ("or", "mutual", "mean"):
         raise ValueError(f"Unknown symmetrization mode: {mode!r}")
 
     src = np.asarray(edge_index[0], dtype=np.int64)
@@ -108,6 +109,8 @@ def symmetrize_edges(
             w_bwd[group_id[~forward_s]] = w_s2[~forward_s]
             if mode == "mutual":
                 w_pair = 0.5 * (w_fwd + w_bwd)
+            elif mode == "mean":
+                w_pair = 0.5 * (np.where(has_fwd, w_fwd, 0.0) + np.where(has_bwd, w_bwd, 0.0))
             else:
                 both = has_fwd & has_bwd
                 w_pair = np.where(both, 0.5 * (w_fwd + w_bwd), np.where(has_fwd, w_fwd, w_bwd))

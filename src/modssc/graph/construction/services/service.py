@@ -147,7 +147,11 @@ def build_graph(
 
     # Turn distances into weights
     edge_weight = compute_edge_weights(
-        distances=distances, weights=spec.weights, metric=spec.metric
+        distances=distances,
+        weights=spec.weights,
+        metric=spec.metric,
+        edge_index=edge_index,
+        n_nodes=n_nodes,
     )
 
     # Post-process graph

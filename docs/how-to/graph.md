@@ -55,6 +55,99 @@ print(list(views.views.keys()))
 Graph CLI options and specs are defined in [`src/modssc/cli/graph.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/cli/graph.py) and [`src/modssc/graph/specs.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/graph/specs.py). <sup class="cite"><a href="#source-4">[4]</a><a href="#source-1">[1]</a></sup>
 
 
+## VAE and AET features for non-graph datasets
+For graph-learning methods on non-graph datasets, keep the no-VAE baseline by building the graph from `features.X`:
+
+```yaml
+graph:
+  enabled: true
+  spec:
+    scheme: knn
+    metric: cosine
+    k: 15
+    feature_field: features.X
+```
+
+To reproduce the Poisson-learning MNIST VAE branch, use raw 28x28 pixels, flatten them to 784 dimensions, add `core.vae` with the paper preset, and point graph construction at `features.vae`:
+
+```yaml
+preprocess:
+  fit_on: train
+  plan:
+    output_key: features.vae
+    steps:
+    - id: labels.encode
+    - id: vision.ensure_num_channels
+      params:
+        num_channels: 1
+    - id: vision.resize
+      params:
+        height: 28
+        width: 28
+    - id: core.ensure_2d
+    - id: core.vae
+      params:
+        preset: poisson_mnist
+        cache_key: poisson-mnist-raw784
+        model_seed: 0
+        device: auto
+graph:
+  enabled: true
+  spec:
+    scheme: knn
+    metric: euclidean
+    k: 10
+    symmetrize: mean
+    weights:
+      kind: knn_gaussian
+    normalize: none
+    self_loops: false
+    feature_field: features.vae
+```
+
+This keeps `features.X` available for the existing baseline while exposing the VAE latent means through `features.vae`.
+VAE checkpoints are cached outside git under `modssc_cache/preprocess/vae_models/` by default, or under `${MODSSC_PREPROCESS_CACHE_DIR}/vae_models` when that environment variable is set.
+Each benchmark run logs the VAE fingerprint, cache path, cache hit status, fit sample count, input hash, and `uses_labels: false` under `artifacts.preprocess.logged_artifacts["features.vae.info"]` in `run.json`; split-specific metadata is also available under `artifacts.preprocess.logged_artifacts.by_split`.
+`preset: poisson_mnist` resolves to the Poisson-style VAE: global min-max scaling, `784 -> 400 -> 20 -> 400 -> 784`, sigmoid decoder, BCE+KL loss, Adam `lr=1e-3`, batch size 128, 100 epochs.
+`preset: poisson_fashionmnist` uses the same settings with latent dimension 30.
+The Poisson paper does not use this VAE for CIFAR-10; it uses an AutoEncodingTransformations embedding instead. <sup class="cite"><a href="#source-8">[8]</a></sup>
+For the CIFAR-10 branch, prefer the precomputed AET artifact when reproducing Poisson-style graph experiments.
+Store `cifar_aet.npz` and `cifar_labels.npz` outside git under `modssc_cache/preprocess/pretrained_features/aet/`.
+The first run extracts the compressed `cifar_aet.npz` into `cifar_aet.npy`, then memory maps that `.npy` so subsequent runs only read the rows needed by the current train/test subset:
+
+```yaml
+preprocess:
+  plan:
+    output_key: features.aet
+    steps:
+    - id: labels.encode
+    - id: vision.aet
+      params:
+        source: precomputed
+        preset: poisson_cifar10_projective
+        features_path: modssc_cache/preprocess/pretrained_features/aet/cifar_aet.npz
+        labels_path: modssc_cache/preprocess/pretrained_features/aet/cifar_labels.npz
+        unit_normalize: true
+graph:
+  enabled: true
+  spec:
+    scheme: knn
+    metric: euclidean
+    k: 10
+    symmetrize: mean
+    weights:
+      kind: knn_gaussian
+    normalize: none
+    self_loops: false
+    feature_field: features.aet
+```
+
+`knn_gaussian` uses a local-scale Gaussian kernel, `exp(-4*d_ij^2/d_k(x_i)^2)`, and `symmetrize: mean` applies `(W + W.T) / 2`.
+Each benchmark run logs the AET artifact path/hash, row offset, unit-normalization flag, and `uses_labels: false` under `artifacts.preprocess.logged_artifacts["features.aet.info"]`; train/test offsets are available under `artifacts.preprocess.logged_artifacts.by_split`.
+The mode uses labels only to align rows with the expected train/test order; it does not use labels to learn or alter the embedding.
+The pipeline also supports a checkpoint-backed `vision.aet` mode for official/external PyTorch AET checkpoints, but the official AET README documents CIFAR-10 training rather than publishing a CIFAR-10 checkpoint. <sup class="cite"><a href="#source-9">[9]</a></sup>
+
+
 ## Pitfalls
 !!! warning
     `GraphBuilderSpec` validation is strict; unsupported combinations (for example, `backend=faiss` with `scheme=epsilon`) raise `GraphValidationError`. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-6">[6]</a></sup>
@@ -80,5 +173,7 @@ Graph CLI options and specs are defined in [`src/modssc/cli/graph.py`](https://g
   <li id="source-5"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/graph/construction/api.py"><code>src/modssc/graph/construction/api.py</code></a></li>
   <li id="source-6"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/graph/construction/builder.py"><code>src/modssc/graph/construction/builder.py</code></a></li>
   <li id="source-7"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/graph/cache.py"><code>src/modssc/graph/cache.py</code></a></li>
+  <li id="source-8"><a href="https://openaccess.thecvf.com/content_CVPR_2019/html/Zhang_AET_vs._AED_Unsupervised_Representation_Learning_by_Auto-Encoding_Transformations_Rather_CVPR_2019_paper.html">Zhang et al. 2019 AET vs. AED</a></li>
+  <li id="source-9"><a href="https://github.com/maple-research-lab/AET">Official AET code</a></li>
 </ol>
 </details>

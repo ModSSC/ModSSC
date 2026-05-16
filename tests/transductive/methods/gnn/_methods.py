@@ -13,7 +13,7 @@ except Exception as exc:  # pragma: no cover - depends on optional torch install
     pytest.skip(f"torch unavailable: {exc}", allow_module_level=True)
 
 from modssc.transductive.errors import TransductiveValidationError  # noqa: E402
-from modssc.transductive.methods.gnn.appnp import APPNPMethod  # noqa: E402
+from modssc.transductive.methods.gnn.appnp import APPNPMethod, _APPNPNet  # noqa: E402
 from modssc.transductive.methods.gnn.chebnet import (  # noqa: E402
     ChebNetMethod,
     ChebNetSpec,
@@ -29,8 +29,8 @@ from modssc.transductive.methods.gnn.common import (  # noqa: E402
     normalize_edge_weight,
     set_torch_seed,
 )
-from modssc.transductive.methods.gnn.gat import GATMethod, _GATConv  # noqa: E402
-from modssc.transductive.methods.gnn.gcn import GCNMethod  # noqa: E402
+from modssc.transductive.methods.gnn.gat import GATMethod, _GATConv, _GATNet  # noqa: E402
+from modssc.transductive.methods.gnn.gcn import GCNMethod, GCNSpec, _GCNNet  # noqa: E402
 from modssc.transductive.methods.gnn.gcnii import GCNIIMethod  # noqa: E402
 from modssc.transductive.methods.gnn.grand import GRANDMethod, GRANDSpec  # noqa: E402
 from modssc.transductive.methods.gnn.graphsage import GraphSAGEMethod  # noqa: E402
@@ -453,6 +453,59 @@ def test_gat_conv_no_bias():
     assert out.shape == (10, 16)
 
 
+def test_gat_conv_projected_feature_dropout_branch():
+    conv = _GATConv(16, 8, heads=2, dropout=0.0, projected_feature_dropout=True)
+    conv.train()
+
+    x = torch.randn(10, 16)
+    edge_index = torch.tensor([[0, 1], [1, 0]], dtype=torch.long)
+
+    out = conv(x, edge_index, n_nodes=10)
+    assert out.shape == (10, 16)
+
+
+def test_gat_projected_feature_dropout_train_only(monkeypatch):
+    conv = _GATConv(4, 3, heads=2, dropout=0.5, projected_feature_dropout=True)
+    x = torch.randn(5, 4)
+    edge_index = torch.tensor([[0, 1, 2, 3], [1, 2, 3, 4]], dtype=torch.long)
+    projected_training_flags = []
+
+    def fake_dropout(input, p=0.5, training=True, inplace=False):
+        if input.ndim == 3:
+            projected_training_flags.append(bool(training))
+        return input
+
+    monkeypatch.setattr(torch.nn.functional, "dropout", fake_dropout)
+
+    conv.train()
+    conv(x, edge_index, n_nodes=5)
+    conv.eval()
+    conv(x, edge_index, n_nodes=5)
+
+    assert projected_training_flags == [True, False]
+
+
+def test_gat_net_output_heads_are_averaged():
+    model = _GATNet(
+        4,
+        head_dim=3,
+        heads=2,
+        output_heads=8,
+        out_channels=5,
+        dropout=0.0,
+        negative_slope=0.2,
+        projected_feature_dropout=False,
+    )
+    x = torch.randn(6, 4)
+    edge_index = torch.tensor([[0, 1, 2, 3, 4], [1, 2, 3, 4, 5]], dtype=torch.long)
+
+    out = model(x, edge_index, n_nodes=6)
+
+    assert model.conv2.heads == 8
+    assert model.conv2.concat is False
+    assert out.shape == (6, 5)
+
+
 def test_appnp_not_fitted():
     method = APPNPMethod()
     data = make_toy_dataset()
@@ -460,11 +513,75 @@ def test_appnp_not_fitted():
         method.predict_proba(data)
 
 
+def test_appnp_adjacency_dropout_train_only(monkeypatch):
+    model = _APPNPNet(
+        3,
+        hidden_dim=4,
+        out_channels=2,
+        k=1,
+        alpha=0.0,
+        dropout=0.0,
+        adjacency_dropout=1.0,
+    )
+    x = torch.ones((2, 3), dtype=torch.float32)
+    edge_index = torch.tensor([[0, 1], [1, 0]], dtype=torch.long)
+    edge_weight = torch.ones(2, dtype=torch.float32)
+    seen = []
+
+    def fake_spmm(edge_index_arg, edge_weight_arg, X_arg, *, n_nodes):
+        seen.append(edge_weight_arg.detach().clone())
+        return torch.zeros_like(X_arg)
+
+    import modssc.transductive.methods.gnn.appnp as appnp
+
+    monkeypatch.setattr(appnp, "spmm", fake_spmm)
+
+    model.train()
+    model(x, edge_index, edge_weight, n_nodes=2)
+    assert torch.equal(seen[-1], torch.zeros_like(edge_weight))
+
+    model.eval()
+    model(x, edge_index, edge_weight, n_nodes=2)
+    assert torch.equal(seen[-1], edge_weight)
+
+
+def test_appnp_bias_false_removes_mlp_biases():
+    model = _APPNPNet(
+        3,
+        hidden_dim=4,
+        out_channels=2,
+        k=1,
+        alpha=0.0,
+        dropout=0.0,
+        adjacency_dropout=0.0,
+        bias=False,
+    )
+
+    assert model.mlp.lin1.bias is None
+    assert model.mlp.lin2.bias is None
+
+
 def test_gcn_not_fitted():
     method = GCNMethod()
     data = make_toy_dataset()
     with pytest.raises(RuntimeError, match="not fitted yet"):
         method.predict_proba(data)
+
+
+def test_gcn_bias_false_removes_conv_biases():
+    model = _GCNNet(3, 4, 2, dropout=0.0, bias=False)
+
+    assert model.conv1.lin.bias is None
+    assert model.conv2.lin.bias is None
+
+
+def test_gcn_spec_bias_false_is_used_in_fit():
+    data = make_toy_dataset(n_nodes=12, n_classes=2)
+    method = GCNMethod(spec=GCNSpec(hidden_dim=4, max_epochs=1, patience=1, bias=False))
+    method.fit(data, device="cpu", seed=0)
+
+    assert method._model.conv1.lin.bias is None
+    assert method._model.conv2.lin.bias is None
 
 
 def test_gcnii_not_fitted():

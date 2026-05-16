@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on "Keep a Changelog", and this project adheres to Semantic Versioning.
 
+## 1.2.0
+### Added
+- Added the `core.vae` preprocessing step with Poisson-style vision presets, cache-backed checkpoints, runtime metadata, and latent feature output through `features.vae`.
+- Added the `vision.aet` preprocessing step for CIFAR Auto-Encoding Transformations features, including checkpoint loading and precomputed feature alignment.
+- Added a torch graph construction backend, local-scale `knn_gaussian` weights, and `mean` symmetrization for directed KNN graphs.
+
+### Changed
+- Updated transductive vision benchmark configs to use the new VAE/AET feature pipelines and local-scale graph construction for non-GNN methods.
+- Aligned `PoissonLearning`, `PoissonMBO`, and `LaplaceLearning` with the reference paper pipeline, including normalized-Laplacian solving with the final `D^-1/2` transform and stricter solver edge-case handling.
+- Reworked torch sparse matrix multiplication to use scatter-add, avoiding `torch.sparse.mm` so transductive methods can run on CPU, CUDA, and Apple MPS.
+- Propagated runtime artifacts from preprocessing steps so training outputs include the metadata used to build cached VAE/AET features.
+
+### Removed
+- Removed transductive benchmark configs and generated command references for `graph_mincuts` and `lazy_random_walk`.
+
+### Fixed
+- Fixed Poisson and Laplace edge cases around zero-degree graphs, inactive right-hand sides, non-finite solver outputs, CG failures, and custom Poisson MBO class priors.
+- Expanded tests for VAE/AET preprocessing, graph construction, Laplacian operators, torch transductive backends, and Poisson/Laplace methods; the full `pytest -q tests/` suite now reaches 100% coverage.
+
 ## 1.1
 - Reorganized internal module boundaries around services, helpers, runtime utilities, and registry data while preserving public entry points.
 - Aligned lazy registries, optional dependency handling, tooling, and the source/test mirror, with the full suite back at 100% coverage.

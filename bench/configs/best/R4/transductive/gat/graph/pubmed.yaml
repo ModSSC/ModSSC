@@ -48,6 +48,10 @@ preprocess:
     steps:
     - id: labels.encode
     - id: core.ensure_2d
+    - id: core.row_normalize
+      params:
+        norm: l1
+        eps: 1.0e-12
     - id: core.to_numpy
 method:
   kind: transductive
@@ -60,11 +64,15 @@ method:
     heads: 8
     dropout: 0.6
     negative_slope: 0.2
-    lr: 0.005
-    weight_decay: 0.0005
+    lr: 0.01
+    weight_decay: 0.001
     max_epochs: 200
     patience: 100
     add_self_loops: true
+    projected_feature_dropout: true
+    selection_metric: val_acc_then_loss_reset_any
+    output_heads: 8
+    weight_decay_scope: non_bias
 evaluation:
   split_for_model_selection: val
   report_splits:

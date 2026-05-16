@@ -26,6 +26,9 @@ class GCNSpec:
     max_epochs: int = 200
     patience: int = 50
     add_self_loops: bool = True
+    bias: bool = False
+    weight_decay_scope: str = "all"
+    selection_metric: str = "val_loss"
 
 
 class _GCNConv(torch.nn.Module):
@@ -40,12 +43,18 @@ class _GCNConv(torch.nn.Module):
 
 class _GCNNet(torch.nn.Module):
     def __init__(
-        self, in_channels: int, hidden_dim: int, out_channels: int, *, dropout: float
+        self,
+        in_channels: int,
+        hidden_dim: int,
+        out_channels: int,
+        *,
+        dropout: float,
+        bias: bool = False,
     ) -> None:
         super().__init__()
         self.dropout = float(dropout)
-        self.conv1 = _GCNConv(in_channels, hidden_dim)
-        self.conv2 = _GCNConv(hidden_dim, out_channels)
+        self.conv1 = _GCNConv(in_channels, hidden_dim, bias=bias)
+        self.conv2 = _GCNConv(hidden_dim, out_channels, bias=bias)
 
     def forward(self, x: Any, edge_index: Any, edge_weight: Any, *, n_nodes: int) -> Any:
         x = torch.nn.functional.dropout(x, p=self.dropout, training=self.training)
@@ -103,6 +112,7 @@ class GCNMethod(TransductiveMethod):
             self.spec.hidden_dim,
             prep.n_classes,
             dropout=self.spec.dropout,
+            bias=self.spec.bias,
         ).to(torch.device(self._device))
 
         train_fullbatch(
@@ -118,6 +128,8 @@ class GCNMethod(TransductiveMethod):
             max_epochs=self.spec.max_epochs,
             patience=self.spec.patience,
             seed=seed,
+            weight_decay_scope=self.spec.weight_decay_scope,
+            selection_metric=self.spec.selection_metric,
         )
 
         logger.info("Finished %s.fit in %.3fs", self.info.method_id, perf_counter() - start)

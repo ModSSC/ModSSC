@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import numpy as np
+import pytest
 
 from modssc.transductive.backends import torch_backend
 from modssc.transductive.operators.laplacian import laplacian_matvec_numpy, laplacian_matvec_torch
@@ -33,6 +34,46 @@ def test_laplacian_matvec_numpy_rw():
     x = np.array([[1.0], [0.0]])
     res = matvec(x)
     np.testing.assert_allclose(res, np.array([[1.0], [-1.0]]), atol=1e-6)
+
+
+def test_laplacian_matvec_numpy_unnormalized():
+    n_nodes = 3
+    edge_index = np.array([[0, 2, 1], [1, 1, 2]])
+    edge_weight = np.array([2.0, 3.0, 4.0])
+
+    matvec = laplacian_matvec_numpy(
+        n_nodes=n_nodes,
+        edge_index=edge_index,
+        edge_weight=edge_weight,
+        kind="unnormalized",
+    )
+
+    x = np.array([[1.0], [2.0], [3.0]])
+    res = matvec(x)
+    np.testing.assert_allclose(res, np.array([[0.0], [-1.0], [4.0]]), atol=1e-6)
+
+    res_1d = matvec(np.array([1.0, 2.0, 3.0], dtype=np.float32))
+    np.testing.assert_allclose(res_1d, np.array([0.0, -1.0, 4.0]), atol=1e-6)
+
+
+def test_laplacian_numpy_edge_weight_validation_and_empty_degree():
+    matvec = laplacian_matvec_numpy(
+        n_nodes=2,
+        edge_index=np.zeros((2, 0), dtype=np.int64),
+        edge_weight=None,
+        kind="unnormalized",
+    )
+    np.testing.assert_allclose(
+        matvec(np.ones((2,), dtype=np.float32)), np.zeros((2,), dtype=np.float32)
+    )
+
+    with np.testing.assert_raises_regex(ValueError, "edge_weight must have shape"):
+        laplacian_matvec_numpy(
+            n_nodes=2,
+            edge_index=np.array([[0, 1], [1, 0]], dtype=np.int64),
+            edge_weight=np.array([1.0], dtype=np.float32),
+            kind="unnormalized",
+        )
 
 
 def test_laplacian_matvec_torch():
@@ -80,3 +121,42 @@ def test_laplacian_matvec_torch():
             dtype="float32",
         )
         mock_x.__sub__.assert_called_with("spmm_result")
+
+
+def test_laplacian_matvec_torch_unnormalized_real_tensors():
+    torch = pytest.importorskip("torch")
+    edge_index = torch.tensor([[0, 2, 1], [1, 1, 2]], dtype=torch.long)
+    edge_weight = torch.tensor([2.0, 3.0, 4.0], dtype=torch.float32)
+
+    matvec = laplacian_matvec_torch(
+        n_nodes=3,
+        edge_index=edge_index,
+        edge_weight=edge_weight,
+        kind="unnormalized",
+        device=DeviceSpec(device="cpu"),
+    )
+    torch.testing.assert_close(
+        matvec(torch.tensor([1.0, 2.0, 3.0], dtype=torch.float32)),
+        torch.tensor([0.0, -1.0, 4.0], dtype=torch.float32),
+    )
+
+    with pytest.raises(ValueError, match="edge_weight must have shape"):
+        laplacian_matvec_torch(
+            n_nodes=3,
+            edge_index=edge_index,
+            edge_weight=torch.ones(2, dtype=torch.float32),
+            kind="unnormalized",
+            device=DeviceSpec(device="cpu"),
+        )
+
+    matvec_empty = laplacian_matvec_torch(
+        n_nodes=2,
+        edge_index=torch.zeros((2, 0), dtype=torch.long),
+        edge_weight=None,
+        kind="unnormalized",
+        device=DeviceSpec(device="cpu"),
+    )
+    torch.testing.assert_close(
+        matvec_empty(torch.ones((2, 1), dtype=torch.float32)),
+        torch.zeros((2, 1), dtype=torch.float32),
+    )

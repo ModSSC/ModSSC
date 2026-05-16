@@ -10,6 +10,7 @@ from ..specs import GraphBuilderSpec
 from .backends.faiss_backend import FaissParams, knn_edges_faiss
 from .backends.numpy_backend import epsilon_edges_numpy, knn_edges_numpy
 from .backends.sklearn_backend import epsilon_edges_sklearn, knn_edges_sklearn
+from .backends.torch_backend import knn_edges_torch
 from .schemes.anchor import AnchorParams, anchor_edges
 
 logger = logging.getLogger(__name__)
@@ -78,6 +79,15 @@ def build_raw_edges(
                 chunk_size=int(spec.chunk_size),
                 work_dir=(wd / "knn" if wd is not None else None),
                 resume=bool(resume),
+            )
+        elif backend == "torch":
+            edge_index, dist = knn_edges_torch(
+                X,
+                k=int(spec.k),
+                metric=spec.metric,
+                include_self=False,
+                chunk_size=int(spec.chunk_size),
+                device="auto",
             )
         else:
             raise GraphValidationError(f"Unknown backend: {backend!r}")

@@ -27,7 +27,7 @@ sampling:
       shuffle: true
     labeling:
       mode: per_class
-      value: 5
+      value: 10
       strategy: balanced
       min_per_class: 1
       per_class: true
@@ -48,6 +48,10 @@ preprocess:
     steps:
     - id: labels.encode
     - id: core.ensure_2d
+    - id: core.row_normalize
+      params:
+        norm: l1
+        eps: 1.0e-12
     - id: core.to_numpy
 method:
   kind: transductive
@@ -57,11 +61,13 @@ method:
     dtype: float32
   params:
     k: 2
-    lr: 0.1
-    weight_decay: 0.0
-    max_epochs: 200
+    lr: 0.2
+    weight_decay: 1.3026973714043257e-05
+    max_epochs: 100
     patience: 50
     add_self_loops: true
+    weight_decay_scope: all
+    selection_metric: val_acc_then_loss
 evaluation:
   split_for_model_selection: val
   report_splits:

@@ -163,4 +163,205 @@ def test_train_fullbatch_tracks_best_state() -> None:
     )
 
     assert res.best_epoch is not None
+    assert res.best_val_acc is not None
     assert res.n_epochs >= 1
+
+
+def test_optimizer_param_groups_weight_decay_scopes() -> None:
+    model = torch.nn.Sequential(torch.nn.Linear(3, 4), torch.nn.Linear(4, 2))
+    model.scale = torch.nn.Parameter(torch.ones(4))
+    model.frozen = torch.nn.Parameter(torch.ones(2), requires_grad=False)
+
+    groups_all = common._optimizer_param_groups(model, weight_decay=0.1, scope="all")
+    assert [id(p) for p in groups_all] == [id(p) for p in model.parameters()]
+
+    groups_none = common._optimizer_param_groups(model, weight_decay=0.1, scope="none")
+    assert groups_none[0]["weight_decay"] == 0.0
+    assert len(groups_none[0]["params"]) == len(list(model.parameters()))
+
+    groups_zero = common._optimizer_param_groups(model, weight_decay=0.0, scope="first_layer")
+    assert groups_zero[0]["weight_decay"] == 0.0
+
+    groups_first = common._optimizer_param_groups(model, weight_decay=0.1, scope="first_layer")
+    assert groups_first[0]["weight_decay"] == 0.1
+    assert groups_first[1]["weight_decay"] == 0.0
+    assert groups_first[0]["params"][0] is model[0].weight
+
+    groups_non_bias = common._optimizer_param_groups(model, weight_decay=0.1, scope="non_bias")
+    assert groups_non_bias[0]["weight_decay"] == 0.1
+    assert groups_non_bias[1]["weight_decay"] == 0.0
+    assert {id(p) for p in groups_non_bias[0]["params"]} == {
+        id(model[0].weight),
+        id(model[1].weight),
+    }
+    assert {id(p) for p in groups_non_bias[1]["params"]} == {
+        id(model[0].bias),
+        id(model[1].bias),
+        id(model.scale),
+    }
+    assert id(model.frozen) not in {id(p) for group in groups_non_bias for p in group["params"]}
+
+    no_weight_model = torch.nn.Module()
+    groups_missing = common._optimizer_param_groups(
+        no_weight_model, weight_decay=0.1, scope="first_layer"
+    )
+    assert groups_missing[0]["params"] == []
+
+    with pytest.raises(ValueError, match="weight_decay_scope"):
+        common._optimizer_param_groups(model, weight_decay=0.1, scope="bad")
+
+
+def test_checkpoint_selection_metrics() -> None:
+    assert common._is_better_checkpoint(
+        selection_metric="val_loss",
+        val_loss=0.5,
+        val_acc=0.1,
+        best_val_loss=None,
+        best_val_acc=None,
+    )
+    assert not common._is_better_checkpoint(
+        selection_metric="val_loss",
+        val_loss=0.5,
+        val_acc=1.0,
+        best_val_loss=0.4,
+        best_val_acc=0.0,
+    )
+    assert common._is_better_checkpoint(
+        selection_metric="val_acc_then_loss",
+        val_loss=0.8,
+        val_acc=0.7,
+        best_val_loss=0.1,
+        best_val_acc=0.6,
+    )
+    assert common._is_better_checkpoint(
+        selection_metric="val_acc_then_loss",
+        val_loss=0.1,
+        val_acc=0.7,
+        best_val_loss=0.2,
+        best_val_acc=0.7,
+    )
+    assert not common._is_better_checkpoint(
+        selection_metric="val_acc_then_loss",
+        val_loss=0.1,
+        val_acc=0.6,
+        best_val_loss=0.2,
+        best_val_acc=0.7,
+    )
+    assert common._is_better_checkpoint(
+        selection_metric="val_acc_then_loss_reset_any",
+        val_loss=0.1,
+        val_acc=0.7,
+        best_val_loss=0.2,
+        best_val_acc=0.7,
+    )
+    assert common._should_reset_patience(
+        selection_metric="val_acc_then_loss_reset_any",
+        checkpoint_updated=False,
+        val_loss=0.1,
+        val_acc=0.6,
+        best_stop_val_loss=0.2,
+        best_stop_val_acc=0.7,
+    )
+    assert common._should_reset_patience(
+        selection_metric="val_acc_then_loss_reset_any",
+        checkpoint_updated=False,
+        val_loss=0.3,
+        val_acc=0.8,
+        best_stop_val_loss=0.2,
+        best_stop_val_acc=0.7,
+    )
+    assert not common._should_reset_patience(
+        selection_metric="val_acc_then_loss_reset_any",
+        checkpoint_updated=False,
+        val_loss=0.3,
+        val_acc=0.6,
+        best_stop_val_loss=0.2,
+        best_stop_val_acc=0.7,
+    )
+    with pytest.raises(ValueError, match="selection_metric"):
+        common._is_better_checkpoint(
+            selection_metric="bad",
+            val_loss=0.1,
+            val_acc=0.1,
+            best_val_loss=None,
+            best_val_acc=None,
+        )
+
+
+def test_train_fullbatch_selects_by_val_acc_then_loss() -> None:
+    y = torch.tensor([0, 1, 0, 1])
+    train_mask = torch.tensor([True, True, False, False])
+    val_mask = torch.tensor([False, False, True, True])
+    model = torch.nn.Linear(1, 2)
+    logits_by_call = [
+        torch.tensor([[5.0, 0.0], [0.0, 5.0], [0.0, 1.0], [1.0, 0.0]], requires_grad=True),
+        torch.tensor([[5.0, 0.0], [0.0, 5.0], [0.0, 1.0], [1.0, 0.0]], requires_grad=True),
+        torch.tensor([[5.0, 0.0], [0.0, 5.0], [1.0, 0.0], [0.0, 1.0]], requires_grad=True),
+        torch.tensor([[5.0, 0.0], [0.0, 5.0], [0.8, 0.0], [0.0, 0.8]], requires_grad=True),
+        torch.tensor([[5.0, 0.0], [0.0, 5.0], [1.0, 0.0], [0.0, 1.0]], requires_grad=True),
+        torch.tensor([[5.0, 0.0], [0.0, 5.0], [0.0, 1.0], [1.0, 0.0]], requires_grad=True),
+    ]
+    calls = {"i": 0}
+
+    def forward_fn():
+        i = min(calls["i"], len(logits_by_call) - 1)
+        calls["i"] += 1
+        return logits_by_call[i]
+
+    res = common.train_fullbatch(
+        model=model,
+        forward_fn=forward_fn,
+        y=y,
+        train_mask=train_mask,
+        val_mask=val_mask,
+        lr=0.0,
+        weight_decay=0.0,
+        max_epochs=3,
+        patience=3,
+        seed=0,
+        weight_decay_scope="none",
+        selection_metric="val_acc_then_loss",
+    )
+
+    assert res.best_epoch == 1
+    assert res.best_val_acc == 1.0
+
+
+def test_train_fullbatch_reset_any_extends_patience_on_loss_progress() -> None:
+    y = torch.tensor([0, 1, 0, 1])
+    train_mask = torch.tensor([True, True, False, False])
+    val_mask = torch.tensor([False, False, True, True])
+    model = torch.nn.Linear(1, 2)
+    logits_by_call = [
+        torch.tensor([[5.0, 0.0], [0.0, 5.0], [1.0, 0.0], [1.0, 0.0]], requires_grad=True),
+        torch.tensor([[5.0, 0.0], [0.0, 5.0], [1.0, 0.0], [1.0, 0.0]], requires_grad=True),
+        torch.tensor([[5.0, 0.0], [0.0, 5.0], [0.0, 0.2], [0.2, 0.0]], requires_grad=True),
+        torch.tensor([[5.0, 0.0], [0.0, 5.0], [0.0, 0.2], [0.2, 0.0]], requires_grad=True),
+        torch.tensor([[5.0, 0.0], [0.0, 5.0], [1.0, 0.0], [0.0, 1.0]], requires_grad=True),
+        torch.tensor([[5.0, 0.0], [0.0, 5.0], [1.0, 0.0], [0.0, 1.0]], requires_grad=True),
+    ]
+    calls = {"i": 0}
+
+    def forward_fn():
+        i = min(calls["i"], len(logits_by_call) - 1)
+        calls["i"] += 1
+        return logits_by_call[i]
+
+    res = common.train_fullbatch(
+        model=model,
+        forward_fn=forward_fn,
+        y=y,
+        train_mask=train_mask,
+        val_mask=val_mask,
+        lr=0.0,
+        weight_decay=0.0,
+        max_epochs=3,
+        patience=1,
+        seed=0,
+        weight_decay_scope="none",
+        selection_metric="val_acc_then_loss_reset_any",
+    )
+
+    assert res.n_epochs == 3
+    assert res.best_epoch == 2
+    assert res.best_val_acc == 1.0

@@ -34,18 +34,24 @@ class _APPNPNet(torch.nn.Module):
         k: int,
         alpha: float,
         dropout: float,
+        adjacency_dropout: float,
+        bias: bool = False,
     ) -> None:
         super().__init__()
-        self.mlp = _MLP(in_channels, hidden_dim, out_channels, dropout=dropout)
+        self.mlp = _MLP(in_channels, hidden_dim, out_channels, dropout=dropout, bias=bias)
         self.k = int(k)
         self.alpha = float(alpha)
+        self.adjacency_dropout = float(adjacency_dropout)
 
     def forward(self, x: Any, edge_index: Any, edge_weight: Any, *, n_nodes: int) -> Any:
         h0 = self.mlp(x)
         h = h0
         for _ in range(self.k):
+            edge_weight_i = torch.nn.functional.dropout(
+                edge_weight, p=self.adjacency_dropout, training=self.training
+            )
             h = (1.0 - self.alpha) * spmm(
-                edge_index, edge_weight, h, n_nodes=n_nodes
+                edge_index, edge_weight_i, h, n_nodes=n_nodes
             ) + self.alpha * h0
         return h
 
@@ -63,6 +69,11 @@ class APPNPSpec:
     max_epochs: int = 200
     patience: int = 50
     add_self_loops: bool = True
+    norm_mode: str = "rw"
+    adjacency_dropout: float = 0.0
+    bias: bool = False
+    weight_decay_scope: str = "all"
+    selection_metric: str = "val_loss"
 
 
 class APPNPMethod(TransductiveMethod):
@@ -95,7 +106,7 @@ class APPNPMethod(TransductiveMethod):
             data,
             device=self._device,
             add_self_loops=self.spec.add_self_loops,
-            norm_mode="rw",  # APPNP uses random-walk / PPR propagation
+            norm_mode=self.spec.norm_mode,
             cache=self._prep_cache,
         )
         val_count = int(prep.val_mask.sum()) if prep.val_mask is not None else None
@@ -114,6 +125,8 @@ class APPNPMethod(TransductiveMethod):
             k=self.spec.k,
             alpha=self.spec.alpha,
             dropout=self.spec.dropout,
+            adjacency_dropout=self.spec.adjacency_dropout,
+            bias=self.spec.bias,
         ).to(self._device)
 
         train_fullbatch(
@@ -129,6 +142,8 @@ class APPNPMethod(TransductiveMethod):
             max_epochs=self.spec.max_epochs,
             patience=self.spec.patience,
             seed=seed,
+            weight_decay_scope=self.spec.weight_decay_scope,
+            selection_metric=self.spec.selection_metric,
         )
         logger.info("Finished %s.fit in %.3fs", self.info.method_id, perf_counter() - start)
         return self
@@ -141,7 +156,7 @@ class APPNPMethod(TransductiveMethod):
             data,
             device=self._device or "cpu",
             add_self_loops=self.spec.add_self_loops,
-            norm_mode="rw",
+            norm_mode=self.spec.norm_mode,
             cache=self._prep_cache,
         )
 
