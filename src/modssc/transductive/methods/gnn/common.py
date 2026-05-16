@@ -21,6 +21,8 @@ torch = optional_import("torch", extra="transductive-torch")
 logger = logging.getLogger(__name__)
 
 NormMode = Literal["rw", "sym"]
+SelectionMetric = Literal["val_loss", "val_acc_then_loss", "val_acc_then_loss_reset_any"]
+WeightDecayScope = Literal["all", "first_layer", "non_bias", "none"]
 
 
 def normalize_device_name(device: str | None) -> str:
@@ -157,12 +159,18 @@ def spmm(edge_index: Any, edge_weight: Any, X: Any, *, n_nodes: int) -> Any:
 
 class TwoLayerMLP(torch.nn.Module):
     def __init__(
-        self, in_channels: int, hidden_dim: int, out_channels: int, *, dropout: float
+        self,
+        in_channels: int,
+        hidden_dim: int,
+        out_channels: int,
+        *,
+        dropout: float,
+        bias: bool = True,
     ) -> None:
         super().__init__()
         self.dropout = float(dropout)
-        self.lin1 = torch.nn.Linear(in_channels, hidden_dim)
-        self.lin2 = torch.nn.Linear(hidden_dim, out_channels)
+        self.lin1 = torch.nn.Linear(in_channels, hidden_dim, bias=bool(bias))
+        self.lin2 = torch.nn.Linear(hidden_dim, out_channels, bias=bool(bias))
 
     def forward(self, x: Any) -> Any:
         x = torch.nn.functional.dropout(x, p=self.dropout, training=self.training)
@@ -336,6 +344,91 @@ class TrainResult:
     n_epochs: int
     best_epoch: int | None
     best_val_loss: float | None
+    best_val_acc: float | None
+
+
+def _optimizer_param_groups(model: Any, *, weight_decay: float, scope: WeightDecayScope) -> Any:
+    wd = float(weight_decay)
+    if scope == "all":
+        return model.parameters()
+    if scope == "none" or wd == 0.0:
+        return [{"params": list(model.parameters()), "weight_decay": 0.0}]
+    if scope == "non_bias":
+        decay_params = []
+        no_decay_params = []
+        for name, param in model.named_parameters():
+            if not getattr(param, "requires_grad", False):
+                continue
+            is_bias = name.rsplit(".", 1)[-1] == "bias"
+            if int(param.ndim) >= 2 and not is_bias:
+                decay_params.append(param)
+            else:
+                no_decay_params.append(param)
+        return [
+            {"params": decay_params, "weight_decay": wd},
+            {"params": no_decay_params, "weight_decay": 0.0},
+        ]
+    if scope != "first_layer":
+        raise ValueError(f"Unknown weight_decay_scope: {scope}")
+
+    first_weight_id: int | None = None
+    for module in model.modules():
+        weight = getattr(module, "weight", None)
+        if weight is not None and getattr(weight, "requires_grad", False) and int(weight.ndim) == 2:
+            first_weight_id = id(weight)
+            break
+    if first_weight_id is None:
+        return [{"params": list(model.parameters()), "weight_decay": 0.0}]
+
+    decay_params = []
+    no_decay_params = []
+    for param in model.parameters():
+        if id(param) == first_weight_id:
+            decay_params.append(param)
+        else:
+            no_decay_params.append(param)
+    return [
+        {"params": decay_params, "weight_decay": wd},
+        {"params": no_decay_params, "weight_decay": 0.0},
+    ]
+
+
+def _is_better_checkpoint(
+    *,
+    selection_metric: SelectionMetric,
+    val_loss: float,
+    val_acc: float,
+    best_val_loss: float | None,
+    best_val_acc: float | None,
+) -> bool:
+    if selection_metric == "val_loss":
+        return best_val_loss is None or val_loss < best_val_loss - 1e-9
+    if selection_metric in {"val_acc_then_loss", "val_acc_then_loss_reset_any"}:
+        if best_val_acc is None or val_acc > best_val_acc + 1e-9:
+            return True
+        if abs(val_acc - best_val_acc) <= 1e-9:
+            return best_val_loss is None or val_loss < best_val_loss - 1e-9
+        return False
+    raise ValueError(f"Unknown selection_metric: {selection_metric}")
+
+
+def _should_reset_patience(
+    *,
+    selection_metric: SelectionMetric,
+    checkpoint_updated: bool,
+    val_loss: float,
+    val_acc: float,
+    best_stop_val_loss: float | None,
+    best_stop_val_acc: float | None,
+) -> bool:
+    if selection_metric != "val_acc_then_loss_reset_any":
+        return checkpoint_updated
+    return (
+        best_stop_val_acc is None
+        or val_acc > best_stop_val_acc + 1e-9
+        or best_stop_val_loss is None
+        or val_loss < best_stop_val_loss - 1e-9
+    )
 
 
 def train_fullbatch(
@@ -350,18 +443,29 @@ def train_fullbatch(
     max_epochs: int,
     patience: int,
     seed: int = 0,
+    weight_decay_scope: WeightDecayScope = "all",
+    selection_metric: SelectionMetric = "val_loss",
 ) -> TrainResult:
     """Generic full-batch training loop for node classification."""
     set_torch_seed(seed)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=float(lr), weight_decay=float(weight_decay))
+    optimizer = torch.optim.Adam(
+        _optimizer_param_groups(model, weight_decay=float(weight_decay), scope=weight_decay_scope),
+        lr=float(lr),
+        weight_decay=float(weight_decay),
+    )
 
     best_state: dict[str, Any] | None = None
     best_val_loss: float | None = None
+    best_val_acc: float | None = None
+    best_stop_val_loss: float | None = None
+    best_stop_val_acc: float | None = None
     best_epoch: int | None = None
     bad_epochs = 0
+    n_epochs = 0
 
     for epoch in range(int(max_epochs)):
+        n_epochs = epoch + 1
         model.train()
         logits = forward_fn()
         loss = torch.nn.functional.cross_entropy(logits[train_mask], y[train_mask])
@@ -377,23 +481,50 @@ def train_fullbatch(
                 val_loss = torch.nn.functional.cross_entropy(
                     logits_val[val_mask], y[val_mask]
                 ).item()
+                val_acc = accuracy_from_logits(logits_val, y, val_mask)
 
-            if best_val_loss is None or val_loss < best_val_loss - 1e-9:
+            checkpoint_updated = _is_better_checkpoint(
+                selection_metric=selection_metric,
+                val_loss=float(val_loss),
+                val_acc=float(val_acc),
+                best_val_loss=best_val_loss,
+                best_val_acc=best_val_acc,
+            )
+            reset_patience = _should_reset_patience(
+                selection_metric=selection_metric,
+                checkpoint_updated=checkpoint_updated,
+                val_loss=float(val_loss),
+                val_acc=float(val_acc),
+                best_stop_val_loss=best_stop_val_loss,
+                best_stop_val_acc=best_stop_val_acc,
+            )
+            if best_stop_val_loss is None or float(val_loss) < best_stop_val_loss - 1e-9:
+                best_stop_val_loss = float(val_loss)
+            if best_stop_val_acc is None or float(val_acc) > best_stop_val_acc + 1e-9:
+                best_stop_val_acc = float(val_acc)
+
+            if checkpoint_updated:
                 best_val_loss = float(val_loss)
+                best_val_acc = float(val_acc)
                 best_epoch = int(epoch)
                 best_state = {k: v.detach().clone() for k, v in model.state_dict().items()}
+
+            if reset_patience:
                 bad_epochs = 0
                 logger.debug(
-                    "train_fullbatch epoch=%s val_loss=%.4f best updated",
+                    "train_fullbatch epoch=%s val_loss=%.4f val_acc=%.4f checkpoint_updated=%s",
                     epoch,
                     val_loss,
+                    val_acc,
+                    checkpoint_updated,
                 )
             else:
                 bad_epochs += 1
                 logger.debug(
-                    "train_fullbatch epoch=%s val_loss=%.4f bad_epochs=%s/%s",
+                    "train_fullbatch epoch=%s val_loss=%.4f val_acc=%.4f bad_epochs=%s/%s",
                     epoch,
                     val_loss,
+                    val_acc,
                     bad_epochs,
                     patience,
                 )
@@ -410,9 +541,15 @@ def train_fullbatch(
         model.load_state_dict(best_state)
 
     logger.debug(
-        "train_fullbatch done n_epochs=%s best_epoch=%s best_val_loss=%s",
-        epoch + 1,
+        "train_fullbatch done n_epochs=%s best_epoch=%s best_val_loss=%s best_val_acc=%s",
+        n_epochs,
         best_epoch,
         best_val_loss,
+        best_val_acc,
     )
-    return TrainResult(n_epochs=epoch + 1, best_epoch=best_epoch, best_val_loss=best_val_loss)
+    return TrainResult(
+        n_epochs=n_epochs,
+        best_epoch=best_epoch,
+        best_val_loss=best_val_loss,
+        best_val_acc=best_val_acc,
+    )

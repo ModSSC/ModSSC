@@ -469,7 +469,7 @@ class VaeStep:
             idx = fit_rng.choice(int(X_fit.shape[0]), size=int(self.max_fit_samples), replace=False)
             idx = np.asarray(idx, dtype=np.int64)
             X_fit = X_fit[idx]
-            fit_indices_used = fit_indices_arr[idx]
+            fit_indices_used = fit_indices_used[idx]
 
         finite = np.isfinite(X_fit)
         if finite.all():

@@ -32,6 +32,8 @@ class SGCSpec:
     max_epochs: int = 200
     patience: int = 50
     add_self_loops: bool = True
+    weight_decay_scope: str = "all"
+    selection_metric: str = "val_loss"
 
 
 class SGCMethod(TransductiveMethod):
@@ -101,6 +103,8 @@ class SGCMethod(TransductiveMethod):
             max_epochs=self.spec.max_epochs,
             patience=self.spec.patience,
             seed=seed,
+            weight_decay_scope=self.spec.weight_decay_scope,
+            selection_metric=self.spec.selection_metric,
         )
         logger.info("Finished %s.fit in %.3fs", self.info.method_id, perf_counter() - start)
         return self

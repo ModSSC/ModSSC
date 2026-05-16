@@ -65,6 +65,16 @@ BUILTIN_STEPS: tuple[StepSpec, ...] = (
         produces=("features.X",),
     ),
     StepSpec(
+        step_id="core.row_normalize",
+        import_path="modssc.preprocess.steps.core.row_normalize:RowNormalizeStep",
+        kind="transform",
+        description="Normalize each feature row independently, preserving zero rows.",
+        required_extra=None,
+        modalities=(),
+        consumes=("features.X",),
+        produces=("features.X",),
+    ),
+    StepSpec(
         step_id="core.pca",
         import_path="modssc.preprocess.steps.core.pca:PcaStep",
         kind="fittable",

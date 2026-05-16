@@ -56,6 +56,7 @@ class _GATConv(torch.nn.Module):
         concat: bool = True,
         dropout: float = 0.0,
         negative_slope: float = 0.2,
+        projected_feature_dropout: bool = False,
         bias: bool = True,
     ) -> None:
         super().__init__()
@@ -64,6 +65,7 @@ class _GATConv(torch.nn.Module):
         self.concat = bool(concat)
         self.dropout = float(dropout)
         self.negative_slope = float(negative_slope)
+        self.projected_feature_dropout = bool(projected_feature_dropout)
 
         self.lin = torch.nn.Linear(in_channels, self.heads * self.out_channels, bias=False)
         self.att_src = torch.nn.Parameter(torch.empty(self.heads, self.out_channels))
@@ -88,6 +90,8 @@ class _GATConv(torch.nn.Module):
         # edge_index: (2, E) (src,dst)
         src, dst = edge_index[0], edge_index[1]
         h = self.lin(x).view(n_nodes, self.heads, self.out_channels)  # (N, H, C)
+        if self.projected_feature_dropout:
+            h = torch.nn.functional.dropout(h, p=self.dropout, training=self.training)
 
         # attention scores per node/head
         e_src = (h * self.att_src).sum(dim=-1)  # (N, H)
@@ -126,9 +130,11 @@ class _GATNet(torch.nn.Module):
         *,
         head_dim: int,
         heads: int,
+        output_heads: int,
         out_channels: int,
         dropout: float,
         negative_slope: float,
+        projected_feature_dropout: bool,
     ) -> None:
         super().__init__()
         self.dropout = float(dropout)
@@ -139,15 +145,17 @@ class _GATNet(torch.nn.Module):
             concat=True,
             dropout=dropout,
             negative_slope=negative_slope,
+            projected_feature_dropout=projected_feature_dropout,
             bias=True,
         )
         self.conv2 = _GATConv(
             head_dim * heads,
             out_channels,
-            heads=1,
+            heads=output_heads,
             concat=False,
             dropout=dropout,
             negative_slope=negative_slope,
+            projected_feature_dropout=projected_feature_dropout,
             bias=True,
         )
 
@@ -169,6 +177,7 @@ class GATSpec:
 
     head_dim: int = 8
     heads: int = 8
+    output_heads: int = 1
     dropout: float = 0.6
     negative_slope: float = 0.2
     lr: float = 0.005
@@ -176,6 +185,9 @@ class GATSpec:
     max_epochs: int = 200
     patience: int = 100
     add_self_loops: bool = True
+    projected_feature_dropout: bool = False
+    weight_decay_scope: str = "all"
+    selection_metric: str = "val_loss"
 
 
 class GATMethod(TransductiveMethod):
@@ -225,9 +237,11 @@ class GATMethod(TransductiveMethod):
             prep.X.shape[1],
             head_dim=self.spec.head_dim,
             heads=self.spec.heads,
+            output_heads=self.spec.output_heads,
             out_channels=prep.n_classes,
             dropout=self.spec.dropout,
             negative_slope=self.spec.negative_slope,
+            projected_feature_dropout=self.spec.projected_feature_dropout,
         ).to(self._device)
 
         train_fullbatch(
@@ -241,6 +255,8 @@ class GATMethod(TransductiveMethod):
             max_epochs=self.spec.max_epochs,
             patience=self.spec.patience,
             seed=seed,
+            weight_decay_scope=self.spec.weight_decay_scope,
+            selection_metric=self.spec.selection_metric,
         )
         logger.info("Finished %s.fit in %.3fs", self.info.method_id, perf_counter() - start)
         return self

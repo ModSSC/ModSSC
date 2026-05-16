@@ -365,6 +365,49 @@ def test_vae_fit_scope_all_ignores_sampling_indices_when_torch_available() -> No
     assert first_info["fingerprint"] == second_info["fingerprint"]
 
 
+def test_vae_fit_scope_all_max_fit_samples_uses_all_scope_indices_when_torch_available() -> None:
+    pytest.importorskip("torch")
+    X = np.array(
+        [[0.0, 1.0, 2.0], [1.0, 0.0, 3.0], [2.0, 1.0, 0.0], [3.0, 2.0, 1.0]],
+        dtype=np.float32,
+    )
+
+    first_store = ArtifactStore()
+    first_store.set("features.X", X)
+    first = VaeStep(
+        latent_dim=2,
+        hidden_dims=(4,),
+        epochs=1,
+        batch_size=2,
+        device="cpu",
+        model_cache=False,
+        model_seed=7,
+        fit_scope="all",
+        max_fit_samples=3,
+    )
+    first.fit(first_store, fit_indices=np.array([0, 1]), rng=np.random.default_rng(0))
+    first_info = first.transform(first_store, rng=np.random.default_rng(0))["features.vae.info"]
+
+    second_store = ArtifactStore()
+    second_store.set("features.X", X)
+    second = VaeStep(
+        latent_dim=2,
+        hidden_dims=(4,),
+        epochs=1,
+        batch_size=2,
+        device="cpu",
+        model_cache=False,
+        model_seed=7,
+        fit_scope="all",
+        max_fit_samples=3,
+    )
+    second.fit(second_store, fit_indices=np.array([2, 3]), rng=np.random.default_rng(999))
+    second_info = second.transform(second_store, rng=np.random.default_rng(0))["features.vae.info"]
+
+    assert first_info["training"]["n_fit_samples"] == 3
+    assert first_info["fingerprint"] == second_info["fingerprint"]
+
+
 def test_vae_poisson_mnist_preset_when_torch_available() -> None:
     pytest.importorskip("torch")
     step = VaeStep(

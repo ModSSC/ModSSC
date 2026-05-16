@@ -40,38 +40,18 @@ sampling:
       allow_override_official: false
 preprocess:
   seed: 3
-  fit_on: train_labeled
+  fit_on: train
   cache: true
   cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
   plan:
-    output_key: features.X
+    output_key: features.aet
     steps:
     - id: labels.encode
-    - id: vision.ensure_num_channels
+    - id: vision.aet
       params:
-        num_channels: 3
-    - id: vision.channels_order
-      params:
-        order: NCHW
-    - id: vision.resize
-      params:
-        height: 32
-        width: 32
-    - id: vision.normalize
-      params:
-        mean:
-        - 123.675
-        - 116.28
-        - 103.53
-        std:
-        - 58.395
-        - 57.12
-        - 57.375
-    - id: embeddings.auto
-      params:
-        model_id_vision: torchvision:resnet18
-        batch_size: 64
-    - id: core.to_numpy
+        source: precomputed
+        preset: poisson_cifar10_projective
+        unit_normalize: true
 method:
   kind: transductive
   id: h_gcn
@@ -105,14 +85,13 @@ graph:
   cache_dir: ${MODSSC_GRAPH_CACHE_DIR}
   spec:
     scheme: knn
-    metric: cosine
-    k: 15
-    symmetrize: mutual
+    metric: euclidean
+    k: 10
+    symmetrize: mean
     weights:
-      kind: heat
-      sigma: 1.0
-    normalize: rw
-    self_loops: true
+      kind: knn_gaussian
+    normalize: none
+    self_loops: false
     backend: numpy
     chunk_size: 1024
-    feature_field: features.X
+    feature_field: features.aet
