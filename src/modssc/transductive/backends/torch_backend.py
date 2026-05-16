@@ -34,9 +34,16 @@ def spmm(
     device,
     dtype,
 ):
-    """Sparse adjacency times dense features using torch sparse COO."""
+    """Sparse adjacency times dense features using scatter-add.
+
+    We avoid ``torch.sparse.mm`` here because sparse COO coverage is incomplete
+    on Apple MPS. The edge convention is A[dst, src] = edge_weight[e].
+    """
     torch = _torch()
     edge_index_t = to_tensor(edge_index, device=device, dtype=torch.long)
+    if int(edge_index_t.dim()) != 2 or int(edge_index_t.shape[0]) != 2:
+        raise ValueError("edge_index must have shape (2, E)")
+    X = to_tensor(X, device=device, dtype=dtype)
     E = int(edge_index_t.shape[1])
     if E == 0:
         out_shape = (n_nodes,) + tuple(X.shape[1:])
@@ -52,16 +59,18 @@ def spmm(
     src = edge_index_t[0]
     dst = edge_index_t[1]
 
-    # COO matrix with shape (n, n): A[dst, src] = w
-    A = torch.sparse_coo_tensor(
-        torch.stack([dst, src], dim=0),
-        w,
-        size=(n_nodes, n_nodes),
-        device=device,
-        dtype=dtype,
-    ).coalesce()
+    if int(X.shape[0]) != int(n_nodes):
+        raise ValueError("X must have shape (n_nodes, ...) or (n_nodes,)")
 
-    out = torch.sparse.mm(A, X.view(-1, 1)).view(-1) if X.ndim == 1 else torch.sparse.mm(A, X)
+    if int(X.dim()) == 1:
+        out = torch.zeros((n_nodes,), device=device, dtype=dtype)
+        out.index_add_(0, dst, w * X.index_select(0, src))
+        return out
+
+    broadcast_shape = (E,) + (1,) * (int(X.dim()) - 1)
+    messages = X.index_select(0, src) * w.reshape(broadcast_shape)
+    out = torch.zeros((n_nodes,) + tuple(X.shape[1:]), device=device, dtype=dtype)
+    out.index_add_(0, dst, messages)
     return out
 
 

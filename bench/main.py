@@ -263,6 +263,27 @@ def _views_preprocess_step_ids(views_plan: dict[str, Any]) -> list[str]:
     return steps
 
 
+def _preprocess_logged_artifacts(pre: Any) -> dict[str, Any]:
+    out: dict[str, Any] = {}
+    by_split: dict[str, dict[str, Any]] = {}
+    for split, store in (("train", pre.train_artifacts), ("test", pre.test_artifacts)):
+        if store is None:
+            continue
+        split_out: dict[str, Any] = {}
+        for key in ("features.vae.info", "features.aet.info"):
+            value = store.get(key)
+            if value is None:
+                continue
+            split_out[key] = value
+            if split == "train":
+                out[key] = value
+        if split_out:
+            by_split[split] = split_out
+    if by_split:
+        out["by_split"] = by_split
+    return out
+
+
 def _requires_fit_indices(step_ids: list[str]) -> bool:
     for step_id in step_ids:
         info = step_info(step_id)
@@ -749,6 +770,9 @@ def _run_experiment_single(
             "fit_fingerprint": pre.dataset.meta.get("preprocess_fit_fingerprint"),
             "cache_dir": pre.cache_dir,
         }
+        logged_preprocess_artifacts = _preprocess_logged_artifacts(pre)
+        if logged_preprocess_artifacts:
+            artifacts["preprocess"]["logged_artifacts"] = logged_preprocess_artifacts
 
         views = None
         if cfg.views is not None:

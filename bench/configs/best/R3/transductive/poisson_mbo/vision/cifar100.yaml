@@ -79,15 +79,16 @@ method:
     device: auto
     dtype: float32
   params:
-    T: 200
-    Ninner: 40
-    Nouter: 20
+    Ns: 40
+    T: 20
     mu: 1.0
-    d_tau: 10.0
-    smin: 0.5
-    smax: 2.0
-    n_volume_iters: 100
-    b_strategy: uniform
+    tol: 1.0e-03
+    max_iter: 1000
+    poisson_eps: 0.0
+    volume_tol: 1.0e-03
+    volume_max_iter: 10000
+    volume_dt: 0.1
+    b_strategy: "true"
     symmetrize: true
     zero_diagonal: true
 evaluation:

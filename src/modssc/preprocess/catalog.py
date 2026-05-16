@@ -84,6 +84,19 @@ BUILTIN_STEPS: tuple[StepSpec, ...] = (
         consumes=("features.X",),
         produces=("features.X",),
     ),
+    StepSpec(
+        step_id="core.vae",
+        import_path="modssc.preprocess.steps.core.vae:VaeStep",
+        kind="fittable",
+        description=(
+            "Fit a dense variational autoencoder on features.X and expose latent means as "
+            "features.vae."
+        ),
+        required_extra="preprocess",
+        modalities=(),
+        consumes=("features.X",),
+        produces=("features.vae", "features.vae.info"),
+    ),
     # Embeddings
     StepSpec(
         step_id="embeddings.auto",
@@ -247,6 +260,19 @@ BUILTIN_STEPS: tuple[StepSpec, ...] = (
         modalities=("vision",),
         consumes=("raw.X",),
         produces=("features.X",),
+    ),
+    StepSpec(
+        step_id="vision.aet",
+        import_path="modssc.preprocess.steps.vision.aet:AetStep",
+        kind="featurizer",
+        description=(
+            "Extract CIFAR Auto-Encoding Transformations features from an official/external "
+            "AET checkpoint and expose them as features.aet."
+        ),
+        required_extra="preprocess",
+        modalities=("vision",),
+        consumes=("raw.X", "raw.y"),
+        produces=("features.aet", "features.aet.info"),
     ),
     # Audio
     StepSpec(

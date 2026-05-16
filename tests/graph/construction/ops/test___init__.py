@@ -146,6 +146,52 @@ def test_weights_unknown_kind():
         compute_edge_weights(distances=distances, metric="cosine", weights=spec)
 
 
+def test_weights_knn_gaussian_validation_and_values():
+    distances = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    edge_index = np.array([[0, 0, 1], [1, 2, 0]], dtype=np.int64)
+    weights = GraphWeightsSpec(kind="knn_gaussian")
+
+    out = compute_edge_weights(
+        distances=distances,
+        metric="euclidean",
+        weights=weights,
+        edge_index=edge_index,
+        n_nodes=2,
+    )
+
+    expected = np.exp(-4.0 * distances * distances / np.array([4.0, 4.0, 9.0], dtype=np.float32))
+    np.testing.assert_allclose(out, expected.astype(np.float32))
+
+    with pytest.raises(GraphValidationError, match="require metric='euclidean'"):
+        compute_edge_weights(distances=distances, metric="cosine", weights=weights)
+    with pytest.raises(GraphValidationError, match="require edge_index and n_nodes"):
+        compute_edge_weights(distances=distances, metric="euclidean", weights=weights)
+    with pytest.raises(GraphValidationError, match="edge_index must have shape"):
+        compute_edge_weights(
+            distances=distances,
+            metric="euclidean",
+            weights=weights,
+            edge_index=np.zeros((2, 2), dtype=np.int64),
+            n_nodes=2,
+        )
+    with pytest.raises(GraphValidationError, match="n_nodes must be non-negative"):
+        compute_edge_weights(
+            distances=np.zeros((0,), dtype=np.float32),
+            metric="euclidean",
+            weights=weights,
+            edge_index=np.zeros((2, 0), dtype=np.int64),
+            n_nodes=-1,
+        )
+    with pytest.raises(GraphValidationError, match="source ids out of range"):
+        compute_edge_weights(
+            distances=distances,
+            metric="euclidean",
+            weights=weights,
+            edge_index=np.array([[0, 2, 1], [1, 0, 0]], dtype=np.int64),
+            n_nodes=2,
+        )
+
+
 def test_derive_seed():
     s1 = _derive_seed(42, 0)
     s2 = _derive_seed(42, 1)
@@ -303,6 +349,22 @@ def test_symmetrize_mode_mutual():
     assert np.allclose(ew, 0.75)
 
 
+def test_symmetrize_mode_mean_halves_missing_reverse_edges():
+    n = 3
+    edge_index = np.array([[0, 1, 1], [1, 0, 2]])
+    edge_weight = np.array([1.0, 0.5, 2.0], dtype=np.float32)
+
+    ei, ew = symmetrize_edges(
+        n_nodes=n, edge_index=edge_index, edge_weight=edge_weight, mode="mean"
+    )
+
+    got = {(int(s), int(d)): float(w) for s, d, w in zip(ei[0], ei[1], ew, strict=False)}
+    assert got[(0, 1)] == pytest.approx(0.75)
+    assert got[(1, 0)] == pytest.approx(0.75)
+    assert got[(1, 2)] == pytest.approx(1.0)
+    assert got[(2, 1)] == pytest.approx(1.0)
+
+
 def test_symmetrize_loops_only_with_weights():
     n = 3
     edge_index = np.array([[0, 1], [0, 1]])
@@ -391,6 +453,29 @@ def test_weights_cosine_metric_mismatch():
 
     with pytest.raises(GraphValidationError, match="cosine weights require metric='cosine'"):
         compute_edge_weights(distances=distances, metric="euclidean", weights=spec)
+
+
+def test_weights_knn_gaussian_uses_source_k_distance():
+    spec = GraphWeightsSpec(kind="knn_gaussian")
+    edge_index = np.array([[0, 0, 1, 1], [1, 2, 0, 2]], dtype=np.int64)
+    distances = np.array([1.0, 2.0, 2.0, 4.0], dtype=np.float32)
+
+    w = compute_edge_weights(
+        distances=distances,
+        metric="euclidean",
+        weights=spec,
+        edge_index=edge_index,
+        n_nodes=3,
+    )
+
+    assert np.allclose(w, [np.exp(-1.0), np.exp(-4.0), np.exp(-1.0), np.exp(-4.0)])
+
+
+def test_weights_knn_gaussian_requires_edge_index():
+    spec = GraphWeightsSpec(kind="knn_gaussian")
+
+    with pytest.raises(GraphValidationError, match="require edge_index"):
+        compute_edge_weights(distances=np.array([1.0]), metric="euclidean", weights=spec)
 
 
 def test_symmetrize_self_loops_no_weights():

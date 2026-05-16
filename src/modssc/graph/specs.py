@@ -11,11 +11,11 @@ from .errors import GraphValidationError
 
 Metric = Literal["cosine", "euclidean"]
 Scheme = Literal["knn", "epsilon", "anchor"]
-Symmetrize = Literal["none", "or", "mutual"]
+Symmetrize = Literal["none", "or", "mutual", "mean"]
 Normalize = Literal["none", "rw", "sym"]
-Backend = Literal["auto", "numpy", "sklearn", "faiss"]
+Backend = Literal["auto", "numpy", "sklearn", "faiss", "torch"]
 
-WeightKind = Literal["binary", "heat", "cosine"]
+WeightKind = Literal["binary", "heat", "cosine", "knn_gaussian"]
 
 AnchorMethod = Literal["random", "kmeans"]
 
@@ -33,6 +33,8 @@ class GraphWeightsSpec:
         - "binary": all edges weight 1
         - "heat": exp(-d^2/(2*sigma^2))
         - "cosine": convert cosine distances into similarities (1 - d)
+        - "knn_gaussian": local-scale local scale
+          exp(-4*d_ij^2/d_k(x_i)^2), for KNN graphs only
     sigma:
         Used only for kind="heat".
     """
@@ -41,7 +43,7 @@ class GraphWeightsSpec:
     sigma: float | None = None
 
     def validate(self, *, metric: Metric) -> None:
-        if self.kind not in ("binary", "heat", "cosine"):
+        if self.kind not in ("binary", "heat", "cosine", "knn_gaussian"):
             raise GraphValidationError(f"Unknown weight kind: {self.kind!r}")
         if self.kind == "heat":
             sigma = float(self.sigma or 0.0)
@@ -49,6 +51,8 @@ class GraphWeightsSpec:
                 raise GraphValidationError("sigma must be > 0 for heat weights")
         if self.kind == "cosine" and metric != "cosine":
             raise GraphValidationError("cosine weights require metric='cosine'")
+        if self.kind == "knn_gaussian" and metric != "euclidean":
+            raise GraphValidationError("knn_gaussian weights require metric='euclidean'")
 
     def to_dict(self) -> dict[str, Any]:
         return {"kind": self.kind, "sigma": self.sigma}
@@ -132,12 +136,12 @@ class GraphBuilderSpec:
         else:
             raise GraphValidationError(f"Unknown scheme: {self.scheme!r}")
 
-        if self.symmetrize not in ("none", "or", "mutual"):
+        if self.symmetrize not in ("none", "or", "mutual", "mean"):
             raise GraphValidationError(f"Unknown symmetrize mode: {self.symmetrize!r}")
         if self.normalize not in ("none", "rw", "sym"):
             raise GraphValidationError(f"Unknown normalize mode: {self.normalize!r}")
 
-        if self.backend not in ("auto", "numpy", "sklearn", "faiss"):
+        if self.backend not in ("auto", "numpy", "sklearn", "faiss", "torch"):
             raise GraphValidationError(f"Unknown backend: {self.backend!r}")
 
         if int(self.chunk_size) <= 0:
@@ -146,6 +150,8 @@ class GraphBuilderSpec:
         # backend-specific constraints
         if self.backend == "faiss" and self.scheme == "epsilon":
             raise GraphValidationError("faiss backend does not support epsilon scheme")
+        if self.backend == "torch" and self.scheme != "knn":
+            raise GraphValidationError("torch backend currently supports only knn scheme")
 
         if int(self.faiss_hnsw_m) <= 0:
             raise GraphValidationError("faiss_hnsw_m must be > 0")
@@ -155,6 +161,8 @@ class GraphBuilderSpec:
             raise GraphValidationError("faiss_ef_construction must be > 0")
 
         self.weights.validate(metric=self.metric)
+        if self.weights.kind == "knn_gaussian" and self.scheme != "knn":
+            raise GraphValidationError("knn_gaussian weights require scheme='knn'")
 
     def to_dict(self) -> dict[str, Any]:
         return {

@@ -80,8 +80,8 @@ method:
     dtype: float32
   params:
     backend: numpy
-    laplacian_kind: sym
-    eps: 1.0e-06
+    laplacian_kind: paper_normalized
+    eps: 0.0
     center_sources: true
     tol: 1.0e-06
     max_iter: 2000

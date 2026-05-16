@@ -7,8 +7,14 @@ from typing import Any, Literal
 
 import numpy as np
 
+from modssc.runtime.device import resolve_device_name
 from modssc.transductive.base import MethodInfo, TransductiveMethod
-from modssc.transductive.methods.utils import DiffusionResult, _validate_graph_inputs, to_numpy
+from modssc.transductive.methods.utils import (
+    DiffusionResult,
+    _validate_graph_inputs,
+    degrees_numpy,
+    to_numpy,
+)
 from modssc.transductive.operators.clamp import labels_to_onehot
 from modssc.transductive.operators.laplacian import laplacian_matvec_numpy, laplacian_matvec_torch
 from modssc.transductive.optional import optional_import
@@ -26,7 +32,7 @@ class PoissonLearningSpec:
     We solve, for each class k, a Poisson-like linear system on the graph:
         (L + eps I + (1/n) 11^T) f_k = b_k
     where:
-      - L is a graph Laplacian ("sym" or "rw")
+      - L is a graph Laplacian ("unnormalized", "sym" or "rw")
       - the (1/n)11^T term enforces solvability (removes constant nullspace component)
       - eps > 0 is a small ridge to handle disconnected graphs (multiple null eigenvectors)
       - b_k is a zero-sum source term defined on labeled nodes.
@@ -36,9 +42,12 @@ class PoissonLearningSpec:
     Parameters
     ----------
     backend:
-        "numpy" or "torch". Torch backend supports GPU if tensors are placed on CUDA.
+        "numpy", "torch", or "auto". Torch backend supports CUDA and Apple MPS
+        when a device is passed by the benchmark runner.
     laplacian_kind:
-        "sym" (symmetric normalized Laplacian) or "rw" (random-walk Laplacian).
+        "paper_normalized" follows the reference paper pipeline:
+        solve with the symmetric normalized Laplacian and transform the source/solution
+        by D^-1/2. "unnormalized", "sym", and "rw" keep the direct ModSSC variants.
     eps:
         Small ridge added to the system to guarantee SPD (especially important if the graph is disconnected).
     center_sources:
@@ -48,7 +57,7 @@ class PoissonLearningSpec:
     """
 
     backend: Literal["numpy", "torch", "auto"] = "numpy"
-    laplacian_kind: Literal["sym", "rw"] = "sym"
+    laplacian_kind: Literal["paper_normalized", "unnormalized", "sym", "rw"] = "sym"
     eps: float = 1e-6
     center_sources: bool = True
     tol: float = 1e-6
@@ -122,14 +131,39 @@ def poisson_learning_numpy(
         Y_labeled=Y, labeled_mask=labeled_mask, center_sources=bool(spec.center_sources)
     )
 
+    laplacian_kind = str(spec.laplacian_kind)
+    matvec_kind = "sym" if laplacian_kind == "paper_normalized" else laplacian_kind
+
     matvec_L = laplacian_matvec_numpy(
         n_nodes=int(n_nodes),
         edge_index=edge_index,
         edge_weight=edge_weight,
-        kind=str(spec.laplacian_kind),
+        kind=matvec_kind,
     )
 
-    ones = np.ones(int(n_nodes), dtype=np.float32)
+    deg = degrees_numpy(n_nodes=int(n_nodes), edge_index=edge_index, edge_weight=edge_weight)
+    inv_sqrt_deg = np.zeros(int(n_nodes), dtype=np.float32)
+    deg_mask = deg > 0.0
+    inv_sqrt_deg[deg_mask] = 1.0 / np.sqrt(deg[deg_mask])
+
+    if laplacian_kind == "paper_normalized":
+        B_solve = inv_sqrt_deg[:, None] * B
+        null_vec = np.sqrt(np.maximum(deg, 0.0)).astype(np.float32, copy=False)
+        denom = float(np.dot(null_vec, null_vec))
+        if denom <= 0.0:
+            null_vec = np.ones(int(n_nodes), dtype=np.float32)
+            denom = float(n_nodes)
+    else:
+        B_solve = B
+    if laplacian_kind == "unnormalized":
+        null_vec = deg
+        denom = float(null_vec.sum())
+        if denom <= 0.0:
+            null_vec = np.ones(int(n_nodes), dtype=np.float32)
+            denom = float(n_nodes)
+    elif laplacian_kind != "paper_normalized":
+        null_vec = np.ones(int(n_nodes), dtype=np.float32)
+        denom = float(n_nodes)
     eps = float(spec.eps)
 
     def matvec_A(x: np.ndarray) -> np.ndarray:
@@ -137,8 +171,9 @@ def poisson_learning_numpy(
         out = matvec_L(x)
         if eps != 0.0:
             out = out + eps * x
-        # (1/n) 11^T x == mean(x) * 1
-        out = out + float(x.mean()) * ones
+        # Lift the constant nullspace while preserving the paper's weighted mean
+        # constraint for the unnormalized graph Laplacian.
+        out = out + float(np.dot(null_vec, x) / denom) * null_vec
         return out
 
     F = np.zeros((int(n_nodes), n_classes), dtype=np.float32)
@@ -146,9 +181,12 @@ def poisson_learning_numpy(
     residual_max = 0.0
 
     for k in range(n_classes):
-        b = B[:, k].astype(np.float32, copy=False)
+        b = B_solve[:, k].astype(np.float32, copy=False)
         cg = cg_solve_numpy(matvec=matvec_A, b=b, tol=float(spec.tol), max_iter=int(spec.max_iter))
-        F[:, k] = cg.x.astype(np.float32, copy=False)
+        x = cg.x.astype(np.float32, copy=False)
+        if laplacian_kind == "paper_normalized":
+            x = inv_sqrt_deg * x
+        F[:, k] = x
         n_iter_max = max(n_iter_max, int(cg.n_iter))
         residual_max = max(residual_max, float(cg.residual_norm))
 
@@ -163,19 +201,27 @@ def poisson_learning_torch(
     y: Any,
     labeled_mask: Any,
     spec: PoissonLearningSpec,
+    device: str | None = None,
 ) -> DiffusionResult:
     torch = optional_import("torch", extra="transductive-torch")
 
-    # Convert to torch tensors (on the same device as y if possible)
-    y_t = torch.as_tensor(y, dtype=torch.long)
-    device = y_t.device
+    if device is None and hasattr(y, "device"):
+        device = str(y.device)
+    dev_name = resolve_device_name(device, torch=torch) or "cpu"
+    device_t = torch.device(dev_name)
 
-    edge_index_t = torch.as_tensor(edge_index, dtype=torch.long, device=device)
+    y_t = torch.as_tensor(y, dtype=torch.long, device=device_t)
+
+    edge_index_t = torch.as_tensor(edge_index, dtype=torch.long, device=device_t)
     if edge_index_t.ndim != 2 or edge_index_t.shape[0] != 2:
         raise ValueError(f"edge_index must have shape (2, E), got {tuple(edge_index_t.shape)}")
 
-    edge_weight_t = torch.as_tensor(edge_weight, dtype=torch.float32, device=device)
-    labeled_mask_t = torch.as_tensor(labeled_mask, dtype=torch.bool, device=device)
+    edge_weight_t = (
+        None
+        if edge_weight is None
+        else torch.as_tensor(edge_weight, dtype=torch.float32, device=device_t)
+    )
+    labeled_mask_t = torch.as_tensor(labeled_mask, dtype=torch.bool, device=device_t)
 
     n_nodes_i = int(n_nodes)
     if int(y_t.numel()) != n_nodes_i:
@@ -197,28 +243,58 @@ def poisson_learning_torch(
         center_sources=bool(spec.center_sources),
     )
 
-    B_t = torch.as_tensor(B_np, dtype=torch.float32, device=device)
+    B_t = torch.as_tensor(B_np, dtype=torch.float32, device=device_t)
+
+    laplacian_kind = str(spec.laplacian_kind)
+    matvec_kind = "sym" if laplacian_kind == "paper_normalized" else laplacian_kind
 
     matvec_L = laplacian_matvec_torch(
         n_nodes=n_nodes_i,
         edge_index=edge_index_t,
         edge_weight=edge_weight_t,
-        device=DeviceSpec(device=str(device)),
-        kind=str(spec.laplacian_kind),
+        device=DeviceSpec(device=str(device_t)),
+        kind=matvec_kind,
     )
 
-    ones = torch.ones((n_nodes_i,), dtype=torch.float32, device=device)
+    edge_weight_for_deg = (
+        torch.ones((edge_index_t.shape[1],), dtype=torch.float32, device=device_t)
+        if edge_weight is None
+        else torch.as_tensor(edge_weight, dtype=torch.float32, device=device_t).reshape(-1)
+    )
+    deg_t = torch.zeros((n_nodes_i,), dtype=torch.float32, device=device_t)
+    if int(edge_index_t.shape[1]):
+        deg_t.scatter_add_(0, edge_index_t[1], edge_weight_for_deg)
+    inv_sqrt_deg = torch.zeros_like(deg_t)
+    deg_mask = deg_t > 0.0
+    inv_sqrt_deg[deg_mask] = torch.rsqrt(deg_t[deg_mask])
+
+    if laplacian_kind == "paper_normalized":
+        B_t = inv_sqrt_deg.view(-1, 1) * B_t
+        null_vec = torch.sqrt(torch.clamp(deg_t, min=0.0))
+        denom = (null_vec * null_vec).sum()
+        if float(denom.detach().cpu()) <= 0.0:
+            null_vec = torch.ones((n_nodes_i,), dtype=torch.float32, device=device_t)
+            denom = torch.as_tensor(float(n_nodes_i), dtype=torch.float32, device=device_t)
+    elif laplacian_kind == "unnormalized":
+        null_vec = deg_t
+        denom = null_vec.sum()
+        if float(denom.detach().cpu()) <= 0.0:
+            null_vec = torch.ones((n_nodes_i,), dtype=torch.float32, device=device_t)
+            denom = torch.as_tensor(float(n_nodes_i), dtype=torch.float32, device=device_t)
+    else:
+        null_vec = torch.ones((n_nodes_i,), dtype=torch.float32, device=device_t)
+        denom = torch.as_tensor(float(n_nodes_i), dtype=torch.float32, device=device_t)
     eps = float(spec.eps)
 
     def matvec_A(x: Any) -> Any:
-        x = torch.as_tensor(x, dtype=torch.float32, device=device)
+        x = torch.as_tensor(x, dtype=torch.float32, device=device_t)
         out = matvec_L(x)
         if eps != 0.0:
             out = out + eps * x
-        out = out + x.mean() * ones
+        out = out + ((null_vec * x).sum() / denom) * null_vec
         return out
 
-    F = torch.zeros((n_nodes_i, n_classes), dtype=torch.float32, device=device)
+    F = torch.zeros((n_nodes_i, n_classes), dtype=torch.float32, device=device_t)
     n_iter_max = 0
     residual_max = 0.0
 
@@ -227,10 +303,12 @@ def poisson_learning_torch(
         x, info = cg_solve_torch(
             matvec=matvec_A,
             b=b,
-            device=DeviceSpec(device=str(device)),
+            device=DeviceSpec(device=str(device_t)),
             tol=float(spec.tol),
             max_iter=int(spec.max_iter),
         )
+        if laplacian_kind == "paper_normalized":
+            x = inv_sqrt_deg * x
         F[:, k] = x
         n_iter_max = max(n_iter_max, int(info.get("n_iter", 0)))
         residual_max = max(residual_max, float(info.get("residual_norm", 0.0)))
@@ -246,6 +324,7 @@ def poisson_learning(
     y: Any,
     labeled_mask: Any,
     spec: PoissonLearningSpec | None = None,
+    device: str | None = None,
 ) -> DiffusionResult:
     """Backend-dispatching wrapper."""
     if spec is None:
@@ -277,6 +356,7 @@ def poisson_learning(
             y=y,
             labeled_mask=labeled_mask,
             spec=spec,
+            device=device,
         )
 
     raise ValueError(f"Unknown backend: {spec.backend!r}")
@@ -330,6 +410,7 @@ class PoissonLearningMethod(TransductiveMethod):
             y=np.asarray(data.y),
             labeled_mask=labeled_mask,
             spec=self.spec,
+            device=device,
         )
         logger.info("Finished %s.fit in %.3fs", self.info.method_id, perf_counter() - start)
         return self

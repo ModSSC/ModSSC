@@ -208,6 +208,14 @@ def test_knn_numpy_backend(sample_data):
         mock_numpy.assert_called_once()
 
 
+def test_knn_torch_backend(sample_data):
+    spec = GraphBuilderSpec(scheme="knn", k=5, backend="torch")
+    with patch("modssc.graph.construction.builder.knn_edges_torch") as mock_torch:
+        mock_torch.return_value = (np.array([[0, 1], [1, 0]]), np.array([0.1, 0.1]))
+        build_raw_edges(sample_data, spec=spec, seed=42)
+        mock_torch.assert_called_once()
+
+
 def test_epsilon_numpy_backend(sample_data):
     spec = GraphBuilderSpec(scheme="epsilon", radius=0.5, backend="numpy")
     with patch("modssc.graph.construction.builder.epsilon_edges_numpy") as mock_numpy:

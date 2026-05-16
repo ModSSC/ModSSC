@@ -8,12 +8,18 @@ from typing import Any
 import numpy as np
 import pytest
 
+try:
+    import torch
+except Exception:
+    torch = None
+
 from modssc.transductive.methods.pde.poisson_mbo import (
     PoissonMBOMethod,
     PoissonMBOSpec,
     _build_b_matrix,
     _build_b_prior,
     _symmetrize_edges,
+    poisson_mbo,
     poisson_mbo_numpy,
 )
 
@@ -105,6 +111,31 @@ def test_poisson_mbo_method_fit_predict():
     assert np.allclose(proba.sum(axis=1), 1.0, atol=1e-6)
 
 
+@pytest.mark.skipif(torch is None, reason="torch not installed")
+def test_poisson_mbo_torch_shapes_cpu():
+    n, edge_index, edge_weight = _two_cluster_graph()
+    y = np.array([0, 0, 0, 1, 1, 1], dtype=np.int64)
+
+    labeled_mask = np.zeros(n, dtype=bool)
+    labeled_mask[0] = True
+    labeled_mask[3] = True
+
+    res = poisson_mbo(
+        n_nodes=n,
+        edge_index=edge_index,
+        edge_weight=edge_weight,
+        y=y,
+        labeled_mask=labeled_mask,
+        spec=PoissonMBOSpec(T=30, Ninner=2, Nouter=2, n_volume_iters=5),
+        backend="torch",
+        device="cpu",
+    )
+
+    assert res.F.shape == (n, 2)
+    assert np.allclose(res.F.sum(axis=1), 1.0, atol=1e-6)
+    assert np.isin(res.F, [0.0, 1.0]).all()
+
+
 def test_poisson_mbo_requires_labeled_per_class():
     n, edge_index, edge_weight = _two_cluster_graph()
     y = np.array([0, 0, 0, 1, 1, 1], dtype=np.int64)
@@ -154,6 +185,106 @@ def test_build_b_prior_strategies():
 
     out = _build_b_prior(y=y, labeled_mask=labeled_mask, n_classes=2, strategy="true", y_bar=y_bar)
     assert np.allclose(out.sum(), 1.0)
+    out = _build_b_prior(y=y, labeled_mask=labeled_mask, n_classes=2, strategy=False, y_bar=y_bar)
+    assert np.allclose(out, [0.5, 0.5])
+    out = _build_b_prior(y=y, labeled_mask=labeled_mask, n_classes=2, strategy=True, y_bar=y_bar)
+    assert np.allclose(out.sum(), 1.0)
+
+
+def test_poisson_mbo_projection_helpers():
+    pmbo = importlib.import_module("modssc.transductive.methods.pde.poisson_mbo")
+    U = np.array([[0.0, 2.0], [3.0, 1.0]], dtype=np.float32)
+    projected = pmbo._proj_vertices(U)
+    np.testing.assert_array_equal(projected, np.array([[0.0, 1.0], [1.0, 0.0]], dtype=np.float32))
+
+    labels = pmbo._predict_with_weights(
+        np.zeros((3, 2), dtype=np.float32), np.ones(2, dtype=np.float32)
+    )
+    np.testing.assert_array_equal(labels, np.zeros(3, dtype=np.int64))
+
+    labels, weights, err, n_iter = pmbo._volume_label_projection(
+        U,
+        class_priors=np.array([1.0, 0.0], dtype=np.float32),
+        weights=np.array([0.0, 1.0], dtype=np.float32),
+        tol=0.0,
+        max_iter=1,
+        dt=0.1,
+    )
+    assert labels.shape == (2,)
+    assert weights.shape == (2,)
+    assert err >= 0.0
+    assert n_iter == 1
+    labels, weights, err, n_iter = pmbo._volume_label_projection(
+        U,
+        class_priors=np.array([1.0, 0.0], dtype=np.float32),
+        weights=np.array([0.0, 1.0], dtype=np.float32),
+        tol=0.0,
+        max_iter=1,
+        dt=0.0,
+    )
+    assert labels.shape == (2,)
+    assert weights[0] == 0.0
+    assert err >= 0.0
+    assert n_iter == 1
+
+    labels, weights, err, n_iter = pmbo._volume_label_projection(
+        U,
+        class_priors=np.array([1.0, 0.0], dtype=np.float32),
+        weights=np.array([1.0, 1.0], dtype=np.float32),
+        tol=0.0,
+        max_iter=1,
+        dt=0.1,
+    )
+    assert labels.shape == (2,)
+    assert np.isfinite(weights).all()
+    assert err >= 0.0
+    assert n_iter == 1
+
+
+@pytest.mark.skipif(torch is None, reason="torch not installed")
+def test_poisson_mbo_torch_projection_helpers():
+    pmbo = importlib.import_module("modssc.transductive.methods.pde.poisson_mbo")
+    U = torch.zeros((3, 2), dtype=torch.float32)
+    labels = pmbo._predict_with_weights_torch(U, torch.ones(2, dtype=torch.float32))
+    torch.testing.assert_close(labels, torch.zeros(3, dtype=torch.long))
+
+    labels, weights, err, n_iter = pmbo._volume_label_projection_torch(
+        torch.tensor([[0.0, 2.0], [3.0, 1.0]], dtype=torch.float32),
+        class_priors=torch.tensor([1.0, 0.0], dtype=torch.float32),
+        weights=torch.tensor([0.0, 1.0], dtype=torch.float32),
+        tol=0.0,
+        max_iter=1,
+        dt=0.1,
+    )
+    assert labels.shape == (2,)
+    assert weights.shape == (2,)
+    assert err >= 0.0
+    assert n_iter == 1
+    labels, weights, err, n_iter = pmbo._volume_label_projection_torch(
+        torch.tensor([[0.0, 2.0], [3.0, 1.0]], dtype=torch.float32),
+        class_priors=torch.tensor([1.0, 0.0], dtype=torch.float32),
+        weights=torch.tensor([0.0, 1.0], dtype=torch.float32),
+        tol=0.0,
+        max_iter=1,
+        dt=0.0,
+    )
+    assert labels.shape == (2,)
+    assert float(weights[0].item()) == 0.0
+    assert err >= 0.0
+    assert n_iter == 1
+
+    labels, weights, err, n_iter = pmbo._volume_label_projection_torch(
+        torch.tensor([[0.0, 2.0], [3.0, 1.0]], dtype=torch.float32),
+        class_priors=torch.tensor([1.0, 0.0], dtype=torch.float32),
+        weights=torch.tensor([1.0, 1.0], dtype=torch.float32),
+        tol=0.0,
+        max_iter=1,
+        dt=0.1,
+    )
+    assert labels.shape == (2,)
+    assert bool(torch.all(torch.isfinite(weights)).item())
+    assert err >= 0.0
+    assert n_iter == 1
 
 
 def test_build_b_prior_errors():
@@ -376,6 +507,155 @@ def test_poisson_mbo_numpy_no_edges():
             labeled_mask=labeled_mask,
             spec=PoissonMBOSpec(T=2, Ninner=1, Nouter=1, n_volume_iters=1),
         )
+
+
+def test_poisson_mbo_wrapper_backend_validation_and_auto_fallback(monkeypatch):
+    pmbo = importlib.import_module("modssc.transductive.methods.pde.poisson_mbo")
+    with pytest.raises(ValueError, match="backend must be one of"):
+        poisson_mbo(
+            n_nodes=1,
+            edge_index=np.zeros((2, 0), dtype=np.int64),
+            edge_weight=None,
+            y=np.array([0], dtype=np.int64),
+            labeled_mask=np.array([True]),
+            backend="bad",
+        )
+
+    monkeypatch.setattr(
+        pmbo, "optional_import", lambda *args, **kwargs: (_ for _ in ()).throw(ImportError())
+    )
+    monkeypatch.setattr(
+        pmbo,
+        "poisson_mbo_numpy",
+        lambda **kwargs: pmbo.DiffusionResult(
+            F=np.ones((1, 1), dtype=np.float32), n_iter=0, residual=0.0
+        ),
+    )
+    res = poisson_mbo(
+        n_nodes=1,
+        edge_index=np.zeros((2, 0), dtype=np.int64),
+        edge_weight=None,
+        y=np.array([0], dtype=np.int64),
+        labeled_mask=np.array([True]),
+        backend="auto",
+    )
+    assert res.F.shape == (1, 1)
+
+
+@pytest.mark.skipif(torch is None, reason="torch not installed")
+def test_poisson_mbo_torch_validation_and_options(monkeypatch):
+    pmbo = importlib.import_module("modssc.transductive.methods.pde.poisson_mbo")
+    edge_index = np.array([[0, 1, 1], [0, 2, 1]], dtype=np.int64)
+    edge_weight = np.ones(edge_index.shape[1], dtype=np.float32)
+    y = np.array([0, 1, 0], dtype=np.int64)
+    labeled_mask = np.array([True, True, False])
+
+    def fake_poisson(**kwargs):
+        return pmbo.DiffusionResult(
+            F=np.array([[1.0, 0.0], [0.0, 1.0], [1.0, 0.0]], dtype=np.float32),
+            n_iter=1,
+            residual=0.0,
+        )
+
+    monkeypatch.setattr(pmbo, "poisson_learning_torch", fake_poisson)
+
+    for spec in (
+        None,
+        PoissonMBOSpec(T=1, Ninner=1, Nouter=1, symmetrize=False),
+        PoissonMBOSpec(T=1, Ninner=1, Nouter=1, symmetrize=False, zero_diagonal=False),
+        PoissonMBOSpec(T=1, Ninner=1, Nouter=1, b=np.array([2.0, 1.0])),
+    ):
+        res = pmbo.poisson_mbo_torch(
+            n_nodes=3,
+            edge_index=edge_index,
+            edge_weight=edge_weight,
+            y=y,
+            labeled_mask=labeled_mask,
+            spec=spec,
+            device="cpu",
+        )
+        assert res.F.shape == (3, 2)
+
+    with pytest.raises(ValueError, match="y must have shape"):
+        pmbo.poisson_mbo_torch(
+            n_nodes=3,
+            edge_index=edge_index,
+            edge_weight=edge_weight,
+            y=y[:-1],
+            labeled_mask=labeled_mask,
+            spec=PoissonMBOSpec(T=1, Ninner=1, Nouter=1),
+            device="cpu",
+        )
+    with pytest.raises(ValueError, match="labeled_mask must have shape"):
+        pmbo.poisson_mbo_torch(
+            n_nodes=3,
+            edge_index=edge_index,
+            edge_weight=edge_weight,
+            y=y,
+            labeled_mask=labeled_mask[:-1],
+            spec=PoissonMBOSpec(T=1, Ninner=1, Nouter=1),
+            device="cpu",
+        )
+    with pytest.raises(ValueError, match="at least one valid label"):
+        pmbo.poisson_mbo_torch(
+            n_nodes=3,
+            edge_index=edge_index,
+            edge_weight=edge_weight,
+            y=np.array([-1, -1, -1], dtype=np.int64),
+            labeled_mask=labeled_mask,
+            spec=PoissonMBOSpec(T=1, Ninner=1, Nouter=1),
+            device="cpu",
+        )
+    for bad_b, message in [
+        (np.array([1.0, 0.0, 0.0]), "b must have shape"),
+        (np.array([1.0, -1.0]), "non-negative"),
+        (np.array([0.0, 0.0]), "sum to a positive"),
+    ]:
+        with pytest.raises(ValueError, match=message):
+            pmbo.poisson_mbo_torch(
+                n_nodes=3,
+                edge_index=edge_index,
+                edge_weight=edge_weight,
+                y=y,
+                labeled_mask=labeled_mask,
+                spec=PoissonMBOSpec(T=1, Ninner=1, Nouter=1, b=bad_b),
+                device="cpu",
+            )
+    with pytest.raises(ValueError, match="at least one edge"):
+        pmbo.poisson_mbo_torch(
+            n_nodes=3,
+            edge_index=np.zeros((2, 0), dtype=np.int64),
+            edge_weight=np.zeros((0,), dtype=np.float32),
+            y=y,
+            labeled_mask=labeled_mask,
+            spec=PoissonMBOSpec(T=1, Ninner=1, Nouter=1),
+            device="cpu",
+        )
+
+
+@pytest.mark.skipif(torch is None, reason="torch not installed")
+def test_poisson_mbo_wrapper_auto_prefers_torch(monkeypatch):
+    pmbo = importlib.import_module("modssc.transductive.methods.pde.poisson_mbo")
+    called = {"torch": 0}
+
+    monkeypatch.setattr(pmbo, "optional_import", lambda *args, **kwargs: object())
+
+    def fake_torch(**kwargs):
+        called["torch"] += 1
+        return pmbo.DiffusionResult(F=np.ones((1, 1), dtype=np.float32), n_iter=0, residual=0.0)
+
+    monkeypatch.setattr(pmbo, "poisson_mbo_torch", fake_torch)
+
+    res = poisson_mbo(
+        n_nodes=1,
+        edge_index=np.zeros((2, 0), dtype=np.int64),
+        edge_weight=None,
+        y=np.array([0], dtype=np.int64),
+        labeled_mask=np.array([True]),
+        backend="auto",
+    )
+    assert res.F.shape == (1, 1)
+    assert called["torch"] == 1
 
 
 def test_poisson_mbo_method_errors():

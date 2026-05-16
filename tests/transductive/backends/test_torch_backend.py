@@ -105,65 +105,77 @@ def test_to_tensor(mock_torch):
     mock_torch.as_tensor.assert_called_with(x_list)
 
 
-def test_spmm(mock_torch):
-    mock_edge_index = MagicMock()
-    mock_edge_index.shape = [2, 3]
-    mock_edge_index.__getitem__.side_effect = ["src", "dst"]
+def test_spmm():
+    torch = pytest.importorskip("torch")
+    edge_index = torch.tensor([[0, 1, 2], [1, 2, 0]], dtype=torch.long)
+    edge_weight = torch.tensor([2.0, 3.0, 4.0], dtype=torch.float32)
+    X = torch.tensor([[1.0, 10.0], [2.0, 20.0], [3.0, 30.0]], dtype=torch.float32)
 
-    mock_weights = MagicMock()
-    mock_weights.reshape.return_value = mock_weights
-    mock_weights.numel.return_value = 3
+    out = torch_backend.spmm(
+        n_nodes=3,
+        edge_index=edge_index,
+        edge_weight=edge_weight,
+        X=X,
+        device="cpu",
+        dtype=torch.float32,
+    )
+    expected = torch.tensor([[12.0, 120.0], [2.0, 20.0], [6.0, 60.0]], dtype=torch.float32)
+    torch.testing.assert_close(out, expected)
 
-    mock_X = MagicMock()
-    mock_X.ndim = 2
-    mock_X.shape = [5, 10]
+    out_no_weight = torch_backend.spmm(
+        n_nodes=3, edge_index=edge_index, edge_weight=None, X=X, device="cpu", dtype=torch.float32
+    )
+    expected_no_weight = torch.tensor([[3.0, 30.0], [1.0, 10.0], [2.0, 20.0]], dtype=torch.float32)
+    torch.testing.assert_close(out_no_weight, expected_no_weight)
 
-    with patch("modssc.transductive.backends.torch_backend.to_tensor") as mock_to_tensor:
-        mock_to_tensor.side_effect = [mock_edge_index, mock_weights]
+    x_1d = torch.tensor([1.0, 2.0, 3.0], dtype=torch.float32)
+    out_1d = torch_backend.spmm(
+        n_nodes=3,
+        edge_index=edge_index,
+        edge_weight=edge_weight,
+        X=x_1d,
+        device="cpu",
+        dtype=torch.float32,
+    )
+    torch.testing.assert_close(out_1d, torch.tensor([12.0, 2.0, 6.0], dtype=torch.float32))
+
+    empty = torch_backend.spmm(
+        n_nodes=3,
+        edge_index=torch.zeros((2, 0), dtype=torch.long),
+        edge_weight=None,
+        X=X,
+        device="cpu",
+        dtype=torch.float32,
+    )
+    torch.testing.assert_close(empty, torch.zeros_like(X))
+
+    with pytest.raises(ValueError, match="edge_index must have shape"):
         torch_backend.spmm(
-            n_nodes=5, edge_index="ei", edge_weight="ew", X=mock_X, device="cpu", dtype="float32"
+            n_nodes=3,
+            edge_index=torch.zeros((3, 1), dtype=torch.long),
+            edge_weight=None,
+            X=X,
+            device="cpu",
+            dtype=torch.float32,
         )
-        mock_torch.sparse_coo_tensor.assert_called()
-
-        mock_edge_index_empty = MagicMock()
-        mock_edge_index_empty.shape = [2, 0]
-        mock_to_tensor.side_effect = [mock_edge_index_empty]
-        mock_torch.zeros.return_value = "zeros"
-        res = torch_backend.spmm(
-            n_nodes=5, edge_index="ei", edge_weight=None, X=mock_X, device="cpu", dtype="float32"
-        )
-        assert res == "zeros"
-
-        mock_to_tensor.side_effect = [mock_edge_index]
-        mock_edge_index.__getitem__.side_effect = ["src", "dst"]
-        mock_torch.ones.return_value = "ones"
+    with pytest.raises(ValueError, match="edge_weight must have shape"):
         torch_backend.spmm(
-            n_nodes=5, edge_index="ei", edge_weight=None, X=mock_X, device="cpu", dtype="float32"
+            n_nodes=3,
+            edge_index=edge_index,
+            edge_weight=torch.ones(2),
+            X=X,
+            device="cpu",
+            dtype=torch.float32,
         )
-        mock_torch.ones.assert_called()
-
-        mock_X_1d = MagicMock()
-        mock_X_1d.ndim = 1
-        mock_to_tensor.side_effect = [mock_edge_index, mock_weights]
-        mock_edge_index.__getitem__.side_effect = ["src", "dst"]
+    with pytest.raises(ValueError, match="X must have shape"):
         torch_backend.spmm(
-            n_nodes=5, edge_index="ei", edge_weight="ew", X=mock_X_1d, device="cpu", dtype="float32"
+            n_nodes=4,
+            edge_index=edge_index,
+            edge_weight=edge_weight,
+            X=X,
+            device="cpu",
+            dtype=torch.float32,
         )
-        mock_torch.sparse.mm.assert_called()
-
-        mock_to_tensor.side_effect = [mock_edge_index, mock_weights]
-        mock_edge_index.__getitem__.side_effect = ["src", "dst"]
-        mock_weights.numel.return_value = 999
-        with pytest.raises(ValueError):
-            torch_backend.spmm(
-                n_nodes=5,
-                edge_index="ei",
-                edge_weight="ew",
-                X=mock_X,
-                device="cpu",
-                dtype="float32",
-            )
-        mock_weights.numel.return_value = 3
 
 
 def test_normalize_edges(mock_torch):

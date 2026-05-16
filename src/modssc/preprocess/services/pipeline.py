@@ -585,6 +585,10 @@ def preprocess(
                     },
                 )
 
+        runtime_artifacts = getattr(step_obj, "runtime_artifacts", None)
+        if callable(runtime_artifacts):
+            produced_train.update(runtime_artifacts(produced=produced_train, split="train"))
+
         for k, v in produced_train.items():
             train_store.set(k, v)
             prov_train[k] = step_fp
@@ -633,6 +637,10 @@ def preprocess(
                             "seed": int(derived),
                         },
                     )
+
+            runtime_artifacts = getattr(step_obj, "runtime_artifacts", None)
+            if callable(runtime_artifacts):
+                produced_test.update(runtime_artifacts(produced=produced_test, split="test"))
 
             for k, v in produced_test.items():
                 test_store.set(k, v)

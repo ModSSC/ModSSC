@@ -43,7 +43,6 @@ python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/label_propagation/tabular/toy.yaml
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/label_spreading/tabular/toy.yaml
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/laplace_learning/tabular/toy.yaml
-python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/lazy_random_walk/tabular/toy.yaml
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/n_gcn/tabular/toy.yaml
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/p_laplace_learning/tabular/toy.yaml
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R1/transductive/planetoid/tabular/toy.yaml
@@ -95,7 +94,6 @@ python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/label_propagation/tabular/toy.yaml
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/label_spreading/tabular/toy.yaml
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/laplace_learning/tabular/toy.yaml
-python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/lazy_random_walk/tabular/toy.yaml
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/n_gcn/tabular/toy.yaml
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/p_laplace_learning/tabular/toy.yaml
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R2/transductive/planetoid/tabular/toy.yaml
@@ -147,7 +145,6 @@ python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/label_propagation/tabular/toy.yaml
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/label_spreading/tabular/toy.yaml
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/laplace_learning/tabular/toy.yaml
-python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/lazy_random_walk/tabular/toy.yaml
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/n_gcn/tabular/toy.yaml
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/p_laplace_learning/tabular/toy.yaml
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R3/transductive/planetoid/tabular/toy.yaml
@@ -199,7 +196,6 @@ python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/label_propagation/tabular/toy.yaml
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/label_spreading/tabular/toy.yaml
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/laplace_learning/tabular/toy.yaml
-python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/lazy_random_walk/tabular/toy.yaml
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/n_gcn/tabular/toy.yaml
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/p_laplace_learning/tabular/toy.yaml
 python -m bench.main --config /Users/melvin/Desktop/ModSSC Project/ModSSC/bench/configs/best/R4/transductive/planetoid/tabular/toy.yaml

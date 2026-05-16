@@ -84,6 +84,71 @@ def test_poisson_learning_numpy_two_clusters():
     assert pred.tolist() == y.tolist()
 
 
+def test_poisson_learning_numpy_unnormalized_positive_degree():
+    n, edge_index, edge_weight = _two_cluster_graph()
+    y = np.array([0, 0, 0, 1, 1, 1], dtype=np.int64)
+    labeled_mask = np.zeros(n, dtype=bool)
+    labeled_mask[0] = True
+    labeled_mask[3] = True
+
+    res = pl.poisson_learning_numpy(
+        n_nodes=n,
+        edge_index=edge_index,
+        edge_weight=edge_weight,
+        y=y,
+        labeled_mask=labeled_mask,
+        spec=PoissonLearningSpec(laplacian_kind="unnormalized", eps=0.0, max_iter=500),
+    )
+
+    assert res.F.shape == (n, 2)
+
+
+def test_poisson_learning_paper_normalized_matches_normalized_transform():
+    n, edge_index, edge_weight = _two_cluster_graph()
+    y = np.array([0, 0, 0, 1, 1, 1], dtype=np.int64)
+    labeled_mask = np.zeros(n, dtype=bool)
+    labeled_mask[0] = True
+    labeled_mask[3] = True
+
+    res = pl.poisson_learning_numpy(
+        n_nodes=n,
+        edge_index=edge_index,
+        edge_weight=edge_weight,
+        y=y,
+        labeled_mask=labeled_mask,
+        spec=PoissonLearningSpec(
+            backend="numpy",
+            laplacian_kind="paper_normalized",
+            eps=0.0,
+            tol=1e-10,
+            max_iter=2000,
+        ),
+    )
+
+    W = np.zeros((n, n), dtype=np.float64)
+    for src, dst, w in zip(edge_index[0], edge_index[1], edge_weight, strict=True):
+        W[int(dst), int(src)] += float(w)
+    deg = W.sum(axis=1)
+    inv_sqrt = np.zeros_like(deg)
+    inv_sqrt[deg > 0.0] = 1.0 / np.sqrt(deg[deg > 0.0])
+    S = inv_sqrt[:, None] * W * inv_sqrt[None, :]
+    L = np.eye(n) - S
+
+    Y = np.eye(2, dtype=np.float64)[y]
+    Y[~labeled_mask] = 0.0
+    source = np.zeros_like(Y)
+    source[labeled_mask] = Y[labeled_mask] - Y[labeled_mask].mean(axis=0)
+    rhs = inv_sqrt[:, None] * source
+
+    null_vec = np.sqrt(deg)
+    A = L + np.outer(null_vec, null_vec) / float(np.dot(null_vec, null_vec))
+    expected = np.zeros_like(rhs)
+    for c in range(rhs.shape[1]):
+        expected[:, c] = inv_sqrt * np.linalg.solve(A, rhs[:, c])
+
+    np.testing.assert_allclose(res.F, expected, atol=2e-4)
+
+
 @pytest.mark.skipif(torch is None, reason="torch not installed")
 def test_poisson_learning_torch_two_clusters():
     n, edge_index, edge_weight = _two_cluster_graph()
@@ -104,6 +169,27 @@ def test_poisson_learning_torch_two_clusters():
 
     pred = np.asarray(res.F).argmax(axis=1)
     assert pred.tolist() == [0, 0, 0, 1, 1, 1]
+
+
+@pytest.mark.skipif(torch is None, reason="torch not installed")
+def test_poisson_learning_torch_unnormalized_positive_degree():
+    n, edge_index, edge_weight = _two_cluster_graph()
+    y = torch.tensor([0, 0, 0, 1, 1, 1], dtype=torch.long)
+    labeled_mask = torch.zeros((n,), dtype=torch.bool)
+    labeled_mask[0] = True
+    labeled_mask[3] = True
+
+    res = pl.poisson_learning_torch(
+        n_nodes=n,
+        edge_index=torch.as_tensor(edge_index, dtype=torch.long),
+        edge_weight=torch.as_tensor(edge_weight, dtype=torch.float32),
+        y=y,
+        labeled_mask=labeled_mask,
+        spec=PoissonLearningSpec(laplacian_kind="unnormalized", eps=0.0, max_iter=500),
+        device="cpu",
+    )
+
+    assert res.F.shape == (n, 2)
 
 
 def test_poisson_learning_method_fit_predict():
@@ -209,6 +295,32 @@ def test_poisson_learning_numpy_eps_zero_branch(monkeypatch):
         spec=PoissonLearningSpec(eps=0.0, max_iter=1),
     )
     assert res.F.shape == (n, 2)
+
+
+def test_poisson_learning_numpy_zero_degree_nullspace_fallbacks(monkeypatch):
+    y = np.array([0, 1], dtype=np.int64)
+    labeled_mask = np.array([True, True])
+    edge_index = np.zeros((2, 0), dtype=np.int64)
+    edge_weight = np.zeros((0,), dtype=np.float32)
+
+    monkeypatch.setattr(pl, "laplacian_matvec_numpy", lambda **_: np.zeros_like)
+
+    def fake_cg(matvec, b, tol, max_iter):
+        matvec(np.zeros_like(b))
+        return SimpleNamespace(x=np.zeros_like(b), n_iter=1, residual_norm=0.0)
+
+    monkeypatch.setattr(pl, "cg_solve_numpy", fake_cg)
+
+    for kind in ("paper_normalized", "unnormalized"):
+        res = pl.poisson_learning_numpy(
+            n_nodes=2,
+            edge_index=edge_index,
+            edge_weight=edge_weight,
+            y=y,
+            labeled_mask=labeled_mask,
+            spec=PoissonLearningSpec(laplacian_kind=kind, eps=0.0),
+        )
+        assert res.F.shape == (2, 2)
 
 
 @pytest.mark.skipif(torch is None, reason="torch not installed")
@@ -357,6 +469,34 @@ def test_poisson_learning_torch_eps_zero_branch(monkeypatch):
         spec=PoissonLearningSpec(eps=0.0, max_iter=1),
     )
     assert res.F.shape == (n, 2)
+
+
+@pytest.mark.skipif(torch is None, reason="torch not installed")
+def test_poisson_learning_torch_zero_degree_nullspace_fallbacks(monkeypatch):
+    y = torch.tensor([0, 1], dtype=torch.long)
+    labeled_mask = torch.tensor([True, True], dtype=torch.bool)
+    edge_index = torch.zeros((2, 0), dtype=torch.long)
+    edge_weight = torch.zeros((0,), dtype=torch.float32)
+
+    monkeypatch.setattr(pl, "laplacian_matvec_torch", lambda **_: torch.zeros_like)
+
+    def fake_cg(matvec, b, device, tol, max_iter):
+        matvec(torch.zeros_like(b))
+        return torch.zeros_like(b), {"n_iter": 1, "residual_norm": 0.0}
+
+    monkeypatch.setattr(pl, "cg_solve_torch", fake_cg)
+
+    for kind in ("paper_normalized", "unnormalized"):
+        res = pl.poisson_learning_torch(
+            n_nodes=2,
+            edge_index=edge_index,
+            edge_weight=edge_weight,
+            y=y,
+            labeled_mask=labeled_mask,
+            spec=PoissonLearningSpec(laplacian_kind=kind, eps=0.0),
+            device="cpu",
+        )
+        assert res.F.shape == (2, 2)
 
 
 def test_poisson_learning_method_requires_train_mask():

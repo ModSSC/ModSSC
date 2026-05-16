@@ -19,6 +19,7 @@ from modssc.graph.validation import (
 def test_weights_validation() -> None:
     GraphWeightsSpec(kind="binary").validate(metric="cosine")
     GraphWeightsSpec(kind="heat", sigma=0.5).validate(metric="euclidean")
+    GraphWeightsSpec(kind="knn_gaussian").validate(metric="euclidean")
 
     with pytest.raises(GraphValidationError):
         GraphWeightsSpec(kind="heat", sigma=0.0).validate(metric="cosine")
@@ -26,11 +27,21 @@ def test_weights_validation() -> None:
     with pytest.raises(GraphValidationError):
         GraphWeightsSpec(kind="cosine").validate(metric="euclidean")
 
+    with pytest.raises(GraphValidationError):
+        GraphWeightsSpec(kind="knn_gaussian").validate(metric="cosine")
+
 
 def test_builder_spec_validation_knn_epsilon_anchor() -> None:
     GraphBuilderSpec(scheme="knn", k=5).validate()
+    GraphBuilderSpec(
+        scheme="knn",
+        metric="euclidean",
+        k=5,
+        weights=GraphWeightsSpec(kind="knn_gaussian"),
+    ).validate()
     GraphBuilderSpec(scheme="epsilon", radius=0.3).validate()
     GraphBuilderSpec(scheme="anchor", k=5, n_anchors=10, anchors_k=3, candidate_limit=50).validate()
+    GraphBuilderSpec(scheme="knn", k=5, backend="torch").validate()
 
     with pytest.raises(GraphValidationError):
         GraphBuilderSpec(scheme="knn", k=0).validate()
@@ -43,6 +54,17 @@ def test_builder_spec_validation_knn_epsilon_anchor() -> None:
 
     with pytest.raises(GraphValidationError):
         GraphBuilderSpec(scheme="epsilon", radius=1.0, backend="faiss").validate()
+
+    with pytest.raises(GraphValidationError):
+        GraphBuilderSpec(scheme="epsilon", radius=1.0, backend="torch").validate()
+
+    with pytest.raises(GraphValidationError):
+        GraphBuilderSpec(
+            scheme="epsilon",
+            radius=1.0,
+            metric="euclidean",
+            weights=GraphWeightsSpec(kind="knn_gaussian"),
+        ).validate()
 
 
 def test_builder_roundtrip_dict() -> None:
@@ -140,6 +162,9 @@ def test_builder_spec_validation_general():
 
     with pytest.raises(GraphValidationError, match="faiss backend does not support epsilon"):
         GraphBuilderSpec(backend="faiss", scheme="epsilon", radius=0.5).validate()
+
+    with pytest.raises(GraphValidationError, match="torch backend currently supports only knn"):
+        GraphBuilderSpec(backend="torch", scheme="anchor", k=5).validate()
 
     with pytest.raises(GraphValidationError, match="faiss_hnsw_m must be > 0"):
         GraphBuilderSpec(faiss_hnsw_m=0).validate()
