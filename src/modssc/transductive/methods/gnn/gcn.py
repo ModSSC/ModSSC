@@ -24,10 +24,10 @@ class GCNSpec:
     lr: float = 0.01
     weight_decay: float = 5e-4
     max_epochs: int = 200
-    patience: int = 50
+    patience: int = 10
     add_self_loops: bool = True
     bias: bool = False
-    weight_decay_scope: str = "all"
+    weight_decay_scope: str = "first_layer"
     selection_metric: str = "val_loss"
 
 
@@ -74,7 +74,7 @@ class GCNMethod(TransductiveMethod):
         supports_gpu=True,
         required_extra="transductive-torch",
         paper_title="Semi-Supervised Classification with Graph Convolutional Networks",
-        paper_pdf="https://arxiv.org/abs/1609.02907",
+        paper_pdf="https://arxiv.org/pdf/1609.02907",
         official_code="https://github.com/tkipf/gcn",
     )
 

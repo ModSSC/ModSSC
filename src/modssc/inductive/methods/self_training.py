@@ -228,13 +228,13 @@ class SelfTrainingMethod(InductiveMethod):
 
     info = MethodInfo(
         method_id="self_training",
-        name="Self Training",
+        name="Self-Training",
         year=1995,
         family="classic",
         supports_gpu=True,
         paper_title="Unsupervised Word Sense Disambiguation Rivaling Supervised Methods",
-        paper_pdf="",
-        official_code="",
+        paper_pdf="docs/article_code/inductive/1995-Self Training/4-1995-Unsupervised word sense disambiguation rivaling supervised methods.pdf",
+        official_code=None,
     )
 
     def __init__(self, spec: SelfTrainingSpec | None = None) -> None:

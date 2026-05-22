@@ -263,8 +263,8 @@ class HGCNMethod(TransductiveMethod):
         family="gnn",
         supports_gpu=True,
         required_extra="transductive-torch",
-        paper_title="Hierarchical Graph Convolutional Networks for Semi-Supervised Node Classification",
-        paper_pdf="https://arxiv.org/abs/1902.06667",
+        paper_title="Hierarchical Graph Convolutional Networks for Semi-supervised Node Classification",
+        paper_pdf="https://arxiv.org/pdf/1902.06667",
         official_code="https://github.com/CRIPAC-DIG/H-GCN",
     )
 

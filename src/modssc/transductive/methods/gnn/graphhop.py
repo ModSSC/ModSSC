@@ -189,12 +189,12 @@ class GraphHopMethod(TransductiveMethod):
     info = MethodInfo(
         method_id="graphhop",
         name="GraphHop",
-        year=2023,
+        year=2021,
         family="gnn",
         supports_gpu=True,
         required_extra="transductive-torch",
         paper_title="GraphHop: An Enhanced Label Propagation Method for Node Classification",
-        paper_pdf="https://arxiv.org/abs/2301.12368",
+        paper_pdf="https://arxiv.org/pdf/2101.02326",
         official_code="https://github.com/TianXieUSC/GraphHop",
     )
 

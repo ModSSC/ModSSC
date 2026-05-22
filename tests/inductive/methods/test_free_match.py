@@ -23,3 +23,15 @@ def _assert_module_importable(module_name: str):
 
 def test_module_importable() -> None:
     _assert_module_importable("modssc.inductive.methods.free_match")
+
+
+def test_spec_defaults() -> None:
+    module = _assert_module_importable("modssc.inductive.methods.free_match")
+    spec = module.FreeMatchSpec()
+    assert spec.temperature == pytest.approx(0.5)
+    assert spec.mu == 7
+    assert spec.lambda_u == pytest.approx(1.0)
+    assert spec.lambda_e == pytest.approx(0.001)
+    assert spec.ema_p == pytest.approx(0.999)
+    assert spec.use_quantile is True
+    assert spec.batch_size == 64

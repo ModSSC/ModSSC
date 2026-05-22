@@ -206,7 +206,7 @@ class SimCLRv2Method(ArgmaxPredictMixin, InductiveMethod):
         family="contrastive",
         supports_gpu=True,
         paper_title="Big Self-Supervised Models are Strong Semi-Supervised Learners",
-        paper_pdf="https://arxiv.org/abs/2006.10029",
+        paper_pdf="https://arxiv.org/pdf/2006.10029",
         official_code="https://github.com/google-research/simclr",
     )
 

@@ -58,8 +58,8 @@ class MeanTeacherMethod(TorchBundlePredictMixin, InductiveMethod):
         family="consistency",
         supports_gpu=True,
         paper_title="Mean teachers are better role models: Weight-averaged consistency targets improve semi-supervised deep learning results",
-        paper_pdf="https://arxiv.org/abs/1703.01780",
-        official_code="",
+        paper_pdf="https://arxiv.org/pdf/1703.01780",
+        official_code="https://github.com/CuriousAI/mean-teacher",
     )
 
     def __init__(self, spec: MeanTeacherSpec | None = None) -> None:

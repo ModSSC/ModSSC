@@ -276,6 +276,7 @@ class LabelPropagationMethod(TransductiveMethod):
         supports_gpu=True,
         required_extra="transductive-torch",
         paper_title="Learning from Labeled and Unlabeled Data with Label Propagation",
+        paper_pdf="docs/article_code/transductive/2002-Label Propagation/Learning from Labeled and Unlabeled Data with Label Propagation.pdf",
     )
 
     def __init__(self, spec: LabelPropagationSpec | None = None) -> None:

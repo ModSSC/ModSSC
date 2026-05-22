@@ -65,15 +65,15 @@ class APPNPSpec:
     k: int = 10
     alpha: float = 0.1
     lr: float = 0.01
-    weight_decay: float = 5e-4
-    max_epochs: int = 200
-    patience: int = 50
+    weight_decay: float = 5e-3
+    max_epochs: int = 10000
+    patience: int = 100
     add_self_loops: bool = True
-    norm_mode: str = "rw"
+    norm_mode: str = "sym"
     adjacency_dropout: float = 0.0
     bias: bool = False
-    weight_decay_scope: str = "all"
-    selection_metric: str = "val_loss"
+    weight_decay_scope: str = "first_layer"
+    selection_metric: str = "val_acc_then_loss_reset_any"
 
 
 class APPNPMethod(TransductiveMethod):
@@ -85,8 +85,8 @@ class APPNPMethod(TransductiveMethod):
         supports_gpu=True,
         required_extra="transductive-torch",
         paper_title="Predict then Propagate: Graph Neural Networks meet Personalized PageRank",
-        paper_pdf="https://arxiv.org/abs/1810.05997",
-        official_code="https://github.com/klicperajo/ppnp",
+        paper_pdf="https://arxiv.org/pdf/1810.05997",
+        official_code="https://github.com/gasteigerjo/ppnp",
     )
 
     def __init__(self, spec: APPNPSpec | None = None) -> None:

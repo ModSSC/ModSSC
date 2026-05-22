@@ -67,7 +67,7 @@ class GraphSAGEMethod(TransductiveMethod):
         supports_gpu=True,
         required_extra="transductive-torch",
         paper_title="Inductive Representation Learning on Large Graphs",
-        paper_pdf="https://arxiv.org/abs/1706.02216",
+        paper_pdf="https://arxiv.org/pdf/1706.02216",
         official_code="https://github.com/williamleif/GraphSAGE",
     )
 

@@ -254,7 +254,9 @@ class PLaplaceLearningMethod(TransductiveMethod):
         year=2022,
         family="pde",
         supports_gpu=False,
-        paper_title="Analysis and Algorithms for lp-based Semi-Supervised Learning on Graphs",
+        paper_title="Analysis and algorithms for lp-based semi-supervised learning on graphs",
+        paper_pdf="https://arxiv.org/pdf/1901.05031",
+        official_code="https://github.com/mauriciofloresML/Laplacian_Lp_Graph_SSL",
     )
 
     def __init__(self, spec: PLaplaceLearningSpec | None = None) -> None:

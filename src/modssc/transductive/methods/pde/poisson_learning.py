@@ -27,14 +27,14 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class PoissonLearningSpec:
-    """Poisson Learning (Calder et al.) — graph-based SSL for very few labels.
+    """Poisson Learning (Calder et al.) - graph-based SSL for very few labels.
 
     We solve, for each class k, a Poisson-like linear system on the graph:
         (L + eps I + (1/n) 11^T) f_k = b_k
     where:
       - L is a graph Laplacian ("unnormalized", "sym" or "rw")
       - the (1/n)11^T term enforces solvability (removes constant nullspace component)
-      - eps > 0 is a small ridge to handle disconnected graphs (multiple null eigenvectors)
+      - eps is an optional ridge for disconnected graphs (multiple null eigenvectors)
       - b_k is a zero-sum source term defined on labeled nodes.
 
     This is implemented via Conjugate Gradient with a matrix-vector product.
@@ -45,11 +45,11 @@ class PoissonLearningSpec:
         "numpy", "torch", or "auto". Torch backend supports CUDA and Apple MPS
         when a device is passed by the benchmark runner.
     laplacian_kind:
-        "paper_normalized" follows the reference paper pipeline:
+        "paper_normalized" uses the paper normalization pipeline:
         solve with the symmetric normalized Laplacian and transform the source/solution
         by D^-1/2. "unnormalized", "sym", and "rw" keep the direct ModSSC variants.
     eps:
-        Small ridge added to the system to guarantee SPD (especially important if the graph is disconnected).
+        Optional ridge added to the system, useful when the graph is disconnected.
     center_sources:
         If True, each class source b_k is centered on labeled nodes so that sum(b_k)=0.
     tol, max_iter:
@@ -57,11 +57,11 @@ class PoissonLearningSpec:
     """
 
     backend: Literal["numpy", "torch", "auto"] = "numpy"
-    laplacian_kind: Literal["paper_normalized", "unnormalized", "sym", "rw"] = "sym"
-    eps: float = 1e-6
+    laplacian_kind: Literal["paper_normalized", "unnormalized", "sym", "rw"] = "paper_normalized"
+    eps: float = 0.0
     center_sources: bool = True
-    tol: float = 1e-6
-    max_iter: int = 2000
+    tol: float = 1e-3
+    max_iter: int = 1000
 
 
 def _build_sources(
@@ -366,11 +366,13 @@ class PoissonLearningMethod(TransductiveMethod):
     info = MethodInfo(
         method_id="poisson_learning",
         name="Poisson Learning",
-        year=2017,
+        year=2020,
         family="pde",
         supports_gpu=True,
         required_extra="transductive-torch",
         paper_title="Poisson Learning: Graph Based Semi-Supervised Learning at Very Low Label Rates",
+        paper_pdf="https://proceedings.mlr.press/v119/calder20a/calder20a.pdf",
+        official_code="https://github.com/jwcalder/GraphLearning",
     )
 
     def __init__(self, spec: PoissonLearningSpec | None = None) -> None:

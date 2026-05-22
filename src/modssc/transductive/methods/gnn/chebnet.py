@@ -94,7 +94,7 @@ class ChebNetMethod(TransductiveMethod):
         supports_gpu=True,
         required_extra="transductive-torch",
         paper_title="Convolutional Neural Networks on Graphs with Fast Localized Spectral Filtering",
-        paper_pdf="https://arxiv.org/abs/1606.09375",
+        paper_pdf="https://arxiv.org/pdf/1606.09375",
         official_code="https://github.com/mdeff/cnn_graph",
     )
 

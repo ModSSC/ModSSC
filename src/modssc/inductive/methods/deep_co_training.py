@@ -181,8 +181,8 @@ class DeepCoTrainingMethod(ArgmaxPredictMixin, InductiveMethod):
         family="agreement",
         supports_gpu=True,
         paper_title="Deep Co-Training for Semi-Supervised Image Recognition",
-        paper_pdf="https://arxiv.org/abs/1803.05984",
-        official_code="",
+        paper_pdf="https://arxiv.org/pdf/1803.05984",
+        official_code=None,
     )
 
     def __init__(self, spec: DeepCoTrainingSpec | None = None) -> None:

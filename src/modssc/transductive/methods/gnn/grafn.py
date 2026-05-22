@@ -170,7 +170,7 @@ class GraFNMethod(TransductiveMethod):
             "GraFN: Semi-Supervised Node Classification on Graph with Few Labels "
             "via Non-Parametric Distribution Assignment"
         ),
-        paper_pdf="https://arxiv.org/abs/2204.01303",
+        paper_pdf="https://arxiv.org/pdf/2204.01303",
         official_code="https://github.com/Junseok0207/GraFN",
     )
 

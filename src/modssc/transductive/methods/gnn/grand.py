@@ -44,12 +44,12 @@ class GRANDMethod(TransductiveMethod):
     info = MethodInfo(
         method_id="grand",
         name="GRAND",
-        year=2021,
+        year=2020,
         family="gnn",
         supports_gpu=True,
         required_extra="transductive-torch",
-        paper_title="Graph Random Neural Networks for Semi-Supervised Learning on Graphs",
-        paper_pdf="https://arxiv.org/abs/2005.11079",
+        paper_title="Graph Random Neural Network for Semi-Supervised Learning on Graphs",
+        paper_pdf="https://arxiv.org/pdf/2005.11079",
         official_code="https://github.com/THUDM/GRAND",
     )
 

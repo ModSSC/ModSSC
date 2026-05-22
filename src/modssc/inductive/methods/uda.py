@@ -72,12 +72,12 @@ class UDAMethod(TorchBundlePredictMixin, InductiveMethod):
     info = MethodInfo(
         method_id="uda",
         name="UDA",
-        year=2019,
+        year=2020,
         family="consistency",
         supports_gpu=True,
         paper_title="Unsupervised Data Augmentation for Consistency Training",
-        paper_pdf="https://arxiv.org/abs/1904.12848",
-        official_code="",
+        paper_pdf="https://arxiv.org/pdf/1904.12848",
+        official_code="https://github.com/google-research/uda",
     )
 
     def __init__(self, spec: UDASpec | None = None) -> None:

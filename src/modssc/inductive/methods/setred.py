@@ -211,13 +211,13 @@ class SetredMethod(InductiveMethod):
 
     info = MethodInfo(
         method_id="setred",
-        name="Setred",
+        name="SETRED",
         year=2005,
         family="classic",
         supports_gpu=True,
         paper_title="SETRED: Self-Training with Editing",
-        paper_pdf=None,
-        official_code="",
+        paper_pdf="docs/article_code/inductive/2005-SETRED selftraining with editing/9-2005-SETRED selftraining with editing.pdf",
+        official_code=None,
     )
 
     def __init__(self, spec: SetredSpec | None = None) -> None:

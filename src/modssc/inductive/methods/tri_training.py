@@ -51,9 +51,9 @@ class TriTrainingMethod(InductiveMethod):
         year=2005,
         family="classic",
         supports_gpu=True,
-        paper_title="Tri-training: Exploiting unlabeled data using three classifiers",
-        paper_pdf="https://people.csail.mit.edu/umangs/papers/tri-training.pdf",
-        official_code="",
+        paper_title="Tri-Training: Exploiting Unlabeled Data Using Three Classifiers",
+        paper_pdf="https://www.lamda.nju.edu.cn/publication/tkde05.pdf",
+        official_code=None,
     )
 
     def __init__(self, spec: TriTrainingSpec | None = None) -> None:

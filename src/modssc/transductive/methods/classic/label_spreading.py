@@ -247,11 +247,12 @@ class LabelSpreadingMethod(TransductiveMethod):
     info = MethodInfo(
         method_id="label_spreading",
         name="Label Spreading",
-        year=2004,
+        year=2003,
         family="propagation",
         supports_gpu=True,
         required_extra="transductive-torch",
         paper_title="Learning with Local and Global Consistency",
+        paper_pdf="docs/article_code/transductive/2004-Label Spreading/Learning with Local and Global Consistency.pdf",
     )
 
     def __init__(self, spec: LabelSpreadingSpec | None = None) -> None:

@@ -69,9 +69,9 @@ class NoisyStudentMethod(TorchBundlePredictMixin, InductiveMethod):
         year=2020,
         family="pseudo-label",
         supports_gpu=True,
-        paper_title="Noisy Student improves ImageNet classification",
-        paper_pdf="https://arxiv.org/abs/1911.04252",
-        official_code="",
+        paper_title="Self-training with Noisy Student improves ImageNet classification",
+        paper_pdf="https://openaccess.thecvf.com/content_CVPR_2020/papers/Xie_Self-Training_With_Noisy_Student_Improves_ImageNet_Classification_CVPR_2020_paper.pdf",
+        official_code="https://github.com/google-research/noisystudent",
     )
 
     def __init__(self, spec: NoisyStudentSpec | None = None) -> None:

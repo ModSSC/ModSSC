@@ -23,3 +23,13 @@ def _assert_module_importable(module_name: str):
 
 def test_module_importable() -> None:
     _assert_module_importable("modssc.inductive.methods.fixmatch")
+
+
+def test_spec_defaults() -> None:
+    module = _assert_module_importable("modssc.inductive.methods.fixmatch")
+    spec = module.FixMatchSpec()
+    assert spec.p_cutoff == pytest.approx(0.95)
+    assert spec.temperature == pytest.approx(0.5)
+    assert spec.mu == 7
+    assert spec.lambda_u == pytest.approx(1.0)
+    assert spec.batch_size == 64

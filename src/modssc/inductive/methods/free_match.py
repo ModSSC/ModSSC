@@ -43,13 +43,14 @@ class FreeMatchSpec:
 
     model_bundle: TorchModelBundle | None = None
     lambda_u: float = 1.0
-    lambda_e: float = 0.01
+    lambda_e: float = 0.001
     temperature: float = 0.5
     ema_p: float = 0.999
     use_quantile: bool = True
     clip_thresh: bool = False
     hard_label: bool = True
     use_cat: bool = False
+    mu: int = 7
     batch_size: int = 64
     max_epochs: int = 1
     detach_target: bool = True
@@ -61,12 +62,12 @@ class FreeMatchMethod(TorchBundlePredictMixin, InductiveMethod):
     info = MethodInfo(
         method_id="free_match",
         name="FreeMatch",
-        year=2022,
+        year=2023,
         family="pseudo-label",
         supports_gpu=True,
-        paper_title="FreeMatch: Self-Adaptive Thresholding for Semi-Supervised Learning",
-        paper_pdf="https://arxiv.org/abs/2205.07246",
-        official_code="",
+        paper_title="FreeMatch: Self-adaptive Thresholding for Semi-supervised Learning",
+        paper_pdf="https://arxiv.org/pdf/2205.07246",
+        official_code="https://github.com/microsoft/Semi-supervised-learning",
     )
 
     def __init__(self, spec: FreeMatchSpec | None = None) -> None:
@@ -137,7 +138,7 @@ class FreeMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         logger.info("Starting %s.fit", self.info.method_id)
         logger.debug(
             "params lambda_u=%s lambda_e=%s temperature=%s ema_p=%s use_quantile=%s "
-            "clip_thresh=%s hard_label=%s use_cat=%s batch_size=%s max_epochs=%s "
+            "clip_thresh=%s hard_label=%s use_cat=%s mu=%s batch_size=%s max_epochs=%s "
             "detach_target=%s has_model_bundle=%s device=%s seed=%s",
             self.spec.lambda_u,
             self.spec.lambda_e,
@@ -147,6 +148,7 @@ class FreeMatchMethod(TorchBundlePredictMixin, InductiveMethod):
             self.spec.clip_thresh,
             self.spec.hard_label,
             self.spec.use_cat,
+            self.spec.mu,
             self.spec.batch_size,
             self.spec.max_epochs,
             self.spec.detach_target,
@@ -200,6 +202,8 @@ class FreeMatchMethod(TorchBundlePredictMixin, InductiveMethod):
 
         if int(self.spec.batch_size) <= 0:
             raise InductiveValidationError("batch_size must be >= 1.")
+        if int(self.spec.mu) < 1:
+            raise InductiveValidationError("mu must be >= 1.")
         if int(self.spec.max_epochs) <= 0:
             raise InductiveValidationError("max_epochs must be >= 1.")
         if float(self.spec.lambda_u) < 0:
@@ -211,8 +215,10 @@ class FreeMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         if not (0.0 <= float(self.spec.ema_p) < 1.0):
             raise InductiveValidationError("ema_p must be in [0, 1).")
 
-        steps_l = num_batches(int(get_torch_len(X_l)), int(self.spec.batch_size))
-        steps_u = num_batches(int(get_torch_len(X_u_w)), int(self.spec.batch_size))
+        batch_size = int(self.spec.batch_size)
+        unlabeled_batch_size = batch_size * int(self.spec.mu)
+        steps_l = num_batches(int(get_torch_len(X_l)), batch_size)
+        steps_u = num_batches(int(get_torch_len(X_u_w)), unlabeled_batch_size)
         steps_per_epoch = max(int(steps_l), int(steps_u))
 
         gen_l = torch.Generator().manual_seed(int(seed))
@@ -223,13 +229,13 @@ class FreeMatchMethod(TorchBundlePredictMixin, InductiveMethod):
             iter_l = cycle_batches(
                 X_l,
                 y_l,
-                batch_size=int(self.spec.batch_size),
+                batch_size=batch_size,
                 generator=gen_l,
                 steps=steps_per_epoch,
             )
             iter_u_idx = cycle_batch_indices(
                 int(get_torch_len(X_u_w)),
-                batch_size=int(self.spec.batch_size),
+                batch_size=unlabeled_batch_size,
                 generator=gen_u,
                 device=get_torch_device(X_u_w),
                 steps=steps_per_epoch,
@@ -295,8 +301,7 @@ class FreeMatchMethod(TorchBundlePredictMixin, InductiveMethod):
                     log_probs = torch.nn.functional.log_softmax(logits_us, dim=1)
                     loss_u = -(pseudo_soft * log_probs).sum(dim=1)
 
-                denom = mask.sum().clamp_min(1.0)
-                unsup_loss = (loss_u * mask).sum() / denom
+                unsup_loss = (loss_u * mask).mean()
 
                 if float(mask.sum().item()) > 0:
                     logits_s = logits_us[mask.bool()]

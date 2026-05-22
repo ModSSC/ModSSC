@@ -116,8 +116,9 @@ class TSVMMethod(TransductiveMethod):
         year=1999,
         family="classic",
         supports_gpu=False,
-        paper_title="Transductive inference for text classification using support vector machines",
+        paper_title="Transductive Inference for Text Classification Using Support Vector Machines",
         paper_pdf="https://www.cs.cornell.edu/people/tj/publications/joachims_99a.pdf",
+        official_code="https://www.cs.cornell.edu/people/tj/svm_light/",
     )
 
     def __init__(self, spec: TSVMTransductiveSpec | None = None) -> None:

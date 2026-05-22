@@ -19,6 +19,18 @@ from modssc.inductive.types import DeviceSpec, InductiveDataset
 from ..conftest import make_numpy_dataset, make_torch_ssl_dataset
 
 
+def test_comatch_spec_defaults():
+    spec = CoMatchSpec()
+    assert spec.p_cutoff == pytest.approx(0.95)
+    assert spec.temperature == pytest.approx(0.5)
+    assert spec.contrast_p_cutoff == pytest.approx(0.8)
+    assert spec.queue_size == 2560
+    assert spec.mu == 7
+    assert spec.lambda_u == pytest.approx(1.0)
+    assert spec.lambda_c == pytest.approx(1.0)
+    assert spec.batch_size == 64
+
+
 class _CoMatchNet(torch.nn.Module):
     def __init__(self, in_dim: int = 2, feat_dim: int = 2, n_classes: int = 2) -> None:
         super().__init__()
@@ -587,6 +599,7 @@ def test_comatch_fit_empty_unlabeled_raises(monkeypatch):
     [
         ({"model_bundle": None}, "model_bundle must be provided"),
         ({"batch_size": 0}, "batch_size must be >= 1"),
+        ({"mu": 0}, "mu must be >= 1"),
         ({"max_epochs": 0}, "max_epochs must be >= 1"),
         ({"lambda_u": -1.0}, "lambda_u must be >= 0"),
         ({"lambda_c": -1.0}, "lambda_c must be >= 0"),

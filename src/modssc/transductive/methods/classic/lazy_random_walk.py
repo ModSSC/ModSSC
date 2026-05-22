@@ -229,7 +229,8 @@ class LazyRandomWalkMethod(TransductiveMethod):
         family="propagation",
         supports_gpu=True,
         required_extra="transductive-torch",
-        paper_title="Learning from labeled and unlabeled data using random walks",
+        paper_title="Learning from Labeled and Unlabeled Data Using Random Walks",
+        paper_pdf="docs/article_code/transductive/2004-Lazy Random Walk/Learning from labeled and labeled data using Random Walks.pdf",
     )
 
     def __init__(self, spec: LazyRandomWalkSpec | None = None) -> None:

@@ -14,6 +14,16 @@ except ImportError:
     torch = None
 
 
+def test_adamatch_spec_defaults():
+    spec = AdaMatchSpec()
+    assert spec.p_cutoff == pytest.approx(0.95)
+    assert spec.temperature == pytest.approx(0.5)
+    assert spec.ema_p == pytest.approx(0.999)
+    assert spec.mu == 7
+    assert spec.lambda_u == pytest.approx(1.0)
+    assert spec.batch_size == 64
+
+
 def _stop_after_slice(monkeypatch):
     monkeypatch.setattr("modssc.inductive.methods.adamatch.ensure_torch_data", lambda d, device: d)
     monkeypatch.setattr(
