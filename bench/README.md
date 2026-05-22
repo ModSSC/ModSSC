@@ -72,10 +72,15 @@ Best benchmark presets under `bench/configs/best/` now default to 5-seed sweeps 
 
 ## Cache behavior in multi-seed
 
-Recommended setup:
+Benchmark presets in `bench/configs/best/` use explicit environment variables for
+outputs and caches, and keep `dataset.download: false`. Seed the dataset cache
+before a full campaign, then run with:
 
 ```bash
-export MODSSC_CACHE_ROOT=/tmp/modssc_cache
+export MODSSC_OUTPUT_DIR=/tmp/modssc_runs
+export MODSSC_DATASET_CACHE_DIR=/tmp/modssc_cache/datasets
+export MODSSC_PREPROCESS_CACHE_DIR=/tmp/modssc_cache/preprocess
+export MODSSC_GRAPH_CACHE_DIR=/tmp/modssc_cache/graphs
 ```
 
 Keep one shared cache root for speed. Fingerprints isolate seed-dependent artifacts automatically.
@@ -86,7 +91,8 @@ Keep one shared cache root for speed. Fingerprints isolate seed-dependent artifa
 - Graph cache: seed-dependent (one entry per seed for the same graph spec and preprocess fingerprint).
 - Method fit/eval: always recomputed.
 
-Use a different `MODSSC_CACHE_ROOT` only when you need strict clean-room runs (for example branch/commit comparisons from scratch).
+Use a different cache directory set only when you need strict clean-room runs
+(for example branch/commit comparisons from scratch).
 
 ## Memory limits
 Use `limits` in the YAML to cap batch sizes and graph chunking when GPUs are tight on memory:

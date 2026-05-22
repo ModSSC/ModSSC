@@ -48,13 +48,13 @@ class PseudoLabelMethod(InductiveMethod):
 
     info = MethodInfo(
         method_id="pseudo_label",
-        name="Pseudo Label",
-        year=2019,
+        name="Pseudo-Label",
+        year=2013,
         family="classic",
         supports_gpu=True,
-        paper_title="Pseudo-Label: The Simple and Efficient Semi-Supervised Learning Method for Deep Neural Networks",
-        paper_pdf="https://arxiv.org/abs/1905.12265",
-        official_code="",
+        paper_title="Pseudo-Label : The Simple and Efficient Semi-Supervised Learning Method for Deep Neural Networks",
+        paper_pdf="docs/article_code/inductive/2013-Pseudo Label/8_pseudo_label.pdf",
+        official_code=None,
     )
 
     def __init__(self, spec: PseudoLabelSpec | None = None) -> None:

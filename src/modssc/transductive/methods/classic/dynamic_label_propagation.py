@@ -263,11 +263,12 @@ class DynamicLabelPropagationMethod(TransductiveMethod):
     info = MethodInfo(
         method_id="dynamic_label_propagation",
         name="Dynamic Label Propagation",
-        year=2016,
+        year=2013,
         family="propagation",
         supports_gpu=True,
         required_extra="transductive-torch",
-        paper_title="Dynamic Label Propagation for Semi-Supervised Multi-Class Multi-Label Classification",
+        paper_title="Dynamic Label Propagation for Semi-supervised Multi-class Multi-label Classification",
+        paper_pdf="https://openaccess.thecvf.com/content_iccv_2013/papers/Wang_Dynamic_Label_Propagation_2013_ICCV_paper.pdf",
     )
 
     def __init__(self, spec: DynamicLabelPropagationSpec | None = None) -> None:

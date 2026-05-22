@@ -62,7 +62,7 @@ class PlanetoidMethod(TransductiveMethod):
         supports_gpu=True,
         required_extra="transductive-torch",
         paper_title="Revisiting Semi-Supervised Learning with Graph Embeddings",
-        paper_pdf="https://arxiv.org/abs/1603.08861",
+        paper_pdf="https://arxiv.org/pdf/1603.08861",
         official_code="https://github.com/kimiyoung/planetoid",
     )
 

@@ -46,6 +46,7 @@ class FlexMatchSpec:
     lambda_u: float = 1.0
     p_cutoff: float = 0.95
     temperature: float = 0.5
+    mu: int = 7
     hard_label: bool = True
     thresh_warmup: bool = True
     use_cat: bool = False
@@ -64,8 +65,8 @@ class FlexMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         family="pseudo-label",
         supports_gpu=True,
         paper_title="FlexMatch: Boosting Semi-Supervised Learning with Curriculum Pseudo Labeling",
-        paper_pdf="https://arxiv.org/abs/2110.08263",
-        official_code="",
+        paper_pdf="https://arxiv.org/pdf/2110.08263",
+        official_code="https://github.com/TorchSSL/TorchSSL",
     )
 
     def __init__(self, spec: FlexMatchSpec | None = None) -> None:
@@ -105,7 +106,8 @@ class FlexMatchMethod(TorchBundlePredictMixin, InductiveMethod):
     def _get_idx_u(self, data: Any, *, device: Any, n_u: int) -> Any:
         torch = optional_import("torch", extra="inductive-torch")
         if data.meta is None:
-            raise InductiveValidationError("FlexMatch requires data.meta with idx_u.")
+            self._ulb_size = int(n_u)
+            return torch.arange(int(n_u), dtype=torch.long, device=device)
         if not isinstance(data.meta, Mapping):
             raise InductiveValidationError("FlexMatch requires data.meta to be a mapping.")
         idx_u = data.meta.get("idx_u")
@@ -114,9 +116,8 @@ class FlexMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         if idx_u is None:
             idx_u = data.meta.get("unlabeled_indices")
         if idx_u is None:
-            raise InductiveValidationError(
-                "FlexMatch requires meta.idx_u (global unlabeled indices)."
-            )
+            self._ulb_size = int(n_u)
+            return torch.arange(int(n_u), dtype=torch.long, device=device)
         if not isinstance(idx_u, torch.Tensor):
             raise InductiveValidationError("meta.idx_u must be a torch.Tensor.")
         if idx_u.dtype != torch.int64:
@@ -130,7 +131,6 @@ class FlexMatchMethod(TorchBundlePredictMixin, InductiveMethod):
 
         ulb_size = data.meta.get("ulb_size") or data.meta.get("unlabeled_size")
         if ulb_size is None:
-            # Require contiguous 0..n_u-1 if size not provided
             if int(idx_u.min().item()) != 0 or int(idx_u.max().item()) != int(n_u) - 1:
                 raise InductiveValidationError(
                     "meta.idx_u must be contiguous 0..n_u-1 or provide meta.ulb_size."
@@ -154,12 +154,13 @@ class FlexMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         start = perf_counter()
         logger.info("Starting %s.fit", self.info.method_id)
         logger.debug(
-            "params lambda_u=%s p_cutoff=%s temperature=%s hard_label=%s thresh_warmup=%s "
+            "params lambda_u=%s p_cutoff=%s temperature=%s mu=%s hard_label=%s thresh_warmup=%s "
             "use_cat=%s batch_size=%s max_epochs=%s detach_target=%s has_model_bundle=%s "
             "device=%s seed=%s",
             self.spec.lambda_u,
             self.spec.p_cutoff,
             self.spec.temperature,
+            self.spec.mu,
             self.spec.hard_label,
             self.spec.thresh_warmup,
             self.spec.use_cat,
@@ -216,6 +217,8 @@ class FlexMatchMethod(TorchBundlePredictMixin, InductiveMethod):
 
         if int(self.spec.batch_size) <= 0:
             raise InductiveValidationError("batch_size must be >= 1.")
+        if int(self.spec.mu) < 1:
+            raise InductiveValidationError("mu must be >= 1.")
         if int(self.spec.max_epochs) <= 0:
             raise InductiveValidationError("max_epochs must be >= 1.")
         if float(self.spec.lambda_u) < 0:
@@ -229,8 +232,10 @@ class FlexMatchMethod(TorchBundlePredictMixin, InductiveMethod):
             ds, device=get_torch_device(X_u_w), n_u=int(get_torch_len(X_u_w))
         )
 
-        steps_l = num_batches(int(get_torch_len(X_l)), int(self.spec.batch_size))
-        steps_u = num_batches(int(get_torch_len(X_u_w)), int(self.spec.batch_size))
+        batch_size = int(self.spec.batch_size)
+        unlabeled_batch_size = batch_size * int(self.spec.mu)
+        steps_l = num_batches(int(get_torch_len(X_l)), batch_size)
+        steps_u = num_batches(int(get_torch_len(X_u_w)), unlabeled_batch_size)
         steps_per_epoch = max(int(steps_l), int(steps_u))
 
         gen_l = torch.Generator().manual_seed(int(seed))
@@ -241,13 +246,13 @@ class FlexMatchMethod(TorchBundlePredictMixin, InductiveMethod):
             iter_l = cycle_batches(
                 X_l,
                 y_l,
-                batch_size=int(self.spec.batch_size),
+                batch_size=batch_size,
                 generator=gen_l,
                 steps=steps_per_epoch,
             )
             iter_u_idx = cycle_batch_indices(
                 int(get_torch_len(X_u_w)),
-                batch_size=int(self.spec.batch_size),
+                batch_size=unlabeled_batch_size,
                 generator=gen_u,
                 device=get_torch_device(X_u_w),
                 steps=steps_per_epoch,
@@ -312,8 +317,7 @@ class FlexMatchMethod(TorchBundlePredictMixin, InductiveMethod):
                     log_probs = torch.nn.functional.log_softmax(logits_us, dim=1)
                     loss_u = -(pseudo_soft * log_probs).sum(dim=1)
 
-                denom = mask.sum().clamp_min(1.0)
-                unsup_loss = (loss_u * mask).sum() / denom
+                unsup_loss = (loss_u * mask).mean()
 
                 if step == 0:
                     mask_mean = float(mask.mean().item()) if int(mask.numel()) else 0.0

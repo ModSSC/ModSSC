@@ -194,8 +194,8 @@ class MixMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         family="mixup",
         supports_gpu=True,
         paper_title="MixMatch: A Holistic Approach to Semi-Supervised Learning",
-        paper_pdf="https://arxiv.org/abs/1905.02249",
-        official_code="",
+        paper_pdf="https://arxiv.org/pdf/1905.02249",
+        official_code="https://github.com/google-research/mixmatch",
     )
 
     def __init__(self, spec: MixMatchSpec | None = None) -> None:

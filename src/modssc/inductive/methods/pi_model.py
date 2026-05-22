@@ -52,13 +52,13 @@ class PiModelMethod(TorchBundlePredictMixin, InductiveMethod):
 
     info = MethodInfo(
         method_id="pi_model",
-        name="Pi-Model",
-        year=2016,
+        name="Pi-model",
+        year=2017,
         family="consistency",
         supports_gpu=True,
         paper_title="Temporal Ensembling for Semi-Supervised Learning",
-        paper_pdf="https://arxiv.org/abs/1610.02242",
-        official_code="",
+        paper_pdf="https://arxiv.org/pdf/1610.02242",
+        official_code="https://github.com/s-laine/tempens",
     )
 
     def __init__(self, spec: PiModelSpec | None = None) -> None:

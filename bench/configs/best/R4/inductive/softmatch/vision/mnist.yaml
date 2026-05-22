@@ -10,11 +10,10 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/R4/inductive/softmatch/vision/mnist
   log_level: detailed
   fail_fast: true
-limits:
-  profile: auto
+  benchmark_mode: true
 dataset:
   id: mnist
-  download: true
+  download: false
   cache_dir: ${MODSSC_DATASET_CACHE_DIR}
 sampling:
   seed: 3
@@ -49,7 +48,7 @@ preprocess:
     - id: labels.encode
     - id: labels.to_torch
       params:
-        device: auto
+        device: cuda
         dtype: int64
     - id: vision.ensure_num_channels
       params:
@@ -94,7 +93,7 @@ method:
   kind: inductive
   id: softmatch
   device:
-    device: auto
+    device: cuda
     dtype: float32
   params:
     lambda_u: 1.0
@@ -106,9 +105,10 @@ method:
     dist_uniform: true
     hard_label: true
     use_cat: false
-    batch_size: 128
+    batch_size: 64
     max_epochs: 50
     detach_target: true
+    mu: 7
   model:
     classifier_id: image_pretrained
     classifier_backend: torch

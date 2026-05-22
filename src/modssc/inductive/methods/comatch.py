@@ -113,6 +113,7 @@ class CoMatchSpec:
     dist_uniform: bool = True
     hard_label: bool = True
     use_cat: bool = False
+    mu: int = 7
     batch_size: int = 64
     max_epochs: int = 1
     detach_target: bool = True
@@ -127,8 +128,8 @@ class CoMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         year=2021,
         family="pseudo-label",
         supports_gpu=True,
-        paper_title="CoMatch: Semi-supervised Learning with Contrastive Graph Regularization",
-        paper_pdf="https://arxiv.org/abs/2011.11183",
+        paper_title="CoMatch: Semi-Supervised Learning With Contrastive Graph Regularization",
+        paper_pdf="https://openaccess.thecvf.com/content/ICCV2021/papers/Li_CoMatch_Semi-Supervised_Learning_With_Contrastive_Graph_Regularization_ICCV_2021_paper.pdf",
         official_code="https://github.com/salesforce/CoMatch/",
     )
 
@@ -233,7 +234,7 @@ class CoMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         logger.debug(
             "params lambda_u=%s lambda_c=%s p_cutoff=%s temperature=%s contrast_p_cutoff=%s "
             "smoothing_alpha=%s queue_size=%s da_len=%s dist_align=%s dist_uniform=%s "
-            "hard_label=%s use_cat=%s batch_size=%s max_epochs=%s detach_target=%s "
+            "hard_label=%s use_cat=%s mu=%s batch_size=%s max_epochs=%s detach_target=%s "
             "has_model_bundle=%s device=%s seed=%s",
             self.spec.lambda_u,
             self.spec.lambda_c,
@@ -247,6 +248,7 @@ class CoMatchMethod(TorchBundlePredictMixin, InductiveMethod):
             self.spec.dist_uniform,
             self.spec.hard_label,
             self.spec.use_cat,
+            self.spec.mu,
             self.spec.batch_size,
             self.spec.max_epochs,
             self.spec.detach_target,
@@ -347,6 +349,8 @@ class CoMatchMethod(TorchBundlePredictMixin, InductiveMethod):
 
         if int(self.spec.batch_size) <= 0:
             raise InductiveValidationError("batch_size must be >= 1.")
+        if int(self.spec.mu) < 1:
+            raise InductiveValidationError("mu must be >= 1.")
         if int(self.spec.max_epochs) <= 0:
             raise InductiveValidationError("max_epochs must be >= 1.")
         if float(self.spec.lambda_u) < 0:
@@ -379,8 +383,10 @@ class CoMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         self._da_count = 0
         self._da_target = None
 
-        steps_l = num_batches(_len(X_l), int(self.spec.batch_size))
-        steps_u = num_batches(_len(X_u_w), int(self.spec.batch_size))
+        batch_size = int(self.spec.batch_size)
+        unlabeled_batch_size = batch_size * int(self.spec.mu)
+        steps_l = num_batches(_len(X_l), batch_size)
+        steps_u = num_batches(_len(X_u_w), unlabeled_batch_size)
         steps_per_epoch = max(int(steps_l), int(steps_u))
 
         gen_l = torch.Generator().manual_seed(int(seed))
@@ -414,13 +420,13 @@ class CoMatchMethod(TorchBundlePredictMixin, InductiveMethod):
             iter_l = cycle_batches(
                 X_l,
                 y_l,
-                batch_size=int(self.spec.batch_size),
+                batch_size=batch_size,
                 generator=gen_l,
                 steps=steps_per_epoch,
             )
             iter_u_idx = cycle_batch_indices(
                 _len(X_u_w),
-                batch_size=int(self.spec.batch_size),
+                batch_size=unlabeled_batch_size,
                 generator=gen_u,
                 device=_get_dev(X_u_w),
                 steps=steps_per_epoch,
@@ -543,8 +549,7 @@ class CoMatchMethod(TorchBundlePredictMixin, InductiveMethod):
                 if int(mask.numel()) == 0:
                     unsup_loss = torch.zeros((), device=logits_us0.device)
                 else:
-                    denom = mask.sum().clamp_min(1.0)
-                    unsup_loss = (loss_u * mask).sum() / denom
+                    unsup_loss = (loss_u * mask).mean()
 
                 contrast_loss = _contrastive_loss(
                     feats_us0_norm,

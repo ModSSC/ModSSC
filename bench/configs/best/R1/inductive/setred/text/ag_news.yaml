@@ -10,11 +10,10 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/R1/inductive/setred/text/ag_news
   log_level: detailed
   fail_fast: true
-limits:
-  profile: auto
+  benchmark_mode: true
 dataset:
   id: ag_news
-  download: true
+  download: false
   cache_dir: ${MODSSC_DATASET_CACHE_DIR}
   options:
     text_column: text
@@ -64,7 +63,7 @@ method:
   kind: inductive
   id: setred
   device:
-    device: auto
+    device: cpu
     dtype: float32
   params:
     classifier_id: logreg

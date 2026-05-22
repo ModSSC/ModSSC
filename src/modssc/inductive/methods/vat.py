@@ -90,15 +90,15 @@ class VATMethod(TorchBundlePredictMixin, InductiveMethod):
     info = MethodInfo(
         method_id="vat",
         name="VAT",
-        year=2017,
+        year=2018,
         family="consistency",
         supports_gpu=True,
         paper_title=(
             "Virtual Adversarial Training: A Regularization Method for Supervised and "
             "Semi-Supervised Learning"
         ),
-        paper_pdf="https://arxiv.org/abs/1704.03976",
-        official_code="",
+        paper_pdf="https://arxiv.org/pdf/1704.03976",
+        official_code="https://github.com/takerum/vat",
     )
 
     def __init__(self, spec: VATSpec | None = None) -> None:

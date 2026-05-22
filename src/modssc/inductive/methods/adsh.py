@@ -131,8 +131,8 @@ class ADSHMethod(ArgmaxPredictMixin, InductiveMethod):
         family="pseudo-label",
         supports_gpu=True,
         paper_title="Class-Imbalanced Semi-Supervised Learning with Adaptive Thresholding",
-        paper_pdf="",
-        official_code="http://www.lamda.nju.edu.cn/code_ADSH.ashx",
+        paper_pdf="https://proceedings.mlr.press/v162/guo22e/guo22e.pdf",
+        official_code="https://www.lamda.nju.edu.cn/code_ADSH.ashx",
     )
 
     def __init__(self, spec: ADSHSpec | None = None) -> None:

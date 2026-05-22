@@ -27,10 +27,10 @@ class SGCSpec:
     """Hyperparameters for the SGC baseline."""
 
     k: int = 2
-    lr: float = 0.1
-    weight_decay: float = 0.0
-    max_epochs: int = 200
-    patience: int = 50
+    lr: float = 0.2
+    weight_decay: float = 5e-6
+    max_epochs: int = 100
+    patience: int = 100
     add_self_loops: bool = True
     weight_decay_scope: str = "all"
     selection_metric: str = "val_loss"
@@ -45,7 +45,7 @@ class SGCMethod(TransductiveMethod):
         supports_gpu=True,
         required_extra="transductive-torch",
         paper_title="Simplifying Graph Convolutional Networks",
-        paper_pdf="https://arxiv.org/abs/1902.07153",
+        paper_pdf="https://arxiv.org/pdf/1902.07153",
         official_code="https://github.com/Tiiiger/SGC",
     )
 

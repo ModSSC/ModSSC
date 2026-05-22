@@ -10,11 +10,10 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/R2/inductive/mixmatch/tabular/iris
   log_level: detailed
   fail_fast: true
-limits:
-  profile: auto
+  benchmark_mode: true
 dataset:
   id: iris
-  download: true
+  download: false
   cache_dir: ${MODSSC_DATASET_CACHE_DIR}
 sampling:
   seed: 1
@@ -49,14 +48,14 @@ preprocess:
     - id: labels.encode
     - id: labels.to_torch
       params:
-        device: auto
+        device: cuda
         dtype: int64
     - id: core.ensure_2d
     - id: tabular.impute
     - id: tabular.standard_scaler
     - id: core.to_torch
       params:
-        device: auto
+        device: cuda
         dtype: float32
 augmentation:
   enabled: true
@@ -77,16 +76,16 @@ method:
   kind: inductive
   id: mixmatch
   device:
-    device: auto
+    device: cuda
     dtype: float32
   params:
-    lambda_u: 1.0
+    lambda_u: 75.0
     temperature: 0.5
-    mixup_alpha: 0.5
+    mixup_alpha: 0.75
     unsup_warm_up: 0.4
     mixup_manifold: false
     freeze_bn: false
-    batch_size: 128
+    batch_size: 64
     max_epochs: 50
   model:
     classifier_id: mlp

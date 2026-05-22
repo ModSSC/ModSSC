@@ -67,12 +67,12 @@ class DeFixMatchMethod(TorchBundlePredictMixin, InductiveMethod):
     info = MethodInfo(
         method_id="defixmatch",
         name="DeFixMatch",
-        year=2022,
+        year=2023,
         family="pseudo-label",
         supports_gpu=True,
-        paper_title="DeFixMatch: Debiased FixMatch for Long-tailed Semi-Supervised Learning",
-        paper_pdf="https://arxiv.org/abs/2203.07512",
-        official_code="",
+        paper_title="Don't fear the unlabelled: safe semi-supervised learning via debiasing",
+        paper_pdf="https://openreview.net/pdf?id=TN9gQ4x0Ep3",
+        official_code="https://github.com/HugoSchmutz/DeFixmatch",
     )
 
     def __init__(self, spec: DeFixMatchSpec | None = None) -> None:

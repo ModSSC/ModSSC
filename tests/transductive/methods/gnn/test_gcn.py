@@ -23,3 +23,15 @@ def _assert_module_importable(module_name: str):
 
 def test_module_importable() -> None:
     _assert_module_importable("modssc.transductive.methods.gnn.gcn")
+
+
+def test_spec_defaults() -> None:
+    module = _assert_module_importable("modssc.transductive.methods.gnn.gcn")
+    spec = module.GCNSpec()
+    assert spec.hidden_dim == 16
+    assert spec.dropout == pytest.approx(0.5)
+    assert spec.lr == pytest.approx(0.01)
+    assert spec.weight_decay == pytest.approx(5e-4)
+    assert spec.max_epochs == 200
+    assert spec.patience == 10
+    assert spec.weight_decay_scope == "first_layer"

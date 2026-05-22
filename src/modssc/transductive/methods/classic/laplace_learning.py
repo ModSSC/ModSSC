@@ -377,7 +377,8 @@ class LaplaceLearningMethod(TransductiveMethod):
         family="propagation",
         supports_gpu=True,
         required_extra="transductive-torch",
-        paper_title="Semi-supervised Learning Using Gaussian Fields and Harmonic Functions",
+        paper_title="Semi-Supervised Learning Using Gaussian Fields and Harmonic Functions",
+        paper_pdf="docs/article_code/transductive/2003-Laplace Learning/Semi-Supervised Learning Using Gaussian Fields and Harmonic Functions.pdf",
     )
 
     def __init__(self, spec: LaplaceLearningSpec | None = None) -> None:

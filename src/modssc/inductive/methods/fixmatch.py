@@ -45,6 +45,7 @@ class FixMatchSpec:
     lambda_u: float = 1.0
     p_cutoff: float = 0.95
     temperature: float = 0.5
+    mu: int = 7
     hard_label: bool = True
     use_cat: bool = False
     batch_size: int = 64
@@ -62,8 +63,8 @@ class FixMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         family="pseudo-label",
         supports_gpu=True,
         paper_title="FixMatch: Simplifying Semi-Supervised Learning with Consistency and Confidence",
-        paper_pdf="https://arxiv.org/abs/2001.07685",
-        official_code="",
+        paper_pdf="https://arxiv.org/pdf/2001.07685",
+        official_code="https://github.com/google-research/fixmatch",
     )
 
     def __init__(self, spec: FixMatchSpec | None = None) -> None:
@@ -75,11 +76,12 @@ class FixMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         start = perf_counter()
         logger.info("Starting %s.fit", self.info.method_id)
         logger.debug(
-            "params lambda_u=%s p_cutoff=%s temperature=%s hard_label=%s use_cat=%s "
+            "params lambda_u=%s p_cutoff=%s temperature=%s mu=%s hard_label=%s use_cat=%s "
             "batch_size=%s max_epochs=%s detach_target=%s has_model_bundle=%s device=%s seed=%s",
             self.spec.lambda_u,
             self.spec.p_cutoff,
             self.spec.temperature,
+            self.spec.mu,
             self.spec.hard_label,
             self.spec.use_cat,
             self.spec.batch_size,
@@ -135,6 +137,8 @@ class FixMatchMethod(TorchBundlePredictMixin, InductiveMethod):
 
         if int(self.spec.batch_size) <= 0:
             raise InductiveValidationError("batch_size must be >= 1.")
+        if int(self.spec.mu) < 1:
+            raise InductiveValidationError("mu must be >= 1.")
         if int(self.spec.max_epochs) <= 0:
             raise InductiveValidationError("max_epochs must be >= 1.")
         if float(self.spec.lambda_u) < 0:
@@ -144,8 +148,10 @@ class FixMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         if float(self.spec.temperature) <= 0:
             raise InductiveValidationError("temperature must be > 0.")
 
-        steps_l = num_batches(int(get_torch_len(X_l)), int(self.spec.batch_size))
-        steps_u = num_batches(int(get_torch_len(X_u_w)), int(self.spec.batch_size))
+        batch_size = int(self.spec.batch_size)
+        unlabeled_batch_size = batch_size * int(self.spec.mu)
+        steps_l = num_batches(int(get_torch_len(X_l)), batch_size)
+        steps_u = num_batches(int(get_torch_len(X_u_w)), unlabeled_batch_size)
         steps_per_epoch = max(int(steps_l), int(steps_u))
 
         gen_l = torch.Generator().manual_seed(int(seed))
@@ -156,13 +162,13 @@ class FixMatchMethod(TorchBundlePredictMixin, InductiveMethod):
             iter_l = cycle_batches(
                 X_l,
                 y_l,
-                batch_size=int(self.spec.batch_size),
+                batch_size=batch_size,
                 generator=gen_l,
                 steps=steps_per_epoch,
             )
             iter_u_idx = cycle_batch_indices(
                 int(get_torch_len(X_u_w)),
-                batch_size=int(self.spec.batch_size),
+                batch_size=unlabeled_batch_size,
                 generator=gen_u,
                 device=get_torch_device(X_u_w),
                 steps=steps_per_epoch,
@@ -218,8 +224,7 @@ class FixMatchMethod(TorchBundlePredictMixin, InductiveMethod):
                 if int(mask.numel()) == 0:
                     unsup_loss = torch.zeros((), device=logits_us.device)
                 else:
-                    denom = mask.sum().clamp_min(1.0)
-                    unsup_loss = (loss_u * mask).sum() / denom
+                    unsup_loss = (loss_u * mask).mean()
 
                 if step == 0:
                     mask_mean = float(mask.mean().item()) if int(mask.numel()) else 0.0

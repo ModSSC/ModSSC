@@ -467,6 +467,10 @@ def test_deep_method_specific_invalid_specs():
             data, device=DeviceSpec(device="cpu"), seed=0
         )
     with pytest.raises(InductiveValidationError):
+        FixMatchMethod(_make_spec(FixMatchMethod, bundle, mu=0)).fit(
+            data, device=DeviceSpec(device="cpu"), seed=0
+        )
+    with pytest.raises(InductiveValidationError):
         ADSHMethod(_make_spec(ADSHMethod, bundle, p_cutoff=0.0)).fit(
             data, device=DeviceSpec(device="cpu"), seed=0
         )
@@ -485,6 +489,10 @@ def test_deep_method_specific_invalid_specs():
 
     with pytest.raises(InductiveValidationError):
         FlexMatchMethod(_make_spec(FlexMatchMethod, bundle, p_cutoff=-1.0)).fit(
+            data, device=DeviceSpec(device="cpu"), seed=0
+        )
+    with pytest.raises(InductiveValidationError):
+        FlexMatchMethod(_make_spec(FlexMatchMethod, bundle, mu=0)).fit(
             data, device=DeviceSpec(device="cpu"), seed=0
         )
 
@@ -509,6 +517,10 @@ def test_deep_method_specific_invalid_specs():
         AdaMatchMethod(_make_spec(AdaMatchMethod, bundle, temperature=0.0)).fit(
             data, device=DeviceSpec(device="cpu"), seed=0
         )
+    with pytest.raises(InductiveValidationError):
+        AdaMatchMethod(_make_spec(AdaMatchMethod, bundle, mu=0)).fit(
+            data, device=DeviceSpec(device="cpu"), seed=0
+        )
 
     with pytest.raises(InductiveValidationError):
         FreeMatchMethod(_make_spec(FreeMatchMethod, bundle, lambda_e=-1.0)).fit(
@@ -522,6 +534,10 @@ def test_deep_method_specific_invalid_specs():
         FreeMatchMethod(_make_spec(FreeMatchMethod, bundle, ema_p=1.0)).fit(
             data, device=DeviceSpec(device="cpu"), seed=0
         )
+    with pytest.raises(InductiveValidationError):
+        FreeMatchMethod(_make_spec(FreeMatchMethod, bundle, mu=0)).fit(
+            data, device=DeviceSpec(device="cpu"), seed=0
+        )
 
     with pytest.raises(InductiveValidationError):
         SoftMatchMethod(_make_spec(SoftMatchMethod, bundle, n_sigma=0.0)).fit(
@@ -533,6 +549,10 @@ def test_deep_method_specific_invalid_specs():
         )
     with pytest.raises(InductiveValidationError):
         SoftMatchMethod(_make_spec(SoftMatchMethod, bundle, ema_p=1.0)).fit(
+            data, device=DeviceSpec(device="cpu"), seed=0
+        )
+    with pytest.raises(InductiveValidationError):
+        SoftMatchMethod(_make_spec(SoftMatchMethod, bundle, mu=0)).fit(
             data, device=DeviceSpec(device="cpu"), seed=0
         )
 
@@ -1155,19 +1175,20 @@ def test_flexmatch_fit_predict_variants_and_meta_helpers():
     assert torch.allclose(flexmatch._sharpen(probs, temperature=1.0), probs)
 
     fm = FlexMatchMethod(FlexMatchSpec())
-    with pytest.raises(InductiveValidationError):
-        fm._get_idx_u(
-            DummyDataset(
-                X_l=data.X_l,
-                y_l=data.y_l,
-                X_u=data.X_u,
-                X_u_w=data.X_u_w,
-                X_u_s=data.X_u_s,
-                meta=None,
-            ),
-            device=data.X_u_w.device,
-            n_u=2,
-        )
+    local_idx = fm._get_idx_u(
+        DummyDataset(
+            X_l=data.X_l,
+            y_l=data.y_l,
+            X_u=data.X_u,
+            X_u_w=data.X_u_w,
+            X_u_s=data.X_u_s,
+            meta=None,
+        ),
+        device=data.X_u_w.device,
+        n_u=2,
+    )
+    assert local_idx.tolist() == [0, 1]
+    assert fm._ulb_size == 2
 
     bad_meta = DummyDataset(
         X_l=data.X_l,
@@ -2293,8 +2314,8 @@ def test_flexmatch_meta_validation_and_state_branches():
         X_u_s=data.X_u_s,
         meta={},
     )
-    with pytest.raises(InductiveValidationError):
-        fm._get_idx_u(missing_idx, device=data.X_u_w.device, n_u=int(data.X_u_w.shape[0]))
+    out_missing = fm._get_idx_u(missing_idx, device=data.X_u_w.device, n_u=int(data.X_u_w.shape[0]))
+    assert out_missing.tolist() == list(range(int(data.X_u_w.shape[0])))
 
     alt_idx = DummyDataset(
         X_l=data.X_l,

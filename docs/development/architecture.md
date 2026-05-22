@@ -77,7 +77,7 @@ The API reference does not try to document every internal support directory as p
 ## Bench repository layout
 The `bench/` tree has three different roles:
 - `bench/configs/experiments/`: authored examples, tutorial configs, and smaller runnable templates.
-- `bench/configs/best/`: curated benchmark configuration sets and generated command listings used for larger runs.
+- `bench/configs/best/`: curated benchmark configuration sets and manifests used for larger runs.
 - `bench/slurm/jean_zay/`: cluster launchers and deployment-oriented job structure for Jean Zay runs.
 
 The docs reference each of these for different purposes and should not present them as one undifferentiated config directory.

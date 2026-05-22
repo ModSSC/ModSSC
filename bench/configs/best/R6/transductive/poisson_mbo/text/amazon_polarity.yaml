@@ -10,11 +10,10 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/R6/transductive/poisson_mbo/text/amazon_polarity
   log_level: detailed
   fail_fast: true
-limits:
-  profile: auto
+  benchmark_mode: true
 dataset:
   id: amazon_polarity
-  download: true
+  download: false
   cache_dir: ${MODSSC_DATASET_CACHE_DIR}
   options:
     text_column: content
@@ -64,20 +63,21 @@ method:
   kind: transductive
   id: poisson_mbo
   device:
-    device: auto
+    device: cuda
     dtype: float32
   params:
-    T: 200
-    Ninner: 40
-    Nouter: 20
+    T: 20
     mu: 1.0
-    d_tau: 10.0
-    smin: 0.5
-    smax: 2.0
-    n_volume_iters: 100
-    b_strategy: uniform
+    b_strategy: 'true'
     symmetrize: true
     zero_diagonal: true
+    Ns: 40
+    tol: 0.001
+    max_iter: 1000
+    poisson_eps: 0.0
+    volume_tol: 0.001
+    volume_max_iter: 10000
+    volume_dt: 0.1
 evaluation:
   split_for_model_selection: val
   report_splits:

@@ -199,7 +199,7 @@ class GATMethod(TransductiveMethod):
         supports_gpu=True,
         required_extra="transductive-torch",
         paper_title="Graph Attention Networks",
-        paper_pdf="https://arxiv.org/abs/1710.10903",
+        paper_pdf="https://arxiv.org/pdf/1710.10903",
         official_code="https://github.com/PetarV-/GAT",
     )
 

@@ -42,12 +42,12 @@ class S4VMMethod(InductiveMethod):
     info = MethodInfo(
         method_id="s4vm",
         name="S4VM",
-        year=2010,
+        year=2011,
         family="classic",
         supports_gpu=True,
-        paper_title="Large Scale Transductive SVMs",
-        paper_pdf="https://icml.cc/Conferences/2010/papers/472.pdf",
-        official_code="",
+        paper_title="Towards Making Unlabeled Data Never Hurt",
+        paper_pdf="https://icml.cc/Conferences/2011/papers/548_icmlpaper.pdf",
+        official_code="https://www.lamda.nju.edu.cn/code_S4VM.ashx",
     )
 
     def __init__(self, spec: S4VMSpec | None = None) -> None:

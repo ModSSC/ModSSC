@@ -38,6 +38,16 @@ class DummyNodeDataset:
     meta: Mapping[str, Any] | None = None
 
 
+def test_poisson_learning_spec_defaults():
+    spec = PoissonLearningSpec()
+    assert spec.backend == "numpy"
+    assert spec.laplacian_kind == "paper_normalized"
+    assert spec.eps == pytest.approx(0.0)
+    assert spec.center_sources is True
+    assert spec.tol == pytest.approx(1e-3)
+    assert spec.max_iter == 1000
+
+
 def _two_cluster_graph() -> tuple[int, np.ndarray, np.ndarray]:
     n = 6
     edges = []

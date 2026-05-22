@@ -184,8 +184,8 @@ class NGCNMethod(TransductiveMethod):
         supports_gpu=True,
         required_extra="transductive-torch",
         paper_title="N-GCN: Multi-scale Graph Convolution for Semi-supervised Node Classification",
-        paper_pdf="https://arxiv.org/abs/1802.08888",
-        official_code=None,
+        paper_pdf="https://proceedings.mlr.press/v115/abu-el-haija20a/abu-el-haija20a.pdf",
+        official_code="https://github.com/samihaija/mixhop",
     )
 
     def __init__(self, spec: NGCNSpec | None = None) -> None:

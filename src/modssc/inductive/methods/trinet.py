@@ -351,7 +351,7 @@ def _validate_bundle_set(
 
 @dataclass(frozen=True)
 class TriNetSpec:
-    """Specification for Tri-Net (torch-only)."""
+    """Specification for Tri-net (torch-only)."""
 
     shared_bundle: TorchModelBundle | None = None
     head_bundles: tuple[TorchModelBundle, TorchModelBundle, TorchModelBundle] | None = None
@@ -372,17 +372,17 @@ class TriNetSpec:
 
 
 class TriNetMethod(ArgmaxPredictMixin, InductiveMethod):
-    """Tri-Net semi-supervised deep learning (torch-only)."""
+    """Tri-net semi-supervised deep learning (torch-only)."""
 
     info = MethodInfo(
         method_id="trinet",
-        name="Tri-Net",
+        name="Tri-net",
         year=2018,
         family="agreement",
         supports_gpu=True,
         paper_title="Tri-net for Semi-Supervised Deep Learning",
-        paper_pdf="",
-        official_code="",
+        paper_pdf="https://www.lamda.nju.edu.cn/publication/ijcai18trinet.pdf",
+        official_code="https://www.lamda.nju.edu.cn/code_Tri-net.ashx",
     )
 
     def __init__(self, spec: TriNetSpec | None = None) -> None:

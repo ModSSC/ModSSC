@@ -87,7 +87,7 @@ class GCNIIMethod(TransductiveMethod):
         supports_gpu=True,
         required_extra="transductive-torch",
         paper_title="Simple and Deep Graph Convolutional Networks",
-        paper_pdf="https://arxiv.org/abs/2007.02133",
+        paper_pdf="https://arxiv.org/pdf/2007.02133",
         official_code="https://github.com/chennnM/GCNII",
     )
 

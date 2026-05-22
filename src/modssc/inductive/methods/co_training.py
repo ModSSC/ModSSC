@@ -217,9 +217,9 @@ class CoTrainingMethod(InductiveMethod):
         year=1998,
         family="classic",
         supports_gpu=True,
-        paper_title="Combining labeled and unlabeled data with co-training",
+        paper_title="Combining Labeled and Unlabeled Data with Co-Training",
         paper_pdf="https://www.cs.cmu.edu/~avrim/Papers/co-training.pdf",
-        official_code="",
+        official_code=None,
     )
 
     def __init__(self, spec: CoTrainingSpec | None = None) -> None:

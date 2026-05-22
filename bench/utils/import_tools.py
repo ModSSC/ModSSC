@@ -25,11 +25,16 @@ def load_object(path: str) -> Any:
 
 
 def _find_pyproject(start: Path | None = None) -> Path | None:
-    current = start or Path.cwd()
-    for parent in [current] + list(current.parents):
-        cand = parent / "pyproject.toml"
-        if cand.exists():
-            return cand
+    starts = [start or Path.cwd(), Path(__file__).resolve().parent]
+    seen: set[Path] = set()
+    for current in starts:
+        for parent in [current] + list(current.parents):
+            if parent in seen:
+                continue
+            seen.add(parent)
+            cand = parent / "pyproject.toml"
+            if cand.exists():
+                return cand
     return None
 
 

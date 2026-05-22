@@ -243,8 +243,8 @@ class DemocraticCoLearningMethod(InductiveMethod):
         family="classic",
         supports_gpu=True,
         paper_title="Democratic Co-Learning",
-        paper_pdf="",
-        official_code="",
+        paper_pdf="docs/article_code/inductive/2004-Democratic colearning/21-2004-Democratic colearning.pdf",
+        official_code=None,
     )
 
     def __init__(self, spec: DemocraticCoLearningSpec | None = None) -> None:

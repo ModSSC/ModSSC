@@ -39,6 +39,17 @@ class DummyNodeDataset:
     meta: Mapping[str, Any] | None = None
 
 
+def test_poisson_mbo_spec_defaults():
+    spec = PoissonMBOSpec()
+    assert spec.Ns == 40
+    assert spec.T == 20
+    assert spec.mu == pytest.approx(1.0)
+    assert spec.tol == pytest.approx(1e-3)
+    assert spec.max_iter == 1000
+    assert spec.poisson_eps == pytest.approx(0.0)
+    assert spec.b_strategy == "true"
+
+
 def _two_cluster_graph() -> tuple[int, np.ndarray, np.ndarray]:
     n = 6
     edges = []

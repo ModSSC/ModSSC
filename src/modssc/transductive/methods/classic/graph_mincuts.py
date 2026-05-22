@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class GraphMincutsSpec:
-    """Graph Mincuts (Blum & Chawla, 2001) — transductive semi-supervised learning.
+    """Graph Mincuts (Blum & Chawla, 2001) - transductive semi-supervised learning.
 
     This implementation focuses on the *binary* s-t min-cut formulation:
       - All labeled nodes of class A are forced to the SOURCE side.
@@ -235,6 +235,7 @@ class GraphMincutsMethod(TransductiveMethod):
         supports_gpu=False,
         required_extra="sklearn",
         paper_title="Learning from Labeled and Unlabeled Data using Graph Mincuts",
+        paper_pdf="docs/article_code/transductive/2001-Graph Mincuts/Learning from Labeled and Unlabeled Data using Graph Mincuts.pdf",
     )
 
     def __init__(self, spec: GraphMincutsSpec | None = None) -> None:

@@ -101,7 +101,7 @@ class MetaPseudoLabelsMethod(ArgmaxPredictMixin, InductiveMethod):
         family="teacher",
         supports_gpu=True,
         paper_title="Meta Pseudo Labels",
-        paper_pdf="https://arxiv.org/abs/2003.10580",
+        paper_pdf="https://arxiv.org/pdf/2003.10580",
         official_code="https://github.com/google-research/google-research/tree/master/meta_pseudo_labels",
     )
 

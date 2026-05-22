@@ -19,6 +19,19 @@ from modssc.inductive.types import DeviceSpec, InductiveDataset
 from ..conftest import make_numpy_dataset, make_torch_ssl_dataset
 
 
+def test_daso_spec_defaults():
+    spec = DASOSpec()
+    assert spec.p_cutoff == pytest.approx(0.95)
+    assert spec.t_proto == pytest.approx(0.05)
+    assert spec.t_dist == pytest.approx(1.5)
+    assert spec.queue_size == 256
+    assert spec.pretrain_steps == 5000
+    assert spec.ema_decay == pytest.approx(0.999)
+    assert spec.mu == 7
+    assert spec.lambda_u == pytest.approx(1.0)
+    assert spec.batch_size == 64
+
+
 class _DASONet(torch.nn.Module):
     def __init__(self, in_dim: int = 2, feat_dim: int = 2, n_classes: int = 2) -> None:
         super().__init__()
@@ -698,6 +711,7 @@ def test_daso_fit_empty_unlabeled_raises(monkeypatch):
     [
         ({"model_bundle": None}, "model_bundle must be provided"),
         ({"batch_size": 0}, "batch_size must be >= 1"),
+        ({"mu": 0}, "mu must be >= 1"),
         ({"max_epochs": 0}, "max_epochs must be >= 1"),
         ({"lambda_u": -1.0}, "lambda_u must be >= 0"),
         ({"lambda_align": -1.0}, "lambda_align must be >= 0"),

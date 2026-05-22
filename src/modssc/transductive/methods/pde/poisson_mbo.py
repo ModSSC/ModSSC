@@ -98,7 +98,7 @@ def _volume_label_projection(
     max_iter: int,
     dt: float,
 ) -> tuple[np.ndarray, np.ndarray, float, int]:
-    """Replicate the reference volume projection for similarity scores."""
+    """Apply the paper volume projection for similarity scores."""
 
     k = int(U.shape[1])
     err = float("inf")
@@ -453,7 +453,7 @@ def poisson_mbo_torch(
 
 @dataclass(frozen=True)
 class PoissonMBOSpec:
-    """Poisson MBO (Calder et al.) — volume constrained MBO with Poisson fidelity."""
+    """Poisson MBO (Calder et al.) - volume constrained MBO with Poisson fidelity."""
 
     Ns: int = 40
     T: int = 20
@@ -540,7 +540,8 @@ class PoissonMBOMethod(TransductiveMethod):
         supports_gpu=True,
         required_extra="transductive-torch",
         paper_title="Poisson Learning: Graph Based Semi-Supervised Learning at Very Low Label Rates",
-        paper_pdf="https://arxiv.org/abs/2006.12037",
+        paper_pdf="https://proceedings.mlr.press/v119/calder20a/calder20a.pdf",
+        official_code="https://github.com/jwcalder/GraphLearning",
     )
 
     def __init__(self, spec: PoissonMBOSpec | None = None) -> None:
