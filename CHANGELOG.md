@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on "Keep a Changelog", and this project adheres to Semantic Versioning.
 
+## 1.2.1
+### Changed
+- Added benchmark seed-section control for reproducible ISO-style sweeps.
+- Aligned experiment templates and GCN smoke configs with paper-style defaults.
+- Improved FashionMNIST catalog coverage and AET precomputed feature caching.
+
 ## 1.2.0
 ### Added
 - Added the `core.vae` preprocessing step with Poisson-style vision presets, cache-backed checkpoints, runtime metadata, and latent feature output through `features.vae`.

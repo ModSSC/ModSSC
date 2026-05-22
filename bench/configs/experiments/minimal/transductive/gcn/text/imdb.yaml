@@ -64,9 +64,12 @@ method:
     dropout: 0.5
     lr: 0.01
     weight_decay: 0.0005
-    max_epochs: 2
-    patience: 50
+    max_epochs: 200
+    patience: 10
     add_self_loops: true
+    bias: false
+    weight_decay_scope: first_layer
+    selection_metric: val_loss
 evaluation:
   split_for_model_selection: val
   report_splits:

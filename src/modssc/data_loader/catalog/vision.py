@@ -13,6 +13,16 @@ VISION_CATALOG: dict[str, DatasetSpec] = {
         required_extra="vision",
         source_kwargs={},
     ),
+    "fashion_mnist": DatasetSpec(
+        key="fashion_mnist",
+        provider="torchvision",
+        uri="torchvision:FashionMNIST",
+        modality="vision",
+        task="classification",
+        description="FashionMNIST (torchvision).",
+        required_extra="vision",
+        source_kwargs={},
+    ),
     "cifar10": DatasetSpec(
         key="cifar10",
         provider="torchvision",

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import shutil
 import zipfile
 from dataclasses import dataclass, field
@@ -82,6 +83,83 @@ def _extract_single_npy_from_npz(npz_path: Path, output_path: Path) -> None:
             tmp_path.unlink()
 
 
+def _float32_npy_cache_path(npy_path: Path) -> Path:
+    return npy_path.with_name(f"{npy_path.stem}.float32.npy")
+
+
+def _float32_npy_cache_meta_path(npy_path: Path) -> Path:
+    return npy_path.with_suffix(npy_path.suffix + ".json")
+
+
+def _npy_source_identity(source_path: Path) -> dict[str, Any]:
+    stat = source_path.stat()
+    return {
+        "path": str(source_path.resolve()),
+        "size": int(stat.st_size),
+        "mtime_ns": int(stat.st_mtime_ns),
+    }
+
+
+def _float32_cache_matches(meta_path: Path, source_identity: dict[str, Any]) -> bool:
+    if not meta_path.exists():
+        return False
+    try:
+        payload = json.loads(meta_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):  # pragma: no cover - corrupt metadata is rare.
+        return False
+    return payload.get("source") == source_identity
+
+
+def _write_float32_cache_meta(meta_path: Path, source_identity: dict[str, Any]) -> None:
+    tmp_path = meta_path.with_suffix(meta_path.suffix + ".tmp")
+    tmp_path.write_text(
+        json.dumps({"source": source_identity}, sort_keys=True),
+        encoding="utf-8",
+    )
+    tmp_path.replace(meta_path)
+
+
+def _ensure_float32_npy(source_path: Path, output_path: Path) -> None:
+    source = np.load(source_path, mmap_mode="r", allow_pickle=False)
+    if source.dtype == np.float32:
+        return
+    source_identity = _npy_source_identity(source_path)
+    meta_path = _float32_npy_cache_meta_path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    if output_path.exists():
+        cached = np.load(output_path, mmap_mode="r", allow_pickle=False)
+        if (
+            tuple(cached.shape) == tuple(source.shape)
+            and cached.dtype == np.float32
+            and _float32_cache_matches(meta_path, source_identity)
+        ):
+            return
+        output_path.unlink()
+        if meta_path.exists():
+            meta_path.unlink()
+
+    tmp_path = output_path.with_suffix(output_path.suffix + ".tmp")
+    if tmp_path.exists():
+        tmp_path.unlink()
+    target = np.lib.format.open_memmap(
+        tmp_path,
+        mode="w+",
+        dtype=np.float32,
+        shape=tuple(source.shape),
+    )
+    try:
+        for start in range(0, int(source.shape[0]), 512):
+            end = min(start + 512, int(source.shape[0]))
+            target[start:end] = np.asarray(source[start:end], dtype=np.float32)
+        target.flush()
+        del target
+        tmp_path.replace(output_path)
+        _write_float32_cache_meta(meta_path, source_identity)
+    finally:
+        if tmp_path.exists():  # pragma: no cover - best-effort cleanup after failed conversion.
+            tmp_path.unlink()
+
+
 def _default_precomputed_features_path() -> Path:
     return default_cache_dir() / "pretrained_features" / "aet" / "cifar_aet.npz"
 
@@ -109,7 +187,7 @@ def _feature_dim(layer: str) -> int:
 
 
 def make_aet_regressor(torch: Any) -> Any:
-    """Build the CIFAR AET Network-In-Network regressor used by the official code."""
+    """Build the CIFAR AET Network-In-Network regressor."""
 
     nn = torch.nn
     functional = torch.nn.functional
@@ -214,7 +292,7 @@ def make_aet_regressor(torch: Any) -> Any:
 
 @dataclass
 class AetStep:
-    """Extract CIFAR AET features from an official/external AET checkpoint."""
+    """Extract CIFAR AET features from an AET checkpoint."""
 
     source: str = "checkpoint"
     preset: str = "poisson_cifar10_projective"
@@ -426,7 +504,7 @@ class AetStep:
         if not checkpoint_path.exists():
             raise PreprocessValidationError(
                 "AetStep checkpoint not found at "
-                f"{checkpoint_path}. Put the official AET checkpoint there or set checkpoint_path."
+                f"{checkpoint_path}. Put the AET checkpoint there or set checkpoint_path."
             )
         torch = require_optional(
             module="torch",
@@ -488,6 +566,11 @@ class AetStep:
         extracted_npy_path = self._extracted_npy_path(features_path)
         if not extracted_npy_path.exists():
             _extract_single_npy_from_npz(features_path, extracted_npy_path)
+        features_npy_path = extracted_npy_path
+        probe = np.load(features_npy_path, mmap_mode="r", allow_pickle=False)
+        if probe.dtype != np.float32:
+            features_npy_path = _float32_npy_cache_path(extracted_npy_path)
+            _ensure_float32_npy(extracted_npy_path, features_npy_path)
 
         labels = np.asarray(_load_npz_member(labels_path, "labels"), dtype=np.int64)
         expected_rows = int(self.expected_rows)
@@ -497,7 +580,7 @@ class AetStep:
             )
         indices, row_offset = self._resolve_precomputed_indices(labels, store.require("raw.y"))
 
-        features = np.load(extracted_npy_path, mmap_mode="r", allow_pickle=False)
+        features = np.load(features_npy_path, mmap_mode="r", allow_pickle=False)
         if int(features.shape[0]) != expected_rows:
             raise PreprocessValidationError(
                 f"Expected {expected_rows} AET rows, got {features.shape}"
@@ -507,21 +590,25 @@ class AetStep:
         else:
             start = int(indices[0])
             if np.array_equal(indices, np.arange(start, start + int(indices.size))):
-                Z = np.asarray(features[start : start + int(indices.size)], dtype=np.float32)
+                Z = np.array(
+                    features[start : start + int(indices.size)],
+                    dtype=np.float32,
+                    copy=True,
+                )
             else:
-                Z = np.asarray(features[indices], dtype=np.float32)
+                Z = np.array(features[indices], dtype=np.float32, copy=True)
 
         if self.unit_normalize:
             norms = np.linalg.norm(Z, axis=1, keepdims=True)
             norms = np.where(norms > 1.0e-12, norms, 1.0).astype(np.float32)
-            Z = (Z / norms).astype(np.float32, copy=False)
+            Z /= norms
 
         features_sha = _file_sha256(features_path)
         labels_sha = _file_sha256(labels_path)
         self.precomputed_info_ = self._build_precomputed_info(
             features_path=features_path,
             labels_path=labels_path,
-            extracted_npy_path=extracted_npy_path,
+            extracted_npy_path=features_npy_path,
             features_sha256=features_sha,
             labels_sha256=labels_sha,
             row_offset=row_offset,

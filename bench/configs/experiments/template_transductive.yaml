@@ -1,88 +1,89 @@
 run:
-  name: "mnist_label_propagation_knn"
+  name: mnist_label_propagation_knn
   seed: 7
-  # Optional sweep mode (same config, seed changed per run):
-  # seeds: [1, 2, 3, 4, 5]
-  output_dir: "runs"
+  output_dir: runs
   log_level: detailed
-
 limits:
   profile: auto
-
 dataset:
-  id: "torchvision:MNIST"
-
+  id: torchvision:MNIST
 sampling:
   seed: 7
   plan:
     split:
-      kind: "holdout"
+      kind: holdout
       test_fraction: 0.2
       val_fraction: 0.1
       stratify: true
       shuffle: true
     labeling:
-      mode: "count"
+      mode: count
       value: 100
-      strategy: "balanced"
+      strategy: balanced
     imbalance:
-      kind: "none"
+      kind: none
     policy:
       respect_official_test: true
-
 preprocess:
   seed: 7
-  fit_on: "train_labeled"
+  fit_on: train_labeled
   cache: true
   plan:
-    output_key: "features.X"
+    output_key: features.X
     steps:
-      - id: "labels.encode"
-      - id: "vision.ensure_num_channels"
-        params:
-          num_channels: 3
-      - id: "vision.channels_order"
-        params:
-          order: "NCHW"
-      - id: "vision.resize"
-        params:
-          height: 28
-          width: 28
-      - id: "vision.normalize"
-        params:
-          mean: [123.675, 116.28, 103.53]
-          std: [58.395, 57.12, 57.375]
-      - id: "embeddings.auto"
-        params:
-          model_id_vision: "torchvision:resnet18"
-          batch_size: 64
-      - id: "core.to_numpy"
-
+    - id: labels.encode
+    - id: vision.ensure_num_channels
+      params:
+        num_channels: 3
+    - id: vision.channels_order
+      params:
+        order: NCHW
+    - id: vision.resize
+      params:
+        height: 28
+        width: 28
+    - id: vision.normalize
+      params:
+        mean:
+        - 123.675
+        - 116.28
+        - 103.53
+        std:
+        - 58.395
+        - 57.12
+        - 57.375
+    - id: embeddings.auto
+      params:
+        model_id_vision: torchvision:resnet18
+        batch_size: 64
+    - id: core.to_numpy
 graph:
   enabled: true
   seed: 7
   spec:
-    scheme: "knn"
-    metric: "cosine"
+    scheme: knn
+    metric: cosine
     k: 30
-    symmetrize: "mutual"
+    symmetrize: mutual
     weights:
-      kind: "heat"
+      kind: heat
       sigma: 0.5
-    normalize: "rw"
+    normalize: rw
     self_loops: true
-    backend: "auto"
+    backend: auto
     chunk_size: 512
-    feature_field: "features.X"
-
+    feature_field: features.X
 method:
-  kind: "transductive"
-  id: "label_propagation"
+  kind: transductive
+  id: label_propagation
   device:
-    device: "auto"
-    dtype: "float32"
+    device: auto
+    dtype: float32
   params: {}
-
 evaluation:
-  report_splits: ["val", "test"]
-  metrics: ["accuracy", "macro_f1"]
+  report_splits:
+  - val
+  - test
+  metrics:
+  - accuracy
+  - macro_f1

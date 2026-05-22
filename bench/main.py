@@ -1079,7 +1079,12 @@ def run_experiment(config_path: Path, *, num_runs: int | None = None) -> int:
     run_results: list[SingleRunResult] = []
     for i, seed in enumerate(seeds, start=1):
         run_name = sweep_run_name(cfg.run.name, seed=seed, index=i - 1, total=len(seeds))
-        sweep_raw = apply_global_seed(raw, seed=seed, run_name=run_name)
+        sweep_raw = apply_global_seed(
+            raw,
+            seed=seed,
+            run_name=run_name,
+            seeded_sections=cfg.run.seeded_sections,
+        )
         sweep_run = sweep_raw.get("run")
         if not isinstance(sweep_run, dict):
             sweep_run = {}
