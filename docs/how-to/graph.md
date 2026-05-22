@@ -68,7 +68,7 @@ graph:
     feature_field: features.X
 ```
 
-To reproduce the Poisson-learning MNIST VAE branch, use raw 28x28 pixels, flatten them to 784 dimensions, add `core.vae` with the paper preset, and point graph construction at `features.vae`:
+For the Poisson-learning MNIST VAE branch, use raw 28x28 pixels, flatten them to 784 dimensions, add `core.vae` with the paper preset, and point graph construction at `features.vae`:
 
 ```yaml
 preprocess:
@@ -111,7 +111,7 @@ Each benchmark run logs the VAE fingerprint, cache path, cache hit status, fit s
 `preset: poisson_mnist` resolves to the Poisson-style VAE: global min-max scaling, `784 -> 400 -> 20 -> 400 -> 784`, sigmoid decoder, BCE+KL loss, Adam `lr=1e-3`, batch size 128, 100 epochs.
 `preset: poisson_fashionmnist` uses the same settings with latent dimension 30.
 The Poisson paper does not use this VAE for CIFAR-10; it uses an AutoEncodingTransformations embedding instead. <sup class="cite"><a href="#source-8">[8]</a></sup>
-For the CIFAR-10 branch, prefer the precomputed AET artifact when reproducing Poisson-style graph experiments.
+For the CIFAR-10 branch, prefer the precomputed AET artifact for Poisson-style graph experiments.
 Store `cifar_aet.npz` and `cifar_labels.npz` outside git under `modssc_cache/preprocess/pretrained_features/aet/`.
 The first run extracts the compressed `cifar_aet.npz` into `cifar_aet.npy`, then memory maps that `.npy` so subsequent runs only read the rows needed by the current train/test subset:
 
@@ -145,7 +145,7 @@ graph:
 `knn_gaussian` uses a local-scale Gaussian kernel, `exp(-4*d_ij^2/d_k(x_i)^2)`, and `symmetrize: mean` applies `(W + W.T) / 2`.
 Each benchmark run logs the AET artifact path/hash, row offset, unit-normalization flag, and `uses_labels: false` under `artifacts.preprocess.logged_artifacts["features.aet.info"]`; train/test offsets are available under `artifacts.preprocess.logged_artifacts.by_split`.
 The mode uses labels only to align rows with the expected train/test order; it does not use labels to learn or alter the embedding.
-The pipeline also supports a checkpoint-backed `vision.aet` mode for official/external PyTorch AET checkpoints, but the official AET README documents CIFAR-10 training rather than publishing a CIFAR-10 checkpoint. <sup class="cite"><a href="#source-9">[9]</a></sup>
+The pipeline also supports a checkpoint-backed `vision.aet` mode for PyTorch AET checkpoints, but the linked AET README documents CIFAR-10 training rather than publishing a CIFAR-10 checkpoint. <sup class="cite"><a href="#source-9">[9]</a></sup>
 
 
 ## Pitfalls

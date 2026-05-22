@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import os
 
 import numpy as np
 import pytest
@@ -72,6 +73,54 @@ def test_aet_private_helpers_and_validation_errors(tmp_path) -> None:
     assert default_checkpoint.name == "net_epoch_1499.pth"
     assert cached_root._features_path().name == "cifar_aet.npz"
     assert cached_root._labels_path().name == "cifar_labels.npz"
+
+
+def test_aet_float32_npy_cache_helper(tmp_path) -> None:
+    source32 = tmp_path / "source32.npy"
+    output32 = tmp_path / "source32.float32.npy"
+    np.save(source32, np.ones((2, 3), dtype=np.float32))
+    aet_module._ensure_float32_npy(source32, output32)
+    assert not output32.exists()
+
+    source64 = tmp_path / "source64.npy"
+    valid_output = tmp_path / "valid.float32.npy"
+    np.save(source64, np.arange(6, dtype=np.float64).reshape(2, 3))
+    np.save(valid_output, np.full((2, 3), 9.0, dtype=np.float32))
+    aet_module._ensure_float32_npy(source64, valid_output)
+    meta_path = aet_module._float32_npy_cache_meta_path(valid_output)
+    assert meta_path.exists()
+    np.testing.assert_array_equal(
+        np.load(valid_output, allow_pickle=False),
+        np.arange(6, dtype=np.float32).reshape(2, 3),
+    )
+
+    aet_module._ensure_float32_npy(source64, valid_output)
+    np.testing.assert_array_equal(
+        np.load(valid_output, allow_pickle=False),
+        np.arange(6, dtype=np.float32).reshape(2, 3),
+    )
+
+    np.save(source64, np.arange(6, 12, dtype=np.float64).reshape(2, 3))
+    mtime_ns = source64.stat().st_mtime_ns + 1_000_000_000
+    os.utime(source64, ns=(mtime_ns, mtime_ns))
+    aet_module._ensure_float32_npy(source64, valid_output)
+    np.testing.assert_array_equal(
+        np.load(valid_output, allow_pickle=False),
+        np.arange(6, 12, dtype=np.float32).reshape(2, 3),
+    )
+
+    rebuilt_output = tmp_path / "rebuilt.float32.npy"
+    np.save(rebuilt_output, np.zeros((1, 3), dtype=np.float32))
+    stale_tmp = rebuilt_output.with_suffix(rebuilt_output.suffix + ".tmp")
+    stale_tmp.write_bytes(b"stale")
+    aet_module._ensure_float32_npy(source64, rebuilt_output)
+    assert not stale_tmp.exists()
+    rebuilt = np.load(rebuilt_output, allow_pickle=False)
+    assert rebuilt.dtype == np.float32
+    np.testing.assert_array_equal(
+        rebuilt,
+        np.arange(6, 12, dtype=np.float32).reshape(2, 3),
+    )
 
 
 def test_aet_missing_checkpoint(tmp_path) -> None:

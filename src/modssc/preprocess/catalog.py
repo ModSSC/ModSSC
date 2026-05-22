@@ -276,8 +276,8 @@ BUILTIN_STEPS: tuple[StepSpec, ...] = (
         import_path="modssc.preprocess.steps.vision.aet:AetStep",
         kind="featurizer",
         description=(
-            "Extract CIFAR Auto-Encoding Transformations features from an official/external "
-            "AET checkpoint and expose them as features.aet."
+            "Extract CIFAR Auto-Encoding Transformations features from an AET checkpoint "
+            "and expose them as features.aet."
         ),
         required_extra="preprocess",
         modalities=("vision",),

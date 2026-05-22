@@ -102,7 +102,7 @@ Every paper-backed method now has a `paper_pdf` value in its `MethodInfo`. Publi
 | `daso` | [PDF](https://openaccess.thecvf.com/content/CVPR2022/papers/Oh_DASO_Distribution-Aware_Semantics-Oriented_Pseudo-Label_for_Imbalanced_Semi-Supervised_Learning_CVPR_2022_paper.pdf) |
 | `deep_co_training` | [PDF](https://arxiv.org/pdf/1803.05984) |
 | `defixmatch` | [PDF](https://openreview.net/pdf?id=TN9gQ4x0Ep3) |
-| `democratic_co_learning` | [PDF](<../article_code/inductive/2004-Democratic colearning/21-2004-Democratic colearning.pdf>) |
+| `democratic_co_learning` | local archive: `docs/article_code/inductive/2004-Democratic colearning/21-2004-Democratic colearning.pdf` |
 | `fixmatch` | [PDF](https://arxiv.org/pdf/2001.07685) |
 | `flexmatch` | [PDF](https://arxiv.org/pdf/2110.08263) |
 | `free_match` | [PDF](https://arxiv.org/pdf/2205.07246) |
@@ -111,10 +111,10 @@ Every paper-backed method now has a `paper_pdf` value in its `MethodInfo`. Publi
 | `mixmatch` | [PDF](https://arxiv.org/pdf/1905.02249) |
 | `noisy_student` | [PDF](https://openaccess.thecvf.com/content_CVPR_2020/papers/Xie_Self-Training_With_Noisy_Student_Improves_ImageNet_Classification_CVPR_2020_paper.pdf) |
 | `pi_model` | [PDF](https://arxiv.org/pdf/1610.02242) |
-| `pseudo_label` | [PDF](<../article_code/inductive/2013-Pseudo Label/8_pseudo_label.pdf>) |
+| `pseudo_label` | local archive: `docs/article_code/inductive/2013-Pseudo Label/8_pseudo_label.pdf` |
 | `s4vm` | [PDF](https://icml.cc/Conferences/2011/papers/548_icmlpaper.pdf) |
-| `self_training` | [PDF](<../article_code/inductive/1995-Self Training/4-1995-Unsupervised word sense disambiguation rivaling supervised methods.pdf>) |
-| `setred` | [PDF](<../article_code/inductive/2005-SETRED selftraining with editing/9-2005-SETRED selftraining with editing.pdf>) |
+| `self_training` | local archive: `docs/article_code/inductive/1995-Self Training/4-1995-Unsupervised word sense disambiguation rivaling supervised methods.pdf` |
+| `setred` | local archive: `docs/article_code/inductive/2005-SETRED selftraining with editing/9-2005-SETRED selftraining with editing.pdf` |
 | `simclr_v2` | [PDF](https://arxiv.org/pdf/2006.10029) |
 | `softmatch` | [PDF](https://openreview.net/pdf?id=ymt1zQXBDiF) |
 | `supervised` | n/a: ModSSC baseline, not a paper-backed method |
@@ -136,14 +136,14 @@ Every paper-backed method now has a `paper_pdf` value in its `MethodInfo`. Publi
 | `gcnii` | [PDF](https://arxiv.org/pdf/2007.02133) |
 | `grafn` | [PDF](https://arxiv.org/pdf/2204.01303) |
 | `grand` | [PDF](https://arxiv.org/pdf/2005.11079) |
-| `graph_mincuts` | [PDF](<../article_code/transductive/2001-Graph Mincuts/Learning from Labeled and Unlabeled Data using Graph Mincuts.pdf>) |
+| `graph_mincuts` | local archive: `docs/article_code/transductive/2001-Graph Mincuts/Learning from Labeled and Unlabeled Data using Graph Mincuts.pdf` |
 | `graphhop` | [PDF](https://arxiv.org/pdf/2101.02326) |
 | `graphsage` | [PDF](https://arxiv.org/pdf/1706.02216) |
 | `h_gcn` | [PDF](https://arxiv.org/pdf/1902.06667) |
-| `label_propagation` | [PDF](<../article_code/transductive/2002-Label Propagation/Learning from Labeled and Unlabeled Data with Label Propagation.pdf>) |
-| `label_spreading` | [PDF](<../article_code/transductive/2004-Label Spreading/Learning with Local and Global Consistency.pdf>) |
-| `laplace_learning` | [PDF](<../article_code/transductive/2003-Laplace Learning/Semi-Supervised Learning Using Gaussian Fields and Harmonic Functions.pdf>) |
-| `lazy_random_walk` | [PDF](<../article_code/transductive/2004-Lazy Random Walk/Learning from labeled and labeled data using Random Walks.pdf>) |
+| `label_propagation` | local archive: `docs/article_code/transductive/2002-Label Propagation/Learning from Labeled and Unlabeled Data with Label Propagation.pdf` |
+| `label_spreading` | local archive: `docs/article_code/transductive/2004-Label Spreading/Learning with Local and Global Consistency.pdf` |
+| `laplace_learning` | local archive: `docs/article_code/transductive/2003-Laplace Learning/Semi-Supervised Learning Using Gaussian Fields and Harmonic Functions.pdf` |
+| `lazy_random_walk` | local archive: `docs/article_code/transductive/2004-Lazy Random Walk/Learning from labeled and labeled data using Random Walks.pdf` |
 | `n_gcn` | [PDF](https://proceedings.mlr.press/v115/abu-el-haija20a/abu-el-haija20a.pdf) |
 | `p_laplace_learning` | [PDF](https://arxiv.org/pdf/1901.05031) |
 | `planetoid` | [PDF](https://arxiv.org/pdf/1603.08861) |

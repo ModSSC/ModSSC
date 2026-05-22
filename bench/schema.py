@@ -120,6 +120,7 @@ class RunConfig:
     seed: int
     output_dir: str
     seeds: list[int] | None = None
+    seeded_sections: list[str] | None = None
     fail_fast: bool = True
     log_level: str | None = None
     benchmark_mode: bool = False
@@ -279,6 +280,7 @@ class ExperimentConfig:
                 "name",
                 "seed",
                 "seeds",
+                "seeded_sections",
                 "output_dir",
                 "fail_fast",
                 "log_level",
@@ -294,11 +296,16 @@ class ExperimentConfig:
                 "run.fail_fast must be true when run.benchmark_mode=true",
                 code="E_BENCH_FAIL_FAST_REQUIRED",
             )
+        seeded_sections = None
+        if "seeded_sections" in run:
+            seeded_sections = [str(item) for item in _optional_list(run, "seeded_sections")]
+
         run_cfg = RunConfig(
             name=_require_str(run, "name", name="run"),
             seed=int(run.get("seed", 0)),
             output_dir=str(run.get("output_dir", "modssc_cache/output")),
             seeds=_optional_seed_list(run, "seeds", name="run"),
+            seeded_sections=seeded_sections,
             fail_fast=fail_fast,
             log_level=_optional_str(run, "log_level"),
             benchmark_mode=benchmark_mode,

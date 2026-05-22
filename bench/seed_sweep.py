@@ -17,6 +17,7 @@ def apply_global_seed(
     *,
     seed: int,
     run_name: str | None = None,
+    seeded_sections: tuple[str, ...] | list[str] | None = None,
 ) -> dict[str, Any]:
     out = deepcopy(dict(raw))
     run = out.get("run")
@@ -28,7 +29,14 @@ def apply_global_seed(
     if run_name is not None:
         run["name"] = str(run_name)
 
-    for section in _SEEDED_SECTIONS:
+    sections = (
+        _SEEDED_SECTIONS if seeded_sections is None else tuple(str(s) for s in seeded_sections)
+    )
+    unknown = sorted(set(sections) - set(_SEEDED_SECTIONS))
+    if unknown:
+        raise ValueError(f"Unknown seeded sections: {unknown!r}")
+
+    for section in sections:
         block = out.get(section)
         if isinstance(block, dict):
             block["seed"] = int(seed)
