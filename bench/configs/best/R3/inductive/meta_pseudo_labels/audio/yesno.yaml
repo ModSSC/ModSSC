@@ -10,11 +10,10 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/R3/inductive/meta_pseudo_labels/audio/yesno
   fail_fast: true
   log_level: detailed
-limits:
-  profile: auto
+  benchmark_mode: true
 dataset:
   id: yesno
-  download: true
+  download: false
   cache_dir: ${MODSSC_DATASET_CACHE_DIR}
 sampling:
   seed: 4
@@ -49,7 +48,7 @@ preprocess:
     - id: labels.encode
     - id: labels.to_torch
       params:
-        device: auto
+        device: cuda
         dtype: int64
     - id: audio.load_waveform
       params:
@@ -58,7 +57,7 @@ preprocess:
         max_length: 16000
     - id: core.to_torch
       params:
-        device: auto
+        device: cuda
         dtype: float32
 augmentation:
   enabled: true
@@ -82,7 +81,7 @@ method:
   kind: inductive
   id: meta_pseudo_labels
   device:
-    device: auto
+    device: cuda
     dtype: float32
   params:
     uda_weight: 1.0

@@ -39,7 +39,7 @@ python -m bench.main --config bench/configs/experiments/toy_inductive.yaml --num
 
 ## Repository layout
 - [`bench/configs/experiments/`](https://github.com/ModSSC/ModSSC/tree/main/bench/configs/experiments): authored examples, tutorial configs, and runnable templates
-- [`bench/configs/best/`](https://github.com/ModSSC/ModSSC/tree/main/bench/configs/best): curated benchmark suites and command listings
+- [`bench/configs/best/`](https://github.com/ModSSC/ModSSC/tree/main/bench/configs/best): curated benchmark suites and manifests
 - local `bench/` deployment helpers such as `bench/slurm/`: cluster launchers and job structure for internal or site-specific environments
 
 These directories serve different audiences. Do not treat them as one undifferentiated config bucket.
@@ -52,6 +52,7 @@ If your config uses environment placeholders such as `${MODSSC_OUTPUT_DIR}`, exp
 export MODSSC_OUTPUT_DIR=/tmp/modssc_runs
 export MODSSC_DATASET_CACHE_DIR=/tmp/modssc_cache/datasets
 export MODSSC_PREPROCESS_CACHE_DIR=/tmp/modssc_cache/preprocess
+export MODSSC_GRAPH_CACHE_DIR=/tmp/modssc_cache/graphs
 ```
 
 If one of these placeholders is missing at runtime, config loading fails fast with an explicit error.
@@ -62,10 +63,9 @@ You can also set one global cache root for runtime caches:
 export MODSSC_CACHE_ROOT=/tmp/modssc_cache
 ```
 
-Optional graph-specific overrides:
+Optional graph-view override:
 
 ```bash
-export MODSSC_GRAPH_CACHE_DIR=/tmp/modssc_cache/graphs
 export MODSSC_GRAPH_VIEWS_CACHE_DIR=/tmp/modssc_cache/graph_views
 ```
 

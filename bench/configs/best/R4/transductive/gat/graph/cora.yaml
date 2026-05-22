@@ -10,11 +10,10 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/R4/transductive/gat/graph/cora
   fail_fast: true
   log_level: detailed
-limits:
-  profile: auto
+  benchmark_mode: true
 dataset:
   id: cora
-  download: true
+  download: false
   cache_dir: ${MODSSC_DATASET_CACHE_DIR}
 sampling:
   seed: 5
@@ -57,7 +56,7 @@ method:
   kind: transductive
   id: gat
   device:
-    device: auto
+    device: cuda
     dtype: float32
   params:
     head_dim: 8
@@ -69,10 +68,10 @@ method:
     max_epochs: 200
     patience: 100
     add_self_loops: true
-    projected_feature_dropout: true
-    selection_metric: val_acc_then_loss_reset_any
+    projected_feature_dropout: false
+    selection_metric: val_loss
     output_heads: 1
-    weight_decay_scope: non_bias
+    weight_decay_scope: all
 evaluation:
   split_for_model_selection: val
   report_splits:

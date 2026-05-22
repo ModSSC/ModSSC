@@ -10,11 +10,10 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/R4/transductive/p_laplace_learning/graph/citeseer
   fail_fast: true
   log_level: detailed
-limits:
-  profile: auto
+  benchmark_mode: true
 dataset:
   id: citeseer
-  download: true
+  download: false
   cache_dir: ${MODSSC_DATASET_CACHE_DIR}
 sampling:
   seed: 5
@@ -53,7 +52,7 @@ method:
   kind: transductive
   id: p_laplace_learning
   device:
-    device: auto
+    device: cpu
     dtype: float32
   params:
     p: 3.0

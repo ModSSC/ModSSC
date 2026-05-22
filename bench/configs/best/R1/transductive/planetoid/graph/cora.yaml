@@ -10,11 +10,10 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/R1/transductive/planetoid/graph/cora
   fail_fast: true
   log_level: detailed
-limits:
-  profile: auto
+  benchmark_mode: true
 dataset:
   id: cora
-  download: true
+  download: false
   cache_dir: ${MODSSC_DATASET_CACHE_DIR}
 sampling:
   seed: 5
@@ -53,7 +52,7 @@ method:
   kind: transductive
   id: planetoid
   device:
-    device: auto
+    device: cuda
     dtype: float32
   params:
     embedding_dim: 128

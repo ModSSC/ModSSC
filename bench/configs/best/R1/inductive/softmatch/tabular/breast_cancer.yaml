@@ -10,11 +10,10 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/R1/inductive/softmatch/tabular/breast_cancer
   log_level: detailed
   fail_fast: true
-limits:
-  profile: auto
+  benchmark_mode: true
 dataset:
   id: breast_cancer
-  download: true
+  download: false
   cache_dir: ${MODSSC_DATASET_CACHE_DIR}
 sampling:
   seed: 1
@@ -49,14 +48,14 @@ preprocess:
     - id: labels.encode
     - id: labels.to_torch
       params:
-        device: auto
+        device: cuda
         dtype: int64
     - id: core.ensure_2d
     - id: tabular.impute
     - id: tabular.standard_scaler
     - id: core.to_torch
       params:
-        device: auto
+        device: cuda
         dtype: float32
 augmentation:
   enabled: true
@@ -77,7 +76,7 @@ method:
   kind: inductive
   id: softmatch
   device:
-    device: auto
+    device: cuda
     dtype: float32
   params:
     lambda_u: 1.0
@@ -89,9 +88,10 @@ method:
     dist_uniform: true
     hard_label: true
     use_cat: false
-    batch_size: 128
+    batch_size: 64
     max_epochs: 50
     detach_target: true
+    mu: 7
   model:
     classifier_id: mlp
     classifier_backend: torch

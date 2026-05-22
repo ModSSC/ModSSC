@@ -10,11 +10,10 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/R3/inductive/democratic_co_learning/text/yelp_polarity
   log_level: detailed
   fail_fast: true
-limits:
-  profile: auto
+  benchmark_mode: true
 dataset:
   id: yelp_polarity
-  download: true
+  download: false
   cache_dir: ${MODSSC_DATASET_CACHE_DIR}
   options:
     text_column: text
@@ -53,7 +52,7 @@ preprocess:
     - id: labels.encode
     - id: labels.to_torch
       params:
-        device: auto
+        device: cuda
         dtype: int64
     - id: text.ensure_strings
     - id: text.vocab_tokenizer
@@ -62,13 +61,13 @@ preprocess:
         vocab_size: 20000
     - id: core.to_torch
       params:
-        device: auto
+        device: cuda
         dtype: float32
 method:
   kind: inductive
   id: democratic_co_learning
   device:
-    device: auto
+    device: cuda
     dtype: float32
   params:
     classifier_id: lstm_scratch

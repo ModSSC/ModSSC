@@ -217,7 +217,7 @@ datasets:
         - 28134
         - 28134
         effective_count_mean: 7033.0
-    config_count: 306
+    config_count: 294
   ag_news:
     dataset: ag_news
     dataset_id: ag_news
@@ -436,7 +436,7 @@ datasets:
         - 86400
         - 86400
         effective_count_mean: 21600.0
-    config_count: 294
+    config_count: 282
   amazon_polarity:
     dataset: amazon_polarity
     dataset_id: amazon_polarity
@@ -655,7 +655,7 @@ datasets:
         - 2592000
         - 2592000
         effective_count_mean: 648000.0
-    config_count: 306
+    config_count: 294
   amazon_reviews_multi_en:
     dataset: amazon_reviews_multi_en
     dataset_id: amazon_reviews_multi_en
@@ -722,7 +722,7 @@ datasets:
       source_legacy_regime: p01
     excluded_regimes: []
     legacy_regimes: {}
-    config_count: 294
+    config_count: 282
   breast_cancer:
     dataset: breast_cancer
     dataset_id: breast_cancer
@@ -924,7 +924,7 @@ datasets:
         - 402
         - 402
         effective_count_mean: 101.0
-    config_count: 255
+    config_count: 245
   cifar10:
     dataset: cifar10
     dataset_id: cifar10
@@ -1143,7 +1143,7 @@ datasets:
         - 36000
         - 36000
         effective_count_mean: 9000.0
-    config_count: 294
+    config_count: 282
   cifar100:
     dataset: cifar100
     dataset_id: cifar100
@@ -1345,7 +1345,7 @@ datasets:
         - 36000
         - 36000
         effective_count_mean: 9000.0
-    config_count: 245
+    config_count: 235
   citeseer:
     dataset: citeseer
     dataset_id: citeseer
@@ -1546,7 +1546,7 @@ datasets:
         - 96
         - 96
         effective_count_mean: 24.0
-    config_count: 196
+    config_count: 188
   cora:
     dataset: cora
     dataset_id: cora
@@ -1747,7 +1747,7 @@ datasets:
         - 112
         - 112
         effective_count_mean: 28.0
-    config_count: 196
+    config_count: 188
   dbpedia_14:
     dataset: dbpedia_14
     dataset_id: dbpedia_14
@@ -1966,7 +1966,7 @@ datasets:
         - 403200
         - 403200
         effective_count_mean: 100800.0
-    config_count: 294
+    config_count: 282
   imdb:
     dataset: imdb
     dataset_id: imdb
@@ -2185,7 +2185,7 @@ datasets:
         - 18000
         - 18000
         effective_count_mean: 4500.0
-    config_count: 306
+    config_count: 294
   iris:
     dataset: iris
     dataset_id: iris
@@ -2370,7 +2370,7 @@ datasets:
         - 86
         - 86
         effective_count_mean: 22.0
-    config_count: 192
+    config_count: 188
   mnist:
     dataset: mnist
     dataset_id: mnist
@@ -2589,7 +2589,7 @@ datasets:
         - 43200
         - 43200
         effective_count_mean: 10800.0
-    config_count: 294
+    config_count: 282
   pubmed:
     dataset: pubmed
     dataset_id: pubmed
@@ -2790,7 +2790,7 @@ datasets:
         - 48
         - 48
         effective_count_mean: 12.0
-    config_count: 196
+    config_count: 188
   speechcommands:
     dataset: speechcommands
     dataset_id: speechcommands
@@ -3009,7 +3009,7 @@ datasets:
         - 61087
         - 61087
         effective_count_mean: 15272.0
-    config_count: 294
+    config_count: 282
   stl10:
     dataset: stl10
     dataset_id: stl10
@@ -3067,7 +3067,7 @@ datasets:
       source_legacy_regime: p01
     excluded_regimes: []
     legacy_regimes: {}
-    config_count: 245
+    config_count: 235
   svhn:
     dataset: svhn
     dataset_id: svhn
@@ -3133,7 +3133,7 @@ datasets:
       source_legacy_regime: p01
     excluded_regimes: []
     legacy_regimes: {}
-    config_count: 294
+    config_count: 282
   toy:
     dataset: toy
     dataset_id: toy
@@ -3334,7 +3334,7 @@ datasets:
         - 34
         - 34
         effective_count_mean: 9.0
-    config_count: 192
+    config_count: 188
   yelp_polarity:
     dataset: yelp_polarity
     dataset_id: yelp_polarity
@@ -3401,7 +3401,7 @@ datasets:
       source_legacy_regime: p01
     excluded_regimes: []
     legacy_regimes: {}
-    config_count: 306
+    config_count: 294
   yelp_review_full:
     dataset: yelp_review_full
     dataset_id: yelp_review_full
@@ -3460,7 +3460,7 @@ datasets:
       source_legacy_regime: p01
     excluded_regimes: []
     legacy_regimes: {}
-    config_count: 245
+    config_count: 235
   yesno:
     dataset: yesno
     dataset_id: yesno
@@ -3662,5 +3662,5 @@ datasets:
         - 34
         - 34
         effective_count_mean: 9.0
-    config_count: 255
-written_config_count: 5499
+    config_count: 245
+written_config_count: 5285

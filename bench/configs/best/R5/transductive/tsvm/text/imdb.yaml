@@ -10,11 +10,10 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/R5/transductive/tsvm/text/imdb
   log_level: detailed
   fail_fast: true
-limits:
-  profile: auto
+  benchmark_mode: true
 dataset:
   id: imdb
-  download: true
+  download: false
   cache_dir: ${MODSSC_DATASET_CACHE_DIR}
   options:
     text_column: text
@@ -67,7 +66,7 @@ method:
   kind: transductive
   id: tsvm
   device:
-    device: auto
+    device: cpu
     dtype: float32
   params:
     max_iter: 10

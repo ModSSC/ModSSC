@@ -10,11 +10,10 @@ run:
   output_dir: ${MODSSC_OUTPUT_DIR}/R6/transductive/poisson_learning/text/yelp_polarity
   log_level: detailed
   fail_fast: true
-limits:
-  profile: auto
+  benchmark_mode: true
 dataset:
   id: yelp_polarity
-  download: true
+  download: false
   cache_dir: ${MODSSC_DATASET_CACHE_DIR}
   options:
     text_column: text
@@ -64,15 +63,15 @@ method:
   kind: transductive
   id: poisson_learning
   device:
-    device: auto
+    device: cpu
     dtype: float32
   params:
     backend: numpy
-    laplacian_kind: sym
-    eps: 1.0e-06
+    laplacian_kind: paper_normalized
+    eps: 0.0
     center_sources: true
-    tol: 1.0e-06
-    max_iter: 2000
+    tol: 0.001
+    max_iter: 1000
 evaluation:
   split_for_model_selection: val
   report_splits:
