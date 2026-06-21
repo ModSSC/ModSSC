@@ -1,0 +1,25 @@
+name: JOSS paper
+
+on:
+  push:
+    branches:
+      - joss-paper
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  paper:
+    runs-on: ubuntu-latest
+    name: Paper draft
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build paper
+        uses: openjournals/openjournals-draft-action@master
+        with:
+          journal: joss
+          paper-path: paper/paper.md
