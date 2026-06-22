@@ -25,6 +25,9 @@ from modssc.transductive.methods.classic.dynamic_label_propagation import (
 from modssc.transductive.methods.classic.dynamic_label_propagation import (
     _knn_matrix_numpy as _dlp_knn_numpy,
 )
+from modssc.transductive.methods.classic.dynamic_label_propagation import (
+    _normalize_transition_numpy as _dlp_normalize_transition_numpy,
+)
 from modssc.transductive.methods.classic.label_propagation import (
     LabelPropagationMethod,
     LabelPropagationSpec,
@@ -61,6 +64,9 @@ from modssc.transductive.methods.classic.lazy_random_walk import (
 if torch is not None:
     from modssc.transductive.methods.classic.dynamic_label_propagation import (
         _knn_matrix_torch as _dlp_knn_torch,
+    )
+    from modssc.transductive.methods.classic.dynamic_label_propagation import (
+        _normalize_transition_torch as _dlp_normalize_transition_torch,
     )
     from modssc.transductive.methods.classic.dynamic_label_propagation import (
         dynamic_label_propagation_torch,
@@ -1272,6 +1278,13 @@ def test_dynamic_label_propagation_knn_matrix_numpy_paths():
         _dlp_knn_numpy(np.zeros((3, 3), dtype=np.float32), 1)
 
 
+def test_dynamic_label_propagation_normalize_transition_numpy_paths():
+    P = np.array([[2.0, 0.0], [1.0, 1.0]], dtype=np.float32)
+    assert np.allclose(_dlp_normalize_transition_numpy(P), [[1.0, 0.0], [0.5, 0.5]])
+    with pytest.raises(ValueError, match="invalid transition weights"):
+        _dlp_normalize_transition_numpy(np.array([[np.nan, 1.0]], dtype=np.float32))
+
+
 @pytest.mark.parametrize(
     ("spec", "y", "labeled_mask", "edge_index", "edge_weight", "match"),
     [
@@ -1288,6 +1301,13 @@ def test_dynamic_label_propagation_knn_matrix_numpy_paths():
             np.array([True, False, True]),
             *_simple_graph(),
             "alpha must be non-negative",
+        ),
+        (
+            DynamicLabelPropagationSpec(lambda_value=-0.1),
+            np.array([0, 1, 0], dtype=np.int64),
+            np.array([True, False, True]),
+            *_simple_graph(),
+            "lambda_value must be non-negative",
         ),
         (
             DynamicLabelPropagationSpec(),
@@ -1346,6 +1366,7 @@ def test_dynamic_label_propagation_numpy_lambda_zero():
         spec=DynamicLabelPropagationSpec(k_neighbors=1, lambda_value=0.0, max_iter=1),
     )
     assert res.F.shape == (3, 2)
+    assert np.isfinite(res.F).all()
 
 
 def test_dynamic_label_propagation_numpy_default_spec():
@@ -1360,6 +1381,7 @@ def test_dynamic_label_propagation_numpy_default_spec():
         labeled_mask=labeled_mask,
     )
     assert res.F.shape == (3, 2)
+    assert np.isfinite(res.F).all()
 
 
 def test_dynamic_label_propagation_dispatch_invalid_backend():
@@ -1393,6 +1415,7 @@ def test_dynamic_label_propagation_torch_paths():
         device="cpu",
     )
     assert res.F.shape == (3, 2)
+    assert np.isfinite(res.F).all()
 
 
 @pytest.mark.skipif(torch is None, reason="torch not installed")
@@ -1420,6 +1443,15 @@ def test_dynamic_label_propagation_knn_matrix_torch_paths():
 
 
 @pytest.mark.skipif(torch is None, reason="torch not installed")
+def test_dynamic_label_propagation_normalize_transition_torch_paths():
+    P = torch.tensor([[2.0, 0.0], [1.0, 1.0]], dtype=torch.float32)
+    expected = torch.tensor([[1.0, 0.0], [0.5, 0.5]], dtype=torch.float32)
+    assert torch.allclose(_dlp_normalize_transition_torch(P), expected)
+    with pytest.raises(ValueError, match="invalid transition weights"):
+        _dlp_normalize_transition_torch(torch.tensor([[float("nan"), 1.0]]))
+
+
+@pytest.mark.skipif(torch is None, reason="torch not installed")
 @pytest.mark.parametrize(
     ("spec", "edge_index", "edge_weight", "y", "labeled_mask", "match"),
     [
@@ -1438,6 +1470,14 @@ def test_dynamic_label_propagation_knn_matrix_torch_paths():
             torch.tensor([0, 1, 0], dtype=torch.long),
             torch.tensor([True, False, True], dtype=torch.bool),
             "alpha must be non-negative",
+        ),
+        (
+            DynamicLabelPropagationSpec(lambda_value=-0.1),
+            torch.tensor([[0, 1], [1, 2]], dtype=torch.long),
+            torch.ones(2, dtype=torch.float32),
+            torch.tensor([0, 1, 0], dtype=torch.long),
+            torch.tensor([True, False, True], dtype=torch.bool),
+            "lambda_value must be non-negative",
         ),
         (
             DynamicLabelPropagationSpec(),

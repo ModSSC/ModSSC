@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on "Keep a Changelog", and this project adheres to Semantic Versioning.
 
+## 1.2.2
+### Fixed
+- Stabilized Dynamic Label Propagation by renormalizing dynamic transition matrices after each update and failing explicitly on invalid transition weights instead of returning non-finite scores.
+- Replaced torch sparse tensor coalescing in DGI and GNN graph helpers with deterministic duplicate-edge aggregation to avoid PyTorch sparse invariant warnings without disabling checks.
+
 ## 1.2.1
 ### Changed
 - Added benchmark seed-section control for reproducible ISO-style sweeps.

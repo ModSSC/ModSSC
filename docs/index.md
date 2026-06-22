@@ -44,7 +44,7 @@ ModSSC is a modular framework for semi-supervised classification across heteroge
 - [Troubleshooting](how-to/troubleshooting.md)
 
 ## Version
-Current version is `1.2.0`, sourced from [`src/modssc/__about__.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/__about__.py) and referenced by the Hatch version config in [`pyproject.toml`](https://github.com/ModSSC/ModSSC/blob/main/pyproject.toml). <sup class="cite"><a href="#source-18">[18]</a><a href="#source-2">[2]</a></sup>
+Current version is `1.2.2`, sourced from [`src/modssc/__about__.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/__about__.py) and referenced by the Hatch version config in [`pyproject.toml`](https://github.com/ModSSC/ModSSC/blob/main/pyproject.toml). <sup class="cite"><a href="#source-18">[18]</a><a href="#source-2">[2]</a></sup>
 
 
 ## Project status and support
