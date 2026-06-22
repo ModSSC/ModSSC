@@ -65,9 +65,11 @@ def _train_dgi(
     def _coalesce_edges(edge_index_t, edge_weight_t, *, n_nodes: int):
         src, dst = edge_index_t[0], edge_index_t[1]
         idx = torch.stack([dst, src], dim=0)
-        adj = torch.sparse_coo_tensor(idx, edge_weight_t, size=(n_nodes, n_nodes)).coalesce()
-        idx2 = adj.indices()
-        w2 = adj.values()
+        idx2, inverse = torch.unique(idx, dim=1, sorted=True, return_inverse=True)
+        w2 = torch.zeros(
+            (int(idx2.shape[1]),), device=edge_weight_t.device, dtype=edge_weight_t.dtype
+        )
+        w2.scatter_add_(0, inverse, edge_weight_t)
         dst2, src2 = idx2[0], idx2[1]
         return torch.stack([src2, dst2], dim=0), w2
 

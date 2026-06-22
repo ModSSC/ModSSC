@@ -53,6 +53,19 @@ def _knn_matrix_numpy(P0: np.ndarray, k: int) -> np.ndarray:
     return P
 
 
+def _normalize_transition_numpy(P: np.ndarray, eps: float = 1e-12) -> np.ndarray:
+    row_sum = P.sum(axis=1, keepdims=True)
+    invalid = (
+        (not bool(np.isfinite(P).all()))
+        or bool((P < 0.0).any())
+        or (not bool(np.isfinite(row_sum).all()))
+        or bool((row_sum <= eps).any())
+    )
+    if invalid:
+        raise ValueError("DynamicLabelPropagation produced invalid transition weights.")
+    return P / row_sum
+
+
 def dynamic_label_propagation_numpy(
     *,
     n_nodes: int,
@@ -68,6 +81,8 @@ def dynamic_label_propagation_numpy(
         raise ValueError("k_neighbors must be positive")
     if not (float(spec.alpha) >= 0.0):
         raise ValueError("alpha must be non-negative")
+    if not (float(spec.lambda_value) >= 0.0):
+        raise ValueError("lambda_value must be non-negative")
 
     edge_index, w = _validate_graph_inputs(
         n_nodes=n_nodes, edge_index=edge_index, edge_weight=edge_weight
@@ -90,8 +105,8 @@ def dynamic_label_propagation_numpy(
     if np.any(deg <= 0):
         raise ValueError("DynamicLabelPropagation requires a graph without isolated nodes.")
 
-    P0 = W / deg[:, None]
-    P = _knn_matrix_numpy(P0, int(spec.k_neighbors))
+    P0 = _normalize_transition_numpy(W / deg[:, None])
+    P = _normalize_transition_numpy(_knn_matrix_numpy(P0, int(spec.k_neighbors)))
 
     P_t = P0.copy()
     Y_t = Y0.copy()
@@ -105,6 +120,7 @@ def dynamic_label_propagation_numpy(
         P_t = P @ (P_t + float(spec.alpha) * (Y_t @ Y_t.T)) @ P.T
         if float(spec.lambda_value) != 0.0:
             P_t = P_t + float(spec.lambda_value) * identity
+        P_t = _normalize_transition_numpy(P_t)
 
         residual = float(np.max(np.abs(Y_next - Y_t)))
         Y_t = Y_next
@@ -130,6 +146,19 @@ def _knn_matrix_torch(P0: torch.Tensor, k: int) -> torch.Tensor:
     return P
 
 
+def _normalize_transition_torch(P: torch.Tensor, eps: float = 1e-12) -> torch.Tensor:
+    row_sum = P.sum(dim=1, keepdim=True)
+    invalid = (
+        (not bool(torch.isfinite(P).all().item()))
+        or bool((P < 0.0).any().item())
+        or (not bool(torch.isfinite(row_sum).all().item()))
+        or bool((row_sum <= float(eps)).any().item())
+    )
+    if invalid:
+        raise ValueError("DynamicLabelPropagation produced invalid transition weights.")
+    return P / row_sum
+
+
 def dynamic_label_propagation_torch(
     *,
     n_nodes: int,
@@ -147,6 +176,8 @@ def dynamic_label_propagation_torch(
         raise ValueError("k_neighbors must be positive")
     if not (float(spec.alpha) >= 0.0):
         raise ValueError("alpha must be non-negative")
+    if not (float(spec.lambda_value) >= 0.0):
+        raise ValueError("lambda_value must be non-negative")
 
     if edge_index.ndim != 2 or int(edge_index.shape[0]) != 2:
         raise ValueError("edge_index must have shape (2, E)")
@@ -180,8 +211,8 @@ def dynamic_label_propagation_torch(
     if bool((deg <= 0).any().item()):
         raise ValueError("DynamicLabelPropagation requires a graph without isolated nodes.")
 
-    P0 = W / deg.view(-1, 1)
-    P = _knn_matrix_torch(P0, int(spec.k_neighbors))
+    P0 = _normalize_transition_torch(W / deg.view(-1, 1))
+    P = _normalize_transition_torch(_knn_matrix_torch(P0, int(spec.k_neighbors)))
 
     P_t = P0.clone()
     Y_t = Y0.clone()
@@ -195,6 +226,7 @@ def dynamic_label_propagation_torch(
         P_t = P @ (P_t + float(spec.alpha) * (Y_t @ Y_t.T)) @ P.T
         if float(spec.lambda_value) != 0.0:
             P_t = P_t + float(spec.lambda_value) * identity
+        P_t = _normalize_transition_torch(P_t)
 
         residual = float(torch.max(torch.abs(Y_next - Y_t)).item())
         Y_t = Y_next

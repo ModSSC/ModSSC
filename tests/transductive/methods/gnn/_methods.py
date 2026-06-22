@@ -672,6 +672,19 @@ def test_common_utils():
     assert ei_out[1, 0] == 1
     assert ew_out[0] == 3.0
 
+    ei_empty = torch.empty((2, 0), dtype=torch.long)
+    ew_empty = torch.empty((0,), dtype=torch.float)
+    ei_empty_out, ew_empty_out = coalesce_edges(ei_empty, ew_empty, n_nodes=2)
+    assert ei_empty_out.shape == (2, 0)
+    assert ew_empty_out.shape == (0,)
+
+    with pytest.raises(ValueError, match="outside"):
+        coalesce_edges(
+            torch.tensor([[0, 2], [1, 0]], dtype=torch.long),
+            torch.ones(2, dtype=torch.float),
+            n_nodes=2,
+        )
+
     with pytest.raises(ValueError, match="X must be 2D"):
         _ensure_2d(np.zeros((2, 2, 2)))
 
