@@ -42,6 +42,46 @@ def test_knn_unknown_backend(sample_data):
         build_raw_edges(sample_data, spec=spec, seed=42)
 
 
+def test_knn_precomputed_backend(sample_data):
+    spec = GraphBuilderSpec(
+        scheme="knn",
+        metric="euclidean",
+        k=2,
+        include_self_in_knn=True,
+        backend="precomputed",
+        precomputed_path="/immutable/knn.npz",
+        precomputed_sha256="a" * 64,
+    )
+    with patch("modssc.graph.construction.builder.knn_edges_precomputed") as mock_backend:
+        mock_backend.return_value = (
+            np.array([[0, 1], [0, 1]], dtype=np.int64),
+            np.array([0.0, 0.0], dtype=np.float64),
+        )
+        build_raw_edges(sample_data, spec=spec, seed=42)
+
+    assert mock_backend.call_args.kwargs == {
+        "k": 2,
+        "metric": "euclidean",
+        "include_self": True,
+        "path": "/immutable/knn.npz",
+        "expected_sha256": "a" * 64,
+    }
+
+
+def test_knn_precomputed_backend_requires_both_pins(sample_data):
+    spec = MagicMock(spec=GraphBuilderSpec)
+    spec.scheme = "knn"
+    spec.k = 2
+    spec.backend = "precomputed"
+    spec.include_self_in_knn = True
+    spec.precomputed_path = None
+    spec.precomputed_sha256 = None
+    spec.validate.return_value = None
+
+    with pytest.raises(GraphValidationError, match="requires precomputed_path"):
+        build_raw_edges(sample_data, spec=spec, seed=42)
+
+
 def test_epsilon_missing_radius(sample_data):
     spec = MagicMock(spec=GraphBuilderSpec)
     spec.scheme = "epsilon"

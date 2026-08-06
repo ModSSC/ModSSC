@@ -1,0 +1,140 @@
+# Reproduction card: original Co-Training experiment from Table 2 of
+# Blum & Mitchell (COLT 1998), on the 1,051-page WebKB Course corpus.
+#
+# Published combined-classifier target: 0.050 mean test error over five runs.
+# Every run reserves exactly 263 examples for test, starts from 3 positive and
+# 9 negative labeled pages, and leaves 776 examples unlabeled.  One multinomial
+# Naive Bayes learner receives page full text; the other receives the anchor
+# text of inbound links.  A 75-example working pool is replenished after each
+# of 30 rounds; each learner selects one positive and three negative examples,
+# whose eight ordered proposals (first view, then second view) are appended to
+# the single labeled multiset L shared by both view-specific learners. If both
+# learners select the same source page, that page therefore occurs twice in L.
+#
+# Scientific ceiling: paper_approx.  The official archive is pinned by the
+# dataset provider, but the paper does not publish historical split indices,
+# RNG, tokenization, HTML/MIME parsing, vocabulary, smoothing, or tie-breaking
+# details.  This card pre-registers deterministic CountVectorizer tokenization,
+# alpha=1 multinomial NB, stable pool-order ties, the literal shared-L multiset
+# update from Table 1 (including duplicate or contradictory overlap proposals),
+# a vocabulary fit on L+U only (never test), and the algebraically equivalent
+# log-space computation of NB confidence and probability products to prevent
+# numerical underflow. No variant may be selected using test metrics.
+run:
+  name: reproduction_co_training_webkb_course_table2
+  seed: 1
+  seeds:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  seeded_sections:
+  - sampling
+  - preprocess
+  - views
+  output_dir: ${MODSSC_OUTPUT_DIR}/reproductions/co_training/webkb_course_table2
+  log_level: detailed
+  fail_fast: true
+  benchmark_mode: false
+dataset:
+  id: webkb_course_cotraining
+  download: false
+  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
+  options: {}
+sampling:
+  seed: 1
+  plan:
+    split:
+      kind: holdout
+      # 263 / 1,051.  The resulting training pool contains exactly 788 rows.
+      test_fraction: 0.25023786869647957
+      val_fraction: 0.0
+      stratify: true
+      shuffle: true
+    labeling:
+      # Proportional allocation on the stratified 788-row pool yields the
+      # published 9 negative / 3 positive labeled examples and 776 U examples.
+      mode: count
+      value: 12
+      strategy: proportional
+      min_per_class: 1
+      per_class: false
+      fixed_indices: null
+    imbalance:
+      kind: none
+    policy:
+      respect_official_test: true
+      use_official_graph_masks: true
+      allow_override_official: false
+preprocess:
+  seed: 1
+  # The fitted view vocabularies see the training pool L+U, never held-out test.
+  fit_on: train
+  cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
+  plan:
+    output_key: features.X
+    steps:
+    - id: labels.encode
+    - id: core.copy_raw
+    - id: core.to_numpy
+views:
+  seed: 1
+  plan:
+    views:
+    - name: fulltext
+      input_columns:
+        mode: indices
+        indices: [0]
+      preprocess:
+        output_key: features.X
+        steps:
+        - id: text.ensure_strings
+        - id: text.count_vectorizer
+          params:
+            dense: true
+            strip_html: true
+    - name: inlinks
+      input_columns:
+        mode: indices
+        indices: [1]
+      preprocess:
+        output_key: features.X
+        steps:
+        - id: text.ensure_strings
+        - id: text.count_vectorizer
+          params:
+            dense: true
+            strip_html: true
+method:
+  kind: inductive
+  id: co_training
+  profile: paper:blum-mitchell-1998-webkb-course-table2
+  device:
+    device: cpu
+    dtype: float32
+  params:
+    classifier_id: multinomial_nb
+    classifier_backend: sklearn
+    classifier_params:
+      alpha: 1.0
+      fit_prior: true
+    view_keys:
+    - fulltext
+    - inlinks
+    protocol: fixed_pool_binary
+    p: 1
+    n: 3
+    u: 75
+    k: 30
+    positive_label: 1
+    negative_label: 0
+    confidence_threshold: null
+evaluation:
+  split_for_model_selection: null
+  report_splits:
+  - test
+  metrics:
+  - accuracy
+  - macro_f1

@@ -19,6 +19,7 @@ from modssc.data_loader.api import (
     download_dataset,
     load_dataset,
     provider_names,
+    verify_dataset_content,
 )
 from modssc.data_loader.errors import (
     DataLoaderError,
@@ -61,6 +62,7 @@ __all__ = [
     "download_dataset",
     "load_dataset",
     "provider_names",
+    "verify_dataset_content",
     "get_output_format",
     "to_numpy",
     "split_to_numpy",

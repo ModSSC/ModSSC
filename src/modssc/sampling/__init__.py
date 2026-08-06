@@ -20,10 +20,14 @@ from modssc.sampling.errors import (
     SamplingValidationError,
 )
 from modssc.sampling.plan import (
+    FixedIndicesArtifactSpec,
     HoldoutSplitSpec,
     ImbalanceSpec,
     KFoldSplitSpec,
     LabelingSpec,
+    OrderedPartitionArtifactSpec,
+    PartitionSpec,
+    SamplingComponentSeeds,
     SamplingPlan,
     SamplingPolicy,
 )
@@ -35,6 +39,10 @@ __all__ = [
     "SamplingValidationError",
     "HoldoutSplitSpec",
     "KFoldSplitSpec",
+    "FixedIndicesArtifactSpec",
+    "OrderedPartitionArtifactSpec",
+    "PartitionSpec",
+    "SamplingComponentSeeds",
     "LabelingSpec",
     "ImbalanceSpec",
     "SamplingPolicy",

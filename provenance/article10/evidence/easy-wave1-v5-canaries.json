@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "release": {
+    "git_sha": "8cbee2e53a029c39d53b0f1557b68dbbd9653e77",
+    "tag": "replication-10m-easy-wave1-v5",
+    "environment_manifest": "evidence://modssc/build-manifests/8cbee2e53a02.json"
+  },
+  "administrative_retry": {
+    "cause": "MODSSC_ENVIRONMENT_LOCK_SHA256 was absent from the first array submission environment; generated wrappers refused before run-task or method import.",
+    "initial_arrays": {
+      "tri_training": 173795,
+      "grand": 173796,
+      "pseudo_label": 173798
+    },
+    "signed_retry_preflights": {
+      "tri_training": 173969,
+      "grand": 173970,
+      "pseudo_label": 173972
+    },
+    "signed_retry_arrays": {
+      "tri_training": 174049,
+      "grand": 174050,
+      "pseudo_label": 174052
+    }
+  },
+  "tri_training": {
+    "campaign_id": "article10-paper-tri-vote-canary-v1",
+    "manifest_sha256": "3c0d30b897282d89ed3920ac92145623ca49144131a5d2bbd89f1a2c0471366b",
+    "preflight_sha256": "75561eb3d580ad623638bfdcfabef6155bb74a60b1a90617f9bbe354b63a19f9",
+    "task_id": "f796812afbfaa8aa97c037e2d0eb31e23bb4ab792ea6a33e268cdbc7228f8c35",
+    "run_json_sha256": "7ba1cd24837798e94596262396e74a4d076b20d51890e812a4decdb4d8ed85e6",
+    "reconcile": "evidence://modssc/reconciliations/article10-paper-tri-vote-canary-v1-v5-002/reconcile.json",
+    "reconcile_sha256": "e81f236e587b225b77d02ee282af91701b13a258581714bdc79acd055b461c48",
+    "successes": 1,
+    "expected": 1,
+    "elapsed_seconds": 24,
+    "test_accuracy": 0.9174311926605505,
+    "weka_jar_sha256": "b034ab0d5b8d9edf7a81d10d9cd9fcf1e3b4e9db970980a9e1aaf94c515caaee",
+    "diagnostics": {
+      "converged": true,
+      "initial_ensemble_retained": true,
+      "n_iter": 2,
+      "prediction_rule": "soft_average",
+      "pseudo_labels_selected_total": 59
+    },
+    "promotion": "passed",
+    "fidelity_ceiling": "paper_approx"
+  },
+  "pseudo_label": {
+    "campaign_id": "article10-paper-pseudo-label-mnist-canary-v1",
+    "manifest_sha256": "c475ed0b5e3bae2af2d9b3d7a9f51ec517d79e943dd9ce5dfaba5ebd900db07b",
+    "preflight_sha256": "da8166a4651f4ff3be8c7cea9b289401c0b51b7b56e2cbe45a098033012e4fe5",
+    "task_id": "3c5a18522d6075fe63941cf8cc04e245d4c0424d1f5c9b62253655c1b2a58001",
+    "run_json_sha256": "77bfddf388e2e7d90dccacbfe3b09490a5f70d98ca13b0b460f254eca78ba1eb",
+    "reconcile": "evidence://modssc/reconciliations/article10-paper-pseudo-label-mnist-canary-v1-v5-002/reconcile.json",
+    "reconcile_sha256": "0ef927bdf792af7f1617c1e900a7e03e5dba509720f2fbadf402c3bdee18faf3",
+    "successes": 1,
+    "expected": 1,
+    "elapsed_seconds": 282,
+    "test_accuracy": 0.9305,
+    "diagnostics": {
+      "epochs_completed": 601,
+      "steps_per_epoch": 229,
+      "parameter_updates": 137629,
+      "alpha_reached_final": true,
+      "confidence_threshold_applied": false,
+      "final_pseudo_labels_assigned": 58400
+    },
+    "projected_ten_run_a100_hours": 0.7833333333333333,
+    "promotion": "passed",
+    "fidelity_ceiling": "paper_approx"
+  },
+  "grand": {
+    "campaign_id": "article10-grand-paper-canary-full-v1",
+    "manifest_sha256": "086d594dc5b9e35d3307b2d4689e2c1836bf0f5f3270ae5f6147ac63572d75e7",
+    "preflight_sha256": "f659e33c5752d3dfbae5bb9c026f39890dd91690a67b5fb5f11dd2d51593037e",
+    "reconcile": "evidence://modssc/reconciliations/article10-grand-paper-canary-full-v1-v5-002/reconcile.json",
+    "reconcile_sha256": "34c5bb967349dc60a3cbe647bc8d3dffe87ed080be0817b171d45f270ea99a08",
+    "successes": 3,
+    "expected": 3,
+    "elapsed_seconds": [
+      85,
+      91,
+      112
+    ],
+    "test_accuracies": [
+      0.852,
+      0.858,
+      0.854
+    ],
+    "mean_test_accuracy": 0.854,
+    "p95_elapsed_seconds": 109.9,
+    "production_walltime_seconds": 180,
+    "required_diagnostics_passed": 10,
+    "promotion": "passed"
+  }
+}

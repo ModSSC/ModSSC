@@ -1,0 +1,48 @@
+{
+  "schema_version": 2,
+  "kind": "modssc.calder2020-protocol-inputs",
+  "provenance": {
+    "repository": "https://github.com/jwcalder/GraphLearningOld",
+    "commit": "04bece45cd512cf1a3bcddb163b767ca44a746e1",
+    "version": "0.0.3",
+    "source_license": "MIT",
+    "source_sha256": "e2d16b74ac7d9ba3daab1c2d020e97b268e26bc378fba1f1077bbfd8707a3372",
+    "original_labels_archive_sha256": "ec01dca8550a4bf9a4c8559c5c9c1c3ed5b8dd4fb9ab2e771883b03c8635ab2e",
+    "original_permutations_archive_sha256": "4d2f9949f4ce20d2644cb4c070766421751070dc625c05a0219b1c9d60045770",
+    "mnist_labels_content_sha256": "818800b46032126b329f9306cb69a6842cc53ea30318374769bb6f46cc861467"
+  },
+  "files": {
+    "README.md": {
+      "size_bytes": 831,
+      "sha256": "2e9480e4ff7918796cc0bb6015d309236f91e1f63358bf59cb833095ce372195"
+    },
+    "LICENSE.graphlearning-mit.txt": {
+      "size_bytes": 1065,
+      "sha256": "8e74f73130eb4067387bdf8b62f76cd7de137eaae1cc12117a33a332073580ea"
+    },
+    "graph/mnist-vae-knn30.npz": {
+      "size_bytes": 14177339,
+      "sha256": "5b42bb234888c83eed763958a17fdfb8a55c09a2f0071b55a61635d86dc90db5"
+    },
+    "references/mnist-vae-k10-laplace-accuracy.csv": {
+      "size_bytes": 4498,
+      "sha256": "894e3b33ae18bf0e43c5413dfe72b0e150f9a40d95027bba145fd309bf429b6b"
+    },
+    "references/mnist-vae-k10-poisson-accuracy.csv": {
+      "size_bytes": 4528,
+      "sha256": "a20e0bc231fa0a05a8b1dc341d42b387e8b7129da63df28ecbf7e5f733be4374"
+    },
+    "splits/mnist-table1-permutations.ragged-int64-v1.npz": {
+      "size_bytes": 44827,
+      "sha256": "8740039403c6e287e24f0cb0a9013011c9ffc552dedc06ae6bd2ab00b3af1fb3"
+    }
+  },
+  "table1": {
+    "budgets_per_class": [1, 2, 3, 4, 5],
+    "trials": 100,
+    "permutation_layout": "trial-major, then budget-minor",
+    "permutation_format": "ragged_int64_v1",
+    "metric": "unlabeled_accuracy_percent",
+    "ddof": 0
+  }
+}

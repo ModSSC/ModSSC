@@ -11,9 +11,12 @@ from modssc.supervised.api import (
     classifier_info,
     create_classifier,
 )
+from modssc.supervised.base import ClassifierCapabilities, classifier_capabilities
 
 __all__ = [
     "available_classifiers",
     "classifier_info",
+    "ClassifierCapabilities",
+    "classifier_capabilities",
     "create_classifier",
 ]

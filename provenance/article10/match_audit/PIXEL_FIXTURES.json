@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "consumer": "tests/data_augmentation/test_cifar_reference.py::test_pillow_operations_match_pinned_upstream_pixel_fixtures",
+  "hash_algorithm": "sha256",
+  "input": {
+    "generator": "numpy.random.default_rng(12345).integers(16, 240, size=(17, 19, 3), dtype=uint8)",
+    "shape": [
+      17,
+      19,
+      3
+    ]
+  },
+  "stacks": {
+    "google_fixmatch": {
+      "repository": "https://github.com/google-research/fixmatch",
+      "commit": "d4985a158065947dba803e626ee9a6721709c570",
+      "source_path": "third_party/auto_augment/augmentations.py",
+      "source_sha256": "5419d28be7b7420cd077f3f8cca52871b5ec188c0ccefa9f12ea140692f77a03",
+      "input_encoding": "uint8((raw_float32 * (2/255) - 1) * 0.5 + 0.5) * 255, then RGBA",
+      "parameters": {
+        "level": 7.0,
+        "sign": -1.0
+      },
+      "output_encoding": "SHA-256 of C-contiguous float32 bytes after upstream pil_unwrap semantics",
+      "digests": {
+        "Identity": "69cc45a0b8f6f629b341fc0e1081bd29690fd8f58d104d0ce031df97d7557d48",
+        "AutoContrast": "45c404c29864f599517cb7fcabd8b3456bb0d18b9e2945ad875f363d6692b9ce",
+        "Equalize": "0262628baaa9c98224f41f134da5227dd7e5a9d08004840be8ff6e292cd6c1b5",
+        "Rotate": "429003475cb7a5431f13add648a6d08fd0d70c594d49898b448ee4f70855fa85",
+        "Solarize": "1d85b0062f7891ac8d6d2dd5512f9bf0940c3f93299230ff005a82b9af53a78c",
+        "Color": "932286f7f4c1cfca70c635b25a5f4cc590a576ba71a4b0e640d31e76e9127550",
+        "Contrast": "e2148bd9ab4b10f6532bef00a5288748a0cd768318587e9c66934bb6f2a4e185",
+        "Brightness": "ea6b829d2856573e564b42a80fa387635343c737e8d4e008dea3a8c70e637cac",
+        "Sharpness": "8e05fb82465d01332737e95e98e00f05fa803c99837c7d7b13ac252fc1a328f0",
+        "ShearX": "3c08637b1e09e0bfc7f2ba68d6c2ba8fc9d1e60eed595837b08ec5115702c539",
+        "TranslateX": "3afd906bc82968c975218d95b33b24d7658525c5f9087e5654d3d7b2047ae9b9",
+        "TranslateY": "5e897377a05006cfea8a761760e0c0e40d8498402d435e68593406410d292ae4",
+        "Posterize": "f70cedbd6d656b93f2873af3c19b034ae1f7975cb35230187070494d1a79020b",
+        "ShearY": "306d76ab9430739b05fe386cb3db3494bf1579e72dd7fb37109848dfb619f9c9"
+      }
+    },
+    "torchssl": {
+      "repository": "https://github.com/TorchSSL/TorchSSL",
+      "commit": "03193a1b7883727db1ce9c092e083091e18aedbb",
+      "source_path": "datasets/augmentation/randaugment.py",
+      "source_sha256": "501137dbb0c569ab7e0cbc0cd628d0197e3eb57519a7c8810d4be4f2cb7e7a02",
+      "input_encoding": "raw uint8 RGB",
+      "parameters": {
+        "normalized_magnitude": 0.37,
+        "sign": 1.0
+      },
+      "output_encoding": "SHA-256 of C-contiguous uint8 RGB bytes",
+      "digests": {
+        "AutoContrast": "550cc4c1d15b298b7a75b180bef15d48cd633a4a8cb9008dbd6e240ad48dd911",
+        "Brightness": "dd732cb25a1c8db81f8caf7cf9f646931502f1ee26a3a9f9c217c1df728b448c",
+        "Color": "2f0648c4a1bd3809aa41b0381cc1f4afb935ab86251d012fec4aeb19f61f6174",
+        "Contrast": "b15a7465b20c61283a3812804fc6a842a34e879047459c6535baed72315f4487",
+        "Equalize": "8fc27d2df0731345628b53190998fb8331d69540ffd43c36bbf90cedc43ed9c1",
+        "Identity": "76aa9ee526af1393ba435cd2aa09a1db583fd70a0efc7dd52a1159806a74dd34",
+        "Posterize": "e0abc375b54744413cb7d928330de4e3fbc551a1021d3966358fb66f39170be2",
+        "Rotate": "ece3e77fff455d26015f77c41d9caca001ad64a3cc17af716a6ffb0aa78c779d",
+        "Sharpness": "5ae3dfdb4f901ff8dda301df78c67b697d24924520064f451205140845bb021c",
+        "ShearX": "ebf1fe71e22fd2f7982d27d2bcb645464cbb919784628abfd61ee21f69c77376",
+        "ShearY": "03059f7d5da2c82738e35013a2ac6035bae5cc449250518bc237d4e7abff3abe",
+        "Solarize": "19863d0a9783e250483469896e75636664e1c3ca70e27a1bec9a7700551ebe1d",
+        "TranslateX": "69d3feba74403c89daa718a7c3ad209ace952daddd9b81a96025bed301e2621f",
+        "TranslateY": "5f6a8ce58549edd01d1a000464fa949b13332428e72084db0a616467f422c267"
+      }
+    }
+  },
+  "notes": [
+    "The operation outputs were generated from the pinned upstream functions, not from the ModSSC port.",
+    "The fixture fixes pixel primitives and output encodings; it does not claim the stateless ModSSC RNG is bitwise-identical to upstream Python, NumPy, TensorFlow, or PyTorch RNG streams.",
+    "Pillow and NumPy versions are authenticated separately by the scientific environment manifest."
+  ]
+}

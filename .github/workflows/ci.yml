@@ -105,3 +105,33 @@ jobs:
           python -m pip install --upgrade pip wheel
           pip install build
           python -m build
+
+      - name: Audit autonomous reproduction artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          WHEEL="$(realpath "$(find dist -maxdepth 1 -name '*.whl' -print -quit)")"
+          SDIST="$(realpath "$(find dist -maxdepth 1 -name '*.tar.gz' -print -quit)")"
+          export WHEEL
+          python .github/scripts/audit_distribution.py --wheel "$WHEEL" --sdist "$SDIST"
+
+          AUDIT_DIR="$(mktemp -d)"
+          python -m venv "$AUDIT_DIR/venv"
+          "$AUDIT_DIR/venv/bin/python" -m pip install "$WHEEL"
+          mkdir "$AUDIT_DIR/empty"
+          cd "$AUDIT_DIR/empty"
+          env -u PYTHONPATH "$AUDIT_DIR/venv/bin/modssc-reproduce" list --json > cards.json
+          env -u PYTHONPATH "$AUDIT_DIR/venv/bin/modssc-reproduce" verify --json > verify.json
+          "$AUDIT_DIR/venv/bin/python" - <<'PY'
+          import json
+
+          with open("cards.json", encoding="utf-8") as stream:
+              cards = json.load(stream)
+          with open("verify.json", encoding="utf-8") as stream:
+              reports = json.load(stream)
+          assert len(cards) == 23
+          assert len(reports) == 23
+          assert all(report["execution_ready"] for report in reports)
+          PY
+          env -u PYTHONPATH "$AUDIT_DIR/venv/bin/modssc-reproduce" \
+            run self_training/wine_table3 --dry-run

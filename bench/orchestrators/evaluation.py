@@ -10,9 +10,11 @@ import numpy as np
 
 from modssc.data_augmentation.utils import is_torch_tensor
 from modssc.evaluation import compute_metrics, labels_1d, predict_labels, to_numpy
+from modssc.inductive.methods.co_training import _fit_add_one_multinomial_nb
 from modssc.inductive.types import InductiveDataset
 from modssc.preprocess.types import PreprocessResult
 from modssc.sampling.result import SamplingResult
+from modssc.supervised.backends.sklearn.naive_bayes import SklearnMultinomialNBClassifier
 from modssc.views.types import ViewsResult
 
 from ..errors import BenchRuntimeError
@@ -234,6 +236,53 @@ def _infer_method_device(method: Any) -> Any | None:
     return None
 
 
+def _concatenate_co_training_views(
+    payload: Mapping[str, Any],
+    view_keys: tuple[str, str],
+) -> np.ndarray:
+    return np.concatenate(
+        [np.asarray(payload[view_key]["X"]) for view_key in view_keys],
+        axis=1,
+    )
+
+
+def _nigam_ghani_supervised_controls(
+    *,
+    pre: PreprocessResult,
+    sampling: SamplingResult,
+    views: ViewsResult,
+    test_views: Mapping[str, Any],
+    y_test: np.ndarray,
+    view_keys: tuple[str, str],
+    metrics: Iterable[str],
+    strict: bool,
+) -> dict[str, dict[str, float]]:
+    """Evaluate the paper's NB-12 and NB-788 controls after SSL training.
+
+    The controls consume true train labels only and are never returned to the
+    Co-Training method.  They therefore localize data/tokenizer differences
+    without influencing its pseudo-label trajectory or selecting a variant.
+    """
+
+    control_results: dict[str, dict[str, float]] = {}
+    test_matrix = _concatenate_co_training_views(test_views, view_keys)
+    for split, result_key in (("train_labeled", "test_nb12"), ("train", "test_nb788")):
+        backend_ref, y_train = _split_data(pre, sampling, split=split)
+        train_views = _views_for_split(
+            views,
+            split=split,
+            sampling=sampling,
+            backend_ref=backend_ref,
+            strict=strict,
+        )
+        train_matrix = _concatenate_co_training_views(train_views, view_keys)
+        classifier = SklearnMultinomialNBClassifier(alpha=1.0, fit_prior=True, seed=0)
+        _fit_add_one_multinomial_nb(classifier, train_matrix, labels_1d(y_train))
+        predictions = predict_labels(classifier.predict_proba(test_matrix))
+        control_results[result_key] = compute_metrics(y_test, predictions, metrics)
+    return control_results
+
+
 def evaluate_inductive(
     *,
     method: Any,
@@ -302,6 +351,77 @@ def evaluate_inductive(
             y_pred=y_pred,
             metrics_out=results[split],
         )
+
+        is_paper_co_training = method_id == "co_training" and getattr(
+            getattr(method, "spec", None), "protocol", None
+        ) in {
+            "fixed_pool_binary",
+            "fixed_pool_binary_feature_selection",
+            "shared_pool_exhaustive_multiset",
+        }
+        if is_paper_co_training:
+            view_keys = getattr(method, "_view_keys", None)
+            if not isinstance(view_keys, tuple) or len(view_keys) != 2:
+                raise BenchRuntimeError(
+                    "E_BENCH_EVAL_CONTRACT",
+                    "fitted paper co_training must expose exactly two view keys",
+                )
+            for view_key in view_keys:
+                view_scores = to_numpy(method.predict_view_proba(data, view_key))
+                view_pred = predict_labels(view_scores)
+                view_metrics = compute_metrics(y_true, view_pred, metrics)
+                view_split = f"{split}_{view_key}"
+                results[view_split] = view_metrics
+                _log_split_metrics(
+                    kind="inductive_view",
+                    split=view_split,
+                    y_true=y_true,
+                    y_pred=view_pred,
+                    metrics_out=view_metrics,
+                )
+
+            is_nigam_ghani = getattr(getattr(method, "spec", None), "protocol", None) == (
+                "shared_pool_exhaustive_multiset"
+            )
+            if is_nigam_ghani and split == "test":
+                control_metrics = _nigam_ghani_supervised_controls(
+                    pre=pre,
+                    sampling=sampling,
+                    views=views,
+                    test_views=views_payload,
+                    y_test=y_true,
+                    view_keys=view_keys,
+                    metrics=metrics,
+                    strict=strict,
+                )
+                results.update(control_metrics)
+                diagnostics = getattr(method, "diagnostics_", None)
+                if isinstance(diagnostics, dict):
+                    diagnostics["supervised_controls"] = {
+                        "nb12_training_size": 12,
+                        "nb788_training_size": 788,
+                        "feature_space": "concatenated_namespaced_views",
+                        "class_prior_smoothing": "add_one",
+                        "test_metrics_used_for_protocol_selection": False,
+                    }
+
+        initial_predict = getattr(method, "predict_proba_initial", None)
+        if callable(initial_predict) and bool(getattr(method, "_initial_clfs", None)):
+            initial_scores = to_numpy(initial_predict(X))
+            initial_pred = predict_labels(initial_scores)
+            initial_metrics = compute_metrics(y_true, initial_pred, metrics)
+            initial_split = f"{split}_initial"
+            results[initial_split] = initial_metrics
+            diagnostics = getattr(method, "diagnostics_", None)
+            if isinstance(diagnostics, dict):
+                diagnostics.setdefault("initial_evaluation", {})[split] = dict(initial_metrics)
+            _log_split_metrics(
+                kind="inductive_initial",
+                split=split,
+                y_true=y_true,
+                y_pred=initial_pred,
+                metrics_out=initial_metrics,
+            )
 
     _LOGGER.info("Evaluation (inductive) done: duration_s=%.3f", perf_counter() - start)
     return results

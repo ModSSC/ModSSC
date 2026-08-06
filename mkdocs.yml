@@ -94,6 +94,29 @@ nav:
           - Runtime device: reference/api/device.md
   - Development:
       - Architecture: development/architecture.md
+      - Campaign system:
+          - Portable HPC campaigns: development/hpc-campaigns.md
+          - Match continuation controller: development/match-continuation-controller.md
+      - Scientific protocols:
+          - Scientific conformity oracles: development/scientific-conformity-oracles.md
+          - Article replication audit: development/article-replication-audit.md
+          - Calder 2020 official parity: development/calder2020-official-parity.md
+          - Classic method equation oracles: development/classic-paper-equation-oracles.md
+          - Pseudo-Label Lee 2013 oracle: development/pseudo-label-lee2013-equation-oracle.md
+          - Tri-Training official parity: development/tri-training-official-parity.md
+          - GRAND official parity: development/grand-official-parity.md
+          - DCL Vote v2 audit: development/dcl-vote-v2-audit.md
+          - Self-Training Li-Zhou 2005: development/self-training-li-zhou-2005-protocol.md
+          - Co-Training Blum-Mitchell 1998: development/co-training-blum-mitchell-1998-protocol.md
+          - Co-Training Blum-Mitchell v2: development/co-training-blum-mitchell-1998-v2-protocol.md
+          - Co-Training Nigam-Ghani 2000: development/co-training-nigam-ghani-2000-protocol.md
+      - Results and audits:
+          - Article 10 replication summary: development/article10-replication-summary.md
+          - Easy-wave canary evidence: development/easy-wave1-v5-canary-evidence.md
+          - Match wave 1 scientific audit: development/match-wave1-scientific-audit.md
+          - Historical replacements v2: development/historical-replacements-v2-results.md
+          - Historical replacements v3: development/historical-replacements-v3-results.md
+          - Historical replacements execution: development/historical-replacements-wave2-execution.md
       - Contributing and development: development/contributing.md
       - Release process: development/release-process.md
 
@@ -105,6 +128,7 @@ plugins:
           options:
             docstring_style: google
             show_signature: true
+            show_source: false
             heading_level: 2
             filters:
               - "!^__"

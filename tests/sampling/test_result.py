@@ -9,13 +9,13 @@ from modssc.sampling.errors import SamplingValidationError
 from modssc.sampling.result import SamplingResult
 
 
-def _make_result(indices=None, refs=None, masks=None):
+def _make_result(indices=None, refs=None, masks=None, plan=None):
     return SamplingResult(
         schema_version=1,
         created_at="now",
         dataset_fingerprint="d",
         split_fingerprint="s",
-        plan={},
+        plan=plan or {},
         indices=indices or {},
         refs=refs or {},
         masks=masks or {},
@@ -152,6 +152,72 @@ def test_result_inductive_labeled_unlabeled_mismatch():
         SamplingValidationError, match=r"labeled \+ unlabeled must cover train exactly"
     ):
         res.validate(n_train=10, n_test=5, n_nodes=None)
+
+
+def test_result_inductive_accepts_explicit_inclusive_unlabeled_pool():
+    res = _make_result(
+        indices={
+            "train": np.array([3, 1, 0]),
+            "val": np.array([2]),
+            "test": np.array([0]),
+            "train_labeled": np.array([1, 3]),
+            "train_unlabeled": np.array([1, 0, 3]),
+        },
+        refs={"test": "test"},
+        plan={
+            "partition": {
+                "ordered_indices_artifact": {
+                    "unlabeled_pool": "includes_labeled",
+                }
+            }
+        },
+    )
+
+    res.validate(n_train=4, n_test=1, n_nodes=None)
+
+
+def test_result_inductive_inclusive_pool_requires_labeled_subset():
+    res = _make_result(
+        indices={
+            "train": np.array([0, 1]),
+            "val": np.array([], dtype=int),
+            "test": np.array([], dtype=int),
+            "train_labeled": np.array([1]),
+            "train_unlabeled": np.array([0]),
+        },
+        plan={
+            "partition": {
+                "ordered_indices_artifact": {
+                    "unlabeled_pool": "includes_labeled",
+                }
+            }
+        },
+    )
+
+    with pytest.raises(SamplingValidationError, match="subset of the inclusive"):
+        res.validate(n_train=2, n_test=None, n_nodes=None)
+
+
+def test_result_inductive_inclusive_pool_must_cover_train():
+    res = _make_result(
+        indices={
+            "train": np.array([0, 1]),
+            "val": np.array([], dtype=int),
+            "test": np.array([], dtype=int),
+            "train_labeled": np.array([0]),
+            "train_unlabeled": np.array([0]),
+        },
+        plan={
+            "partition": {
+                "ordered_indices_artifact": {
+                    "unlabeled_pool": "includes_labeled",
+                }
+            }
+        },
+    )
+
+    with pytest.raises(SamplingValidationError, match="must cover train exactly"):
+        res.validate(n_train=2, n_test=None, n_nodes=None)
 
 
 def test_result_graph_missing_nnodes():

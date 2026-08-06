@@ -1,0 +1,17 @@
+schema_version: 2
+datasets:
+  adult:
+    fingerprint: f9281cab47a3de02bacdff6aeecab3cc3bec164d4d321622f81551b6b4f82967
+    content_sha256: 289edd109fe4c6f198572557770f3fdcd785be89baaa1c252eca29280c1800ec
+  ag_news:
+    fingerprint: c76cb0fcac607faf409fadd0539fd8d56833d7871e6ca7be3272c95526320b35
+    content_sha256: f2732475d59aaa3821e68276014e71aafaae559c6ba27136c3b90fb877c990b0
+  cifar10:
+    fingerprint: 46bfdd98e26ed954f611b41565bc64a3ba5b5497773f2f92a7ebeaa8ff465a58
+    content_sha256: 2ab0d29a8fa44ec94f2d282630b74d31a4fc9986c706173dada6e3a52d75dcfb
+  cora:
+    fingerprint: 2919521af8679a8c84658219f16403f74aa1bfc03b19b6a08eb2565299400728
+    content_sha256: ac0c8e2b1f4be38d49a1fd637a26a1e34d25776c041435812d4f168ca9435e7f
+  speechcommands:
+    fingerprint: f9fc65e7babec5490a6dbc801b8e6baf994aed0339d53d9bea1b3505219d04e3
+    content_sha256: 9394b43a86399df13fe011abd7d19f307b392ed655452c82601180379923b895

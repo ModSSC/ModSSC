@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on "Keep a Changelog", and this project adheres to Semantic Versioning.
 
+## Unreleased
+
+### Added
+- Added the wheel-shipped `modssc-reproduce` command and autonomous `bench`
+  package, with 23 canonical paper cards, authenticated dataset identities,
+  fixed splits, graph inputs, and numerical replay evidence.
+- Added reproducible paper profiles and authenticated protocol assets for the ten-method semi-supervised replication campaign.
+- Added immutable campaign manifests, scoped scientific gates, attempt journals, resumable checkpoints, reconciliation bundles, and generic Slurm execution templates.
+- Added ordered partition artifacts, fixed-index labeling artifacts, precomputed graph support, and location-independent sampling fingerprints for exact paper replays.
+- Added paper-faithful training paths and diagnostic oracles for classic, Match-family, graph-learning, and GRAND methods while retaining standardized behavior.
+
+### Changed
+- Moved deployment-specific HPC profiles, allocations, paths, and scheduler policy out of the public package; `bench` now exposes scheduler-neutral scientific contracts while repository-only adapters live under `tools/hpc`.
+- Made paper behavior explicit through `method.profile`, leaving `standardized` as the backward-compatible default.
+- Expanded the scientific documentation with protocol cards, acceptance evidence, provenance records, and campaign operations.
+
+### Fixed
+- Removed the Weka/Java runtime and all vendored GraphLearning, FixMatch,
+  TorchSSL, and USB source dependencies; ModSSC now executes its own scientific
+  implementations and uses only compact authenticated protocol inputs.
+- Preserved historical public constructor signatures, standardized-method numerics, cache read-only behavior, graph precision, and sampling identities while adding replication features.
+- Hardened campaign publication against stale authorization, concurrent attempts, incomplete results, corrupted checkpoints, and non-authenticated historical evidence.
+
 ## 1.2.2
 ### Fixed
 - Stabilized Dynamic Label Propagation by renormalizing dynamic transition matrices after each update and failing explicitly on invalid transition weights instead of returning non-finite scores.

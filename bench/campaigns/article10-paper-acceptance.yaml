@@ -1,0 +1,527 @@
+schema_version: 1
+registry_id: article10-paper-acceptance-v2
+
+# Metric values and margins use fractions: 0.01 is one percentage point.
+# A result can become paper_matched only if the campaign manifest also declares
+# that ceiling, the method conformity gate is passed, all repetitions and
+# diagnostics succeed, there are no deviations/critical unknowns, the published
+# mean lies inside the replication CI95, and the absolute margin is respected.
+protocols:
+  lee-2013-mnist-table2-600:
+    method_id: pseudo_label
+    repetitions: 10
+    target:
+      split: test
+      metric: accuracy
+      transform: one_minus
+      published_mean: 0.0503
+      margin_absolute: 0.01
+    required_diagnostics:
+      - {path: artifacts.method.diagnostics.alpha_reached_final, op: eq, value: true}
+      - {path: artifacts.method.diagnostics.confidence_threshold_applied, op: eq, value: false}
+      - {path: artifacts.method.diagnostics.pseudo_labels_assigned_total, op: gt, value: 0}
+    known_deviations:
+      - The paper does not publish weight initialization or an unambiguous final stopping rule.
+      - The original ten split indices are unavailable, and the paper does not state whether the optional 20% visible-unit dropout was used for Table 2.
+      - The card scales pixels by 1/255 and defines an epoch as 229 unlabeled batches while recycling labeled examples; the paper does not specify either traversal detail.
+    critical_unknowns: []
+
+  nigam-ghani2000-webkb-table2:
+    method_id: co_training
+    repetitions: 10
+    target:
+      split: test
+      metric: accuracy
+      transform: one_minus
+      published_mean: 0.054
+      margin_absolute: 0.02
+    # The supervised Table 2 rows are controls produced by the same run. They
+    # diagnose corpus/tokenizer parity and never select a Co-Training variant.
+    secondary_targets:
+      - id: table2-nb12-labeled-only-error
+        split: test_nb12
+        metric: accuracy
+        transform: one_minus
+        published_mean: 0.130
+        margin_absolute: 0.02
+      - id: table2-nb788-fully-supervised-error
+        split: test_nb788
+        metric: accuracy
+        transform: one_minus
+        published_mean: 0.033
+        margin_absolute: 0.02
+    required_diagnostics:
+      - {path: artifacts.method.diagnostics.protocol, op: eq, value: nigam_ghani_2000}
+      - {path: artifacts.method.diagnostics.seed, op: present}
+      - {path: artifacts.method.diagnostics.p, op: eq, value: 1}
+      - {path: artifacts.method.diagnostics.n, op: eq, value: 3}
+      - {path: artifacts.method.diagnostics.u, op: eq, value: 75}
+      - {path: artifacts.method.diagnostics.k, op: eq, value: 0}
+      - {path: artifacts.method.diagnostics.negative_label, op: eq, value: 0}
+      - {path: artifacts.method.diagnostics.positive_label, op: eq, value: 1}
+      - {path: artifacts.method.diagnostics.initial_labeled_size, op: eq, value: 12}
+      - {path: artifacts.method.diagnostics.initial_unlabeled_count, op: eq, value: 776}
+      - {path: artifacts.method.diagnostics.initial_class_counts, op: eq, value: {'0': 9, '1': 3}}
+      - {path: artifacts.method.diagnostics.n_iter, op: between, value: [97, 194]}
+      - {path: artifacts.method.diagnostics.round_trace, op: nonempty}
+      - {path: artifacts.method.diagnostics.unique_pseudo_labeled_examples, op: eq, value: 776}
+      - {path: artifacts.method.diagnostics.pseudo_label_proposals_view1, op: between, value: [388, 776]}
+      - {path: artifacts.method.diagnostics.pseudo_label_proposals_view2, op: between, value: [388, 776]}
+      - {path: artifacts.method.diagnostics.pseudo_labels_added_to_shared_l, op: between, value: [776, 1552]}
+      - {path: artifacts.method.diagnostics.pseudo_labels_received_by_view1, op: between, value: [776, 1552]}
+      - {path: artifacts.method.diagnostics.pseudo_labels_received_by_view2, op: between, value: [776, 1552]}
+      - {path: artifacts.method.diagnostics.final_labeled_size, op: between, value: [788, 1564]}
+      - {path: artifacts.method.diagnostics.remaining_unlabeled_count, op: eq, value: 0}
+      - {path: artifacts.method.diagnostics.remaining_unlabeled_indices, op: eq, value: []}
+      - {path: artifacts.method.diagnostics.shared_labeled_multiset, op: eq, value: true}
+      - {path: artifacts.method.diagnostics.views_select_from_same_pre_round_pool, op: eq, value: true}
+      - {path: artifacts.method.diagnostics.addition_policy, op: eq, value: ordered_multiset_view1_then_view2}
+      - {path: artifacts.method.diagnostics.overlap_policy, op: eq, value: ordered_multiset_view1_then_view2}
+      - {path: artifacts.method.diagnostics.overlap_count, op: between, value: [0, 776]}
+      - {path: artifacts.method.diagnostics.duplicate_multiset_additions, op: between, value: [0, 776]}
+      - {path: artifacts.method.diagnostics.same_label_overlap_count, op: between, value: [0, 776]}
+      - {path: artifacts.method.diagnostics.conflicting_overlap_count, op: between, value: [0, 776]}
+      - {path: artifacts.method.diagnostics.termination, op: eq, value: unlabeled_exhausted}
+      - {path: artifacts.method.diagnostics.selection_score_space, op: eq, value: posterior_probability}
+      - {path: artifacts.method.diagnostics.paper_confidence, op: eq, value: posterior_probability}
+      - {path: artifacts.method.diagnostics.ranking_space, op: eq, value: log_posterior_probability}
+      - {path: artifacts.method.diagnostics.combination_score_space, op: eq, value: summed_log_probability}
+      - {path: artifacts.method.diagnostics.probability_underflow_safe, op: eq, value: true}
+      - {path: artifacts.method.diagnostics.word_likelihood_smoothing, op: eq, value: add_one}
+      - {path: artifacts.method.diagnostics.class_prior_smoothing, op: eq, value: add_one}
+      - {path: artifacts.method.diagnostics.dynamic_feature_selection, op: eq, value: none}
+      - {path: artifacts.method.diagnostics.selection_diagnostics_scope, op: eq, value: training_and_pseudo_labels_only}
+      - {path: artifacts.method.diagnostics.test_metrics_used_for_protocol_selection, op: eq, value: false}
+      - {path: artifacts.method.diagnostics.supervised_controls.nb12_training_size, op: eq, value: 12}
+      - {path: artifacts.method.diagnostics.supervised_controls.nb788_training_size, op: eq, value: 788}
+      - {path: artifacts.method.diagnostics.supervised_controls.feature_space, op: eq, value: concatenated_namespaced_views}
+      - {path: artifacts.method.diagnostics.supervised_controls.class_prior_smoothing, op: eq, value: add_one}
+      - {path: artifacts.method.diagnostics.supervised_controls.test_metrics_used_for_protocol_selection, op: eq, value: false}
+    known_deviations:
+      - The paper does not publish the ten split identities or RNG state; confirmation campaign v2 pre-registers fresh seeds 21 through 30.
+      - The historical HTML/MIME parser, tokenizer, and vocabulary are unavailable; ModSSC freezes deterministic HTML stripping and CountVectorizer word counts on the authenticated CMU archive.
+      - The historical cross-view collision policy and final undersized pool are not specified; ModSSC preserves both same-pool proposal streams in view-1-then-view-2 multiset order and drains the pool without replacement.
+    critical_unknowns: []
+
+  zhou-li-2005-wdbc-table3-j48-80pct-unlabeled:
+    method_id: tri_training
+    repetitions: 3
+    target:
+      split: test
+      metric: accuracy
+      transform: one_minus
+      published_mean: 0.075
+      margin_absolute: 0.02
+    secondary_targets:
+      - id: round0-initial-ensemble-error
+        split: test_initial
+        metric: accuracy
+        transform: one_minus
+        published_mean: 0.094
+        margin_absolute: 0.02
+    required_diagnostics:
+      - {path: artifacts.method.diagnostics.converged, op: eq, value: true}
+      - {path: artifacts.method.diagnostics.initial_ensemble_retained, op: eq, value: true}
+      - {path: artifacts.method.diagnostics.n_iter, op: lt, value: 100}
+      - {path: artifacts.method.diagnostics.rounds, op: present}
+    known_deviations:
+      - Original test indices and exact RNG state were not published.
+      - The released code averages Weka probabilities although Table I prints a hard majority vote.
+      - The released demonstration uses unpruned J48, while the paper states only J4.8.
+    critical_unknowns: []
+
+  zhou-li-2005-vote-table3-j48-80pct-unlabeled:
+    method_id: tri_training
+    repetitions: 3
+    target:
+      split: test
+      metric: accuracy
+      transform: one_minus
+      published_mean: 0.055
+      margin_absolute: 0.02
+    secondary_targets:
+      - id: round0-initial-ensemble-error
+        split: test_initial
+        metric: accuracy
+        transform: one_minus
+        published_mean: 0.076
+        margin_absolute: 0.02
+    required_diagnostics:
+      - {path: artifacts.method.diagnostics.converged, op: eq, value: true}
+      - {path: artifacts.method.diagnostics.initial_ensemble_retained, op: eq, value: true}
+      - {path: artifacts.method.diagnostics.n_iter, op: lt, value: 100}
+      - {path: artifacts.method.diagnostics.rounds, op: present}
+    known_deviations:
+      - Original test indices and exact RNG state were not published.
+      - The released code averages Weka probabilities although Table I prints a hard majority vote.
+      - The released demonstration uses unpruned J48, while the paper states only J4.8.
+    critical_unknowns: []
+
+  zhou-goldman-2004-adult-table3:
+    method_id: democratic_co_learning
+    repetitions: 20
+    target:
+      split: test
+      metric: accuracy
+      transform: identity
+      published_mean: 0.784
+      published_std: 0.021
+      margin_absolute: 0.02
+    required_diagnostics:
+      - {path: artifacts.method.diagnostics.converged, op: eq, value: true}
+      - {path: artifacts.method.diagnostics.pseudo_labels_added_total, op: gt, value: 0}
+    known_deviations: []
+    critical_unknowns:
+      - The paper does not publish exact learner/software versions, and the Adult production source-data fingerprints are not yet pinned.
+
+  zhou-goldman-2004-vote-table3:
+    method_id: democratic_co_learning
+    repetitions: 20
+    # The independently reviewed equation oracle passed, but the completed
+    # Table 3 controls rejected the pinned historical-learner reconstruction.
+    # Keep this separate from the numerical result and from the diagnostic
+    # confidence candidates below so v1 remains explicitly paper_approx.
+    protocol_conformity: failed
+    target:
+      split: test
+      metric: accuracy
+      transform: identity
+      published_mean: 0.944
+      published_std: 0.012
+      margin_absolute: 0.02
+    required_diagnostics:
+      - {path: artifacts.method.diagnostics.converged, op: eq, value: true}
+      - {path: artifacts.method.diagnostics.n_iter, op: lt, value: 20}
+      - {path: artifacts.method.diagnostics.changed_rounds, op: present}
+      - {path: artifacts.method.diagnostics.pseudo_labels_added_per_learner, op: present}
+      - {path: artifacts.method.diagnostics.pseudo_labels_added_total, op: gt, value: 0}
+    # Table 2 reports "exs from U labeled for": 66/40/40 are pseudo-label
+    # additions from U, not final learner-set sizes. These are
+    # protocol-conformity blockers, not result targets; no published
+    # variability is available, so only predeclared margins are enforced.
+    diagnostic_targets:
+      # ModSSC n_iter counts the terminal no-change convergence pass. The
+      # paper does not state whether its 2.2 "rounds" includes that pass. This
+      # raw convention remains a deviation but does not reverse the failed
+      # protocol-conformity decision established by the Table 3 controls.
+      - id: table2-mean-iterations-including-terminal-pass
+        path: artifacts.method.diagnostics.n_iter
+        published_mean: 2.2
+        margin_absolute: 1.0
+      - id: table2-naive-bayes-unlabeled-examples-assigned
+        path: artifacts.method.diagnostics.pseudo_labels_added_per_learner.0
+        published_mean: 66
+        margin_absolute: 10
+      - id: table2-c45-unlabeled-examples-assigned
+        path: artifacts.method.diagnostics.pseudo_labels_added_per_learner.1
+        published_mean: 40
+        margin_absolute: 5
+      - id: table2-3nn-unlabeled-examples-assigned
+        path: artifacts.method.diagnostics.pseudo_labels_added_per_learner.2
+        published_mean: 40
+        margin_absolute: 5
+    # Table 3 localization controls are evaluated in a diagnostic-only
+    # campaign on the same 20 locked partitions. They can establish protocol
+    # conformity but can never enter the primary DCL paper aggregate.
+    control_targets:
+      - id: table3-naive-bayes-only
+        control_mode: learner_0
+        split: test
+        metric: accuracy
+        transform: identity
+        published_mean: 0.861
+        margin_absolute: 0.02
+      - id: table3-c45-only
+        control_mode: learner_1
+        split: test
+        metric: accuracy
+        transform: identity
+        published_mean: 0.942
+        margin_absolute: 0.02
+      - id: table3-3nn-only
+        control_mode: learner_2
+        split: test
+        metric: accuracy
+        transform: identity
+        published_mean: 0.902
+        margin_absolute: 0.02
+      - id: table3-combining-only
+        control_mode: combining_only
+        split: test
+        metric: accuracy
+        transform: identity
+        published_mean: 0.938
+        margin_absolute: 0.02
+    # Goldman & Zhou (2000) explicitly use 10-fold CV on L, while the 2004 DCL
+    # paper itself only says to use L/L_i. Therefore kfold+Wald is a reasoned
+    # primary reconstruction, not a verified historical fact. All four
+    # internal candidates completed 20/20 test-blind diagnostics and failed
+    # the Table 2 dynamics. Their historical conformity remains pending even
+    # though the parent Vote protocol is failed.
+    confidence_candidates:
+      - id: resub-wald-v1-control
+        estimator: training_accuracy
+        interval: wald
+        folds: 10
+        role: v1_control
+        protocol_conformity: pending
+        test_information_used: false
+      - id: 10fold-wald-primary-reconstruction
+        estimator: kfold_oof
+        interval: wald
+        folds: 10
+        role: primary_reconstruction
+        protocol_conformity: pending
+        test_information_used: false
+      - id: 10fold-wilson-conditional
+        estimator: kfold_oof
+        interval: wilson
+        folds: 10
+        role: conditional
+        protocol_conformity: pending
+        test_information_used: false
+      - id: 10fold-clopper-pearson-conditional
+        estimator: kfold_oof
+        interval: clopper_pearson
+        folds: 10
+        role: conditional
+        protocol_conformity: pending
+        test_information_used: false
+    known_deviations:
+      - The paper does not publish exact learner/software versions; parity of ModSSC's embedded NumPy historical learners remains to be confirmed numerically.
+      - The paper does not specify the confidence-interval construction; the v1 paper profile uses a clipped normal/Wald accuracy interval, while the four registered test-blind diagnostics remain distinct reconstructions.
+      - No official implementation is supplied or cited, so conformity is based on the independently reviewed equation oracle rather than official-code trajectory parity.
+    critical_unknowns: []
+
+  sohn-2020-cifar10-table2-250:
+    method_id: fixmatch
+    repetitions: 5
+    target:
+      path: artifacts.method.diagnostics.paper_metrics.historical_paper_metric.test_accuracy
+      transform: one_minus
+      published_mean: 0.0507
+      published_std: 0.0065
+      margin_absolute: 0.01
+    informational_targets:
+      - id: fixed-terminal-without-test-selection
+        path: artifacts.method.diagnostics.paper_metrics.fixed_terminal_metric.test_accuracy
+        transform: one_minus
+        published_mean: 0.0507
+        published_std: 0.0065
+        margin_absolute: 0.01
+    required_diagnostics:
+      - {path: artifacts.method.diagnostics.optimization_steps, op: eq, value: 1048576}
+      - {path: artifacts.method.diagnostics.target_steps, op: eq, value: 1048576}
+      - {path: artifacts.method.diagnostics.accepted_pseudo_labels, op: gt, value: 0}
+      - {path: artifacts.method.diagnostics.confidence_threshold, op: eq, value: 0.95}
+      - {path: artifacts.method.diagnostics.reference_stack, op: eq, value: google_fixmatch}
+      - {path: artifacts.method.diagnostics.batch_size_labeled, op: eq, value: 64}
+      - {path: artifacts.method.diagnostics.batch_size_unlabeled, op: eq, value: 448}
+      - {path: artifacts.method.diagnostics.checkpoint_policy.checkpoint_interval_steps, op: eq, value: 1024}
+      - {path: artifacts.method.diagnostics.checkpoint_policy.evaluation_interval_steps, op: eq, value: 1024}
+      - {path: artifacts.method.diagnostics.sampler_contract.mode, op: eq, value: shuffle_repeat}
+      - {path: artifacts.method.diagnostics.sampler_contract.reference_algorithm, op: eq, value: tensorflow.data.Dataset.repeat().shuffle(buffer_size)}
+      - {path: artifacts.method.diagnostics.sampler_contract.rng_backend, op: eq, value: numpy_pcg64}
+      - {path: artifacts.method.diagnostics.sampler_contract.seed_policy, op: eq, value: explicit_independent_loader_seeds_from_numpy_seedsequence}
+      - {path: artifacts.method.diagnostics.sampler_contract.shuffle_buffer, op: eq, value: 8192}
+      - {path: artifacts.method.diagnostics.sampler_contract.historical_bitstream_claimed, op: eq, value: false}
+    known_deviations: []
+    documented_equivalences:
+      - ModSSC reproduces the pinned TensorFlow `repeat().shuffle(8192)` fill/replace transition and repeat order. The TF1 graph and parallel-input RNG bitstream was neither published nor portable, so an authenticated local slot generator draws the same uniform distribution and permits exact continuation without claiming bitwise historical draws.
+      - Augmentation primitives and their distributions match the pinned source, while authenticated independent weak/strong streams replace the non-portable TensorFlow multiprocessing draw order.
+      - The five ordered folds and one-example validation prefix are authenticated deterministic reconstructions of the pinned official generators; Google did not publish the generated JSON index files.
+    critical_unknowns: []
+
+  zhang-2021-cifar10-table1-250:
+    method_id: flexmatch
+    repetitions: 3
+    target:
+      path: artifacts.method.diagnostics.paper_metrics.historical_paper_metric.test_accuracy
+      transform: one_minus
+      published_mean: 0.0498
+      published_std: 0.0009
+      margin_absolute: 0.01
+    informational_targets:
+      - id: fixed-terminal-without-test-selection
+        path: artifacts.method.diagnostics.paper_metrics.fixed_terminal_metric.test_accuracy
+        transform: one_minus
+        published_mean: 0.0498
+        published_std: 0.0009
+        margin_absolute: 0.01
+    required_diagnostics:
+      - {path: artifacts.method.diagnostics.optimization_steps, op: eq, value: 1048576}
+      - {path: artifacts.method.diagnostics.target_steps, op: eq, value: 1048576}
+      - {path: artifacts.method.diagnostics.accepted_pseudo_labels, op: gt, value: 0}
+      - {path: artifacts.method.diagnostics.selected_label_count, op: gt, value: 0}
+      - {path: artifacts.method.diagnostics.reference_stack, op: eq, value: torchssl}
+      - {path: artifacts.method.diagnostics.batch_size_labeled, op: eq, value: 64}
+      - {path: artifacts.method.diagnostics.batch_size_unlabeled, op: eq, value: 448}
+      - {path: artifacts.method.diagnostics.checkpoint_policy.checkpoint_interval_steps, op: eq, value: 5000}
+      - {path: artifacts.method.diagnostics.checkpoint_policy.evaluation_interval_steps, op: eq, value: 5000}
+      - {path: artifacts.method.diagnostics.sampler_contract.mode, op: eq, value: replacement}
+      - {path: artifacts.method.diagnostics.sampler_contract.reference_algorithm, op: eq, value: "torch.utils.data.RandomSampler(replacement=True)"}
+      - {path: artifacts.method.diagnostics.sampler_contract.rng_backend, op: eq, value: torch_cpu_generator}
+      - {path: artifacts.method.diagnostics.sampler_contract.seed_policy, op: eq, value: explicit_independent_loader_seeds_from_torch_root_generator}
+      - {path: artifacts.method.diagnostics.sampler_contract.historical_bitstream_claimed, op: eq, value: false}
+    known_deviations: []
+    documented_equivalences:
+      - Index sampling uses the pinned CPU `RandomSampler(replacement=True)`/`torch.randint` algorithm exactly with serialized `torch.Generator` state. Explicit per-loader seeds replace TorchSSL's process-global implicit seed allocation, whose value depends on unrelated model and worker RNG consumption.
+      - Augmentation primitives and distributions match TorchSSL, while an authenticated stateless stream replaces its multiprocessing worker draw order and permits exact continuation.
+      - The three ordered pools, including labeled examples in the unlabeled loader, are authenticated deterministic reconstructions because USB did not publish its generated NPY index files.
+      - TorchSSL leaves conflicting updates undefined when replacement sampling repeats an unlabeled index in one CUDA batch; ModSSC explicitly applies the last accepted occurrence in batch order before writing unique CPL indices.
+    critical_unknowns: []
+
+  wang-2023-cifar10-table1-40:
+    method_id: free_match
+    repetitions: 3
+    target:
+      path: artifacts.method.diagnostics.paper_metrics.historical_paper_metric.test_accuracy
+      transform: one_minus
+      published_mean: 0.0490
+      published_std: 0.0004
+      margin_absolute: 0.01
+    informational_targets:
+      - id: fixed-terminal-without-test-selection
+        path: artifacts.method.diagnostics.paper_metrics.fixed_terminal_metric.test_accuracy
+        transform: one_minus
+        published_mean: 0.0490
+        published_std: 0.0004
+        margin_absolute: 0.01
+    required_diagnostics:
+      - {path: artifacts.method.diagnostics.optimization_steps, op: eq, value: 1048576}
+      - {path: artifacts.method.diagnostics.target_steps, op: eq, value: 1048576}
+      - {path: artifacts.method.diagnostics.accepted_pseudo_labels, op: gt, value: 0}
+      - {path: artifacts.method.diagnostics.self_adaptive_threshold, op: between, value: [0.0, 1.0]}
+      - {path: artifacts.method.diagnostics.lambda_e, op: eq, value: 0.05}
+      - {path: artifacts.method.diagnostics.reference_stack, op: eq, value: torchssl}
+      - {path: artifacts.method.diagnostics.batch_size_labeled, op: eq, value: 64}
+      - {path: artifacts.method.diagnostics.batch_size_unlabeled, op: eq, value: 448}
+      - {path: artifacts.method.diagnostics.checkpoint_policy.checkpoint_interval_steps, op: eq, value: 5000}
+      - {path: artifacts.method.diagnostics.checkpoint_policy.evaluation_interval_steps, op: eq, value: 5000}
+      - {path: artifacts.method.diagnostics.sampler_contract.mode, op: eq, value: replacement}
+      - {path: artifacts.method.diagnostics.sampler_contract.reference_algorithm, op: eq, value: "torch.utils.data.RandomSampler(replacement=True)"}
+      - {path: artifacts.method.diagnostics.sampler_contract.rng_backend, op: eq, value: torch_cpu_generator}
+      - {path: artifacts.method.diagnostics.sampler_contract.seed_policy, op: eq, value: explicit_independent_loader_seeds_from_torch_root_generator}
+      - {path: artifacts.method.diagnostics.sampler_contract.historical_bitstream_claimed, op: eq, value: false}
+    known_deviations: []
+    documented_equivalences:
+      - The paper explicitly assigns entropy weight 0.05 to this CIFAR-10 setting, while the later pinned USB card records 0.001; 0.05 remains the preregistered primary profile and the alternatives are test-blind diagnostics only.
+      - Index sampling uses the pinned CPU `RandomSampler(replacement=True)`/`torch.randint` algorithm exactly with serialized `torch.Generator` state. Explicit per-loader seeds replace TorchSSL's process-global implicit seed allocation, whose value depends on unrelated model and worker RNG consumption.
+      - Augmentation primitives and distributions match TorchSSL, while an authenticated stateless stream replaces its multiprocessing worker draw order and permits exact continuation.
+      - The three ordered 40-label pools are authenticated deterministic reconstructions because USB did not publish its generated NPY index files.
+    critical_unknowns: []
+
+  chen-2023-cifar10-table2-250:
+    method_id: softmatch
+    repetitions: 3
+    target:
+      path: artifacts.method.diagnostics.paper_metrics.historical_paper_metric.test_accuracy
+      transform: one_minus
+      published_mean: 0.0482
+      published_std: 0.0009
+      margin_absolute: 0.01
+    informational_targets:
+      - id: fixed-terminal-without-test-selection
+        path: artifacts.method.diagnostics.paper_metrics.fixed_terminal_metric.test_accuracy
+        transform: one_minus
+        published_mean: 0.0482
+        published_std: 0.0009
+        margin_absolute: 0.01
+    required_diagnostics:
+      - {path: artifacts.method.diagnostics.optimization_steps, op: eq, value: 1048576}
+      - {path: artifacts.method.diagnostics.target_steps, op: eq, value: 1048576}
+      - {path: artifacts.method.diagnostics.effective_pseudo_label_weight, op: gt, value: 0}
+      - {path: artifacts.method.diagnostics.mean_pseudo_label_weight, op: between, value: [0.0, 1.0]}
+      - {path: artifacts.method.diagnostics.reference_stack, op: eq, value: torchssl}
+      - {path: artifacts.method.diagnostics.batch_size_labeled, op: eq, value: 64}
+      - {path: artifacts.method.diagnostics.batch_size_unlabeled, op: eq, value: 448}
+      - {path: artifacts.method.diagnostics.checkpoint_policy.checkpoint_interval_steps, op: eq, value: 5000}
+      - {path: artifacts.method.diagnostics.checkpoint_policy.evaluation_interval_steps, op: eq, value: 5000}
+      - {path: artifacts.method.diagnostics.sampler_contract.mode, op: eq, value: replacement}
+      - {path: artifacts.method.diagnostics.sampler_contract.reference_algorithm, op: eq, value: "torch.utils.data.RandomSampler(replacement=True)"}
+      - {path: artifacts.method.diagnostics.sampler_contract.rng_backend, op: eq, value: torch_cpu_generator}
+      - {path: artifacts.method.diagnostics.sampler_contract.seed_policy, op: eq, value: explicit_independent_loader_seeds_from_torch_root_generator}
+      - {path: artifacts.method.diagnostics.sampler_contract.historical_bitstream_claimed, op: eq, value: false}
+    known_deviations: []
+    documented_equivalences:
+      - The paper explicitly states that its Section 4.1 results, including the 4.82 percent CIFAR-10/250 target, were produced with TorchSSL. The preregistered profile therefore follows TorchSSL raw Gaussian statistics, labeled-prediction alignment and raw pseudo-labels even though Algorithm 1 specifies uniform alignment; the later USB port instead applies uniform alignment before updating Gaussian statistics.
+      - Index sampling uses the pinned CPU `RandomSampler(replacement=True)`/`torch.randint` algorithm exactly with serialized `torch.Generator` state. Explicit per-loader seeds replace TorchSSL's process-global implicit seed allocation, whose value depends on unrelated model and worker RNG consumption.
+      - Augmentation primitives and distributions match TorchSSL, while an authenticated stateless stream replaces its multiprocessing worker draw order and permits exact continuation.
+      - The three ordered pools, including labeled examples in the unlabeled loader, are authenticated deterministic reconstructions because TorchSSL did not publish its generated NPY index files.
+    critical_unknowns: []
+
+  feng-2020-cora-table1-planetoid:
+    method_id: grand
+    repetitions: 100
+    target:
+      split: test
+      metric: accuracy
+      transform: identity
+      published_mean: 0.854
+      published_std: 0.004
+      published_std_ddof: 0
+      margin_absolute: 0.01
+    required_diagnostics:
+      - {path: artifacts.method.diagnostics.algorithm, op: eq, value: grand_feng2020_protocol}
+      - {path: artifacts.method.diagnostics.perturbation, op: eq, value: dropnode}
+      - {path: artifacts.method.diagnostics.dropnode_scaling, op: eq, value: official_train_mask_eval_keep_probability}
+      - {path: artifacts.method.diagnostics.dropnode_rng, op: eq, value: official_cpu_bernoulli}
+      - {path: artifacts.method.diagnostics.propagation, op: eq, value: mixed_order_mean}
+      - {path: artifacts.method.diagnostics.initialization, op: eq, value: official_mlplayer_normal}
+      - {path: artifacts.method.diagnostics.checkpoint_policy, op: eq, value: official_loss_checkpoint_patience_loss_or_accuracy}
+      - {path: artifacts.method.diagnostics.model_seed, op: present}
+      - {path: artifacts.method.diagnostics.epochs_completed, op: gt, value: 0}
+      - {path: artifacts.method.diagnostics.best_epoch, op: present}
+    known_deviations: []
+    critical_unknowns: []
+    environment_differences:
+      - The pinned paper used PyTorch 1.2.0 on RTX 2080 Ti; runtime hardware is recorded separately from this scientific protocol.
+
+  calder-2020-mnist-table1-laplace-1-label-per-class: &laplace1
+    method_id: laplace_learning
+    repetitions: 100
+    target: {split: unlabeled, metric: accuracy, transform: identity, published_mean: 0.161, published_std: 0.062, published_std_ddof: 0, margin_absolute: 0.01}
+    required_diagnostics:
+      - {path: artifacts.method.diagnostics.solver, op: eq, value: calder2020_conjugate_gradient}
+      - {path: artifacts.method.diagnostics.converged, op: eq, value: true}
+      - {path: artifacts.method.diagnostics.iterations, op: gt, value: 0}
+      - {path: artifacts.method.diagnostics.absolute_residual, op: between, value: [0.0, 0.00001]}
+    known_deviations: &laplace_deviations []
+    critical_unknowns: []
+  calder-2020-mnist-table1-laplace-2-label-per-class:
+    <<: *laplace1
+    target: {split: unlabeled, metric: accuracy, transform: identity, published_mean: 0.282, published_std: 0.103, published_std_ddof: 0, margin_absolute: 0.01}
+  calder-2020-mnist-table1-laplace-3-label-per-class:
+    <<: *laplace1
+    target: {split: unlabeled, metric: accuracy, transform: identity, published_mean: 0.420, published_std: 0.124, published_std_ddof: 0, margin_absolute: 0.01}
+  calder-2020-mnist-table1-laplace-4-label-per-class:
+    <<: *laplace1
+    target: {split: unlabeled, metric: accuracy, transform: identity, published_mean: 0.578, published_std: 0.123, published_std_ddof: 0, margin_absolute: 0.01}
+  calder-2020-mnist-table1-laplace-5-label-per-class:
+    <<: *laplace1
+    target: {split: unlabeled, metric: accuracy, transform: identity, published_mean: 0.695, published_std: 0.122, published_std_ddof: 0, margin_absolute: 0.01}
+
+  calder-2020-mnist-table1-poisson-1-label-per-class: &poisson1
+    method_id: poisson_learning
+    repetitions: 100
+    target: {split: unlabeled, metric: accuracy, transform: identity, published_mean: 0.902, published_std: 0.040, published_std_ddof: 0, margin_absolute: 0.01}
+    required_diagnostics:
+      - {path: artifacts.method.diagnostics.solver, op: eq, value: paper_iteration}
+      - {path: artifacts.method.diagnostics.decision_rule, op: eq, value: paper_class_prior_correction}
+      - {path: artifacts.method.diagnostics.converged, op: eq, value: true}
+      - {path: artifacts.method.diagnostics.iterations, op: between, value: [50, 1000]}
+      - {path: artifacts.method.diagnostics.mixing_residual, op: between, value: [0.0, 0.000014285714285714285]}
+    known_deviations: &poisson_deviations []
+    critical_unknowns: []
+  calder-2020-mnist-table1-poisson-2-label-per-class:
+    <<: *poisson1
+    target: {split: unlabeled, metric: accuracy, transform: identity, published_mean: 0.936, published_std: 0.016, published_std_ddof: 0, margin_absolute: 0.01}
+  calder-2020-mnist-table1-poisson-3-label-per-class:
+    <<: *poisson1
+    target: {split: unlabeled, metric: accuracy, transform: identity, published_mean: 0.945, published_std: 0.011, published_std_ddof: 0, margin_absolute: 0.01}
+  calder-2020-mnist-table1-poisson-4-label-per-class:
+    <<: *poisson1
+    target: {split: unlabeled, metric: accuracy, transform: identity, published_mean: 0.949, published_std: 0.008, published_std_ddof: 0, margin_absolute: 0.01}
+  calder-2020-mnist-table1-poisson-5-label-per-class:
+    <<: *poisson1
+    target: {split: unlabeled, metric: accuracy, transform: identity, published_mean: 0.953, published_std: 0.007, published_std_ddof: 0, margin_absolute: 0.01}

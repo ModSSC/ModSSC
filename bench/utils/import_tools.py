@@ -4,12 +4,14 @@ import importlib
 import importlib.util
 import re
 import tomllib
+from importlib import metadata
 from pathlib import Path
 from typing import Any
 
 from modssc.utils.imports import load_object as _load_object
 
 _PACKAGE_ALIASES = {
+    "PyYAML": "yaml",
     "scikit-learn": "sklearn",
     "torch-geometric": "torch_geometric",
     "tensorflow-datasets": "tensorflow_datasets",
@@ -40,7 +42,7 @@ def _find_pyproject(start: Path | None = None) -> Path | None:
 
 def _read_optional_deps(pyproject_path: Path | None) -> dict[str, list[str]]:
     if pyproject_path is None:
-        return {}
+        return _read_installed_optional_deps()
     raw = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
     project = raw.get("project", {})
     opt = project.get("optional-dependencies", {})
@@ -49,6 +51,27 @@ def _read_optional_deps(pyproject_path: Path | None) -> dict[str, list[str]]:
         if not isinstance(items, list):
             continue
         out[str(extra)] = [str(item) for item in items]
+    return out
+
+
+def _read_installed_optional_deps(distribution: str = "modssc") -> dict[str, list[str]]:
+    """Read extras from installed wheel metadata when no checkout is present."""
+
+    try:
+        package_metadata = metadata.metadata(distribution)
+        requirements = metadata.requires(distribution) or []
+    except metadata.PackageNotFoundError:
+        return {}
+    extras = package_metadata.get_all("Provides-Extra") or []
+    out = {str(extra): [] for extra in extras}
+    for requirement in requirements:
+        dependency, separator, marker = requirement.partition(";")
+        if not separator:
+            continue
+        for extra in extras:
+            pattern = rf"\bextra\s*==\s*(['\"]){re.escape(str(extra))}\1"
+            if re.search(pattern, marker):
+                out[str(extra)].append(dependency.strip())
     return out
 
 

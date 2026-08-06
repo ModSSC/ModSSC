@@ -261,6 +261,8 @@ def _maybe_warn_nonfinite(name: str, value: Any, *, max_elems: int = 1_000_000) 
         return
     if int(value.size) > max_elems:
         return
+    if not np.issubdtype(value.dtype, np.number):
+        return
     if not np.isfinite(value).all():
         logger.warning("Non-finite values detected in %s", name)
 

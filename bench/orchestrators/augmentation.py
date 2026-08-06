@@ -9,10 +9,31 @@ import numpy as np
 
 from modssc.data_augmentation.api import build_strategy
 from modssc.data_augmentation.plan import AugmentationPlan, StepConfig
+from modssc.data_augmentation.runtime import OnlineAugmentation
 from modssc.data_augmentation.types import AugmentationContext
 from modssc.data_augmentation.utils import is_torch_tensor
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def build_online(
+    *,
+    weak_plan: Mapping[str, Any],
+    strong_plan: Mapping[str, Any],
+    seed: int,
+    modality: str | None,
+) -> OnlineAugmentation:
+    """Compile a replayable per-step augmenter for SSL training loops."""
+
+    if modality == "graph":
+        raise ValueError("Online per-sample augmentation is not supported for graph inputs")
+    weak = _plan_from_dict(weak_plan, modality=modality)
+    strong = _plan_from_dict(strong_plan, modality=modality)
+    return OnlineAugmentation(
+        strategy=build_strategy(weak=weak, strong=strong),
+        seed=int(seed),
+        modality=modality,
+    )
 
 
 def _check_unknown_keys(data: Mapping[str, Any], *, allowed: set[str], path: str) -> None:

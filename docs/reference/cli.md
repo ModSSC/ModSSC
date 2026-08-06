@@ -11,6 +11,11 @@ ModSSC exposes a root CLI plus brick-specific entry points for datasets, samplin
 - Use `modssc` when you want one entry point with shared logging, `doctor`, and access to every brick.
 - Use the direct entry points when you want shorter commands in shell scripts or when a workflow only touches one subsystem.
 - Use the Python API instead when you need in-process objects, custom control flow, or notebook-friendly inspection.
+- Use the repository-level `python -m bench.main` runner for general and
+  standardized benchmark configs. Use `python -m bench.reproduce` for frozen
+  article cards so dataset preparation and fixed-resource authentication cannot
+  be bypassed. Benchmark, campaign, and scheduler operations are intentionally
+  not added to the installed root CLI.
 
 
 ## Minimal examples
@@ -267,7 +272,15 @@ modssc supervised info logreg
 
 
 ## Common mistakes
-- Running `python -m bench.main ...` after a PyPI-only install and expecting `bench/` assets to exist locally. Use a source checkout for repository assets.
+- Bypassing `modssc-reproduce` for an article card and thereby skipping dataset
+  preparation or fixed-input authentication.
+- Looking for a `modssc replicate` subcommand. Paper protocols remain in the
+  repository's `bench/configs/reproductions/` tree and use
+  `python -m bench.reproduce`; that command prepares datasets through ModSSC
+  before delegating execution to `bench.main`.
+- Treating an external paper repository or Weka JAR as part of the CLI setup.
+  Supported protocols use ModSSC implementations and declared dataset providers;
+  generic Slurm launchers live separately under `tools/hpc/`.
 - Expecting `modssc datasets download --dataset <id>` to ignore missing extras automatically. The ignore flag exists, but you should still treat a missing extra as a dependency problem to resolve intentionally.
 - Looking for dataset IDs, step IDs, or method IDs in this page alone. Use [Catalogs and registries](catalogs.md) for the full lists.
 - Treating `modssc doctor` as a full environment validator. It reports available bricks and missing extras, but it does not validate your benchmark config semantics.

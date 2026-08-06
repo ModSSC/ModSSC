@@ -192,6 +192,7 @@ def _objective_value(
     X_u_w = prepared_artifacts["X_u_w"]
     X_u_s = prepared_artifacts["X_u_s"]
     X_u_s_1 = prepared_artifacts.get("X_u_s_1")
+    online_augmentation = prepared_artifacts.get("online_augmentation")
     use_test = prepared_artifacts["use_test"]
     strict = bool(prepared_artifacts.get("strict", False))
     requires_torch = bool(prepared_artifacts.get("requires_torch", False))
@@ -204,6 +205,7 @@ def _objective_value(
             X_u_w=X_u_w,
             X_u_s=X_u_s,
             X_u_s_1=X_u_s_1,
+            online_augmentation=online_augmentation,
             cfg=cfg.method,
             seed=seed,
             strict=strict,

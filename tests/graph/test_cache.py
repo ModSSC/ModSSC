@@ -44,6 +44,24 @@ def test_graph_cache_sharded(tmp_path):
     assert np.array_equal(loaded.edge_weight, edge_weight)
 
 
+@pytest.mark.parametrize("edge_shard_size", [None, 2])
+def test_graph_cache_preserves_frozen_float64_weights(tmp_path, edge_shard_size):
+    cache = GraphCache(root=tmp_path, edge_shard_size=edge_shard_size)
+    edge_index = np.array([[0, 0, 1], [0, 1, 0]], dtype=np.int64)
+    edge_weight = np.array([1.0, np.nextafter(0.5, 1.0), 0.5], dtype=np.float64)
+    graph = GraphArtifact(
+        n_nodes=2,
+        edge_index=edge_index,
+        edge_weight=edge_weight,
+        meta={"edge_weight_dtype": "float64"},
+    )
+    cache.save(fingerprint="float64", graph=graph, manifest={"n_nodes": 2})
+    loaded, _ = cache.load("float64")
+
+    assert loaded.edge_weight.dtype == np.float64
+    np.testing.assert_array_equal(loaded.edge_weight, edge_weight)
+
+
 def test_graph_cache_save_no_overwrite(tmp_path):
     cache = GraphCache(root=tmp_path)
     graph = GraphArtifact(
@@ -343,9 +361,9 @@ def test_cache_defaults_with_global_root(monkeypatch: pytest.MonkeyPatch, tmp_pa
     monkeypatch.delenv("MODSSC_GRAPH_CACHE_DIR", raising=False)
     monkeypatch.delenv("MODSSC_GRAPH_VIEWS_CACHE_DIR", raising=False)
 
-    assert default_cache_dir() == (root / "graphs").resolve()
+    assert default_cache_dir() == (root / "graph").resolve()
     assert default_views_cache_dir() == (root / "graph_views").resolve()
-    assert GraphCache.default().root == (root / "graphs").resolve()
+    assert GraphCache.default().root == (root / "graph").resolve()
     assert ViewsCache.default().root == (root / "graph_views").resolve()
 
 
@@ -379,6 +397,21 @@ def test_cache_defaults_graph_override_sets_implicit_views_path(
     assert ViewsCache.default().root == (graph.resolve().parent / "graph_views")
 
 
+def test_cache_defaults_use_repository_local_cache_subdirectories(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.delenv("MODSSC_GRAPH_CACHE_DIR", raising=False)
+    monkeypatch.delenv("MODSSC_GRAPH_VIEWS_CACHE_DIR", raising=False)
+    monkeypatch.delenv("MODSSC_CACHE_ROOT", raising=False)
+    monkeypatch.setattr(
+        "modssc.graph.cache.default_local_cache_subdir",
+        lambda name: tmp_path / name,
+    )
+
+    assert default_cache_dir() == tmp_path / "graph"
+    assert default_views_cache_dir() == tmp_path / "graph_views"
+
+
 def test_cache_defaults_user_cache_fallback(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -389,9 +422,9 @@ def test_cache_defaults_user_cache_fallback(
     monkeypatch.setattr("modssc.graph.cache.default_local_cache_subdir", lambda _name: None)
     monkeypatch.setattr("modssc.graph.cache.user_cache_dir", lambda _app: str(user_cache))
 
-    assert default_cache_dir() == user_cache / "graphs"
+    assert default_cache_dir() == user_cache / "graph"
     assert default_views_cache_dir() == user_cache / "graph_views"
-    assert GraphCache.default().root == user_cache / "graphs"
+    assert GraphCache.default().root == user_cache / "graph"
     assert ViewsCache.default().root == user_cache / "graph_views"
 
 

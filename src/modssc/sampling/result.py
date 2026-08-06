@@ -41,6 +41,16 @@ class SamplingResult:
     def is_graph(self) -> bool:
         return bool(self.masks)
 
+    def _unlabeled_pool_semantics(self) -> str:
+        partition = self.plan.get("partition")
+        if not isinstance(partition, Mapping):
+            return "complement"
+        artifact = partition.get("ordered_indices_artifact")
+        if not isinstance(artifact, Mapping):
+            return "complement"
+        semantics = artifact.get("unlabeled_pool", "complement")
+        return str(semantics)
+
     def validate(self, *, n_train: int, n_test: int | None, n_nodes: int | None) -> None:
         if self.is_graph():
             self._validate_graph(n_nodes=n_nodes)
@@ -93,10 +103,21 @@ class SamplingResult:
         unlabeled = self.indices.get("train_unlabeled")
         if labeled is None or unlabeled is None:
             raise SamplingValidationError("Missing labeled/unlabeled indices")
-        if np.intersect1d(labeled, unlabeled).size:
-            raise SamplingValidationError("labeled and unlabeled overlap")
-        if not np.array_equal(np.sort(np.concatenate([labeled, unlabeled])), np.sort(train)):
-            raise SamplingValidationError("labeled + unlabeled must cover train exactly")
+        if self._unlabeled_pool_semantics() == "includes_labeled":
+            if np.setdiff1d(labeled, unlabeled).size:
+                raise SamplingValidationError(
+                    "labeled indices must be a subset of the inclusive unlabeled pool"
+                )
+            if not np.array_equal(np.sort(unlabeled), np.sort(train)):
+                raise SamplingValidationError("inclusive unlabeled pool must cover train exactly")
+        else:
+            if np.intersect1d(labeled, unlabeled).size:
+                raise SamplingValidationError("labeled and unlabeled overlap")
+            if not np.array_equal(
+                np.sort(np.concatenate([labeled, unlabeled])),
+                np.sort(train),
+            ):
+                raise SamplingValidationError("labeled + unlabeled must cover train exactly")
 
     def _validate_graph(self, *, n_nodes: int | None) -> None:
         if n_nodes is None:

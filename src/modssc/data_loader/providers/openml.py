@@ -103,6 +103,12 @@ class OpenMLProvider(BaseProvider):
             "as_frame": bool(cfg.get("as_frame", False)),
             "data_home": str(raw_dir),
         }
+        # Dense OpenML datasets otherwise select scikit-learn's pandas parser
+        # when ``as_frame=False``.  The Liac-compatible parser returns the same
+        # NumPy representation without turning pandas into an undeclared
+        # runtime requirement for the ``openml`` extra.
+        if not kwargs["as_frame"]:
+            kwargs["parser"] = "liac-arff"
 
         if cfg.get("data_id") is not None:
             kwargs["data_id"] = int(cfg["data_id"])

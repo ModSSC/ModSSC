@@ -1,0 +1,98 @@
+# Fresh confirmation campaign for the single Co-Training replication profile.
+# Nigam and Ghani (CIKM 2000, Table 2) publish the labeled/unlabeled sizes,
+# quotas, confidence rule, stopping rule, smoothing, repetitions, and target.
+# Their exact ten splits and tokenizer were not released, so the scientific
+# ceiling remains paper_approx even if the numerical target is recovered.
+run:
+  name: confirmation_v2_co_training_webkb_course_nigam_ghani_2000
+  seed: 21
+  seeds: [21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
+  seeded_sections: [sampling, preprocess, views]
+  output_dir: ${MODSSC_OUTPUT_DIR}/reproductions/co_training/webkb_course_nigam_ghani_2000_confirmation_v2
+  log_level: detailed
+  fail_fast: true
+  benchmark_mode: false
+dataset:
+  id: webkb_course_cotraining
+  download: false
+  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
+  options: {}
+sampling:
+  seed: 21
+  plan:
+    split:
+      kind: holdout
+      test_fraction: 0.25023786869647957
+      val_fraction: 0.0
+      stratify: false
+      shuffle: true
+    labeling:
+      mode: count
+      value: 12
+      strategy: random
+      min_per_class: 0
+      per_class: false
+      fixed_indices: null
+      class_counts: {'0': 9, '1': 3}
+      selection_order: permutation
+    imbalance: {kind: none}
+    policy:
+      respect_official_test: true
+      use_official_graph_masks: true
+      allow_override_official: false
+preprocess:
+  seed: 21
+  fit_on: train
+  cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
+  plan:
+    output_key: features.X
+    steps:
+    - {id: labels.encode}
+    - {id: core.copy_raw}
+    - {id: core.to_numpy}
+views:
+  seed: 21
+  plan:
+    views:
+    - name: fulltext
+      input_columns: {mode: indices, indices: [0]}
+      preprocess:
+        output_key: features.X
+        steps:
+        - {id: text.ensure_strings}
+        - id: text.count_vectorizer
+          params: {dense: true, strip_html: true, min_df: 1}
+    - name: inlinks
+      input_columns: {mode: indices, indices: [1]}
+      preprocess:
+        output_key: features.X
+        steps:
+        - {id: text.ensure_strings}
+        - id: text.count_vectorizer
+          params: {dense: true, strip_html: true, min_df: 1}
+method:
+  kind: inductive
+  id: co_training
+  profile: paper:nigam-ghani2000-webkb-table2
+  device: {device: cpu, dtype: float32}
+  params:
+    classifier_id: multinomial_nb
+    classifier_backend: sklearn
+    classifier_params: {alpha: 1.0, fit_prior: true}
+    view_keys: [fulltext, inlinks]
+    protocol: shared_pool_exhaustive_multiset
+    p: 1
+    n: 3
+    u: 75
+    k: 0
+    positive_label: 1
+    negative_label: 0
+    confidence_threshold: null
+    dynamic_feature_selection: none
+    feature_selection_max_features: null
+    selection_score: posterior_probability
+evaluation:
+  split_for_model_selection: null
+  report_splits: [test]
+  metrics: [accuracy, macro_f1]

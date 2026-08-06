@@ -1,0 +1,35 @@
+# Ten-run, local-CPU confirmation of the single Nigam--Ghani Table 2
+# Co-Training profile. The NB-12 and NB-788 rows are secondary diagnostics
+# emitted by this cell, not separate scientific profiles.
+schema_version: 1
+campaign_id: historical-paper-co-training-nigam-ghani2000-v2
+track: paper
+scientific_scope:
+  claim_scope_id: historical-replacements
+  stage: production
+  claim_eligible: true
+  gate_policy_id: modssc-scientific-gates-v2
+  gate_policy_sha256: from_registry
+default_site: local-cpu
+code:
+  git_sha: REPLACE_WITH_CLEAN_COMMIT
+  require_clean: true
+  environment_lock_sha256: REPLACE_WITH_ENVIRONMENT_LOCK_SHA256
+expect:
+  config_count: 1
+  task_count: 10
+  tasks_per_method:
+    co_training: 10
+  tasks_by_profile:
+    cpu_text: 10
+  tasks_by_site:
+    local-cpu: 10
+cells:
+  - protocol_id: nigam-ghani2000-webkb-table2
+    config: bench/configs/reproductions/co_training/webkb_course_nigam_ghani_2000.yaml
+    seeds: [21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
+    resource_profile: cpu_text
+    site: local-cpu
+    fidelity_status: paper_approx
+    expected_dataset_fingerprint: 5a1d45139e2a1ccb17abf374fb6ec17dc7d0bb3f9ff7caf08935d7731bb80683
+    expected_dataset_content_sha256: 894e2f310924fd66239632029db7738b8e1fcd330ffb86cb201cf6937ed9a264

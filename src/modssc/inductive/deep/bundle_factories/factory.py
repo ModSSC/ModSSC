@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import math
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -61,6 +62,194 @@ def _maybe_ema(model: Any, *, enabled: bool) -> Any | None:
     for p in ema_model.parameters():
         p.requires_grad_(False)
     return ema_model
+
+
+def _weight_decay_parameters(
+    model: Any,
+    *,
+    weight_decay: float,
+    decay_bias_and_norm: bool,
+) -> tuple[Any, float]:
+    trainable = [parameter for parameter in model.parameters() if parameter.requires_grad]
+    if float(weight_decay) == 0.0 or bool(decay_bias_and_norm):
+        return trainable, float(weight_decay)
+
+    decay = [parameter for parameter in trainable if int(parameter.ndim) > 1]
+    no_decay = [parameter for parameter in trainable if int(parameter.ndim) <= 1]
+    groups = [
+        {"params": decay, "weight_decay": float(weight_decay)},
+        {"params": no_decay, "weight_decay": 0.0},
+    ]
+    return groups, 0.0
+
+
+def _cosine_lr_factor(step: int, *, max_steps: int, cycles: float) -> float:
+    progress = min(max(float(step), 0.0), float(max_steps)) / float(max_steps)
+    return float(math.cos(math.pi * float(cycles) * progress))
+
+
+def _build_wide_resnet_bundle(
+    sample: Any,
+    *,
+    num_classes: int,
+    params: Mapping[str, Any],
+    seed: int,
+    ema: bool,
+) -> TorchModelBundle:
+    from modssc.inductive.deep.wide_resnet import (
+        WideResNetCifar,
+        resolve_wide_resnet_reference,
+    )
+
+    torch = _torch()
+    if not isinstance(sample, torch.Tensor) or int(sample.ndim) != 4:
+        raise InductiveValidationError(
+            "wide_resnet_cifar requires 4D torch.Tensor features (N, C, H, W)."
+        )
+    input_layout = str(params.get("input_layout", "channels_first"))
+    if input_layout != "channels_first":
+        raise InductiveValidationError("wide_resnet_cifar requires input_layout='channels_first'.")
+
+    lr = float(params.get("lr", 0.03))
+    weight_decay = float(params.get("weight_decay", 5e-4))
+    momentum = float(params.get("momentum", 0.9))
+    nesterov = bool(params.get("nesterov", True))
+    optimizer_name = str(params.get("optimizer", "sgd")).lower()
+    decay_bias_and_norm = bool(params.get("decay_bias_and_norm", False))
+    if lr <= 0.0:
+        raise InductiveValidationError("lr must be > 0.")
+    if weight_decay < 0.0:
+        raise InductiveValidationError("weight_decay must be >= 0.")
+    if not (0.0 <= momentum < 1.0):
+        raise InductiveValidationError("momentum must be in [0, 1).")
+    if nesterov and momentum <= 0.0:
+        raise InductiveValidationError("nesterov requires momentum > 0.")
+
+    torch.manual_seed(int(seed))
+    reference_raw = params.get("reference_implementation")
+    reference_implementation = None if reference_raw is None else str(reference_raw)
+    reference = resolve_wide_resnet_reference(reference_implementation)
+    model = WideResNetCifar(
+        in_channels=int(sample.shape[1]),
+        num_classes=int(num_classes),
+        depth=int(params.get("depth", 28)),
+        widen_factor=int(params.get("widen_factor", 2)),
+        bn_momentum=float(params.get("bn_momentum", 0.001)),
+        bn_eps=float(params.get("bn_eps", 1e-3)),
+        input_mean=params.get("input_mean"),
+        input_std=params.get("input_std"),
+        reference_implementation=reference,
+    ).to(sample.device)
+
+    optimizer_params, optimizer_weight_decay = _weight_decay_parameters(
+        model,
+        weight_decay=weight_decay,
+        decay_bias_and_norm=decay_bias_and_norm,
+    )
+    if optimizer_name == "sgd":
+        optimizer = torch.optim.SGD(
+            optimizer_params,
+            lr=lr,
+            momentum=momentum,
+            nesterov=nesterov,
+            weight_decay=optimizer_weight_decay,
+        )
+    elif optimizer_name == "adamw":
+        optimizer = torch.optim.AdamW(
+            optimizer_params,
+            lr=lr,
+            weight_decay=optimizer_weight_decay,
+        )
+    else:
+        raise InductiveValidationError("optimizer must be 'sgd' or 'adamw'.")
+
+    scheduler_name_raw = params.get("scheduler", "cosine")
+    scheduler_name = "none" if scheduler_name_raw is None else str(scheduler_name_raw).lower()
+    max_steps: int | None = None
+    cosine_cycles: float | None = None
+    scheduler = None
+    if scheduler_name == "cosine":
+        max_steps = int(params.get("max_steps", 1 << 20))
+        cosine_cycles = float(params.get("cosine_cycles", 7.0 / 16.0))
+        if max_steps <= 0:
+            raise InductiveValidationError("max_steps must be > 0 for cosine scheduling.")
+        if not (0.0 < cosine_cycles <= 0.5):
+            raise InductiveValidationError("cosine_cycles must be in (0, 0.5].")
+        scheduler = torch.optim.lr_scheduler.LambdaLR(
+            optimizer,
+            lr_lambda=lambda step: _cosine_lr_factor(
+                step,
+                max_steps=max_steps,
+                cycles=cosine_cycles,
+            ),
+        )
+    elif scheduler_name != "none":
+        raise InductiveValidationError("scheduler must be 'cosine', 'none', or null.")
+
+    ema_decay = float(params.get("ema_decay", 0.999))
+    if not (0.0 <= ema_decay < 1.0):
+        raise InductiveValidationError("ema_decay must be in [0, 1).")
+    ema_model = _maybe_ema(model, enabled=ema)
+    predict_with_ema = bool(params.get("predict_with_ema", ema_model is not None))
+    if predict_with_ema and ema_model is None:
+        raise InductiveValidationError("predict_with_ema=true requires ema=true.")
+
+    meta = {
+        "contract_schema_version": 1,
+        "classifier_id": "wide_resnet_cifar",
+        "depth": int(params.get("depth", 28)),
+        "widen_factor": int(params.get("widen_factor", 2)),
+        "in_channels": int(sample.shape[1]),
+        "num_classes": int(num_classes),
+        "bn_momentum": float(params.get("bn_momentum", 0.001)),
+        "bn_eps": float(params.get("bn_eps", 1e-3)),
+        "input_mean": params.get("input_mean"),
+        "input_std": params.get("input_std"),
+        "initialization": (
+            "torchssl_kaiming_normal"
+            if reference == "torchssl"
+            else (
+                "google_fixmatch_variance_scaling"
+                if reference == "google_fixmatch"
+                else "modssc_standardized"
+            )
+        ),
+        "optimizer": optimizer_name,
+        "lr": lr,
+        "momentum": momentum,
+        "nesterov": nesterov,
+        "weight_decay": weight_decay,
+        "scheduler": scheduler_name,
+        "scheduler_step_unit": "optimizer_step",
+        "max_steps": max_steps,
+        "cosine_cycles": cosine_cycles,
+        "ema_decay": ema_decay,
+        "predict_with_ema": predict_with_ema,
+        "decay_bias_and_norm": decay_bias_and_norm,
+        "reference_implementation": reference,
+        # Preserve the historical ModSSC EMA for standardized runs.  Both
+        # paper implementations average trainable parameters and use current
+        # model buffers instead of exponentially averaging BN state.
+        "ema_strategy": (
+            "all_floating_state" if reference == "standardized" else "parameters_only_copy_buffers"
+        ),
+        "ema_reference": (
+            "modssc_standardized"
+            if reference == "standardized"
+            else (
+                "torchssl_named_parameters"
+                if reference == "torchssl"
+                else "google_trainable_variables"
+            )
+        ),
+    }
+    return TorchModelBundle(
+        model=model,
+        optimizer=optimizer,
+        ema_model=ema_model,
+        scheduler=scheduler,
+        meta=meta,
+    )
 
 
 def _build_mlp_bundle(
@@ -856,6 +1045,14 @@ def build_torch_bundle_from_classifier(
         )
     if key == "image_cnn":
         return _build_image_cnn_bundle(
+            sample,
+            num_classes=num_classes,
+            params=params,
+            seed=seed,
+            ema=ema,
+        )
+    if key == "wide_resnet_cifar":
+        return _build_wide_resnet_bundle(
             sample,
             num_classes=num_classes,
             params=params,

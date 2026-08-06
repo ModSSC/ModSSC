@@ -45,7 +45,7 @@ def _view_spec_from_dict(obj: Mapping[str, Any]) -> ViewSpec:
         raise ValueError("Each view must be a mapping")
     _check_unknown_keys(
         obj,
-        allowed={"name", "preprocess", "columns", "meta"},
+        allowed={"name", "preprocess", "input_columns", "columns", "meta"},
         path="views.plan.views[]",
     )
     name = str(obj.get("name", ""))
@@ -60,12 +60,20 @@ def _view_spec_from_dict(obj: Mapping[str, Any]) -> ViewSpec:
     if obj.get("columns") is not None:
         columns = _column_spec_from_dict(obj["columns"])
 
+    input_columns = None
+    if obj.get("input_columns") is not None:
+        input_columns = _column_spec_from_dict(obj["input_columns"])
+
     meta = obj.get("meta")
     if meta is not None and not isinstance(meta, Mapping):
         raise ValueError("view.meta must be a mapping when provided")
 
     return ViewSpec(
-        name=name, preprocess=preprocess, columns=columns, meta=dict(meta) if meta else None
+        name=name,
+        preprocess=preprocess,
+        input_columns=input_columns,
+        columns=columns,
+        meta=dict(meta) if meta else None,
     )
 
 

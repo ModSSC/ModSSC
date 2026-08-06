@@ -1,0 +1,16 @@
+schema_version: 1
+site_id: local-cpu
+scheduler: local
+environment_lock_sha256: from_environment
+setup: []
+profiles:
+  cpu_graph: &local_cpu
+    architecture: CPU
+    accelerators_per_task: 0
+    concurrency: 2
+    initial_concurrency: 2
+    promoted_concurrency: 2
+    walltime: "04:00:00"
+    max_walltime: "04:00:00"
+  # Semantic alias for CPU-only bag-of-words and classical text learners.
+  cpu_text: *local_cpu

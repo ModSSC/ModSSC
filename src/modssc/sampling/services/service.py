@@ -12,10 +12,11 @@ from platformdirs import user_cache_dir
 
 from modssc.runtime.paths import default_local_cache_subdir
 from modssc.sampling.errors import MissingDatasetFingerprintError
-from modssc.sampling.fingerprint import derive_seed, stable_hash
+from modssc.sampling.fingerprint import stable_hash
 from modssc.sampling.imbalance import apply_imbalance
 from modssc.sampling.labeling import select_labeled
-from modssc.sampling.plan import HoldoutSplitSpec, SamplingPlan
+from modssc.sampling.partition_artifact import load_ordered_partition
+from modssc.sampling.plan import HoldoutSplitSpec, PartitionSpec, SamplingPlan
 from modssc.sampling.result import SamplingResult
 from modssc.sampling.splitters import make_holdout_split, make_kfold_split
 from modssc.sampling.stats import build_graph_stats, build_inductive_stats
@@ -24,8 +25,6 @@ from modssc.sampling.storage import save_split as _save_split
 
 SPLIT_CACHE_ENV = "MODSSC_SPLIT_CACHE_DIR"
 CACHE_ROOT_ENV = "MODSSC_CACHE_ROOT"
-SCHEMA_VERSION = 1
-
 logger = logging.getLogger(__name__)
 
 
@@ -78,16 +77,19 @@ def sample(
     start = perf_counter()
     ds_fp = _resolve_dataset_fingerprint(dataset, dataset_fingerprint)
 
-    seed_split = derive_seed(seed, "split")
-    seed_label = derive_seed(seed, "labeling")
-    seed_imb = derive_seed(seed, "imbalance")
+    component_seeds = plan.component_seeds.resolve(seed)
+    seed_partition = component_seeds["partition"]
+    seed_split = component_seeds["split"]
+    seed_label = component_seeds["labeling"]
+    seed_imb = component_seeds["imbalance"]
 
     plan_dict = plan.as_dict()
+    schema_version = plan.fingerprint_schema_version()
     split_fingerprint = stable_hash(
         {
-            "schema_version": SCHEMA_VERSION,
+            "schema_version": schema_version,
             "dataset_fingerprint": ds_fp,
-            "plan": plan_dict,
+            "plan": plan.fingerprint_payload(),
             "seed": int(seed),
         }
     )
@@ -108,11 +110,18 @@ def sample(
         plan.split.kind,
     )
     logger.debug("Sampling plan: %s", plan_dict)
+    logger.debug("Sampling component seeds: %s", component_seeds)
 
     if is_graph:
+        if (
+            plan.partition.max_samples is not None
+            or plan.partition.ordered_indices_artifact is not None
+        ):
+            raise ValueError("sampling.partition is not supported for graph datasets")
         result = _sample_graph(
             dataset,
             plan=plan,
+            run_seed=int(seed),
             seed_split=seed_split,
             seed_label=seed_label,
             seed_imb=seed_imb,
@@ -120,11 +129,14 @@ def sample(
             split_fingerprint=split_fingerprint,
             created_at=created_at,
             plan_dict=plan_dict,
+            schema_version=schema_version,
         )
     else:
         result = _sample_inductive(
             dataset,
             plan=plan,
+            run_seed=int(seed),
+            seed_partition=seed_partition,
             seed_split=seed_split,
             seed_label=seed_label,
             seed_imb=seed_imb,
@@ -132,6 +144,7 @@ def sample(
             split_fingerprint=split_fingerprint,
             created_at=created_at,
             plan_dict=plan_dict,
+            schema_version=schema_version,
         )
 
     out_path: Path | None = None
@@ -202,6 +215,8 @@ def _sample_inductive(
     dataset: Any,
     *,
     plan: SamplingPlan,
+    run_seed: int,
+    seed_partition: int,
     seed_split: int,
     seed_label: int,
     seed_imb: int,
@@ -209,6 +224,7 @@ def _sample_inductive(
     split_fingerprint: str,
     created_at: str,
     plan_dict: dict[str, Any],
+    schema_version: int,
 ) -> SamplingResult:
     y_train = np.asarray(dataset.train.y)
     n_train = int(y_train.shape[0])
@@ -220,13 +236,74 @@ def _sample_inductive(
         y_test = np.asarray(dataset.test.y)
         n_test = int(y_test.shape[0])
 
+    artifact = plan.partition.ordered_indices_artifact
+    if artifact is not None:
+        if plan.imbalance.kind != "none":
+            raise ValueError("sampling.imbalance must be 'none' with an ordered partition artifact")
+        indices = load_ordered_partition(
+            spec=artifact,
+            run_seed=run_seed,
+            y_train=y_train,
+            n_test=n_test,
+            dataset_fingerprint=dataset_fingerprint,
+        )
+        refs = {
+            "train": "train",
+            "val": "train",
+            "test": artifact.test_ref,
+            "train_labeled": "train",
+            "train_unlabeled": "train",
+        }
+        policy_info = {
+            "respect_official_test": bool(plan.policy.respect_official_test),
+            "allow_override_official": bool(plan.policy.allow_override_official),
+            "has_official_test": bool(has_official_test),
+            "official_test_ignored": artifact.test_ref != "test",
+            "test_ref": artifact.test_ref,
+            "partition_source_n": n_train,
+            "partition_selected_n": int(indices["train"].size),
+            "partition_artifact_sha256": artifact.sha256,
+            "unlabeled_pool": artifact.unlabeled_pool,
+            "ordered_indices": True,
+        }
+        stats = build_inductive_stats(
+            y_train=y_train,
+            train_idx=indices["train"],
+            val_idx=indices["val"],
+            test_ref=artifact.test_ref,
+            y_test=y_test,
+            test_idx=indices["test"],
+            labeled_idx=indices["train_labeled"],
+            unlabeled_idx=indices["train_unlabeled"],
+            policy=policy_info,
+        )
+        result = SamplingResult(
+            schema_version=schema_version,
+            created_at=created_at,
+            dataset_fingerprint=dataset_fingerprint,
+            split_fingerprint=split_fingerprint,
+            plan=plan_dict,
+            indices=indices,
+            refs=refs,
+            masks={},
+            stats=stats,
+        )
+        result.validate(n_train=n_train, n_test=n_test, n_nodes=None)
+        return result
+
+    partition_idx = _select_partition_indices(
+        n_samples=n_train,
+        spec=plan.partition,
+        rng=np.random.default_rng(seed_partition),
+    )
+    pool_y = y_train[partition_idx]
+    pool_n = int(partition_idx.shape[0])
+
     # Split on train indices only if official test is respected
     if has_official_test and plan.policy.respect_official_test:
         if not plan.policy.allow_override_official:
             test_idx = np.arange(n_test or 0, dtype=np.int64)
             test_ref = "test"
-            pool_y = y_train
-            pool_n = n_train
             if isinstance(plan.split, HoldoutSplitSpec):
                 rng = np.random.default_rng(seed_split)
                 # ignore test_fraction, split only val from train
@@ -256,14 +333,14 @@ def _sample_inductive(
                     "val": parts["test"],
                     "test": np.asarray([], dtype=np.int64),
                 }
-            train_idx = parts["train"]
-            val_idx = parts["val"]
+            train_idx = partition_idx[parts["train"]]
+            val_idx = partition_idx[parts["val"]]
         else:
             rng = np.random.default_rng(seed_split)
             if isinstance(plan.split, HoldoutSplitSpec):
                 parts = make_holdout_split(
-                    n_samples=n_train,
-                    y=y_train,
+                    n_samples=pool_n,
+                    y=pool_y,
                     test_fraction=float(plan.split.test_fraction),
                     val_fraction=float(plan.split.val_fraction),
                     stratify=bool(plan.split.stratify),
@@ -271,8 +348,8 @@ def _sample_inductive(
                 )
             else:
                 parts = make_kfold_split(
-                    n_samples=n_train,
-                    y=y_train,
+                    n_samples=pool_n,
+                    y=pool_y,
                     k=int(plan.split.k),
                     fold=int(plan.split.fold),
                     stratify=bool(plan.split.stratify),
@@ -280,16 +357,16 @@ def _sample_inductive(
                     val_fraction=float(plan.split.val_fraction),
                     rng=rng,
                 )
-            train_idx = parts["train"]
-            val_idx = parts["val"]
-            test_idx = parts["test"]
+            train_idx = partition_idx[parts["train"]]
+            val_idx = partition_idx[parts["val"]]
+            test_idx = partition_idx[parts["test"]]
             test_ref = "train"
     else:
         rng = np.random.default_rng(seed_split)
         if isinstance(plan.split, HoldoutSplitSpec):
             parts = make_holdout_split(
-                n_samples=n_train,
-                y=y_train,
+                n_samples=pool_n,
+                y=pool_y,
                 test_fraction=float(plan.split.test_fraction),
                 val_fraction=float(plan.split.val_fraction),
                 stratify=bool(plan.split.stratify),
@@ -297,8 +374,8 @@ def _sample_inductive(
             )
         else:
             parts = make_kfold_split(
-                n_samples=n_train,
-                y=y_train,
+                n_samples=pool_n,
+                y=pool_y,
                 k=int(plan.split.k),
                 fold=int(plan.split.fold),
                 stratify=bool(plan.split.stratify),
@@ -306,9 +383,9 @@ def _sample_inductive(
                 val_fraction=float(plan.split.val_fraction),
                 rng=rng,
             )
-        train_idx = parts["train"]
-        val_idx = parts["val"]
-        test_idx = parts["test"]
+        train_idx = partition_idx[parts["train"]]
+        val_idx = partition_idx[parts["val"]]
+        test_idx = partition_idx[parts["test"]]
         test_ref = "train"
 
     # apply imbalance to train if requested
@@ -319,7 +396,13 @@ def _sample_inductive(
         train_idx_adj = train_idx
 
     rng_lab = np.random.default_rng(seed_label)
-    labeled = select_labeled(train_idx=train_idx_adj, y=y_train, spec=plan.labeling, rng=rng_lab)
+    labeled = select_labeled(
+        train_idx=train_idx_adj,
+        y=y_train,
+        spec=plan.labeling,
+        rng=rng_lab,
+        run_seed=run_seed,
+    )
 
     if plan.imbalance.apply_to == "labeled":
         labeled_adj = apply_imbalance(idx=labeled, y=y_train, spec=plan.imbalance, rng=rng_imb)
@@ -355,6 +438,8 @@ def _sample_inductive(
             and plan.policy.allow_override_official
         ),
         "test_ref": test_ref,
+        "partition_source_n": n_train,
+        "partition_selected_n": pool_n,
     }
     stats = build_inductive_stats(
         y_train=y_train,
@@ -369,7 +454,7 @@ def _sample_inductive(
     )
 
     result = SamplingResult(
-        schema_version=SCHEMA_VERSION,
+        schema_version=schema_version,
         created_at=created_at,
         dataset_fingerprint=dataset_fingerprint,
         split_fingerprint=split_fingerprint,
@@ -383,10 +468,25 @@ def _sample_inductive(
     return result
 
 
+def _select_partition_indices(
+    *,
+    n_samples: int,
+    spec: PartitionSpec,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    indices = np.arange(n_samples, dtype=np.int64)
+    if spec.max_samples is None or spec.max_samples >= n_samples:
+        return indices
+    if spec.shuffle:
+        indices = rng.permutation(indices)
+    return np.sort(indices[: spec.max_samples])
+
+
 def _sample_graph(
     dataset: Any,
     *,
     plan: SamplingPlan,
+    run_seed: int,
     seed_split: int,
     seed_label: int,
     seed_imb: int,
@@ -394,6 +494,7 @@ def _sample_graph(
     split_fingerprint: str,
     created_at: str,
     plan_dict: dict[str, Any],
+    schema_version: int,
 ) -> SamplingResult:
     y = np.asarray(dataset.train.y)
     n_nodes = int(y.shape[0])
@@ -441,7 +542,13 @@ def _sample_graph(
     train_idx = np.where(train_mask)[0].astype(np.int64)
 
     rng_lab = np.random.default_rng(seed_label)
-    labeled_idx = select_labeled(train_idx=train_idx, y=y, spec=plan.labeling, rng=rng_lab)
+    labeled_idx = select_labeled(
+        train_idx=train_idx,
+        y=y,
+        spec=plan.labeling,
+        rng=rng_lab,
+        run_seed=run_seed,
+    )
 
     rng_imb = np.random.default_rng(seed_imb)
     if plan.imbalance.apply_to == "labeled":
@@ -461,7 +568,7 @@ def _sample_graph(
     stats = build_graph_stats(masks=masks, y=y, labeled_idx=labeled_idx)
 
     result = SamplingResult(
-        schema_version=SCHEMA_VERSION,
+        schema_version=schema_version,
         created_at=created_at,
         dataset_fingerprint=dataset_fingerprint,
         split_fingerprint=split_fingerprint,

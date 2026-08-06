@@ -11,7 +11,10 @@ BUILTIN_STEPS: tuple[StepSpec, ...] = (
         description="Ensure numeric arrays are 2D (n_samples, n_features) and store as features.X.",
         required_extra=None,
         modalities=(),
-        consumes=("raw.X",),
+        # Ensure2DStep prefers an upstream features.X artifact and falls back to raw.X.
+        # Track both possible inputs so cached output is invalidated when the upstream
+        # feature-producing step changes (for example across different fit scopes).
+        consumes=("features.X", "raw.X"),
         produces=("features.X",),
     ),
     StepSpec(
@@ -185,6 +188,16 @@ BUILTIN_STEPS: tuple[StepSpec, ...] = (
         import_path="modssc.preprocess.steps.text.tfidf:TfidfStep",
         kind="fittable",
         description="Fit a TF-IDF vectorizer and write sparse features.X.",
+        required_extra="preprocess-sklearn",
+        modalities=("text",),
+        consumes=("raw.X",),
+        produces=("features.X",),
+    ),
+    StepSpec(
+        step_id="text.count_vectorizer",
+        import_path="modssc.preprocess.steps.text.count_vectorizer:CountVectorizerStep",
+        kind="fittable",
+        description="Fit a bag-of-words count vectorizer and write features.X.",
         required_extra="preprocess-sklearn",
         modalities=("text",),
         consumes=("raw.X",),

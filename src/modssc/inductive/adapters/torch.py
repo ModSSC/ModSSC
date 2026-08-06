@@ -100,6 +100,13 @@ def _check_same_device(tensors: list[Any]) -> None:
         check_item(t)
 
 
+def _matches_expected_device(actual: Any, expected: Any) -> bool:
+    """Match an unindexed device request to any device with the same type."""
+    if expected.index is None:
+        return actual.type == expected.type
+    return actual == expected
+
+
 @dataclass(frozen=True)
 class TorchDataset:
     """Strict torch view of an inductive dataset (no implicit conversion)."""
@@ -174,6 +181,7 @@ def to_torch_dataset(
         _check_same_device(tensors)
 
     if device is not None and device.device != "auto":
+        torch = _torch()
         expected = torch_backend.resolve_device(device)
 
         def _check_expected_device(obj: Any) -> None:
@@ -183,7 +191,9 @@ def to_torch_dataset(
                 for value in obj.values():
                     _check_expected_device(value)
                 return
-            if obj.device != expected:
+            if not isinstance(obj, torch.Tensor):
+                return
+            if not _matches_expected_device(obj.device, expected):
                 raise InductiveValidationError(
                     f"Tensor device mismatch: expected {expected}, got {obj.device}"
                 )

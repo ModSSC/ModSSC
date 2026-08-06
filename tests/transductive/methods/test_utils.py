@@ -39,6 +39,28 @@ def test_validate_graph_inputs():
         )
 
 
+def test_validate_graph_inputs_keeps_float32_default_and_opt_in_float64() -> None:
+    edge_index = np.array([[0, 1], [1, 0]], dtype=np.int64)
+    edge_weight = np.array([0.123456789012345, 0.987654321098765], dtype=np.float64)
+
+    _, standardized = _validate_graph_inputs(
+        n_nodes=2,
+        edge_index=edge_index,
+        edge_weight=edge_weight,
+    )
+    _, paper = _validate_graph_inputs(
+        n_nodes=2,
+        edge_index=edge_index,
+        edge_weight=edge_weight,
+        preserve_float64=True,
+    )
+
+    assert standardized.dtype == np.float32
+    np.testing.assert_array_equal(standardized, edge_weight.astype(np.float32))
+    assert paper.dtype == np.float64
+    np.testing.assert_array_equal(paper, edge_weight)
+
+
 def test_validate_graph_inputs_edge_cases():
     n_nodes = 3
     edge_index = np.array([[0, 1], [1, 2]])

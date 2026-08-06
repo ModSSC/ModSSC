@@ -71,6 +71,10 @@ preprocess:
         - 57.12
         - 57.375
     - id: core.copy_raw
+    - id: core.to_torch
+      params:
+        device: cuda
+        dtype: float32
 augmentation:
   enabled: true
   seed: 3

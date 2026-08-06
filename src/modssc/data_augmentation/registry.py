@@ -45,6 +45,10 @@ _BUILTIN_OPS: dict[str, tuple[str, Modality]] = {
         "modssc.data_augmentation.ops.vision:RandomHorizontalFlip",
         "vision",
     ),
+    "vision.randaugment": (
+        "modssc.data_augmentation.ops.vision:RandAugment",
+        "vision",
+    ),
 }
 
 

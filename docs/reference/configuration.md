@@ -45,7 +45,10 @@ The bench entry point, schema, and YAML loader are implemented in [`bench/main.p
 ## Where configs live
 - Authored benchmark examples and templates: [`bench/configs/experiments/`](https://github.com/ModSSC/ModSSC/tree/main/bench/configs/experiments). <sup class="cite"><a href="#source-1">[1]</a></sup>
 - Curated benchmark suites and manifests: [`bench/configs/best/`](https://github.com/ModSSC/ModSSC/tree/main/bench/configs/best).
-- Cluster launchers and deployment helpers may also exist under local `bench/` subdirectories such as `bench/slurm/`, but those operational assets are not part of the stable public documentation contract.
+- Portable scheduler contracts and generic Slurm entry points live under
+  `tools/hpc/`. Accounts, partitions, QoS names, filesystem roots, environment
+  activation, and deployment policy belong in an untracked site overlay; they
+  are deliberately absent from the public configuration contract.
 - Brick-level plan files can also live outside `bench/`, but they must still satisfy the same schema objects described below.
 
 
@@ -65,7 +68,7 @@ The bench entry point, schema, and YAML loader are implemented in [`bench/main.p
 | `dataset` | dataset selection and provider options | `id` |
 | `sampling` | split and labeling plan | `seed`, `plan` |
 | `preprocess` | feature pipeline before training | `seed`, `fit_on`, `cache`, `plan` |
-| `method` | inductive or transductive method selection | `kind`, `id`, `device`, `params` |
+| `method` | inductive or transductive method selection | `kind`, `id`, `device`, `params`; optional `profile` |
 | `evaluation` | metrics and report splits | `report_splits`, `metrics` |
 | `graph` | graph construction for transductive workflows | optional block |
 | `views` | multi-view feature generation | optional block |
@@ -80,17 +83,24 @@ Top-level keys and their required fields are defined in [`bench/schema.py`](http
 - `dataset`: `id`, optional `options`, `download`, `cache_dir`. <sup class="cite"><a href="#source-2">[2]</a></sup>
 - `sampling`: `seed`, `plan`. <sup class="cite"><a href="#source-2">[2]</a></sup>
 - `preprocess`: `seed`, `fit_on`, `cache`, `plan`. <sup class="cite"><a href="#source-2">[2]</a></sup>
-- `method`: `kind` (`inductive` or `transductive`), `id`, `device`, `params`, optional `model`. `model` accepts classifier settings or an advanced `factory` + `params` pair when `run.allow_custom_factories=true`. <sup class="cite"><a href="#source-2">[2]</a></sup>
+- `method`: `kind` (`inductive` or `transductive`), `id`, `device`, `params`, optional `model`, and optional `profile`. `profile` defaults to `standardized`; a `paper:*` value is a bench-only protocol identity. `bench` validates that identity while executable behavior is expressed through generic `params`; `src/modssc` neither catalogs nor interprets article profile identifiers. `model` accepts classifier settings or an advanced `factory` + `params` pair when `run.allow_custom_factories=true`. <sup class="cite"><a href="#source-2">[2]</a></sup>
 - `evaluation`: `report_splits`, `metrics`, optional `split_for_model_selection`. <sup class="cite"><a href="#source-2">[2]</a></sup>
 - Optional blocks: `graph`, `views`, `augmentation`, `search`. <sup class="cite"><a href="#source-2">[2]</a></sup>
 
 
 ## Sampling plan schema
 Sampling plans are validated by `SamplingPlan.from_dict` and include:
+- optional `partition`: `max_samples`/`shuffle`, or an authenticated `ordered_indices_artifact` for an exact ordered train/validation/test/labeled/unlabeled replay
 - `split`: `kind` (`holdout` or `kfold`) plus its parameters <sup class="cite"><a href="#source-9">[9]</a><a href="#source-10">[10]</a><a href="#source-11">[11]</a><a href="#source-12">[12]</a><a href="#source-13">[13]</a><a href="#source-14">[14]</a><a href="#source-5">[5]</a></sup>
-- `labeling`: `mode` (`fraction`, `count`, `per_class`), `value`, `strategy`, `min_per_class`, optional `fixed_indices` <sup class="cite"><a href="#source-5">[5]</a></sup>
+- `labeling`: `mode` (`fraction`, `count`, `per_class`), `value`, `strategy`, `min_per_class`, and one optional exact source among `fixed_indices`, authenticated `fixed_indices_artifact`, or `class_counts`; `selection_order` distinguishes choice sampling from a frozen permutation <sup class="cite"><a href="#source-5">[5]</a></sup>
 - `imbalance`: `kind` (`none`, `subsample_max_per_class`, `long_tail`) and its parameters <sup class="cite"><a href="#source-5">[5]</a></sup>
-- `policy`: `respect_official_test`, `use_official_graph_masks`, `allow_override_official` <sup class="cite"><a href="#source-5">[5]</a></sup>
+- `policy`: `respect_official_test`, `use_official_graph_masks`, `allow_override_official`, and optional `merge_official_splits` <sup class="cite"><a href="#source-5">[5]</a></sup>
+- optional `component_seeds`: independent non-negative seeds for partition, split, labeling, and imbalance
+
+Historical plans retain fingerprint schema 1 exactly. Activating an artifact,
+ordered partition, independent component seed, merged official split, explicit
+class quota, random labeling, or permutation ordering selects schema 2. Schema
+2 fingerprints bind artifact content digests rather than machine-local paths.
 
 When `allow_override_official=true` on inductive datasets, provider test partitions are ignored and the user split is applied to `dataset.train`. See the [glossary](../getting-started/glossary.md) if these policy names are still unfamiliar.
 
@@ -105,7 +115,7 @@ Available step IDs and their metadata are listed in the built-in catalog. <sup c
 
 ## Views plan schema
 Views plans define multiple feature views:
-- `views`: list of view definitions with `name`, optional `preprocess`, `columns`, and `meta` <sup class="cite"><a href="#source-17">[17]</a></sup>
+- `views`: list of view definitions with `name`, optional `preprocess`, `input_columns`, `columns`, and `meta`; `input_columns` selects native source columns before per-view preprocessing <sup class="cite"><a href="#source-17">[17]</a></sup>
 - `columns` supports `all`, `indices`, `random`, and `complement` <sup class="cite"><a href="#source-17">[17]</a></sup>
 
 
@@ -115,7 +125,9 @@ Graph specs match `GraphBuilderSpec`:
 - `metric`: `cosine` or `euclidean`
 - `k` or `radius` depending on scheme
 - `symmetrize`, `weights`, `normalize`, `self_loops`
-- `backend`: `auto`, `numpy`, `sklearn`, or `faiss`
+- `backend`: `auto`, `numpy`, `sklearn`, `faiss`, `torch`, or `precomputed`
+- `include_self_in_knn` and `edge_weight_dtype` for protocol-specific graph semantics
+- `precomputed_path` plus `precomputed_sha256` when `backend: precomputed`; graph identity uses the digest rather than the artifact location
 - anchor-specific and faiss-specific parameters
 
 All validation rules are defined in [`src/modssc/graph/specs.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/graph/specs.py). <sup class="cite"><a href="#source-6">[6]</a></sup>

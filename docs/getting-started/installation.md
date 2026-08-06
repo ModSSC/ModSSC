@@ -10,7 +10,10 @@ ModSSC requires Python 3.11 or newer. <sup class="cite"><a href="#source-1">[1]<
 ## Install from PyPI
 Install the core library and CLI tools from PyPI.
 
-Choose this if you only need the packaged library and CLI. The benchmark runner is located in `bench/` and is not shipped to PyPI. <sup class="cite"><a href="#source-2">[2]</a></sup>
+Choose this if you only need the packaged library and CLI. The benchmark and
+paper-replication runner is located in the separately packaged top-level
+`bench/` namespace and is available from both wheels and source checkouts.
+<sup class="cite"><a href="#source-2">[2]</a></sup>
 
 This package name and entry points are declared in project metadata. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a></sup>
 
@@ -20,9 +23,13 @@ python -m pip install modssc
 
 
 ## Install from source
-Use this for development, [benchmarks](../reference/benchmarks.md), or when you need the latest main branch.
+Use this for development, [benchmarks](../reference/benchmarks.md), paper
+replication, or when you need the latest main branch.
 
-This path is recommended for benchmark runs because the runner and configs are in the repository. <sup class="cite"><a href="#source-2">[2]</a><a href="#source-3">[3]</a></sup>
+The ModSSC checkout contains the runner, protocol cards, fixed replay resources,
+and implementations required by supported replications. It must not require a
+second checkout of an upstream research repository.
+<sup class="cite"><a href="#source-2">[2]</a><a href="#source-3">[3]</a></sup>
 
 ```bash
 git clone https://github.com/ModSSC/ModSSC
@@ -52,6 +59,10 @@ The CLI version flag is implemented in [`src/modssc/cli/app.py`](https://github.
 ## Common pitfalls
 !!! warning
     Some datasets and methods require optional extras (for example, `hf`, `openml`, `graph`, `inductive-torch`). <sup class="cite"><a href="#source-1">[1]</a><a href="#source-7">[7]</a></sup>
+
+    Article protocols resolve datasets through ModSSC providers and may require
+    declared Python extras. A supported replication must not require an external
+    source checkout, JAR, Weka installation, or manually prepared cache.
 
 
 !!! tip

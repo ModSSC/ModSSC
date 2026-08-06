@@ -21,6 +21,54 @@ def _require_keys(obj: Mapping[str, Any], *, path: str, keys: list[str]) -> None
         )
 
 
+def _validate_git_provenance(versions: Mapping[str, Any]) -> None:
+    distribution_sha256 = versions.get("distribution_sha256")
+    if distribution_sha256 is not None and not (
+        isinstance(distribution_sha256, str)
+        and len(distribution_sha256) == 64
+        and all(character in "0123456789abcdef" for character in distribution_sha256)
+    ):
+        raise BenchRuntimeError(
+            "E_BENCH_RUN_JSON_SCHEMA",
+            "versions.distribution_sha256 must be null or a lowercase SHA-256 hex digest",
+        )
+    provenance_keys = {"git_dirty", "git_diff_sha256"}
+    present = provenance_keys.intersection(versions)
+    if not present:
+        # Reports created before worktree provenance was introduced remain readable.
+        return
+    if present != provenance_keys:
+        missing = sorted(provenance_keys - present)
+        raise BenchRuntimeError(
+            "E_BENCH_RUN_JSON_SCHEMA",
+            f"versions missing Git provenance keys: {missing}",
+        )
+
+    dirty = versions["git_dirty"]
+    fingerprint = versions["git_diff_sha256"]
+    if dirty is None:
+        if fingerprint is not None:
+            raise BenchRuntimeError(
+                "E_BENCH_RUN_JSON_SCHEMA",
+                "versions.git_diff_sha256 must be null when versions.git_dirty is null",
+            )
+        return
+    if type(dirty) is not bool:
+        raise BenchRuntimeError(
+            "E_BENCH_RUN_JSON_SCHEMA",
+            "versions.git_dirty must be a boolean or null",
+        )
+    if not (
+        isinstance(fingerprint, str)
+        and len(fingerprint) == 64
+        and all(character in "0123456789abcdef" for character in fingerprint)
+    ):
+        raise BenchRuntimeError(
+            "E_BENCH_RUN_JSON_SCHEMA",
+            "versions.git_diff_sha256 must be a lowercase SHA-256 hex digest",
+        )
+
+
 def validate_run_payload(payload: Mapping[str, Any]) -> None:
     _require_keys(
         payload,
@@ -104,6 +152,7 @@ def validate_run_payload(payload: Mapping[str, Any]) -> None:
         path="versions",
         keys=["python", "modssc", "numpy", "git_sha"],
     )
+    _validate_git_provenance(versions)
 
     fallback_events = payload["fallback_events"]
     if not isinstance(fallback_events, list):

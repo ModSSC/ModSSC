@@ -23,8 +23,14 @@ from .api import (
     get_op,
     make_context_rng,
 )
+from .cifar_reference import (
+    CifarAugmentationDraws,
+    CifarReferenceAugmentation,
+    resolve_cifar_augmentation_profile,
+)
 from .plan import AugmentationPlan, StepConfig
 from .registry import register_op
+from .runtime import OnlineAugmentation
 from .types import AugmentationContext, GraphSample, Modality
 
 __all__ = [
@@ -42,4 +48,8 @@ __all__ = [
     "get_op",
     "register_op",
     "make_context_rng",
+    "OnlineAugmentation",
+    "CifarAugmentationDraws",
+    "CifarReferenceAugmentation",
+    "resolve_cifar_augmentation_profile",
 ]

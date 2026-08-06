@@ -122,7 +122,10 @@ def summarize_graph(graph: GraphArtifact, spec_dict: Mapping[str, Any] | None) -
         "weights": dict(weights),
         "normalize": spec.get("normalize"),
         "self_loops": spec.get("self_loops"),
+        "include_self_in_knn": spec.get("include_self_in_knn", False),
+        "edge_weight_dtype": spec.get("edge_weight_dtype", "float32"),
         "backend": spec.get("backend"),
+        "precomputed_sha256": spec.get("precomputed_sha256"),
         "feature_field": spec.get("feature_field"),
     }
     info.update(_connected_component_stats(graph))
@@ -136,8 +139,11 @@ def build(
     seed: int,
     dataset_fingerprint: str | None,
     cache: bool,
+    require_cache_hit: bool,
     cache_dir: str | None,
     include_test: bool,
+    expected_fingerprint: str | None = None,
+    expected_preprocess_fingerprint: str | None = None,
 ) -> GraphArtifact:
     start = perf_counter()
     spec = _spec_from_dict(spec_dict)
@@ -178,6 +184,9 @@ def build(
         dataset_fingerprint=dataset_fingerprint,
         preprocess_fingerprint=pre.preprocess_fingerprint,
         cache=bool(cache),
+        require_cache_hit=bool(require_cache_hit),
+        expected_fingerprint=expected_fingerprint,
+        expected_preprocess_fingerprint=expected_preprocess_fingerprint,
         cache_dir=cache_root,
     )
     _LOGGER.info(

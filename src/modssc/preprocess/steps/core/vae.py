@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import contextlib
 import hashlib
+import json
 import logging
+import os
+import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -58,6 +62,14 @@ def _array_sha256(X: np.ndarray) -> str:
     h.update(str(tuple(int(dim) for dim in arr.shape)).encode("utf-8"))
     h.update(memoryview(arr).cast("B"))
     return h.hexdigest()
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _default_vae_cache_dir() -> Path:
@@ -136,6 +148,8 @@ class VaeStep:
     cache_key: str | None = None
     model_seed: int | None = None
     fit_scope: str = "selected"
+    require_cache_hit: bool = field(default=False, kw_only=True)
+    expected_model_fingerprint: str | None = field(default=None, kw_only=True)
 
     mean_: np.ndarray | None = None
     scale_: np.ndarray | None = None
@@ -201,6 +215,13 @@ class VaeStep:
             )
         if self.model_seed is not None and int(self.model_seed) < 0:
             raise PreprocessValidationError("model_seed must be >= 0 when provided")
+        if bool(self.require_cache_hit) and not bool(self.model_cache):
+            raise PreprocessValidationError("require_cache_hit=true requires model_cache=true")
+        if (
+            self.expected_model_fingerprint is not None
+            and not str(self.expected_model_fingerprint).strip()
+        ):
+            raise PreprocessValidationError("expected_model_fingerprint must not be empty")
         if str(self.fit_scope) not in {"selected", "all"}:
             raise PreprocessValidationError("fit_scope must be one of: selected, all")
 
@@ -285,6 +306,7 @@ class VaeStep:
             "kind": "dense_vae",
             "schema_version": 1,
             "fingerprint": model_fingerprint,
+            "expected_fingerprint": self.expected_model_fingerprint,
             "params": self._params_for_fingerprint(),
             "training": {
                 "n_fit_samples": int(fit_shape[0]),
@@ -388,7 +410,13 @@ class VaeStep:
         return DenseVAE()
 
     def _load_cached_model(
-        self, torch: Any, *, cache_dir: Path, input_dim: int, device: str
+        self,
+        torch: Any,
+        *,
+        cache_dir: Path,
+        input_dim: int,
+        device: str,
+        expected_fingerprint: str | None = None,
     ) -> bool:
         manifest_path = cache_dir / "manifest.json"
         model_path = cache_dir / "model.pt"
@@ -397,6 +425,21 @@ class VaeStep:
             return False
 
         try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            if not isinstance(manifest, dict):
+                raise ValueError("manifest root must be a mapping")
+            if expected_fingerprint is not None and manifest.get("fingerprint") != str(
+                expected_fingerprint
+            ):
+                raise ValueError("cached VAE fingerprint does not match the requested model")
+            file_hashes = manifest.get("file_sha256")
+            if expected_fingerprint is not None:
+                if not isinstance(file_hashes, dict):
+                    raise ValueError("cached VAE manifest does not contain file SHA-256 values")
+                for name, path in (("model.pt", model_path), ("state.npz", state_path)):
+                    expected_hash = file_hashes.get(name)
+                    if not isinstance(expected_hash, str) or _file_sha256(path) != expected_hash:
+                        raise ValueError(f"cached VAE file hash mismatch: {name}")
             state_np = np.load(state_path, allow_pickle=False)
             self.mean_ = np.asarray(state_np["mean"], dtype=np.float32)
             self.scale_ = np.asarray(state_np["scale"], dtype=np.float32)
@@ -423,18 +466,36 @@ class VaeStep:
         cache_dir.mkdir(parents=True, exist_ok=True)
         model_path = cache_dir / "model.pt"
         state_path = cache_dir / "state.npz"
-        torch.save({"state_dict": self.model_.state_dict()}, model_path)
-        np.savez(
-            state_path,
-            mean=np.asarray(self.mean_, dtype=np.float32),
-            scale=np.asarray(self.scale_, dtype=np.float32),
-            impute=np.asarray(self.impute_, dtype=np.float32),
-        )
-        manifest = dict(info)
-        manifest["created_at"] = datetime.now(UTC).isoformat()
-        manifest["files"] = {"model": model_path.name, "state": state_path.name}
-        manifest["runtime"] = {"torch_version": str(getattr(torch, "__version__", ""))}
-        atomic_write_text(cache_dir / "manifest.json", stable_json_dumps(manifest))
+        token = f"{os.getpid()}-{uuid.uuid4().hex}"
+        model_tmp = cache_dir / f".model.pt.{token}.tmp"
+        state_tmp = cache_dir / f".state.npz.{token}.tmp"
+        try:
+            torch.save({"state_dict": self.model_.state_dict()}, model_tmp)
+            with state_tmp.open("wb") as handle:
+                np.savez(
+                    handle,
+                    mean=np.asarray(self.mean_, dtype=np.float32),
+                    scale=np.asarray(self.scale_, dtype=np.float32),
+                    impute=np.asarray(self.impute_, dtype=np.float32),
+                )
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(model_tmp, model_path)
+            os.replace(state_tmp, state_path)
+            manifest = dict(info)
+            manifest["created_at"] = datetime.now(UTC).isoformat()
+            manifest["files"] = {"model": model_path.name, "state": state_path.name}
+            manifest["file_sha256"] = {
+                model_path.name: _file_sha256(model_path),
+                state_path.name: _file_sha256(state_path),
+            }
+            manifest["runtime"] = {"torch_version": str(getattr(torch, "__version__", ""))}
+            # The manifest is the commit marker and is always published last.
+            atomic_write_text(cache_dir / "manifest.json", stable_json_dumps(manifest))
+        finally:
+            for path in (model_tmp, state_tmp):
+                with contextlib.suppress(FileNotFoundError):
+                    path.unlink()
 
     def fit(
         self, store: ArtifactStore, *, fit_indices: np.ndarray, rng: np.random.Generator
@@ -511,6 +572,13 @@ class VaeStep:
             fit_indices_hash=fit_indices_hash,
             seed=seed,
         )
+        if self.expected_model_fingerprint is not None and model_fingerprint != str(
+            self.expected_model_fingerprint
+        ):
+            raise PreprocessValidationError(
+                "VAE model fingerprint differs from expected_model_fingerprint: "
+                f"computed {model_fingerprint}, expected {self.expected_model_fingerprint}"
+            )
         cache_dir = self._cache_dir_for(model_fingerprint) if self.model_cache else None
 
         torch = require_optional(
@@ -522,7 +590,11 @@ class VaeStep:
         self.model_fingerprint_ = model_fingerprint
         self.model_cache_dir_ = cache_dir
         if cache_dir is not None and self._load_cached_model(
-            torch, cache_dir=cache_dir, input_dim=int(X_fit.shape[1]), device=device
+            torch,
+            cache_dir=cache_dir,
+            input_dim=int(X_fit.shape[1]),
+            device=device,
+            expected_fingerprint=model_fingerprint,
         ):
             self.model_cache_hit_ = True
             self.model_info_ = self._build_info(
@@ -539,6 +611,13 @@ class VaeStep:
                 "Loaded cached VAE model: fingerprint=%s dir=%s", model_fingerprint, cache_dir
             )
             return
+
+        if cache_dir is not None and bool(self.require_cache_hit):
+            raise PreprocessValidationError(
+                "The frozen VAE cache is missing, corrupt, or has a different fingerprint: "
+                f"{cache_dir}. Build and verify it during preflight; scientific jobs are not "
+                "allowed to train it implicitly."
+            )
 
         self.model_cache_hit_ = False
         X_fit = self._scale_features(X_fit)

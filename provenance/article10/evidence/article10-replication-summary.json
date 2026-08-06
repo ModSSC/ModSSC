@@ -1,0 +1,1102 @@
+{
+  "schema_version": 1,
+  "report_id": "article10-replication-summary-v2",
+  "draft": false,
+  "snapshot_date": "2026-08-05",
+  "publication_redaction": {
+    "execution_site_identity": "private",
+    "historical_aliases_are_source_ids": false,
+    "source_identities_are_bound_by_sha256": true,
+    "provenance_descriptor": "provenance/article10/evidence/execution-history-bundle.json"
+  },
+  "execution_releases": {
+    "calder_table1": {
+      "git_sha": "2756f2f53c6454d726be476d7d0799fc088f1898",
+      "tag": "replication-10m-easy-wave1-v4"
+    },
+    "grand_production": {
+      "git_sha": "8cbee2e53a029c39d53b0f1557b68dbbd9653e77",
+      "tag": "replication-10m-easy-wave1-v5"
+    },
+    "tri_pseudo_production": {
+      "git_sha": "04a8f0be1009bde3a32bf44f9b352ec889c9a459",
+      "tag": "replication-10m-easy-wave1-v6"
+    },
+    "dcl_confidence_diagnostics": {
+      "git_sha": "e6e509e0840e6ee18ef55d1b5b99255798364f5a",
+      "tag": "replication-10m-easy-wave1-v8",
+      "environment_lock_sha256": "040ef191238a49230ed3b3e035ce03ee51dc949da9aa0b662c26f305289e37c7",
+      "accelerator_architecture": "V100",
+      "claim_eligible": false
+    },
+    "match_fix_production": {
+      "git_sha": "c024a03fce7d93a1a1ac29fc0fd31bde3e6b780f",
+      "tag": "replication-10m-match-wave1-v3",
+      "environment_lock_sha256": "040ef191238a49230ed3b3e035ce03ee51dc949da9aa0b662c26f305289e37c7"
+    },
+    "match_adaptive_production": {
+      "git_sha": "f0fb2b7c3834f54dfd03b9aba72a32901f649ca2",
+      "tag": "replication-10m-match-wave2-v1",
+      "environment_lock_sha256": "040ef191238a49230ed3b3e035ce03ee51dc949da9aa0b662c26f305289e37c7"
+    }
+  },
+  "calder_final_bundle": {
+    "path": "evidence://modssc/calder/table1/final-bundle-v4",
+    "artifact_manifest_sha256": "ed70f03ce70023438466a60d9c14a21e27ffb7e5e711eb2ed04b0bfb374bf143",
+    "manifest_internal_seal_sha256": "7bd263e5b6307046f09c5260338a21c1b6d09c14ee63c91c053b7ebeca5a06f2",
+    "key_artifacts_manifest_sha256": "557259120fece8c56346fad85ed6951d5f7ff1e78279a0b6b3c887e30bef5241",
+    "result_files_manifest_sha256": "47ca7c878b86bd9a1812f0ab91dbffd11e3aa9bc335343478dd0f4814431668c",
+    "result_file_count": 9000
+  },
+  "scope": {
+    "method_count": 10,
+    "method_ids": [
+      "pseudo_label",
+      "tri_training",
+      "democratic_co_learning",
+      "fixmatch",
+      "flexmatch",
+      "free_match",
+      "softmatch",
+      "laplace_learning",
+      "poisson_learning",
+      "grand"
+    ]
+  },
+  "track_statuses": {
+    "paper": "passed",
+    "standardized": "pending"
+  },
+  "allowed_statuses": {
+    "algorithmic_conformity": [
+      "passed",
+      "pending"
+    ],
+    "protocol_conformity": [
+      "passed",
+      "pending",
+      "failed",
+      "not_assessed"
+    ],
+    "campaign": [
+      "complete",
+      "pending",
+      "blocked"
+    ],
+    "result": [
+      "matched",
+      "failed_margin",
+      "pending",
+      "not_evaluated"
+    ],
+    "replication": [
+      "paper_matched",
+      "paper_approx",
+      "not_claimable",
+      "pending"
+    ]
+  },
+  "production_resource_usage": {
+    "reserve_fraction": 0.15,
+    "reserve_status": "pass",
+    "calder_local_cpu": {
+      "wall_time_seconds": 11370,
+      "max_processes": 2,
+      "successful_tasks": 1000,
+      "failed_tasks": 0
+    },
+    "methods": {
+      "grand": {
+        "architecture": "V100",
+        "accelerator_hours": 1.5933824413888888,
+        "daily_report_path": "evidence://modssc/daily/article10-grand-paper-production-v1-v5-001/daily-usage.json",
+        "daily_report_sha256": "9ede52ac93490b6790f432954471662654e1b575a7c9996d9bc6bd830de59bcd"
+      },
+      "tri_training": {
+        "architecture": "V100",
+        "accelerator_hours": 0.009924006666666667,
+        "daily_report_path": "evidence://modssc/daily/article10-paper-tri-vote-v1-v6-001/daily-usage.json",
+        "daily_report_sha256": "a22f86b8e5d5be665e8694a3818e72eae3e0d4d7677206d0e2b0554930d4188a"
+      },
+      "pseudo_label": {
+        "architecture": "A100",
+        "accelerator_hours": 0.6074879725,
+        "daily_report_path": "evidence://modssc/daily/article10-paper-pseudo-label-mnist-v1-v6-001/daily-usage.json",
+        "daily_report_sha256": "1424a5595388d5b20e58ea3d0ce32cc30eadd9850391f1961088741b80401eb8"
+      }
+    },
+    "additional_analyses": {
+      "tri_training_extended100": {
+        "architecture": "V100",
+        "accelerator_hours": 0.26006854,
+        "successful_tasks": 100,
+        "failed_tasks": 0,
+        "daily_report_path": "evidence://modssc/daily/article10-paper-tri-vote-extended100-v1-002/daily-usage.json",
+        "daily_report_sha256": "ee4348907e68e133eec473228d4bcdcab52eb1464862d1433a1df66657f58e71"
+      },
+      "dcl_confidence_diagnostics": {
+        "architecture": "V100",
+        "accelerator_hours": 2.1883333333333335,
+        "scientific_tasks": 80,
+        "successful_scientific_tasks": 80,
+        "failed_scientific_tasks": 0,
+        "allocation_count_including_postprocessing": 95,
+        "budget_hours": 5.0,
+        "within_budget": true,
+        "usage_descriptor_path": "provenance/article10/evidence/dcl-confidence-v8-resource-usage.json",
+        "usage_descriptor_sha256": "f4fafb0e5a2fb83a38bea7bb888eca0a8444d4fd6422a4c67441112aa437aa3d",
+        "source_usage_report_sha256": "22a20d62130fae3c2e2e5fef5615b87f3190c2e4fc5decc424592067a0a0be5e"
+      }
+    }
+  },
+  "methods": [
+    {
+      "method_id": "pseudo_label",
+      "paper_profile": "paper:lee2013-mnist-table2-600",
+      "protocol_id": "lee-2013-mnist-table2-600",
+      "dataset_id": "mnist",
+      "coded": true,
+      "algorithmic_conformity": "passed",
+      "protocol_conformity": "pending",
+      "campaign": {
+        "campaign_id": "article10-paper-pseudo-label-mnist-v1",
+        "status": "complete",
+        "manifest_sha256": "9b833544553b39c9a9d87e494f70b10442ccac49c2c71406168d5d225e605a13"
+      },
+      "repetitions": {
+        "cells": 1,
+        "required_per_cell": 10,
+        "required_total": 10,
+        "successful_total": 10
+      },
+      "result": {
+        "status": "failed_margin",
+        "metric": "test_error",
+        "published_mean": 0.0503,
+        "replication_mean": 0.06860000000000001,
+        "replication_std": 0.004257803293822871,
+        "std_ddof": 1,
+        "ci95": [
+          0.06555415100949917,
+          0.07164584899050085
+        ],
+        "absolute_difference": 0.01830000000000001,
+        "margin_absolute": 0.01,
+        "target_in_ci95": false,
+        "within_margin": false
+      },
+      "replication_status": "paper_approx",
+      "evidence": [
+        {
+          "kind": "paper_acceptance",
+          "path": "evidence://modssc/paper-evaluations/article10-paper-pseudo-label-mnist-v1-v6-001/paper-acceptance.json",
+          "sha256": "6e656b42d8d24edf10c2b62fe7afbc4c72bd57f3ef12d709a6373f896d83b34e"
+        },
+        {
+          "kind": "reconciliation",
+          "path": "evidence://modssc/reconciliations/article10-paper-pseudo-label-mnist-v1-v6-001/reconcile.json",
+          "sha256": "589756ae45b631010ff17839cf8c33cfc93f04c1f3c1f3c692bdc4a8a96c7aea"
+        }
+      ]
+    },
+    {
+      "method_id": "tri_training",
+      "paper_profile": "paper:zhou-li-2005-vote-table3-j48",
+      "protocol_id": "zhou-li-2005-vote-table3-j48-80pct-unlabeled",
+      "dataset_id": "vote",
+      "coded": true,
+      "algorithmic_conformity": "passed",
+      "protocol_conformity": "pending",
+      "campaign": {
+        "campaign_id": "article10-paper-tri-vote-v1",
+        "status": "complete",
+        "manifest_sha256": "3e7254409e32343681cfc9ad103b157dea4342f6b87dfe5ac93c8c1c1fbf614e"
+      },
+      "repetitions": {
+        "cells": 1,
+        "required_per_cell": 3,
+        "required_total": 3,
+        "successful_total": 3
+      },
+      "result": {
+        "status": "matched",
+        "metric": "test_error",
+        "published_mean": 0.055,
+        "replication_mean": 0.07033639143730885,
+        "replication_std": 0.014013992950935267,
+        "std_ddof": 1,
+        "ci95": [
+          0.035523703055687264,
+          0.10514907981893044
+        ],
+        "absolute_difference": 0.015336391437308854,
+        "margin_absolute": 0.02,
+        "target_in_ci95": true,
+        "within_margin": true,
+        "secondary_targets_ok": false,
+        "secondary_targets": [
+          {
+            "id": "round0-initial-ensemble-error",
+            "published_mean": 0.076,
+            "replication_mean": 0.055045871559632996,
+            "absolute_difference": 0.020954128440367002,
+            "margin_absolute": 0.02,
+            "target_in_ci95": true,
+            "within_margin": false
+          }
+        ]
+      },
+      "robustness_extension": {
+        "campaign_id": "article10-paper-tri-vote-extended100-v1",
+        "protocol_id": "zhou-li-2005-vote-table3-j48-80pct-unlabeled-extended100",
+        "purpose": "preregistered 100-draw robustness extension beyond the three paper repetitions",
+        "status": "complete",
+        "manifest_sha256": "c2b335df4dd694ed00ff54ebf8c7318230ffc7fdb9b3a7979b8ff5e0e7336757",
+        "required_total": 100,
+        "successful_total": 100,
+        "acceptance_result_status": "failed_ci95",
+        "equivalence_claim": "replicated_within_preregistered_margin",
+        "equivalence_interval": [
+          0.035,
+          0.075
+        ],
+        "final_test_error": {
+          "published_mean": 0.055,
+          "replication_mean": 0.06715596330275227,
+          "replication_std": 0.020530127491321853,
+          "std_ddof": 1,
+          "ci95": [
+            0.06308234060410114,
+            0.07122958600140339
+          ],
+          "absolute_difference": 0.012155963302752266,
+          "margin_absolute": 0.02,
+          "target_in_ci95": false,
+          "within_margin": true
+        },
+        "initial_ensemble_test_error": {
+          "published_mean": 0.076,
+          "replication_mean": 0.06339449541284399,
+          "replication_std": 0.022017383292093767,
+          "std_ddof": 1,
+          "ci95": [
+            0.05902576889706919,
+            0.06776322192861879
+          ],
+          "absolute_difference": 0.012605504587156008,
+          "margin_absolute": 0.02,
+          "target_in_ci95": false,
+          "within_margin": true
+        },
+        "paired_final_minus_initial_error": {
+          "replication_mean": 0.003761467889908261,
+          "replication_std": 0.022094476555838367,
+          "std_ddof": 1,
+          "ci95": [
+            -0.0006225556019440566,
+            0.00814549138176058
+          ],
+          "improved_count": 28,
+          "worsened_count": 36,
+          "unchanged_count": 36
+        },
+        "integrity": {
+          "fixed_test_partition_count": 1,
+          "unique_labeled_unlabeled_partitions": 100,
+          "test_based_selection": false,
+          "original_seed_replay_exact": true
+        }
+      },
+      "replication_status": "paper_approx",
+      "evidence": [
+        {
+          "kind": "paper_acceptance",
+          "path": "evidence://modssc/paper-evaluations/article10-paper-tri-vote-v1-v6-001/paper-acceptance.json",
+          "sha256": "495cf0abafb7575db39c835dc3d162b12e93b5324767a83cca2b0261bd2999a6"
+        },
+        {
+          "kind": "reconciliation",
+          "path": "evidence://modssc/reconciliations/article10-paper-tri-vote-v1-v6-001/reconcile.json",
+          "sha256": "eef55167f2f6bb2441bcb22c75f11d8d9abece3d614de9ce90ef87cac3f863db"
+        },
+        {
+          "kind": "paper_acceptance_extended100",
+          "path": "evidence://modssc/paper-evaluations/article10-paper-tri-vote-extended100-v1-002/paper-acceptance.json",
+          "sha256": "e6d007ab44742c2b24b3a2707fb9f00aa8331867470ea05725d1b95007c179fe"
+        },
+        {
+          "kind": "reconciliation_extended100",
+          "path": "evidence://modssc/reconciliations/article10-paper-tri-vote-extended100-v1-002/reconcile.json",
+          "sha256": "9e3dc726dc924cb543366da60fc89b23fd5d83effe3fb7ec8b8dda9f67f7844c"
+        },
+        {
+          "kind": "paired_robustness_analysis_extended100",
+          "path": "evidence://modssc/audits/article10-paper-tri-vote-extended100-v1/paired-analysis-v1/robustness-analysis.json",
+          "sha256": "4c1cdf1cb24c5a5b1d63b10d7eb9d986d5ff0aefa69f51e7bd6b465bebaaf5c5"
+        }
+      ]
+    },
+    {
+      "method_id": "democratic_co_learning",
+      "paper_profile": "paper:zhou-goldman-2004-vote-table3",
+      "protocol_id": "zhou-goldman-2004-vote-table3",
+      "dataset_id": "vote",
+      "coded": true,
+      "algorithmic_conformity": "passed",
+      "protocol_conformity": "failed",
+      "campaign": {
+        "public_campaign_alias": "article10-paper-dcl-vote-v1",
+        "source_campaign_id_sha256": "61410e61b4f3d1e7434ff592b3e15e8fe00dded8bccaab61fae9d549cee9283e",
+        "status": "complete",
+        "manifest_sha256": "2a9f24c759442c26715c94348017eed5452f64cc53c44825b90a937bc08195f2"
+      },
+      "repetitions": {
+        "cells": 1,
+        "required_per_cell": 20,
+        "required_total": 20,
+        "successful_total": 20
+      },
+      "result": {
+        "status": "failed_margin",
+        "metric": "test_accuracy",
+        "published_mean": 0.944,
+        "replication_mean": 0.9046153846153846,
+        "replication_std": 0.02139790911632902,
+        "std_ddof": 1,
+        "ci95": [
+          0.8946008548816785,
+          0.9146299143490907
+        ],
+        "absolute_difference": 0.03938461538461535,
+        "margin_absolute": 0.02,
+        "target_in_ci95": false,
+        "within_margin": false,
+        "protocol_diagnostics_ok": false
+      },
+      "confidence_diagnostic_extension": {
+        "purpose": "test-blind localization of the Table 2 dynamics; not a new paper replication",
+        "paper_claim_allowed": false,
+        "selection_basis": "table2_trajectory_only",
+        "test_information_used": false,
+        "primary_campaign": {
+          "public_campaign_alias": "dcl-vote-confidence-primary-v2-v8",
+          "source_campaign_id_sha256": "da2b29125ec25f6690bb02a1b4bd3c9848c5666a15eba055910410395015ae67",
+          "status": "complete",
+          "manifest_sha256": "ad8e4787c5b9ce48282c0ed105813b12775746717acb2258038b676e51e286ad",
+          "required_total": 40,
+          "successful_total": 40,
+          "reconciliation_sha256": "ad1a2e4d5a6710df1f4f712c697c60f2e61e7e8b2b9e5358882e6e9015d182e0"
+        },
+        "primary_candidates": [
+          {
+            "candidate_id": "resub-wald-v1-control",
+            "confidence_estimator": "training_accuracy",
+            "confidence_interval": "wald",
+            "n_success": 20,
+            "protocol_conformity": "pending",
+            "dynamics_status": "failed",
+            "mean_iterations_including_terminal_pass": 5.55,
+            "pseudo_labels_added_mean_per_learner": [
+              4.45,
+              42.8,
+              5.6
+            ],
+            "nb_receives_most": false
+          },
+          {
+            "candidate_id": "10fold-wald-primary-reconstruction",
+            "confidence_estimator": "kfold_oof",
+            "confidence_interval": "wald",
+            "folds": 10,
+            "n_success": 20,
+            "protocol_conformity": "pending",
+            "dynamics_status": "failed",
+            "mean_iterations_including_terminal_pass": 5.35,
+            "pseudo_labels_added_mean_per_learner": [
+              4.05,
+              40.85,
+              4.6
+            ],
+            "nb_receives_most": false
+          }
+        ],
+        "attribution": {
+          "status": "initial_raw_geometry_is_inverted_before_confidence",
+          "first_round_raw_disagreement_mean_per_learner": [
+            3.45,
+            13.4,
+            2.3
+          ],
+          "normalized_table2_distance": {
+            "10fold_wald": 4.14875,
+            "resubstitution_wald": 4.23625
+          },
+          "conclusion": "confidence construction is not sufficient to explain the inversion; historical learner semantics, unavailable partitions, or their interaction remain plausible"
+        },
+        "conditional_decision": {
+          "status": "completed",
+          "triggered": true,
+          "trigger": "both primary candidates failed and 10fold-Wald had the lower preregistered Table 2 distance"
+        },
+        "conditional_campaign": {
+          "public_campaign_alias": "dcl-vote-confidence-conditional-v2-v8",
+          "source_campaign_id_sha256": "cc6adbf83c380e46f37f64e19ac3afbbc2c9c903d80b0eae891cb18a49f9ee69",
+          "status": "complete",
+          "manifest_sha256": "0267792444c0280b9fdeb8106b94b4782a491bb502557e1f8c1459cfa5272e39",
+          "required_total": 40,
+          "successful_total": 40,
+          "reconciliation_sha256": "1409d8daccaeb5356cbb7ad37d895c45931f4179c16db3ca57d911c0b8ebadc9"
+        },
+        "conditional_candidates": [
+          {
+            "candidate_id": "10fold-wilson-conditional",
+            "confidence_estimator": "kfold_oof",
+            "confidence_interval": "wilson",
+            "folds": 10,
+            "n_success": 20,
+            "protocol_conformity": "pending",
+            "dynamics_status": "failed",
+            "mean_iterations_including_terminal_pass": 5.1,
+            "pseudo_labels_added_mean_per_learner": [
+              3.9,
+              38.9,
+              3.65
+            ],
+            "nb_receives_most": false
+          },
+          {
+            "candidate_id": "10fold-clopper-pearson-conditional",
+            "confidence_estimator": "kfold_oof",
+            "confidence_interval": "clopper_pearson",
+            "folds": 10,
+            "n_success": 20,
+            "protocol_conformity": "pending",
+            "dynamics_status": "failed",
+            "mean_iterations_including_terminal_pass": 4.95,
+            "pseudo_labels_added_mean_per_learner": [
+              3.95,
+              35.2,
+              3.6
+            ],
+            "nb_receives_most": false
+          }
+        ],
+        "final_diagnostic_status": "tested_confidence_constructions_insufficient"
+      },
+      "replication_status": "paper_approx",
+      "evidence": [
+        {
+          "kind": "paper_acceptance",
+          "path": "modssc-artifact://replication/evidence/d66677565b5968daade77bfa252c2178859aaad8390732f6acbae9364dc61dcc",
+          "sha256": "d66677565b5968daade77bfa252c2178859aaad8390732f6acbae9364dc61dcc"
+        },
+        {
+          "kind": "diagnostic_gates",
+          "path": "modssc-artifact://replication/evidence/b065c02124ff1f2d807a60bcc00321794749bafb48beee239264cd5a39238fed",
+          "sha256": "b065c02124ff1f2d807a60bcc00321794749bafb48beee239264cd5a39238fed"
+        },
+        {
+          "kind": "confidence_primary_reconciliation",
+          "path": "modssc-artifact://replication/evidence/ad1a2e4d5a6710df1f4f712c697c60f2e61e7e8b2b9e5358882e6e9015d182e0",
+          "sha256": "ad1a2e4d5a6710df1f4f712c697c60f2e61e7e8b2b9e5358882e6e9015d182e0"
+        },
+        {
+          "kind": "confidence_primary_diagnostic_gates",
+          "path": "modssc-artifact://replication/evidence/42e6805a991ce4230d6158c7fdf20382884b53c86601d9a4437590faeb362990",
+          "sha256": "42e6805a991ce4230d6158c7fdf20382884b53c86601d9a4437590faeb362990"
+        },
+        {
+          "kind": "confidence_full_attribution",
+          "path": "modssc-artifact://replication/evidence/565bd6f5c453bdfc7cb13bd8f04b4e75c3f8db45d08f3eef816ecf8e1221069e",
+          "sha256": "565bd6f5c453bdfc7cb13bd8f04b4e75c3f8db45d08f3eef816ecf8e1221069e"
+        },
+        {
+          "kind": "confidence_conditional_canary_audit",
+          "path": "modssc-artifact://replication/evidence/7744de15cb23d23b987fbd53bfe437a86790a141fe17287508192461a298f4a9",
+          "sha256": "7744de15cb23d23b987fbd53bfe437a86790a141fe17287508192461a298f4a9"
+        },
+        {
+          "kind": "confidence_conditional_reconciliation",
+          "path": "modssc-artifact://replication/evidence/1409d8daccaeb5356cbb7ad37d895c45931f4179c16db3ca57d911c0b8ebadc9",
+          "sha256": "1409d8daccaeb5356cbb7ad37d895c45931f4179c16db3ca57d911c0b8ebadc9"
+        },
+        {
+          "kind": "confidence_conditional_diagnostic_gates",
+          "path": "modssc-artifact://replication/evidence/8d79278dfb3a3b40718d48ad24b81d5d036dd0b16a8a3b54ef844db8924c37dc",
+          "sha256": "8d79278dfb3a3b40718d48ad24b81d5d036dd0b16a8a3b54ef844db8924c37dc"
+        },
+        {
+          "kind": "confidence_resource_usage_public_descriptor",
+          "path": "provenance/article10/evidence/dcl-confidence-v8-resource-usage.json",
+          "sha256": "f4fafb0e5a2fb83a38bea7bb888eca0a8444d4fd6422a4c67441112aa437aa3d",
+          "source_artifact_sha256": "22a20d62130fae3c2e2e5fef5615b87f3190c2e4fc5decc424592067a0a0be5e"
+        }
+      ]
+    },
+    {
+      "method_id": "fixmatch",
+      "paper_profile": "paper:sohn2020-cifar10-table2-250",
+      "protocol_id": "sohn-2020-cifar10-table2-250",
+      "dataset_id": "cifar10",
+      "coded": true,
+      "algorithmic_conformity": "passed",
+      "protocol_conformity": "passed",
+      "campaign": {
+        "campaign_id": "article10-match-fix-production-v3",
+        "status": "complete",
+        "manifest_sha256": "1c0f8eae6e1f1dd44b974fb2687181b9ed576ced1fbe3440831576df8c473473"
+      },
+      "repetitions": {
+        "cells": 1,
+        "required_per_cell": 5,
+        "required_total": 5,
+        "successful_total": 5
+      },
+      "result": {
+        "status": "matched",
+        "metric": "test_error",
+        "published_mean": 0.0507,
+        "replication_mean": 0.051180000000000024,
+        "replication_std": 0.008383361497633284,
+        "std_ddof": 1,
+        "ci95": [
+          0.040770681844461185,
+          0.061589318155538864
+        ],
+        "absolute_difference": 0.0004800000000000221,
+        "margin_absolute": 0.01,
+        "target_in_ci95": true,
+        "within_margin": true,
+        "informational_terminal": {
+          "replication_mean": 0.051239999999999994,
+          "replication_std": 0.008787661805053698,
+          "ci95": [
+            0.040328676708274516,
+            0.06215132329172547
+          ]
+        }
+      },
+      "replication_status": "paper_matched",
+      "evidence": [
+        {
+          "kind": "paper_acceptance",
+          "path": "evidence://modssc/paper-acceptance/match-adaptive-v2/fixmatch-source-refresh-v1/paper-acceptance.json",
+          "sha256": "f80a675aa3a0463021577614c0334dde9ab3904ab7b9669e923cf0e8f8c4a9d9"
+        },
+        {
+          "kind": "reconciliation",
+          "path": "evidence://modssc/reconciliations/match-adaptive-v2/fixmatch-source-refresh-v1/reconcile.json",
+          "sha256": "42b0a8d3f77159badc440df81133c0b5cb47ece6deb59b1c5c6b4edf6418a9ed"
+        }
+      ]
+    },
+    {
+      "method_id": "flexmatch",
+      "paper_profile": "paper:zhang2021-cifar10-table1-250",
+      "protocol_id": "zhang-2021-cifar10-table1-250",
+      "dataset_id": "cifar10",
+      "coded": true,
+      "algorithmic_conformity": "passed",
+      "protocol_conformity": "passed",
+      "campaign": {
+        "campaign_id": "article10-match-adaptive-production-v2",
+        "status": "complete",
+        "manifest_sha256": "c4bf7a13ffbc40d9fa69731ad583c03971e79576f22f6907074d43443a8e04a5"
+      },
+      "repetitions": {
+        "cells": 1,
+        "required_per_cell": 3,
+        "required_total": 3,
+        "successful_total": 3
+      },
+      "result": {
+        "status": "matched",
+        "metric": "test_error",
+        "published_mean": 0.0498,
+        "replication_mean": 0.05106666666666667,
+        "replication_std": 0.0009073771725877059,
+        "std_ddof": 1,
+        "ci95": [
+          0.04881261681346016,
+          0.053320716519873176
+        ],
+        "absolute_difference": 0.0012666666666666729,
+        "margin_absolute": 0.01,
+        "target_in_ci95": true,
+        "within_margin": true,
+        "informational_terminal": {
+          "replication_mean": 0.05266666666666664,
+          "replication_std": 0.0016196707484341926,
+          "ci95": [
+            0.04864318147986238,
+            0.0566901518534709
+          ]
+        }
+      },
+      "replication_status": "paper_matched",
+      "evidence": [
+        {
+          "kind": "paper_acceptance",
+          "path": "evidence://modssc/acceptance/match-adaptive-v2/article10-match-adaptive-production-v2-final-v1/paper-acceptance.json",
+          "sha256": "b80e95ac13941b8805fcf629bdd833c825ff576bf8b1163496e7e326bfa26475"
+        },
+        {
+          "kind": "reconciliation",
+          "path": "evidence://modssc/reconciliations/match-adaptive-v2/article10-match-adaptive-production-v2-final-v1/reconcile.json",
+          "sha256": "07902f4567574b21ecf6fff780386d23cd8592dd12d47f505cdb50440d221673"
+        }
+      ]
+    },
+    {
+      "method_id": "free_match",
+      "paper_profile": "paper:wang2023-cifar10-table1-40",
+      "protocol_id": "wang-2023-cifar10-table1-40",
+      "dataset_id": "cifar10",
+      "coded": true,
+      "algorithmic_conformity": "passed",
+      "protocol_conformity": "passed",
+      "campaign": {
+        "campaign_id": "article10-match-adaptive-production-v2",
+        "status": "complete",
+        "manifest_sha256": "c4bf7a13ffbc40d9fa69731ad583c03971e79576f22f6907074d43443a8e04a5"
+      },
+      "repetitions": {
+        "cells": 1,
+        "required_per_cell": 3,
+        "required_total": 3,
+        "successful_total": 3
+      },
+      "result": {
+        "status": "matched",
+        "metric": "test_error",
+        "published_mean": 0.049,
+        "replication_mean": 0.053766666666666664,
+        "replication_std": 0.003781974792794545,
+        "std_ddof": 1,
+        "ci95": [
+          0.044371720458996594,
+          0.06316161287433673
+        ],
+        "absolute_difference": 0.004766666666666662,
+        "margin_absolute": 0.01,
+        "target_in_ci95": true,
+        "within_margin": true,
+        "informational_terminal": {
+          "replication_mean": 0.05623333333333332,
+          "replication_std": 0.005158811232574162,
+          "ci95": [
+            0.04341813580269464,
+            0.069048530863972
+          ]
+        }
+      },
+      "replication_status": "paper_matched",
+      "evidence": [
+        {
+          "kind": "paper_acceptance",
+          "path": "evidence://modssc/acceptance/match-adaptive-v2/article10-match-adaptive-production-v2-final-v1/paper-acceptance.json",
+          "sha256": "b80e95ac13941b8805fcf629bdd833c825ff576bf8b1163496e7e326bfa26475"
+        },
+        {
+          "kind": "reconciliation",
+          "path": "evidence://modssc/reconciliations/match-adaptive-v2/article10-match-adaptive-production-v2-final-v1/reconcile.json",
+          "sha256": "07902f4567574b21ecf6fff780386d23cd8592dd12d47f505cdb50440d221673"
+        }
+      ]
+    },
+    {
+      "method_id": "softmatch",
+      "paper_profile": "paper:chen2023-cifar10-table2-250",
+      "protocol_id": "chen-2023-cifar10-table2-250",
+      "dataset_id": "cifar10",
+      "coded": true,
+      "algorithmic_conformity": "passed",
+      "protocol_conformity": "passed",
+      "campaign": {
+        "campaign_id": "article10-match-adaptive-production-v2",
+        "status": "complete",
+        "manifest_sha256": "c4bf7a13ffbc40d9fa69731ad583c03971e79576f22f6907074d43443a8e04a5"
+      },
+      "repetitions": {
+        "cells": 1,
+        "required_per_cell": 3,
+        "required_total": 3,
+        "successful_total": 3
+      },
+      "result": {
+        "status": "matched",
+        "metric": "test_error",
+        "published_mean": 0.0482,
+        "replication_mean": 0.0487,
+        "replication_std": 0.0007937253933194156,
+        "std_ddof": 1,
+        "ci95": [
+          0.04672827681768138,
+          0.05067172318231862
+        ],
+        "absolute_difference": 0.0005000000000000004,
+        "margin_absolute": 0.01,
+        "target_in_ci95": true,
+        "within_margin": true,
+        "informational_terminal": {
+          "replication_mean": 0.05083333333333332,
+          "replication_std": 0.0021361959960016362,
+          "ci95": [
+            0.0455267282999756,
+            0.05613993836669104
+          ]
+        }
+      },
+      "replication_status": "paper_matched",
+      "evidence": [
+        {
+          "kind": "paper_acceptance",
+          "path": "evidence://modssc/acceptance/match-adaptive-v2/article10-match-adaptive-production-v2-final-v1/paper-acceptance.json",
+          "sha256": "b80e95ac13941b8805fcf629bdd833c825ff576bf8b1163496e7e326bfa26475"
+        },
+        {
+          "kind": "reconciliation",
+          "path": "evidence://modssc/reconciliations/match-adaptive-v2/article10-match-adaptive-production-v2-final-v1/reconcile.json",
+          "sha256": "07902f4567574b21ecf6fff780386d23cd8592dd12d47f505cdb50440d221673"
+        }
+      ]
+    },
+    {
+      "method_id": "laplace_learning",
+      "paper_profile": "paper:calder2020-mnist-table1-laplace-{1..5}-label-per-class",
+      "protocol_id": "calder-2020-mnist-table1-laplace-1-to-5-labels-per-class",
+      "dataset_id": "mnist",
+      "coded": true,
+      "algorithmic_conformity": "passed",
+      "protocol_conformity": "passed",
+      "campaign": {
+        "campaign_id": "article10-calder-paper-local-v1",
+        "status": "complete",
+        "manifest_sha256": "26210cf77d0a1b27b12c9dce0fb1036f2ff2d54eb756d56c7c968beeec8888c8"
+      },
+      "repetitions": {
+        "cells": 5,
+        "required_per_cell": 100,
+        "required_total": 500,
+        "successful_total": 500
+      },
+      "result": {
+        "status": "matched",
+        "metric": "unlabeled_accuracy",
+        "published_mean": null,
+        "replication_mean": null,
+        "replication_std": null,
+        "std_ddof": 0,
+        "ci95": null,
+        "absolute_difference": null,
+        "margin_absolute": 0.01,
+        "target_in_ci95": true,
+        "within_margin": true,
+        "all_cells_matched": true,
+        "cells": [
+          {
+            "labels_per_class": 1,
+            "n_success": 100,
+            "published_mean": 0.161,
+            "published_std_ddof0": 0.062,
+            "replication_mean": 0.16060180025717963,
+            "replication_std_ddof0": 0.06207319786882116,
+            "ci95": [
+              0.14822308200836876,
+              0.1729805185059905
+            ],
+            "absolute_difference": 0.0003981997428203765,
+            "target_in_ci95": true,
+            "within_margin": true,
+            "status": "paper_matched"
+          },
+          {
+            "labels_per_class": 2,
+            "n_success": 100,
+            "published_mean": 0.282,
+            "published_std_ddof0": 0.103,
+            "replication_mean": 0.2819978565304373,
+            "replication_std_ddof0": 0.10295851554348837,
+            "ci95": [
+              0.26146573479374124,
+              0.30252997826713335
+            ],
+            "absolute_difference": 0.0000021434695626765254,
+            "target_in_ci95": true,
+            "within_margin": true,
+            "status": "paper_matched"
+          },
+          {
+            "labels_per_class": 3,
+            "n_success": 100,
+            "published_mean": 0.42,
+            "published_std_ddof0": 0.124,
+            "replication_mean": 0.4197291696441332,
+            "replication_std_ddof0": 0.1236588045215131,
+            "ci95": [
+              0.3950689692241148,
+              0.44438937006415163
+            ],
+            "absolute_difference": 0.00027083035586678017,
+            "target_in_ci95": true,
+            "within_margin": true,
+            "status": "paper_matched"
+          },
+          {
+            "labels_per_class": 4,
+            "n_success": 100,
+            "published_mean": 0.578,
+            "published_std_ddof0": 0.123,
+            "replication_mean": 0.5781023441966839,
+            "replication_std_ddof0": 0.1229912642505076,
+            "ci95": [
+              0.553575265529986,
+              0.6026294228633818
+            ],
+            "absolute_difference": 0.00010234419668397887,
+            "target_in_ci95": true,
+            "within_margin": true,
+            "status": "paper_matched"
+          },
+          {
+            "labels_per_class": 5,
+            "n_success": 100,
+            "published_mean": 0.695,
+            "published_std_ddof0": 0.122,
+            "replication_mean": 0.6946208720514653,
+            "replication_std_ddof0": 0.1216103029376696,
+            "ci95": [
+              0.6703691864946931,
+              0.7188725576082374
+            ],
+            "absolute_difference": 0.00037912794853467435,
+            "target_in_ci95": true,
+            "within_margin": true,
+            "status": "paper_matched"
+          }
+        ]
+      },
+      "replication_status": "paper_matched",
+      "evidence": [
+        {
+          "kind": "paper_acceptance",
+          "path": "evidence://modssc/calder/table1/final-bundle-v4/evaluation/paper-acceptance.json",
+          "sha256": "5c5a149db34c531a6a87dbe99f6e9b6152b4c87ee6d1a773cab4381f15b2673a"
+        },
+        {
+          "kind": "reconciliation",
+          "path": "evidence://modssc/calder/table1/final-bundle-v4/reconcile/reconcile.json",
+          "sha256": "c74a102dea89b2b0999cb745e8cb877aa0d91220998a8ffd0c205339e4af53ac"
+        },
+        {
+          "kind": "reconstructed_table",
+          "path": "evidence://modssc/calder/table1/final-bundle-v4/evaluation/calder-table1-reconstructed.json",
+          "sha256": "a179cd1b505221124835e4feb8768c40cb720a5272012cb4663222a1d6e88ede"
+        },
+        {
+          "kind": "official_artifact_manifest",
+          "path": "bench/assets/calder2020/protocol_inputs/MANIFEST.json",
+          "sha256": "3fc3f96e179b4cb4aa7019311e1873dfdc97d6d29c5f134a2b2041691531a063"
+        },
+        {
+          "kind": "official_parity_review",
+          "path": "docs/development/calder2020-official-parity.md",
+          "sha256": "98df2c58bf1f42bd9f79e9513ce3ac0ff1975837d399c0022541c0fc6c0604e3"
+        }
+      ]
+    },
+    {
+      "method_id": "poisson_learning",
+      "paper_profile": "paper:calder2020-mnist-table1-poisson-{1..5}-label-per-class",
+      "protocol_id": "calder-2020-mnist-table1-poisson-1-to-5-labels-per-class",
+      "dataset_id": "mnist",
+      "coded": true,
+      "algorithmic_conformity": "passed",
+      "protocol_conformity": "passed",
+      "campaign": {
+        "campaign_id": "article10-calder-paper-local-v1",
+        "status": "complete",
+        "manifest_sha256": "26210cf77d0a1b27b12c9dce0fb1036f2ff2d54eb756d56c7c968beeec8888c8"
+      },
+      "repetitions": {
+        "cells": 5,
+        "required_per_cell": 100,
+        "required_total": 500,
+        "successful_total": 500
+      },
+      "result": {
+        "status": "matched",
+        "metric": "unlabeled_accuracy",
+        "published_mean": null,
+        "replication_mean": null,
+        "replication_std": null,
+        "std_ddof": 0,
+        "ci95": null,
+        "absolute_difference": null,
+        "margin_absolute": 0.01,
+        "target_in_ci95": true,
+        "within_margin": true,
+        "all_cells_matched": true,
+        "cells": [
+          {
+            "labels_per_class": 1,
+            "n_success": 100,
+            "published_mean": 0.902,
+            "published_std_ddof0": 0.04,
+            "replication_mean": 0.9017603943420488,
+            "replication_std_ddof0": 0.03991527667144326,
+            "ci95": [
+              0.8938004376988723,
+              0.9097203509852253
+            ],
+            "absolute_difference": 0.00023960565795122513,
+            "target_in_ci95": true,
+            "within_margin": true,
+            "status": "paper_matched"
+          },
+          {
+            "labels_per_class": 2,
+            "n_success": 100,
+            "published_mean": 0.936,
+            "published_std_ddof0": 0.016,
+            "replication_mean": 0.9358938268076593,
+            "replication_std_ddof0": 0.01573508213716617,
+            "ci95": [
+              0.9327559161620775,
+              0.9390317374532411
+            ],
+            "absolute_difference": 0.00010617319234074163,
+            "target_in_ci95": true,
+            "within_margin": true,
+            "status": "paper_matched"
+          },
+          {
+            "labels_per_class": 3,
+            "n_success": 100,
+            "published_mean": 0.945,
+            "published_std_ddof0": 0.011,
+            "replication_mean": 0.9453365728169216,
+            "replication_std_ddof0": 0.010843442966013975,
+            "ci95": [
+              0.9431741592482346,
+              0.9474989863856087
+            ],
+            "absolute_difference": 0.0003365728169216764,
+            "target_in_ci95": true,
+            "within_margin": true,
+            "status": "paper_matched"
+          },
+          {
+            "labels_per_class": 4,
+            "n_success": 100,
+            "published_mean": 0.949,
+            "published_std_ddof0": 0.008,
+            "replication_mean": 0.9494744139508289,
+            "replication_std_ddof0": 0.008177717990411856,
+            "ci95": [
+              0.947843602740885,
+              0.9511052251607728
+            ],
+            "absolute_difference": 0.00047441395082892246,
+            "target_in_ci95": true,
+            "within_margin": true,
+            "status": "paper_matched"
+          },
+          {
+            "labels_per_class": 5,
+            "n_success": 100,
+            "published_mean": 0.953,
+            "published_std_ddof0": 0.007,
+            "replication_mean": 0.952944388849178,
+            "replication_std_ddof0": 0.007251416726521065,
+            "ci95": [
+              0.951498301847957,
+              0.9543904758503989
+            ],
+            "absolute_difference": 0.000055611150821976985,
+            "target_in_ci95": true,
+            "within_margin": true,
+            "status": "paper_matched"
+          }
+        ]
+      },
+      "replication_status": "paper_matched",
+      "evidence": [
+        {
+          "kind": "paper_acceptance",
+          "path": "evidence://modssc/calder/table1/final-bundle-v4/evaluation/paper-acceptance.json",
+          "sha256": "5c5a149db34c531a6a87dbe99f6e9b6152b4c87ee6d1a773cab4381f15b2673a"
+        },
+        {
+          "kind": "reconciliation",
+          "path": "evidence://modssc/calder/table1/final-bundle-v4/reconcile/reconcile.json",
+          "sha256": "c74a102dea89b2b0999cb745e8cb877aa0d91220998a8ffd0c205339e4af53ac"
+        },
+        {
+          "kind": "reconstructed_table",
+          "path": "evidence://modssc/calder/table1/final-bundle-v4/evaluation/calder-table1-reconstructed.json",
+          "sha256": "a179cd1b505221124835e4feb8768c40cb720a5272012cb4663222a1d6e88ede"
+        },
+        {
+          "kind": "official_artifact_manifest",
+          "path": "bench/assets/calder2020/protocol_inputs/MANIFEST.json",
+          "sha256": "3fc3f96e179b4cb4aa7019311e1873dfdc97d6d29c5f134a2b2041691531a063"
+        },
+        {
+          "kind": "official_parity_review",
+          "path": "docs/development/calder2020-official-parity.md",
+          "sha256": "98df2c58bf1f42bd9f79e9513ce3ac0ff1975837d399c0022541c0fc6c0604e3"
+        }
+      ]
+    },
+    {
+      "method_id": "grand",
+      "paper_profile": "paper:feng2020-cora-table1",
+      "protocol_id": "feng-2020-cora-table1-planetoid",
+      "dataset_id": "cora",
+      "coded": true,
+      "algorithmic_conformity": "passed",
+      "protocol_conformity": "passed",
+      "campaign": {
+        "campaign_id": "article10-grand-paper-production-v1",
+        "status": "complete",
+        "manifest_sha256": "3de3597eb88e0037b3687c2e2bcef388c166c7e6f119d40de6a47d93b50be9ca"
+      },
+      "repetitions": {
+        "cells": 1,
+        "required_per_cell": 100,
+        "required_total": 100,
+        "successful_total": 100
+      },
+      "result": {
+        "status": "matched",
+        "metric": "test_accuracy",
+        "published_mean": 0.854,
+        "replication_mean": 0.8536599999999999,
+        "replication_std": 0.00332631928714007,
+        "std_ddof": 0,
+        "ci95": [
+          0.8529966610602515,
+          0.8543233389397482
+        ],
+        "absolute_difference": 0.000340000000000118,
+        "margin_absolute": 0.01,
+        "target_in_ci95": true,
+        "within_margin": true
+      },
+      "replication_status": "paper_matched",
+      "evidence": [
+        {
+          "kind": "paper_acceptance",
+          "path": "evidence://modssc/paper-evaluations/article10-grand-paper-production-v1-v5-001/paper-acceptance.json",
+          "sha256": "0c8a48a217ae4da243eac3a8ccbe117742212c9345beab615733986a2da73ddc"
+        },
+        {
+          "kind": "reconciliation",
+          "path": "evidence://modssc/reconciliations/article10-grand-paper-production-v1-v5-001/reconcile.json",
+          "sha256": "9dfd5adde525316eeeb99d82cad414e28e24bfea2d12bf967530d4d435e4166c"
+        }
+      ]
+    }
+  ]
+}

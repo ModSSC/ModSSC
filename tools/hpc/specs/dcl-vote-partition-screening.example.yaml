@@ -1,0 +1,137 @@
+# Diagnostic screening only. These 100 candidate runs are not the 20 paper
+# repetitions and must never enter a paper aggregate. The dedicated config does
+# not produce test metrics. Select eligible partitions from method diagnostics
+# only, then SHA-pin the reviewed 20-partition selection in a new production
+# manifest.
+schema_version: 1
+campaign_id: dcl-vote-partition-screening-v1
+track: paper
+scientific_scope:
+  claim_scope_id: article10
+  stage: diagnostic
+  claim_eligible: false
+  gate_policy_id: modssc-scientific-gates-v2
+  gate_policy_sha256: from_registry
+default_site: regional
+code:
+  git_sha: REPLACE_WITH_CLEAN_COMMIT
+  require_clean: true
+  environment_lock_sha256: REPLACE_WITH_ENVIRONMENT_LOCK_SHA256
+expect:
+  config_count: 1
+  task_count: 100
+  tasks_per_method:
+    democratic_co_learning: 100
+  tasks_by_profile:
+    cpu_tabular: 100
+  tasks_by_site:
+    regional: 100
+cells:
+  - protocol_id: zhou-goldman-2004-vote-table3-partition-screening
+    config: bench/configs/reproductions/democratic_co_learning/vote_partition_screening.yaml
+    seeds:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+      - 16
+      - 17
+      - 18
+      - 19
+      - 20
+      - 21
+      - 22
+      - 23
+      - 24
+      - 25
+      - 26
+      - 27
+      - 28
+      - 29
+      - 30
+      - 31
+      - 32
+      - 33
+      - 34
+      - 35
+      - 36
+      - 37
+      - 38
+      - 39
+      - 40
+      - 41
+      - 42
+      - 43
+      - 44
+      - 45
+      - 46
+      - 47
+      - 48
+      - 49
+      - 50
+      - 51
+      - 52
+      - 53
+      - 54
+      - 55
+      - 56
+      - 57
+      - 58
+      - 59
+      - 60
+      - 61
+      - 62
+      - 63
+      - 64
+      - 65
+      - 66
+      - 67
+      - 68
+      - 69
+      - 70
+      - 71
+      - 72
+      - 73
+      - 74
+      - 75
+      - 76
+      - 77
+      - 78
+      - 79
+      - 80
+      - 81
+      - 82
+      - 83
+      - 84
+      - 85
+      - 86
+      - 87
+      - 88
+      - 89
+      - 90
+      - 91
+      - 92
+      - 93
+      - 94
+      - 95
+      - 96
+      - 97
+      - 98
+      - 99
+      - 100
+    resource_profile: cpu_tabular
+    site: regional
+    fidelity_status: not_claimable
+    expected_dataset_fingerprint: REPLACE_WITH_OPENML_56_CACHE_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_OPENML_56_CONTENT_SHA256

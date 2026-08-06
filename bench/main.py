@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import logging
+import shutil
 import traceback
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass
@@ -18,10 +20,20 @@ from modssc.inductive.registry import get_method_info as get_inductive_method_in
 from modssc.preprocess import step_info
 from modssc.runtime.device import resolve_device_name
 from modssc.runtime.logging import configure_logging, resolve_log_level
+from modssc.sampling.plan import SamplingPlan
 from modssc.sampling.result import SamplingResult
+from modssc.sampling.storage import load_split, save_split
 from modssc.transductive.registry import get_method_class as get_transductive_method_class
 from modssc.transductive.registry import get_method_info as get_transductive_method_info
 
+from .campaign.dcl_partition_lock import (
+    DCL_DATASET_ID,
+    DCL_DIAGNOSTIC_METHOD_PROFILE,
+    DCL_METHOD_ID,
+    DCL_METHOD_PROFILE,
+    VerifiedDCLPartitionReplay,
+    verify_dcl_partition_replay,
+)
 from .context import RunContext, next_available_run_dir
 from .errors import BenchRuntimeError, extract_error_code
 from .limits import apply_limits
@@ -41,11 +53,11 @@ from .schema import BenchConfigError, ExperimentConfig
 from .seed_sweep import apply_global_seed, sweep_run_name
 from .utils.hashing import hash_any
 from .utils.import_tools import check_extra_installed
-from .utils.io import load_yaml
+from .utils.io import atomic_write_json, load_yaml
 from .utils.runtime import collect_runtime_versions
 
 _ALLOWED_METRICS = set(list_metrics())
-_ALLOWED_SPLITS = {"train", "val", "test"}
+_ALLOWED_SPLITS = {"train", "train_labeled", "val", "test", "unlabeled"}
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -63,6 +75,16 @@ def _positive_int(value: str) -> int:
         raise argparse.ArgumentTypeError("must be an integer") from exc
     if out <= 0:
         raise argparse.ArgumentTypeError("must be > 0")
+    return out
+
+
+def _non_negative_int(value: str) -> int:
+    try:
+        out = int(value)
+    except (TypeError, ValueError) as exc:
+        raise argparse.ArgumentTypeError("must be an integer") from exc
+    if out < 0:
+        raise argparse.ArgumentTypeError("must be >= 0")
     return out
 
 
@@ -210,9 +232,9 @@ def _preflight(
             )
 
     if cfg.augmentation is not None and cfg.augmentation.enabled:
-        if cfg.augmentation.mode != "fixed":
+        if cfg.augmentation.mode not in {"fixed", "online"}:
             raise BenchConfigError(
-                "Only augmentation.mode='fixed' is supported",
+                "augmentation.mode must be 'fixed' or 'online'",
                 code="E_BENCH_CONFIG",
             )
         if not cfg.augmentation.weak or not cfg.augmentation.strong:
@@ -228,6 +250,11 @@ def _preflight(
     for split in cfg.evaluation.report_splits:
         if split not in _ALLOWED_SPLITS:
             raise BenchConfigError(f"Unknown split: {split}", code="E_BENCH_CONFIG")
+        if split == "unlabeled" and cfg.method.kind != "transductive":
+            raise BenchConfigError(
+                "evaluation split 'unlabeled' is only supported for transductive methods",
+                code="E_BENCH_CONFIG",
+            )
     return method_info
 
 
@@ -340,6 +367,150 @@ def _write_error_traceback(ctx: RunContext, tb: str) -> None:
         (ctx.run_dir / "error.txt").write_text(tb, encoding="utf-8")
     except OSError:
         _LOGGER.exception("Failed to write error.txt")
+
+
+def _file_sha256(path: Path) -> str:
+    hasher = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def _persist_sampling_replay(
+    ctx: RunContext,
+    sampling: SamplingResult,
+    *,
+    source_dir: Path | None = None,
+) -> dict[str, Any]:
+    """Persist the exact sampled partition in a portable, reloadable form."""
+
+    relative_path = Path("sampling_split")
+    replay_dir = ctx.run_dir / relative_path
+    manifest_name = "MANIFEST.json"
+    if source_dir is not None:
+        source = source_dir.resolve()
+        if not source.is_dir():
+            raise BenchConfigError(
+                f"Frozen sampling replay is missing: {source}",
+                code="E_BENCH_SAMPLING_REPLAY_INVALID",
+            )
+        shutil.copytree(source, replay_dir)
+    else:
+        save_split(sampling, replay_dir, overwrite=False)
+        files = {
+            name: {"sha256": _file_sha256(replay_dir / name)}
+            for name in ("split.json", "arrays.npz")
+        }
+        atomic_write_json(
+            replay_dir / manifest_name,
+            {
+                "schema_version": 1,
+                "format": "modssc.sampling.storage.v1",
+                "dataset_fingerprint": sampling.dataset_fingerprint,
+                "split_fingerprint": sampling.split_fingerprint,
+                "files": files,
+            },
+        )
+    return {
+        "format": "modssc.sampling.storage.v1",
+        "path": relative_path.as_posix(),
+        "manifest": manifest_name,
+        "manifest_sha256": _file_sha256(replay_dir / manifest_name),
+    }
+
+
+def _load_locked_sampling_replay(
+    *,
+    dataset: Any,
+    cfg: ExperimentConfig,
+    sampling_seed: int,
+) -> tuple[SamplingResult, VerifiedDCLPartitionReplay]:
+    replay = cfg.sampling.replay
+    if replay is None:
+        raise BenchConfigError(
+            "Frozen sampling replay configuration is missing",
+            code="E_BENCH_SAMPLING_REPLAY_INVALID",
+        )
+    if (
+        cfg.dataset.id != DCL_DATASET_ID
+        or cfg.method.method_id != DCL_METHOD_ID
+        or cfg.method.profile not in {DCL_METHOD_PROFILE, DCL_DIAGNOSTIC_METHOD_PROFILE}
+    ):
+        raise BenchConfigError(
+            "Frozen DCL partition replay is attached to the wrong method, profile, or dataset",
+            code="E_BENCH_SAMPLING_REPLAY_INVALID",
+        )
+    dataset_fingerprint = (
+        dataset.meta.get("dataset_fingerprint") if isinstance(dataset.meta, Mapping) else None
+    )
+    if not isinstance(dataset_fingerprint, str) or not dataset_fingerprint:
+        raise BenchConfigError(
+            "Dataset fingerprint is required for frozen sampling replay",
+            code="E_BENCH_SAMPLING_REPLAY_INVALID",
+        )
+    dataset_content_sha256 = (
+        dataset.meta.get("dataset_content_sha256") if isinstance(dataset.meta, Mapping) else None
+    )
+    if not isinstance(dataset_content_sha256, str) or not dataset_content_sha256:
+        raise BenchConfigError(
+            "Dataset content digest is required for frozen sampling replay",
+            code="E_BENCH_SAMPLING_REPLAY_INVALID",
+        )
+    if int(sampling_seed) != int(cfg.run.seed):
+        raise BenchConfigError(
+            "Frozen sampling replay seed differs from the effective run seed",
+            code="E_BENCH_SAMPLING_REPLAY_INVALID",
+        )
+    try:
+        verified = verify_dcl_partition_replay(
+            replay,
+            expected_seed=cfg.run.seed,
+            expected_dataset_fingerprint=dataset_fingerprint,
+            expected_plan=cfg.sampling.plan,
+        )
+    except Exception as exc:
+        raise BenchConfigError(
+            f"Frozen sampling replay verification failed: {exc}",
+            code="E_BENCH_SAMPLING_REPLAY_INVALID",
+        ) from exc
+    if dataset_content_sha256 != verified.selection.dataset_content_sha256:
+        raise BenchConfigError(
+            "Dataset content digest differs from the frozen partition selection",
+            code="E_BENCH_SAMPLING_REPLAY_INVALID",
+        )
+    try:
+        sampling = load_split(verified.replay_dir)
+    except Exception as exc:
+        raise BenchConfigError(
+            f"Cannot load frozen sampling replay: {exc}",
+            code="E_BENCH_SAMPLING_REPLAY_INVALID",
+        ) from exc
+    if (
+        sampling.dataset_fingerprint != dataset_fingerprint
+        or sampling.split_fingerprint != verified.entry.split_fingerprint
+        or SamplingPlan.from_dict(dict(sampling.plan)).as_dict()
+        != SamplingPlan.from_dict(cfg.sampling.plan).as_dict()
+    ):
+        raise BenchConfigError(
+            "Loaded frozen sampling replay identity differs from its signed metadata",
+            code="E_BENCH_SAMPLING_REPLAY_INVALID",
+        )
+    n_train = int(np.asarray(dataset.train.y).shape[0])
+    n_test = (
+        int(np.asarray(dataset.test.y).shape[0])
+        if getattr(dataset, "test", None) is not None
+        else None
+    )
+    n_nodes = n_train if _dataset_has_graph(dataset) else None
+    try:
+        sampling.validate(n_train=n_train, n_test=n_test, n_nodes=n_nodes)
+    except Exception as exc:
+        raise BenchConfigError(
+            f"Frozen sampling replay violates split invariants: {exc}",
+            code="E_BENCH_SAMPLING_REPLAY_INVALID",
+        ) from exc
+    return sampling, verified
 
 
 def _scan_auto_entries(node: Any, *, path: str) -> list[str]:
@@ -524,6 +695,12 @@ def _derive_run_id(*, effective_config_hash: str, seed: int, versions: Mapping[s
     )[:20]
 
 
+def _collect_code_runtime_versions() -> dict[str, Any]:
+    """Collect provenance from the repository containing the benchmark code."""
+
+    return collect_runtime_versions(repo_root=Path(__file__).resolve().parent)
+
+
 def _sync_ctx_run_identity(ctx: RunContext, *, run_id: str) -> None:
     if ctx.run_id == run_id:
         return
@@ -549,9 +726,16 @@ def _sync_ctx_run_identity(ctx: RunContext, *, run_id: str) -> None:
     _LOGGER.info("Run identity updated after config mutation: %s -> %s", old_run_id, run_id)
 
 
+def _resolve_method_seed(ctx: RunContext, cfg: ExperimentConfig) -> int:
+    """Resolve the method RNG, honoring an explicit campaign-pinned seed."""
+
+    return ctx.seed_for("method", cfg.run.model_seed)
+
+
 def _run_experiment_single(
     config_path: Path, *, raw: dict[str, Any], cfg: ExperimentConfig
 ) -> SingleRunResult:
+    resource_measurement = report_orch.begin_run_resource_measurement()
     requested_raw = deep_merge({}, raw)
     config_hash = hash_any(requested_raw)
 
@@ -568,7 +752,7 @@ def _run_experiment_single(
         cfg = ExperimentConfig.from_dict(raw)
 
     effective_config_hash = hash_any(raw)
-    versions = collect_runtime_versions(repo_root=config_path.parent)
+    versions = _collect_code_runtime_versions()
     run_id = _derive_run_id(
         effective_config_hash=effective_config_hash,
         seed=int(cfg.run.seed),
@@ -655,6 +839,7 @@ def _run_experiment_single(
 
         _LOGGER.info("Loading dataset: %s", cfg.dataset.id)
         dataset, dataset_info = ds_orch.load(cfg.dataset)
+        dataset = sampling_orch.prepare_dataset(dataset, plan_dict=cfg.sampling.plan)
         dataset_has_graph = _dataset_has_graph(dataset)
 
         all_preprocess_steps = preprocess_steps + view_preprocess_steps
@@ -695,6 +880,7 @@ def _run_experiment_single(
         artifacts["method"] = {
             "id": cfg.method.method_id,
             "kind": cfg.method.kind,
+            "profile": cfg.method.profile,
             "device": {
                 "requested": cfg.method.device.device,
                 "resolved": resolved_device,
@@ -717,16 +903,42 @@ def _run_experiment_single(
             "id": cfg.dataset.id,
             "info": dataset_info,
             "fingerprint": dataset.meta.get("dataset_fingerprint"),
+            "content_sha256": dataset.meta.get("dataset_content_sha256"),
+            "content_manifest_sha256": dataset.meta.get("dataset_content_manifest_sha256"),
         }
 
         _LOGGER.info("Sampling splits")
         sampling_seed = ctx.seed_for("sampling", cfg.sampling.seed)
-        sampling = sampling_orch.run(
-            dataset,
-            plan_dict=cfg.sampling.plan,
-            seed=sampling_seed,
-            dataset_id=cfg.dataset.id,
-        )
+        sampling_component_seeds = SamplingPlan.from_dict(
+            cfg.sampling.plan
+        ).component_seeds.resolve(sampling_seed)
+        selected_replay: VerifiedDCLPartitionReplay | None = None
+        if cfg.sampling.replay is not None:
+            sampling, selected_replay = _load_locked_sampling_replay(
+                dataset=dataset,
+                cfg=cfg,
+                sampling_seed=sampling_seed,
+            )
+            sampling_replay = _persist_sampling_replay(
+                ctx,
+                sampling,
+                source_dir=selected_replay.replay_dir,
+            )
+            sampling_replay["selection"] = {
+                "kind": cfg.sampling.replay["kind"],
+                "selection_sha256": selected_replay.selection.sha256,
+                "selection_rank": selected_replay.entry.selection_rank,
+                "source_task_id": selected_replay.entry.source_task_id,
+                "source_task_row_sha256": selected_replay.entry.source_task_row_sha256,
+            }
+        else:
+            sampling = sampling_orch.run(
+                dataset,
+                plan_dict=cfg.sampling.plan,
+                seed=sampling_seed,
+                dataset_id=cfg.dataset.id,
+            )
+            sampling_replay = _persist_sampling_replay(ctx, sampling)
         use_test = _use_test_split(sampling)
         protocol["use_test_split"] = bool(use_test)
         resolution["splits"]["resolved"] = {
@@ -736,9 +948,11 @@ def _run_experiment_single(
         }
         artifacts["sampling"] = {
             "seed": sampling_seed,
+            "component_seeds": sampling_component_seeds,
             "plan": sampling.plan,
             "split_fingerprint": sampling.split_fingerprint,
             "stats": sampling.stats,
+            "replay": sampling_replay,
         }
 
         if cfg.method.kind == "inductive" and sampling.is_graph():
@@ -807,8 +1021,11 @@ def _run_experiment_single(
                 seed=graph_seed,
                 dataset_fingerprint=ds_fp,
                 cache=cfg.graph.cache,
+                require_cache_hit=cfg.graph.require_cache_hit,
                 cache_dir=cfg.graph.cache_dir,
                 include_test=use_test,
+                expected_fingerprint=cfg.graph.expected_fingerprint,
+                expected_preprocess_fingerprint=cfg.graph.expected_preprocess_fingerprint,
             )
             graph_info = graph_orch.summarize_graph(graph, cfg.graph.spec)
             artifacts["graph"] = {
@@ -840,6 +1057,7 @@ def _run_experiment_single(
         X_u_w = None
         X_u_s = None
         X_u_s_1 = None
+        online_augmentation = None
         if (
             cfg.augmentation is not None
             and cfg.augmentation.enabled
@@ -855,16 +1073,33 @@ def _run_experiment_single(
 
             aug_seed = ctx.seed_for("augmentation", cfg.augmentation.seed)
             strong_views = 2 if cfg.method.method_id == "comatch" else 1
-            X_u_w, X_u_s, X_u_s_1 = aug_orch.run(
-                X_u_aug_input,
-                weak_plan=cfg.augmentation.weak,
-                strong_plan=cfg.augmentation.strong,
-                seed=aug_seed,
-                mode=cfg.augmentation.mode,
-                modality=cfg.augmentation.modality,
-                sample_ids=idx_u,
-                strong_views=strong_views,
-            )
+            if cfg.augmentation.mode == "online":
+                if strong_views != 1:
+                    raise BenchConfigError(
+                        "augmentation.mode='online' currently supports one strong view",
+                        code="E_BENCH_CONFIG",
+                    )
+                online_augmentation = aug_orch.build_online(
+                    weak_plan=cfg.augmentation.weak,
+                    strong_plan=cfg.augmentation.strong,
+                    seed=aug_seed,
+                    modality=cfg.augmentation.modality,
+                )
+                # The method contract still receives two views. In online mode these
+                # are only shape/device references; each batch is rematerialized in fit().
+                X_u_w = X_u_aug_input
+                X_u_s = X_u_aug_input
+            else:
+                X_u_w, X_u_s, X_u_s_1 = aug_orch.run(
+                    X_u_aug_input,
+                    weak_plan=cfg.augmentation.weak,
+                    strong_plan=cfg.augmentation.strong,
+                    seed=aug_seed,
+                    mode=cfg.augmentation.mode,
+                    modality=cfg.augmentation.modality,
+                    sample_ids=idx_u,
+                    strong_views=strong_views,
+                )
 
             if cfg.augmentation.modality != "graph" and isinstance(X_u, dict) and "x" in X_u:
 
@@ -906,6 +1141,7 @@ def _run_experiment_single(
             "X_u_w": X_u_w,
             "X_u_s": X_u_s,
             "X_u_s_1": X_u_s_1,
+            "online_augmentation": online_augmentation,
             "use_test": use_test,
             "masks": masks,
             "expected_labeled_count": expected_labeled_count,
@@ -944,7 +1180,7 @@ def _run_experiment_single(
 
         if cfg.method.kind == "inductive":
             _LOGGER.info("Method: %s", cfg.method.method_id)
-            method_seed = ctx.seed_for("method", None)
+            method_seed = _resolve_method_seed(ctx, cfg)
             method, method_resolution = inductive_orch.run(
                 pre,
                 sampling,
@@ -952,6 +1188,7 @@ def _run_experiment_single(
                 X_u_w=X_u_w,
                 X_u_s=X_u_s,
                 X_u_s_1=X_u_s_1,
+                online_augmentation=online_augmentation,
                 cfg=cfg.method,
                 seed=method_seed,
                 strict=cfg.run.benchmark_mode,
@@ -969,7 +1206,7 @@ def _run_experiment_single(
             )
         else:
             _LOGGER.info("Method: %s", cfg.method.method_id)
-            method_seed = ctx.seed_for("method", None)
+            method_seed = _resolve_method_seed(ctx, cfg)
             method, data, method_resolution = transductive_orch.run(
                 dataset=pre.dataset,
                 graph=graph,
@@ -994,6 +1231,11 @@ def _run_experiment_single(
         )
         resolution["dtype"]["resolved"] = method_resolution.get("dtypes", {})
         resolution["normalization"]["resolved"] = method_resolution.get("normalization", {})
+        method_diagnostics = getattr(method, "diagnostics_", None)
+        if not isinstance(method_diagnostics, Mapping):
+            method_diagnostics = method_resolution.get("diagnostics")
+        if isinstance(method_diagnostics, Mapping):
+            artifacts["method"]["diagnostics"] = dict(method_diagnostics)
 
     except Exception as exc:
         status = "failed"
@@ -1016,6 +1258,7 @@ def _run_experiment_single(
             protocol=protocol,
             versions=versions,
             fallback_events=fallback_events,
+            resource_measurement=resource_measurement,
             error=error,
             error_code=error_code,
         )
@@ -1041,18 +1284,57 @@ def _run_experiment_single(
         protocol=protocol,
         versions=versions,
         fallback_events=fallback_events,
+        resource_measurement=resource_measurement,
         error=error,
         error_code=error_code,
     )
     return SingleRunResult(code=0, run_dir=ctx.run_dir, run_json_path=ctx.run_dir / "run.json")
 
 
-def run_experiment(config_path: Path, *, num_runs: int | None = None) -> int:
+def run_experiment_single(
+    config_path: Path,
+    *,
+    raw: dict[str, Any] | None = None,
+    cfg: ExperimentConfig | None = None,
+) -> SingleRunResult:
+    """Public one-configuration/one-seed execution API used by campaign workers."""
+
+    if raw is None:
+        raw = load_yaml(config_path)
+    if cfg is None:
+        cfg = ExperimentConfig.from_dict(raw)
+    if cfg.run.seeds is not None:
+        raise ValueError("run_experiment_single requires run.seeds to be absent")
+    return _run_experiment_single(config_path, raw=raw, cfg=cfg)
+
+
+def run_experiment(
+    config_path: Path,
+    *,
+    num_runs: int | None = None,
+    seed: int | None = None,
+) -> int:
     if num_runs is not None and num_runs <= 0:
         raise ValueError("num_runs must be > 0")
+    if seed is not None and seed < 0:
+        raise ValueError("seed must be >= 0")
+    if seed is not None and num_runs is not None:
+        raise ValueError("seed and num_runs are mutually exclusive")
 
     raw = load_yaml(config_path)
     cfg = ExperimentConfig.from_dict(raw)
+
+    if seed is not None:
+        run_name = sweep_run_name(cfg.run.name, seed=seed, index=0, total=1)
+        single_raw = apply_global_seed(
+            raw,
+            seed=seed,
+            run_name=run_name,
+            seeded_sections=cfg.run.seeded_sections,
+        )
+        single_cfg = ExperimentConfig.from_dict(single_raw)
+        _LOGGER.info("Single-seed run: name=%s seed=%s", run_name, seed)
+        return _run_experiment_single(config_path, raw=single_raw, cfg=single_cfg).code
 
     if num_runs is not None:
         seeds = [int(cfg.run.seed) + i for i in range(num_runs)]
@@ -1132,7 +1414,14 @@ def main() -> int:
         default=None,
         help="Logging level: none, basic, detailed (aliases: quiet, full).",
     )
-    parser.add_argument(
+    sweep_group = parser.add_mutually_exclusive_group()
+    sweep_group.add_argument(
+        "--seed",
+        type=_non_negative_int,
+        default=None,
+        help="Run exactly one seed, overriding run.seed and run.seeds from YAML.",
+    )
+    sweep_group.add_argument(
         "--num-runs",
         type=_positive_int,
         default=None,
@@ -1147,7 +1436,7 @@ def main() -> int:
     except ValueError as exc:
         raise SystemExit(str(exc)) from exc
     configure_logging(resolved)
-    return run_experiment(Path(args.config), num_runs=args.num_runs)
+    return run_experiment(Path(args.config), num_runs=args.num_runs, seed=args.seed)
 
 
 if __name__ == "__main__":

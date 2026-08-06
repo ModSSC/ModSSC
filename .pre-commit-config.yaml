@@ -3,9 +3,12 @@ repos:
     rev: v6.0.0
     hooks:
       - id: end-of-file-fixer
+        # Preserve the byte-exact upstream licence copy authenticated by the audit manifest.
+        exclude: ^provenance/article10/match_audit/LICENSE\.usb\.mit\.txt$
       - id: trailing-whitespace
       - id: check-yaml
       - id: check-added-large-files
+        exclude: ^bench/assets/calder2020/protocol_inputs/graph/mnist-vae-knn30\.npz$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.0
@@ -24,7 +27,7 @@ repos:
       - id: pytest
         name: pytest
         entry: >-
-          bash -c 'if [ ! -x ./.venv/bin/python ]; then echo "Missing ./.venv/bin/python. Run: python3 -m venv .venv && make install-dev"; exit 1; fi; exec ./.venv/bin/python -m pytest'
+          bash -c 'if [ ! -x ./.venv/bin/python ]; then echo "Missing ./.venv/bin/python. Run: python3 -m venv .venv && make install-dev"; exit 1; fi; exec ./.venv/bin/python -m pytest "$@"' --
         language: system
         args: ["-n", "4", "--dist", "loadgroup", "--cov-report=xml:coverage.xml"]
         pass_filenames: false

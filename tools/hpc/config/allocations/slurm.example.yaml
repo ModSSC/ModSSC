@@ -1,0 +1,12 @@
+schema_version: 1
+site_id: slurm-gpu
+updated_at: REPLACE_WITH_ISO8601_TIMESTAMP
+resources:
+  GPU_PRIMARY:
+    total_hours: REPLACE_WITH_TOTAL_HOURS
+    consumed_hours: REPLACE_WITH_CONSUMED_HOURS
+    reserve_fraction: 0.15
+  GPU_SECONDARY:
+    total_hours: REPLACE_WITH_TOTAL_HOURS
+    consumed_hours: REPLACE_WITH_CONSUMED_HOURS
+    reserve_fraction: 0.15

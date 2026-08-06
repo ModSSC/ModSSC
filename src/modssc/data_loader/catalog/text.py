@@ -3,6 +3,26 @@ from __future__ import annotations
 from modssc.data_loader.types import DatasetSpec
 
 TEXT_CATALOG: dict[str, DatasetSpec] = {
+    "webkb_course_cotraining": DatasetSpec(
+        key="webkb_course_cotraining",
+        provider="webkb1998",
+        uri="webkb1998:course",
+        modality="text",
+        task="classification",
+        description=(
+            "WebKB Course subset used by Blum and Mitchell (1998): 1,051 paired "
+            "full-page/inlink-anchor documents, 230 course and 821 non-course pages, "
+            "with no official split."
+        ),
+        required_extra=None,
+        source_kwargs={},
+        homepage=("https://www.cs.cmu.edu/afs/cs.cmu.edu/project/theo-51/www/co-training/data/"),
+        license=None,
+        citation=(
+            "Blum, A., & Mitchell, T. (1998). Combining Labeled and Unlabeled Data "
+            "with Co-Training. COLT, 92-100. https://doi.org/10.1145/279943.279962."
+        ),
+    ),
     "ag_news": DatasetSpec(
         key="ag_news",
         provider="hf",

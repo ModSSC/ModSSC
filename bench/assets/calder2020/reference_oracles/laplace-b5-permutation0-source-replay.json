@@ -1,0 +1,96 @@
+{
+  "archive": {
+    "accuracy_percent_text": "69.00",
+    "compatible_correct_count": [
+      48263,
+      48268
+    ],
+    "node_delta": 1,
+    "results_sha256": "894e3b33ae18bf0e43c5413dfe72b0e150f9a40d95027bba145fd309bf429b6b"
+  },
+  "bindings": {
+    "dataset_content_sha256": "a918159751de8d67828d471643f73e70781ae5986e63d7d544be33e04139a89d",
+    "dataset_fingerprint": "f42c17a0366a8feb04f6e0c58503e5b3a20cb311aaa714e18e1fc707d6cc473d",
+    "environment_lock_sha256": "2a01852bb33ac2d091abee119a1248a87e18ca4237751f52f49c4be6f7b8fb0e",
+    "effective_config_sha256": "75e251431b2133d05a39cc7b0c105998fa4ec9375104bdacf2a9f0798310b2a5",
+    "graph_fingerprint": "209e8c9a6427fcd1403d76f1111654fc202e92d18d771ab37a5da92e14de693c",
+    "labeled_indices_permutation_order_sha256": "cd6fce0c5f59fcb8f60d298ea1fe53737777408e460d7947952fa422e5f7118d",
+    "labeled_indices_sorted_sha256": "df21dd3dcb617ff90b44538383c2908b4594583d6aeb22724b45c8e862d7390f",
+    "labels_sha256": "ec01dca8550a4bf9a4c8559c5c9c1c3ed5b8dd4fb9ab2e771883b03c8635ab2e",
+    "modssc_source": {
+      "module": "modssc.transductive.methods.classic.laplace_learning",
+      "sha256": "4d2d8042c93d961f94871a8e8a26a9d5230ad35c99e454cf509a8616647887f0"
+    },
+    "official_commit": "04bece45cd512cf1a3bcddb163b767ca44a746e1",
+    "official_graph_sha256": "5b42bb234888c83eed763958a17fdfb8a55c09a2f0071b55a61635d86dc90db5",
+    "official_permutations_sha256": "4d2f9949f4ce20d2644cb4c070766421751070dc625c05a0219b1c9d60045770",
+    "official_source": {
+      "commit": "04bece45cd512cf1a3bcddb163b767ca44a746e1",
+      "repository": "https://github.com/jwcalder/GraphLearningOld",
+      "sha256": "e2d16b74ac7d9ba3daab1c2d020e97b268e26bc378fba1f1077bbfd8707a3372",
+      "upstream_path": "graphlearning/graphlearning.py"
+    },
+    "preprocess_fingerprint": "preprocess:7d44ae1b3a7f09a1c241a9b5e16ec7ff4502e3b4ef7c8aeadb4a6561caa25f20",
+    "split_fingerprint": "81380399ddff4e037f90101b5a1ff360b7e151c015fe8d162aba70d9c799a9d0"
+  },
+  "claim": "The completed audit found identical GraphLearning and ModSSC predictions in the locked environment. The upstream source is identified by repository, commit, path and SHA-256 but is neither distributed nor executed by ModSSC. The one-node discrepancy is only between those audited executions and the historical two-decimal CSV archive.",
+  "identity": {
+    "budget_per_class": 5,
+    "fixed_permutation_row": 4,
+    "method_id": "laplace_learning",
+    "permutation": 0
+  },
+  "kind": "modssc.calder2020-laplace-source-replay-oracle",
+  "observed_environment": {
+    "numpy": "2.3.5",
+    "python": "3.12.13",
+    "scipy": "1.17.1"
+  },
+  "oracle_sha256": "1b1519660a34e1e770abf3a8d0b2e9c3a882427b082af77f3153526ec572deb5",
+  "protocol": {
+    "archive_format": "%.2f",
+    "cg_max_iter": 100000,
+    "cg_tol": 1e-05,
+    "labeled_count": 50,
+    "n_classes": 10,
+    "n_nodes": 70000,
+    "solver": "calder2020_conjugate_gradient",
+    "unlabeled_count": 69950
+  },
+  "replay": {
+    "accuracy": 0.6900500357398142,
+    "correct_count": 48269,
+    "differing_predictions": 0,
+    "iterations": {
+      "modssc": 148,
+      "official_source": 148
+    },
+    "max_absolute_score_delta": 0.0,
+    "prediction_byte_count": 560000,
+    "prediction_count": 70000,
+    "prediction_encoding": "numpy-int64-little-endian-c-order",
+    "prediction_shape": [
+      70000
+    ],
+    "prediction_sha256": {
+      "modssc": "bef12df18225f501da01f4522115748f3d63a7b1568734c172d81acae7482432",
+      "official_source": "bef12df18225f501da01f4522115748f3d63a7b1568734c172d81acae7482432"
+    },
+    "residual": {
+      "modssc_recursive": 9.842962973957787e-06,
+      "official_system": 9.842962973879334e-06
+    },
+    "score_byte_count": 5600000,
+    "score_encoding": "numpy-float64-little-endian-c-order",
+    "score_sha256": {
+      "modssc": "9a8150ef38e5a2c02f1bcc326f98c01ec9455a8aa30a45714df75f832591c059",
+      "official_source": "9a8150ef38e5a2c02f1bcc326f98c01ec9455a8aa30a45714df75f832591c059"
+    },
+    "score_shape": [
+      70000,
+      10
+    ],
+    "unlabeled_count": 69950
+  },
+  "schema_version": 1
+}

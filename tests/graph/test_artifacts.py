@@ -15,6 +15,14 @@ def test_graph_artifact_validation():
     with pytest.raises(GraphValidationError, match="edge_weight must have shape"):
         GraphArtifact(n_nodes=5, edge_index=np.zeros((2, 3)), edge_weight=np.zeros((4,)))
 
+    exact = GraphArtifact(
+        n_nodes=1,
+        edge_index=np.array([[0], [0]]),
+        edge_weight=np.array([np.nextafter(0.5, 1.0)], dtype=np.float64),
+        meta={"edge_weight_dtype": "float64"},
+    )
+    assert exact.edge_weight.dtype == np.float64
+
 
 def test_node_dataset_validation():
     graph = GraphArtifact(n_nodes=5, edge_index=np.zeros((2, 0)))

@@ -31,6 +31,7 @@ AET_PRESETS: dict[str, dict[str, Any]] = {
 
 _VALID_FEATURE_LAYERS = {"conv1", "conv2", "conv3", "conv4", "classifier"}
 _PRECOMPUTED_CIFAR_ROWS = 60_000
+_SHA256_HEX = frozenset("0123456789abcdef")
 
 
 def _safe_cache_component(value: str) -> str:
@@ -91,48 +92,128 @@ def _float32_npy_cache_meta_path(npy_path: Path) -> Path:
     return npy_path.with_suffix(npy_path.suffix + ".json")
 
 
-def _npy_source_identity(source_path: Path) -> dict[str, Any]:
-    stat = source_path.stat()
+def _npy_source_identity(
+    source_path: Path, *, source_npz_sha256: str | None = None
+) -> dict[str, Any]:
     return {
-        "path": str(source_path.resolve()),
-        "size": int(stat.st_size),
-        "mtime_ns": int(stat.st_mtime_ns),
+        "npy_sha256": _file_sha256(source_path),
+        "source_npz_sha256": source_npz_sha256,
     }
 
 
-def _float32_cache_matches(meta_path: Path, source_identity: dict[str, Any]) -> bool:
-    if not meta_path.exists():
-        return False
+def _read_npy_cache_meta(meta_path: Path) -> dict[str, Any] | None:
+    if not meta_path.is_file():
+        return None
     try:
         payload = json.loads(meta_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):  # pragma: no cover - corrupt metadata is rare.
+    except (OSError, json.JSONDecodeError):
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _npy_cache_matches(
+    *,
+    output_path: Path,
+    meta_path: Path,
+    kind: str,
+    source_identity: dict[str, Any],
+) -> bool:
+    if not output_path.is_file():
         return False
-    return payload.get("source") == source_identity
+    payload = _read_npy_cache_meta(meta_path)
+    if payload is None:
+        return False
+    if (
+        payload.get("schema_version") != 1
+        or payload.get("kind") != kind
+        or payload.get("source") != source_identity
+    ):
+        return False
+    expected_output_sha256 = payload.get("output_npy_sha256")
+    return (
+        isinstance(expected_output_sha256, str)
+        and _file_sha256(output_path) == expected_output_sha256
+    )
 
 
-def _write_float32_cache_meta(meta_path: Path, source_identity: dict[str, Any]) -> None:
+def _write_npy_cache_meta(
+    meta_path: Path,
+    *,
+    kind: str,
+    source_identity: dict[str, Any],
+    output_path: Path,
+) -> None:
     tmp_path = meta_path.with_suffix(meta_path.suffix + ".tmp")
     tmp_path.write_text(
-        json.dumps({"source": source_identity}, sort_keys=True),
+        json.dumps(
+            {
+                "schema_version": 1,
+                "kind": kind,
+                "source": source_identity,
+                "output_npy_sha256": _file_sha256(output_path),
+            },
+            sort_keys=True,
+        ),
         encoding="utf-8",
     )
     tmp_path.replace(meta_path)
 
 
-def _ensure_float32_npy(source_path: Path, output_path: Path) -> None:
+def _ensure_extracted_npy(
+    npz_path: Path,
+    output_path: Path,
+    *,
+    source_npz_sha256: str,
+) -> None:
+    meta_path = _float32_npy_cache_meta_path(output_path)
+    source_identity = {"source_npz_sha256": source_npz_sha256}
+    if _npy_cache_matches(
+        output_path=output_path,
+        meta_path=meta_path,
+        kind="npz-extraction",
+        source_identity=source_identity,
+    ):
+        return
+    _extract_single_npy_from_npz(npz_path, output_path)
+    _write_npy_cache_meta(
+        meta_path,
+        kind="npz-extraction",
+        source_identity=source_identity,
+        output_path=output_path,
+    )
+
+
+def _ensure_float32_npy(
+    source_path: Path,
+    output_path: Path,
+    *,
+    source_npz_sha256: str | None = None,
+) -> None:
     source = np.load(source_path, mmap_mode="r", allow_pickle=False)
     if source.dtype == np.float32:
         return
-    source_identity = _npy_source_identity(source_path)
+    source_identity = _npy_source_identity(
+        source_path,
+        source_npz_sha256=source_npz_sha256,
+    )
     meta_path = _float32_npy_cache_meta_path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     if output_path.exists():
-        cached = np.load(output_path, mmap_mode="r", allow_pickle=False)
-        if (
-            tuple(cached.shape) == tuple(source.shape)
-            and cached.dtype == np.float32
-            and _float32_cache_matches(meta_path, source_identity)
-        ):
+        try:
+            cached = np.load(output_path, mmap_mode="r", allow_pickle=False)
+            cache_valid = (
+                tuple(cached.shape) == tuple(source.shape)
+                and cached.dtype == np.float32
+                and _npy_cache_matches(
+                    output_path=output_path,
+                    meta_path=meta_path,
+                    kind="float32-conversion",
+                    source_identity=source_identity,
+                )
+            )
+        except (OSError, ValueError):
+            cache_valid = False
+        if cache_valid:
             return
         output_path.unlink()
         if meta_path.exists():
@@ -154,7 +235,12 @@ def _ensure_float32_npy(source_path: Path, output_path: Path) -> None:
         target.flush()
         del target
         tmp_path.replace(output_path)
-        _write_float32_cache_meta(meta_path, source_identity)
+        _write_npy_cache_meta(
+            meta_path,
+            kind="float32-conversion",
+            source_identity=source_identity,
+            output_path=output_path,
+        )
     finally:
         if tmp_path.exists():  # pragma: no cover - best-effort cleanup after failed conversion.
             tmp_path.unlink()
@@ -310,6 +396,8 @@ class AetStep:
     unit_normalize: bool | None = None
     batch_size: int = 128
     device: str | None = "auto"
+    expected_features_sha256: str | None = field(default=None, kw_only=True)
+    expected_labels_sha256: str | None = field(default=None, kw_only=True)
 
     model_: Any = field(default=None, init=False, repr=False)
     torch_: Any = field(default=None, init=False, repr=False)
@@ -350,6 +438,14 @@ class AetStep:
             raise PreprocessValidationError("train_offset and test_offset must be >= 0")
         if int(self.expected_rows) <= 0:
             raise PreprocessValidationError("expected_rows must be > 0")
+        for field_name in ("expected_features_sha256", "expected_labels_sha256"):
+            value = getattr(self, field_name)
+            if value is None:
+                continue
+            normalized = str(value).strip().lower()
+            if len(normalized) != 64 or any(ch not in _SHA256_HEX for ch in normalized):
+                raise PreprocessValidationError(f"{field_name} must be a SHA-256 hex digest")
+            setattr(self, field_name, normalized)
         if self.feature_layer not in _VALID_FEATURE_LAYERS:
             known = ", ".join(sorted(_VALID_FEATURE_LAYERS))
             raise PreprocessValidationError(f"feature_layer must be one of: {known}")
@@ -481,11 +577,13 @@ class AetStep:
                 "features_npz": {
                     "path": str(features_path),
                     "sha256": features_sha256,
+                    "expected_sha256": self.expected_features_sha256,
                     "source_url": "https://www-users.cse.umn.edu/~jwcalder/Data/cifar_aet.npz",
                 },
                 "labels_npz": {
                     "path": str(labels_path),
                     "sha256": labels_sha256,
+                    "expected_sha256": self.expected_labels_sha256,
                     "source_url": "https://www-users.cse.umn.edu/~jwcalder/Data/cifar_labels.npz",
                 },
                 "features_npy_cache": str(extracted_npy_path),
@@ -563,14 +661,35 @@ class AetStep:
         if not labels_path.exists():
             raise PreprocessValidationError(f"Precomputed CIFAR labels not found at {labels_path}")
 
+        features_sha = _file_sha256(features_path)
+        if (
+            self.expected_features_sha256 is not None
+            and features_sha != self.expected_features_sha256
+        ):
+            raise PreprocessValidationError(
+                f"Precomputed AET features SHA-256 mismatch at {features_path}"
+            )
+        labels_sha = _file_sha256(labels_path)
+        if self.expected_labels_sha256 is not None and labels_sha != self.expected_labels_sha256:
+            raise PreprocessValidationError(
+                f"Precomputed CIFAR labels SHA-256 mismatch at {labels_path}"
+            )
+
         extracted_npy_path = self._extracted_npy_path(features_path)
-        if not extracted_npy_path.exists():
-            _extract_single_npy_from_npz(features_path, extracted_npy_path)
+        _ensure_extracted_npy(
+            features_path,
+            extracted_npy_path,
+            source_npz_sha256=features_sha,
+        )
         features_npy_path = extracted_npy_path
         probe = np.load(features_npy_path, mmap_mode="r", allow_pickle=False)
         if probe.dtype != np.float32:
             features_npy_path = _float32_npy_cache_path(extracted_npy_path)
-            _ensure_float32_npy(extracted_npy_path, features_npy_path)
+            _ensure_float32_npy(
+                extracted_npy_path,
+                features_npy_path,
+                source_npz_sha256=features_sha,
+            )
 
         labels = np.asarray(_load_npz_member(labels_path, "labels"), dtype=np.int64)
         expected_rows = int(self.expected_rows)
@@ -603,8 +722,6 @@ class AetStep:
             norms = np.where(norms > 1.0e-12, norms, 1.0).astype(np.float32)
             Z /= norms
 
-        features_sha = _file_sha256(features_path)
-        labels_sha = _file_sha256(labels_path)
         self.precomputed_info_ = self._build_precomputed_info(
             features_path=features_path,
             labels_path=labels_path,

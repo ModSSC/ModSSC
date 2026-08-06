@@ -44,9 +44,20 @@ Ruff configuration is in [`pyproject.toml`](https://github.com/ModSSC/ModSSC/blo
 
 
 ## Project structure explanation
-- [`src/modssc/`](https://github.com/ModSSC/ModSSC/tree/main/src/modssc): core library and CLI implementations. <sup class="cite"><a href="#source-4">[4]</a></sup>
+- [`src/modssc/`](https://github.com/ModSSC/ModSSC/tree/main/src/modssc): core
+  library, method implementations, reusable backends, and installed CLIs.
+  <sup class="cite"><a href="#source-4">[4]</a></sup>
 
-- [`bench/`](https://github.com/ModSSC/ModSSC/tree/main/bench): benchmark runner and experiment configs (repository-only). <sup class="cite"><a href="#source-5">[5]</a></sup>
+- [`bench/`](https://github.com/ModSSC/ModSSC/tree/main/bench): separately
+  packaged benchmark and paper-replication runner, validated configs, schemas,
+  and scientific orchestration. <sup class="cite"><a href="#source-5">[5]</a></sup>
+
+- Operational scheduler/deployment code lives in `tools/hpc/`; completed
+  evidence and audit-only source manifests live in `provenance/article10/`.
+  Checksums, notices, and licences needed by direct protocol inputs remain
+  beside those inputs under `bench/assets/`. External research source snapshots
+  are not retained. Site-specific accounts, partitions, paths and credentials
+  never belong in the public repository.
 
 - [`examples/`](https://github.com/ModSSC/ModSSC/tree/main/examples) and [`notebooks/`](https://github.com/ModSSC/ModSSC/tree/main/notebooks): runnable demos and exploratory workflows. <sup class="cite"><a href="#source-4">[4]</a><a href="#source-6">[6]</a></sup>
 

@@ -11,6 +11,11 @@ import numpy as np
 
 from modssc.data_loader import cache
 from modssc.data_loader.catalog import DATASET_CATALOG
+from modssc.data_loader.content import (
+    build_content_manifest,
+    content_manifest_json,
+    verify_content_manifest,
+)
 from modssc.data_loader.errors import (
     DatasetNotCachedError,
     ManifestError,
@@ -479,6 +484,18 @@ def _download_and_store(
             schema_version=SCHEMA_VERSION, fingerprint=fp, identity=identity, dataset=ds
         )
         write_manifest(layout.manifest_path(fp), manifest)
+        content_available = any(path.is_file() for path in processed_dir.rglob("*"))
+        if content_available:
+            content_manifest = build_content_manifest(
+                layout,
+                fp,
+                ds,
+                identity=identity.as_dict(),
+            )
+            cache.atomic_write_text(
+                layout.content_manifest_path(fp),
+                content_manifest_json(content_manifest),
+            )
         cache.index_upsert(layout, fingerprint=fp, manifest=manifest)
 
         logger.info(
@@ -487,6 +504,13 @@ def _download_and_store(
             identity.dataset_id,
             fp,
         )
+        if content_available:
+            return _attach_content_evidence(
+                layout,
+                fp,
+                ds,
+                identity=identity.as_dict(),
+            )
         return ds
 
 
@@ -514,8 +538,78 @@ def _load_processed(layout: cache.CacheLayout, fingerprint: str) -> LoadedDatase
     if ds.meta is None:
         ds = replace(ds, meta={})
     ds.meta["dataset_fingerprint"] = fingerprint
+    content_manifest_path = layout.content_manifest_path(fingerprint)
+    if isinstance(content_manifest_path, Path) and content_manifest_path.is_file():
+        manifest = cache.read_cached_manifest(layout, fingerprint)
+        ds = _attach_content_evidence(
+            layout,
+            fingerprint,
+            ds,
+            identity=manifest.identity,
+        )
     logger.debug("Loaded cached dataset: fingerprint=%s", fingerprint)
     return ds
+
+
+def _attach_content_evidence(
+    layout: cache.CacheLayout,
+    fingerprint: str,
+    dataset: LoadedDataset,
+    *,
+    identity: Mapping[str, Any],
+) -> LoadedDataset:
+    evidence = verify_content_manifest(
+        layout,
+        fingerprint,
+        identity=identity,
+        rehash=False,
+    )
+    meta = dict(dataset.meta or {})
+    meta.update(
+        {
+            "dataset_cache_fingerprint": fingerprint,
+            "dataset_content_sha256": evidence["content_sha256"],
+            "dataset_content_manifest_sha256": evidence["content_manifest_sha256"],
+            "dataset_content_state_sha256": evidence["cache_state_sha256"],
+        }
+    )
+    return replace(dataset, meta=meta)
+
+
+def verify_dataset_content(
+    dataset_id: str,
+    *,
+    cache_dir: Path | None = None,
+    options: Mapping[str, Any] | None = None,
+    rehash: bool = True,
+) -> dict[str, str]:
+    """Verify cached bytes for a resolved dataset without downloading anything."""
+
+    layout = _layout(cache_dir)
+    identity = _resolve_identity(DatasetRequest(id=dataset_id, options=options or {}))
+    fingerprint = identity.fingerprint(schema_version=SCHEMA_VERSION)
+    if not cache.is_cached(layout, fingerprint):
+        raise DatasetNotCachedError(dataset_id)
+    if not layout.content_manifest_path(fingerprint).is_file():
+        loaded = _load_processed_or_purge(layout, fingerprint, dataset_id=dataset_id)
+        if loaded is None:
+            raise DatasetNotCachedError(dataset_id)
+        content_manifest = build_content_manifest(
+            layout,
+            fingerprint,
+            loaded,
+            identity=identity.as_dict(),
+        )
+        cache.atomic_write_text(
+            layout.content_manifest_path(fingerprint),
+            content_manifest_json(content_manifest),
+        )
+    return verify_content_manifest(
+        layout,
+        fingerprint,
+        identity=identity.as_dict(),
+        rehash=rehash,
+    )
 
 
 def available_providers() -> list[str]:

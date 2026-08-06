@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "provenance": {
+    "repository": "https://github.com/THUDM/GRAND",
+    "commit": "7a2fd6e7c3f20ca2c84b06ec1c5dc7f227dbfe2b",
+    "paper_sha256": "b37c0c72d463d8ccd973d59fb85bdf23ab2a18e13bde7d5cde5916564272e7b2",
+    "supplemental_sha256": "aa4c625aa3a074e3440386bf303efe2c3cb85f5eab6b1ecbbf40e793be48a7d2",
+    "source_sha256": {
+      "train_grand.py": "6c6e3162937fcb382172569af7d9ddfa71c677a3a406c17ace7cd3d7a4978443",
+      "pygcn/models.py": "970837c2bd448bf21bb6085ff8604d73bd8f7098260696f86fd1f1acd6082cba",
+      "pygcn/layers.py": "a2715fd232e3449d76a072b88496938e2182aade355bce8d363f2056476567c4",
+      "pygcn/utils.py": "a6f272c9ddcccca29a7c788b0b9c36c0b83c57b137d700f02e765d810c4a90d6",
+      "run100_cora.sh": "cc94cfc7eb6194c6a6cb4a2438a89a72b518163eee10c1514542299420dc684a"
+    },
+    "cora_raw_sha256": {
+      "ind.cora.allx": "9419ba2f26f5c35243db64aba110e0f35a04851609e0dc5433450676ca6b8543",
+      "ind.cora.ally": "2b998f5cc7fedc86e7f97ca2498f47a1ffc1462c29e2d578b23bf3f62b6e7d71",
+      "ind.cora.graph": "58f13302f39dde8852dad6fe6d15b89b077b6d7f837626bce671ef80344b383d",
+      "ind.cora.test.index": "297ce89af2b51a6a194181c7dbe1796c6a1cf9cd9349a88383b1b1e227867875",
+      "ind.cora.tx": "b9afbaa4a400df991f6f02ef677e1e44da55ffc04801fd02f9e673987829226a",
+      "ind.cora.ty": "41f5ac76596a1699cc33f53084a2419e92961c42bb75f36fc38e616d348532ad",
+      "ind.cora.x": "23cfa55d91c6f624233f5eb7b6e3f141f1bd2b2ae39608a63cf5d084bb27baab",
+      "ind.cora.y": "94465c14eb53e04ca262198dcbb2521ee8af60fb3f3d546cd6ca24a511b0e7d1"
+    },
+    "oracle": "Frozen float32 outputs from an independent transcription of the pinned functions; no ModSSC function was imported."
+  },
+  "dropnode": {
+    "drop_probability": 0.25,
+    "features": [
+      [1.0, 0.0, 2.0],
+      [0.0, 3.0, 1.0],
+      [2.0, 1.0, 0.0],
+      [1.0, 1.0, 1.0]
+    ],
+    "bernoulli_mask": [1.0, 0.0, 1.0, 1.0],
+    "training_output": [
+      [1.0, 0.0, 2.0],
+      [0.0, 0.0, 0.0],
+      [2.0, 1.0, 0.0],
+      [1.0, 1.0, 1.0]
+    ],
+    "inference_output": [
+      [0.75, 0.0, 1.5],
+      [0.0, 2.25, 0.75],
+      [1.5, 0.75, 0.0],
+      [0.75, 0.75, 0.75]
+    ]
+  },
+  "propagation": {
+    "order": 2,
+    "adjacency": [
+      [0.5, 0.40824827551841736, 0.0, 0.0],
+      [0.40824827551841736, 0.3333333432674408, 0.3333333432674408, 0.0],
+      [0.0, 0.3333333432674408, 0.3333333432674408, 0.40824827551841736],
+      [0.0, 0.0, 0.40824827551841736, 0.5]
+    ],
+    "training_output": [
+      [0.7296107411384583, 0.04536092281341553, 1.2777777910232544],
+      [0.6652163863182068, 0.23054611682891846, 0.5443310141563416],
+      [1.4429941177368164, 0.8235591053962708, 0.34020689129829407],
+      [1.1378589868545532, 0.8883740305900574, 0.6388888955116272]
+    ],
+    "inference_output": [
+      [0.5472080707550049, 0.5953620672225952, 1.1454471349716187],
+      [0.4989122450351715, 1.464576244354248, 0.8388038277626038],
+      [1.0822455883026123, 1.034335970878601, 0.39404407143592834],
+      [0.8533942103385925, 0.7683424949645996, 0.5131873488426208]
+    ]
+  },
+  "objective": {
+    "temperature": 0.5,
+    "consistency_weight": 0.7,
+    "labels": [0, 1, 2, 1],
+    "train_indices": [0, 2],
+    "logits": [
+      [
+        [1.2, -0.3, 0.4],
+        [0.1, 0.7, -0.2],
+        [-0.4, 0.2, 1.1],
+        [0.5, -0.1, 0.3]
+      ],
+      [
+        [0.9, -0.1, 0.6],
+        [0.3, 0.4, -0.4],
+        [-0.2, 0.1, 0.8],
+        [0.2, 0.2, 0.6]
+      ]
+    ],
+    "mean_probability": [
+      [0.536074161529541, 0.1539362668991089, 0.3099895715713501],
+      [0.3325115442276001, 0.46809399127960205, 0.19939444959163666],
+      [0.16711294651031494, 0.2579086124897003, 0.5749784708023071],
+      [0.35438108444213867, 0.25909483432769775, 0.3865240812301636]
+    ],
+    "sharpened_target": [
+      [0.7057954668998718, 0.05819839611649513, 0.23600614070892334],
+      [0.29927918314933777, 0.5931017398834229, 0.10761906206607819],
+      [0.06570319831371307, 0.1564941108226776, 0.7778027057647705],
+      [0.3670848608016968, 0.19621984660625458, 0.43669527769088745]
+    ],
+    "supervised_loss": 0.5929338932037354,
+    "consistency_loss": 0.0392572358250618,
+    "total_loss": 0.6204139590263367
+  },
+  "checkpoint": {
+    "patience": 2,
+    "observations": [
+      {"loss": 1.0, "accuracy": 0.5, "reset": true, "save": true, "stop": false},
+      {"loss": 1.1, "accuracy": 0.6, "reset": true, "save": false, "stop": false},
+      {"loss": 1.05, "accuracy": 0.55, "reset": false, "save": false, "stop": false},
+      {"loss": 0.9, "accuracy": 0.55, "reset": true, "save": true, "stop": false},
+      {"loss": 0.95, "accuracy": 0.54, "reset": false, "save": false, "stop": false},
+      {"loss": 0.96, "accuracy": 0.53, "reset": false, "save": false, "stop": true}
+    ],
+    "best_epoch": 3,
+    "best_loss": 0.9,
+    "best_accuracy": 0.55
+  }
+}

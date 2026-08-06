@@ -1,18 +1,36 @@
 # Benchmarks
 
-Use this reference when you want to run the benchmark runner end to end and understand the artifacts it writes. For the YAML contract itself, continue with the [Configuration reference](configuration.md).
+Use this reference when you want to run the benchmark runner end to end and
+understand the artifacts it writes. For the YAML contract itself, continue with
+the [Configuration reference](configuration.md). For an exact published result,
+select a frozen card from `bench/configs/reproductions/` rather than adapting a
+standardized benchmark config.
 
 !!! warning
     Bench configs and caches are trusted local inputs. In particular, `method.model.factory` is disabled unless you explicitly opt in with `run.allow_custom_factories: true`, and that mode should only be used for configs you control.
 
 
 ## What it is for
-The benchmark runner orchestrates dataset loading, sampling, preprocess, optional graph and views stages, method execution, evaluation, and reporting from one validated config. It is the highest-level execution path in the repository. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-5">[5]</a><a href="#source-6">[6]</a></sup>
+The repository-level benchmark runner orchestrates dataset loading, sampling,
+preprocess, optional graph and views stages, method execution, evaluation, and
+reporting from one validated config. Method implementations and reusable
+backends come from `src/modssc`; protocol and campaign orchestration stay in
+`bench`. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-5">[5]</a><a href="#source-6">[6]</a></sup>
+
+The two config families have different contracts:
+
+- `bench/configs/experiments/` and `bench/configs/best/` define examples and the
+  standardized benchmark;
+- `bench/configs/reproductions/` freezes article-specific datasets, splits,
+  hyperparameters, repetitions, metrics, and acceptance rules.
 
 
 ## When to use
 - Use the benchmark runner when you want a reproducible experiment with saved configs and result artifacts.
 - Use it when you need seed sweeps, output folders, or HPO orchestration from YAML.
+- Use a reproduction card when the objective is to reproduce a published
+  result. This avoids silently replacing a fixed split, graph, metric, or
+  aggregation rule with a convenient local choice.
 - Use CLI bricks or Python APIs instead when you only need one stage in isolation.
 
 
@@ -38,11 +56,21 @@ python -m bench.main --config bench/configs/experiments/toy_inductive.yaml --num
 
 
 ## Repository layout
+- `bench/main.py`, `bench/schema.py`, and `bench/orchestrators/`: validated
+  runner and scientific stages
 - [`bench/configs/experiments/`](https://github.com/ModSSC/ModSSC/tree/main/bench/configs/experiments): authored examples, tutorial configs, and runnable templates
 - [`bench/configs/best/`](https://github.com/ModSSC/ModSSC/tree/main/bench/configs/best): curated benchmark suites and manifests
-- local `bench/` deployment helpers such as `bench/slurm/`: cluster launchers and job structure for internal or site-specific environments
+- `bench/configs/reproductions/`: frozen article protocol cards
+- `bench/campaign/`: scientific campaign manifests, execution,
+  reconciliation, and acceptance
 
-These directories serve different audiences. Do not treat them as one undifferentiated config bucket.
+Generic Slurm and deployment helpers live under `tools/hpc/`, not `bench/`.
+Completed evidence, audit history, and audit-only source manifests live under
+`provenance/article10/`. Checksums, notices, and licences required to
+authenticate or redistribute direct protocol inputs remain beside those inputs
+under `bench/assets/`. Copies of third-party research source trees are not
+retained. Private accounts, partitions, QoS names, filesystem roots, caches,
+logs, and results remain outside the public repository.
 
 
 ## How to run bench
@@ -52,7 +80,7 @@ If your config uses environment placeholders such as `${MODSSC_OUTPUT_DIR}`, exp
 export MODSSC_OUTPUT_DIR=/tmp/modssc_runs
 export MODSSC_DATASET_CACHE_DIR=/tmp/modssc_cache/datasets
 export MODSSC_PREPROCESS_CACHE_DIR=/tmp/modssc_cache/preprocess
-export MODSSC_GRAPH_CACHE_DIR=/tmp/modssc_cache/graphs
+export MODSSC_GRAPH_CACHE_DIR=/tmp/modssc_cache/graph
 ```
 
 If one of these placeholders is missing at runtime, config loading fails fast with an explicit error.
@@ -81,6 +109,30 @@ run:
 In sweep mode, the runner executes one run per seed and auto-suffixes `run.name` with `-seed<N>`. For each run, `run.seed` and section seeds (`sampling`, `preprocess`, `views`, `graph`, `augmentation`, `search`) are aligned to that seed. `--num-runs` follows the same seed-sweep logic and overrides `run.seeds` when both are present. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-6">[6]</a></sup>
 
 
+## Paper replication without external source code
+A supported reproduction uses the shipped command with a frozen card:
+
+```bash
+python -m bench.reproduce list
+python -m bench.reproduce verify
+python -m bench.reproduce run METHOD/PROTOCOL
+```
+
+The checkout contains the ModSSC strategy implementation, protocol metadata,
+scientific checks, and compact fixed inputs. It must not clone or import the
+authors' code, invoke an external JAR, rely on Weka installed outside the
+project, or require a manually seeded dataset cache. Datasets are downloaded or
+materialized through ModSSC providers using the identity recorded by the
+protocol. `run` performs this preparation before delegating to `bench.main`;
+`prepare METHOD/PROTOCOL` is available when preparation and execution must be
+scheduled separately. Optional Python backends are installed through declared
+project extras.
+
+Operational launchers may call this exact interface from `tools/hpc/`. A Slurm
+profile changes resources and scheduling only; it must not change the scientific
+config.
+
+
 ## Cache behavior in multi-seed runs
 For multi-seed sweeps, keep one shared cache root and let fingerprints isolate seed-dependent artifacts:
 
@@ -95,7 +147,7 @@ When you run five seeds, expect five distinct split, preprocess, and graph finge
 - Dataset cache (`datasets/`): reused across seeds when dataset identity is unchanged
 - Sampling split cache (`splits/`): conceptually seed-dependent, but current bench orchestration computes sampling in memory and does not persist split cache entries
 - Preprocess cache (`preprocess/`): seed-dependent and keyed by dataset fingerprint, plan fingerprint, fit fingerprint, and seed
-- Graph cache (`graphs/`): seed-dependent and keyed by dataset fingerprint, preprocess fingerprint, graph spec, and seed
+- Graph cache (`graph/`): seed-dependent and keyed by dataset fingerprint, preprocess fingerprint, graph spec, and seed
 - Method training and inference: not cached by the benchmark runner
 
 Practical rules:
@@ -134,8 +186,15 @@ This structure is written in [`bench/orchestrators/reporting.py`](https://github
 
 
 ## Common mistakes
-- Running bench from a PyPI-only install and expecting `bench/` configs to be present locally.
-- Forgetting to export environment variables used by the YAML before launching the runner.
+- Bypassing `modssc-reproduce` for a frozen article card and thereby skipping
+  dataset preparation or fixed-input authentication.
+- Treating a standardized `best/` config as an article reproduction protocol.
+- Installing an author's repository or external Weka JAR to make a protocol
+  pass instead of implementing the required strategy through ModSSC.
+- Preparing a dataset cache manually instead of using the provider and identity
+  declared by the protocol.
+- Forgetting to export environment variables used by a raw `bench.main` YAML.
+  `bench.reproduce` supplies checkout-local cache and output defaults itself.
 - Reusing old caches during a “from scratch” comparison and then attributing the speedup or output drift to the method itself.
 - Expecting the runner to persist split cache entries during bench orchestration the same way the standalone sampling CLI can.
 - Treating `run.json` as the only artifact in multi-seed mode and overlooking `aggregate.json`.

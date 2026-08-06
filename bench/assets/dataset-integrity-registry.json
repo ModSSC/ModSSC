@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "protocols": {
+    "paper:calder2020-mnist-table1-laplace-1-label-per-class": {
+      "dataset_id": "mnist",
+      "options": {},
+      "fingerprint": "f42c17a0366a8feb04f6e0c58503e5b3a20cb311aaa714e18e1fc707d6cc473d",
+      "content_sha256": "a918159751de8d67828d471643f73e70781ae5986e63d7d544be33e04139a89d",
+      "evidence": "Calder Laplace source-replay oracle"
+    },
+    "paper:calder2020-mnist-table1-laplace-2-label-per-class": {
+      "dataset_id": "mnist",
+      "options": {},
+      "fingerprint": "f42c17a0366a8feb04f6e0c58503e5b3a20cb311aaa714e18e1fc707d6cc473d",
+      "content_sha256": "a918159751de8d67828d471643f73e70781ae5986e63d7d544be33e04139a89d",
+      "evidence": "Calder Laplace source-replay oracle"
+    },
+    "paper:calder2020-mnist-table1-laplace-3-label-per-class": {
+      "dataset_id": "mnist",
+      "options": {},
+      "fingerprint": "f42c17a0366a8feb04f6e0c58503e5b3a20cb311aaa714e18e1fc707d6cc473d",
+      "content_sha256": "a918159751de8d67828d471643f73e70781ae5986e63d7d544be33e04139a89d",
+      "evidence": "Calder Laplace source-replay oracle"
+    },
+    "paper:calder2020-mnist-table1-laplace-4-label-per-class": {
+      "dataset_id": "mnist",
+      "options": {},
+      "fingerprint": "f42c17a0366a8feb04f6e0c58503e5b3a20cb311aaa714e18e1fc707d6cc473d",
+      "content_sha256": "a918159751de8d67828d471643f73e70781ae5986e63d7d544be33e04139a89d",
+      "evidence": "Calder Laplace source-replay oracle"
+    },
+    "paper:calder2020-mnist-table1-laplace-5-label-per-class": {
+      "dataset_id": "mnist",
+      "options": {},
+      "fingerprint": "f42c17a0366a8feb04f6e0c58503e5b3a20cb311aaa714e18e1fc707d6cc473d",
+      "content_sha256": "a918159751de8d67828d471643f73e70781ae5986e63d7d544be33e04139a89d",
+      "evidence": "Calder Laplace source-replay oracle"
+    },
+    "paper:calder2020-mnist-table1-poisson-1-label-per-class": {
+      "dataset_id": "mnist",
+      "options": {},
+      "fingerprint": "f42c17a0366a8feb04f6e0c58503e5b3a20cb311aaa714e18e1fc707d6cc473d",
+      "content_sha256": "a918159751de8d67828d471643f73e70781ae5986e63d7d544be33e04139a89d",
+      "evidence": "Calder Laplace source-replay oracle"
+    },
+    "paper:calder2020-mnist-table1-poisson-2-label-per-class": {
+      "dataset_id": "mnist",
+      "options": {},
+      "fingerprint": "f42c17a0366a8feb04f6e0c58503e5b3a20cb311aaa714e18e1fc707d6cc473d",
+      "content_sha256": "a918159751de8d67828d471643f73e70781ae5986e63d7d544be33e04139a89d",
+      "evidence": "Calder Laplace source-replay oracle"
+    },
+    "paper:calder2020-mnist-table1-poisson-3-label-per-class": {
+      "dataset_id": "mnist",
+      "options": {},
+      "fingerprint": "f42c17a0366a8feb04f6e0c58503e5b3a20cb311aaa714e18e1fc707d6cc473d",
+      "content_sha256": "a918159751de8d67828d471643f73e70781ae5986e63d7d544be33e04139a89d",
+      "evidence": "Calder Laplace source-replay oracle"
+    },
+    "paper:calder2020-mnist-table1-poisson-4-label-per-class": {
+      "dataset_id": "mnist",
+      "options": {},
+      "fingerprint": "f42c17a0366a8feb04f6e0c58503e5b3a20cb311aaa714e18e1fc707d6cc473d",
+      "content_sha256": "a918159751de8d67828d471643f73e70781ae5986e63d7d544be33e04139a89d",
+      "evidence": "Calder Laplace source-replay oracle"
+    },
+    "paper:calder2020-mnist-table1-poisson-5-label-per-class": {
+      "dataset_id": "mnist",
+      "options": {},
+      "fingerprint": "f42c17a0366a8feb04f6e0c58503e5b3a20cb311aaa714e18e1fc707d6cc473d",
+      "content_sha256": "a918159751de8d67828d471643f73e70781ae5986e63d7d544be33e04139a89d",
+      "evidence": "Calder Laplace source-replay oracle"
+    },
+    "paper:chen2023-cifar10-table2-250": {
+      "dataset_id": "cifar10",
+      "options": {},
+      "fingerprint": "46bfdd98e26ed954f611b41565bc64a3ba5b5497773f2f92a7ebeaa8ff465a58",
+      "content_sha256": "2ab0d29a8fa44ec94f2d282630b74d31a4fc9986c706173dada6e3a52d75dcfb",
+      "evidence": "article10 canary dataset lock and ordered split metadata"
+    },
+    "paper:feng2020-cora-table1": {
+      "dataset_id": "cora",
+      "options": {"split": "public"},
+      "fingerprint": "774b6f9406cdd219aabdea52e411cfc28931fc2007878145b472e58e469e1471",
+      "content_sha256": "0db92e9492bbe2f32d6d70018fa205b351cb5a44c3f742b2585547e8160922a6",
+      "evidence": "article10 GRAND paper production pin"
+    },
+    "paper:nigam-ghani2000-webkb-table2": {
+      "dataset_id": "webkb_course_cotraining",
+      "options": {},
+      "fingerprint": "5a1d45139e2a1ccb17abf374fb6ec17dc7d0bb3f9ff7caf08935d7731bb80683",
+      "content_sha256": "894e2f310924fd66239632029db7738b8e1fcd330ffb86cb201cf6937ed9a264",
+      "evidence": "historical-paper-co-training-nigam-ghani2000-v2 campaign pin"
+    },
+    "paper:lee2013-mnist-table2-600": {
+      "dataset_id": "mnist",
+      "options": {},
+      "fingerprint": "a509362fa8ce20622694ff1f4d85b7a5a2009a412d9e6ab54d1c35a2f8a6ab01",
+      "content_sha256": "a918159751de8d67828d471643f73e70781ae5986e63d7d544be33e04139a89d",
+      "evidence": "ModSSC torchvision MNIST provider identity and content manifest"
+    },
+    "paper:li-zhou-2005-setred-table3-wine-self-training": {
+      "dataset_id": "wine",
+      "options": {},
+      "fingerprint": "984da35a8465017e8fb1881e20932fc1ac8036e6736e425caeba76db467bb543",
+      "content_sha256": "88e42e2b23ebb7dc5c3de3d4b258016178b7ab4591c54b5265cfd1d01a03f99a",
+      "evidence": "ModSSC OpenML data_id=187 provider identity and content manifest"
+    },
+    "paper:li-zhou-2005-setred-table3-wine-self-training-confirmation-v2": {
+      "dataset_id": "wine",
+      "options": {},
+      "fingerprint": "984da35a8465017e8fb1881e20932fc1ac8036e6736e425caeba76db467bb543",
+      "content_sha256": "88e42e2b23ebb7dc5c3de3d4b258016178b7ab4591c54b5265cfd1d01a03f99a",
+      "evidence": "ModSSC OpenML data_id=187 provider identity and content manifest"
+    },
+    "paper:sohn2020-cifar10-table2-250": {
+      "dataset_id": "cifar10",
+      "options": {},
+      "fingerprint": "46bfdd98e26ed954f611b41565bc64a3ba5b5497773f2f92a7ebeaa8ff465a58",
+      "content_sha256": "2ab0d29a8fa44ec94f2d282630b74d31a4fc9986c706173dada6e3a52d75dcfb",
+      "evidence": "article10 canary dataset lock and ordered split metadata"
+    },
+    "paper:wang2023-cifar10-table1-40": {
+      "dataset_id": "cifar10",
+      "options": {},
+      "fingerprint": "46bfdd98e26ed954f611b41565bc64a3ba5b5497773f2f92a7ebeaa8ff465a58",
+      "content_sha256": "2ab0d29a8fa44ec94f2d282630b74d31a4fc9986c706173dada6e3a52d75dcfb",
+      "evidence": "article10 canary dataset lock and ordered split metadata"
+    },
+    "paper:zhang2021-cifar10-table1-250": {
+      "dataset_id": "cifar10",
+      "options": {},
+      "fingerprint": "46bfdd98e26ed954f611b41565bc64a3ba5b5497773f2f92a7ebeaa8ff465a58",
+      "content_sha256": "2ab0d29a8fa44ec94f2d282630b74d31a4fc9986c706173dada6e3a52d75dcfb",
+      "evidence": "article10 canary dataset lock and ordered split metadata"
+    },
+    "paper:zhou-goldman-2004-adult-table3": {
+      "dataset_id": "adult",
+      "options": {},
+      "fingerprint": "f9281cab47a3de02bacdff6aeecab3cc3bec164d4d321622f81551b6b4f82967",
+      "content_sha256": "289edd109fe4c6f198572557770f3fdcd785be89baaa1c252eca29280c1800ec",
+      "evidence": "article10 canary dataset lock"
+    },
+    "paper:zhou-goldman-2004-vote-table3": {
+      "dataset_id": "vote",
+      "options": {},
+      "fingerprint": "98f2cf80ea8e8fb8f3f546dc87d3a231a0ec10fe6d26b5dfe490fc832079b0dd",
+      "content_sha256": "5b95c771651aa62b985332026f63b423d7fe7dff2f0bc90ef2c336d4d2b70130",
+      "evidence": "DCL Vote immutable partition lock"
+    },
+    "paper:zhou-li-2005-vote-table3-j48": {
+      "dataset_id": "vote",
+      "options": {},
+      "fingerprint": "98f2cf80ea8e8fb8f3f546dc87d3a231a0ec10fe6d26b5dfe490fc832079b0dd",
+      "content_sha256": "5b95c771651aa62b985332026f63b423d7fe7dff2f0bc90ef2c336d4d2b70130",
+      "evidence": "article10 Tri-Training Vote paper pin"
+    },
+    "paper:zhou-li-2005-wdbc-table3-j48": {
+      "dataset_id": "wdbc",
+      "options": {},
+      "fingerprint": "b4c81b9f26e810a53c52c65cf8f3ea2533be8b1ca36917dc6d2d289240d61f41",
+      "content_sha256": "a74495c0877d7fd6edbef21b4b774b2d9cf698ed6c46feed1ee8607f8af6baef",
+      "evidence": "ModSSC OpenML data_id=1510 provider identity and content manifest"
+    }
+  }
+}

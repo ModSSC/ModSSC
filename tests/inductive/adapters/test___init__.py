@@ -13,10 +13,12 @@ from modssc.inductive.adapters.torch import (
     _check_2d,
     _check_feature_dim,
     _check_same_device,
+    _matches_expected_device,
     _require_tensor,
     _require_views,
 )
 from modssc.inductive.adapters.torch import _suggest_step as _torch_suggest_step
+from modssc.inductive.backends import torch_backend
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.types import DeviceSpec, InductiveDataset
 from modssc.inductive.validation import (
@@ -193,6 +195,50 @@ def test_to_torch_dataset_device_mismatch():
         to_torch_dataset(data, device=DeviceSpec(device="cpu"), require_same_device=False)
 
 
+@pytest.mark.parametrize(
+    ("actual", "expected", "matches"),
+    [
+        ("cuda:0", "cuda", True),
+        ("cuda:1", "cuda", True),
+        ("cuda:0", "cuda:0", True),
+        ("cuda:1", "cuda:0", False),
+        ("mps:0", "mps", True),
+        ("cpu", "cpu", True),
+        ("cpu:0", "cpu", True),
+        ("cpu", "cuda", False),
+    ],
+)
+def test_torch_device_matching(actual, expected, matches):
+    assert _matches_expected_device(torch.device(actual), torch.device(expected)) is matches
+
+
+def test_to_torch_dataset_accepts_unindexed_cuda(monkeypatch: pytest.MonkeyPatch):
+    class _FakeCudaTensor(torch.Tensor):
+        @staticmethod
+        def __new__(cls, value):
+            return torch.Tensor._make_subclass(cls, value, value.requires_grad)
+
+        @property
+        def device(self):
+            return torch.device("cuda:0")
+
+    data = DummyDataset(
+        X_l=_FakeCudaTensor(torch.zeros((2, 3))),
+        y_l=_FakeCudaTensor(torch.tensor([0, 1], dtype=torch.int64)),
+        X_u={"x": _FakeCudaTensor(torch.ones((2, 3))), "metadata": "keep"},
+    )
+    monkeypatch.setattr(torch_backend, "resolve_device", lambda _device: torch.device("cuda"))
+
+    out = to_torch_dataset(
+        data,
+        device=DeviceSpec(device="cuda"),
+        require_same_device=True,
+    )
+
+    assert out.X_l.device == torch.device("cuda:0")
+    assert out.X_u["metadata"] == "keep"
+
+
 def test_to_torch_dataset_views_and_shapes_errors():
     data = make_torch_dataset()
     with pytest.raises(InductiveValidationError):
@@ -317,7 +363,10 @@ def test_to_torch_dataset_device_check_recurses_nested_dicts():
     y_l = torch.tensor([0, 1], dtype=torch.int64)
     X_u = {
         "x": torch.ones((2, 3)),
-        "nested": {"mask": torch.tensor([1.0, 0.0])},
+        "nested": {
+            "mask": torch.tensor([1.0, 0.0]),
+            "metadata": "keep",
+        },
     }
     data = DummyDataset(X_l=X_l, y_l=y_l, X_u=X_u)
     out = to_torch_dataset(data, device=DeviceSpec(device="cpu"), require_same_device=False)

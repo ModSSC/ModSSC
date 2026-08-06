@@ -1,0 +1,57 @@
+{
+  "schema_version": 2,
+  "audit_id": "dcl-confidence-v8-resource-usage-public",
+  "artifact_kind": "redacted_historical_descriptor",
+  "source_artifact_sha256": "22a20d62130fae3c2e2e5fef5615b87f3190c2e4fc5decc424592067a0a0be5e",
+  "claim_eligible": false,
+  "execution_site": {
+    "scheduler": "slurm",
+    "accelerator_architecture": "V100",
+    "identity_visibility": "private"
+  },
+  "redacted_source_fields": [
+    "account",
+    "cluster",
+    "submission_job_ids"
+  ],
+  "retrieved_on": "2026-07-25",
+  "source": {
+    "system": "Slurm sacct",
+    "records_visibility": "private",
+    "fields": [
+      "JobID",
+      "ElapsedRaw",
+      "State",
+      "AllocTRES"
+    ],
+    "start_time": "2026-07-24"
+  },
+  "scientific_tasks": {
+    "required": 80,
+    "successful": 80,
+    "failed": 0,
+    "elapsed_seconds": 6757,
+    "accelerator_hours": 1.8769444444444445
+  },
+  "all_campaign_allocations": {
+    "allocation_count": 95,
+    "completed_allocation_count": 90,
+    "expected_failed_gate_allocation_count": 5,
+    "cancelled_before_allocation_count": 1,
+    "elapsed_seconds": 7878,
+    "accelerator_hours": 2.1883333333333335,
+    "unexpected_failure_count": 0
+  },
+  "budget": {
+    "maximum_v100_hours": 5.0,
+    "within_budget": true,
+    "remaining_v100_hours": 2.8116666666666665
+  },
+  "notes": [
+    "This public descriptor preserves authenticated aggregate values without exposing the private execution-site identity or scheduler job identifiers.",
+    "The source_artifact_sha256 authenticates the immutable private schema-v1 report; this descriptor is a derived public view, not a renamed source report.",
+    "Failed gate jobs are expected non-zero exits for incomplete canary reconciliation or scientifically blocked dynamics.",
+    "The total includes generation, preflight, canary audits, reconciliation and final diagnostic evaluation allocations.",
+    "The cancelled attribution job never received an allocation and contributes zero accelerator-hours."
+  ]
+}

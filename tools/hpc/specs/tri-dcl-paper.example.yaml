@@ -1,0 +1,41 @@
+# Historical two-dataset comparison template: Tri-Training on WDBC and
+# Democratic Co-Learning on Adult. It is not the four-dataset production path;
+# the Adult DCL cell remains not_claimable. For the shared Vote dataset and its
+# enforced partition lock, use article10-paper-minimal.example.yaml.
+schema_version: 1
+campaign_id: article10-tri-dcl-paper-v1
+track: paper
+scientific_scope:
+  claim_scope_id: article10
+  stage: production
+  claim_eligible: true
+  gate_policy_id: modssc-scientific-gates-v2
+  gate_policy_sha256: from_registry
+default_site: regional
+code:
+  git_sha: REPLACE_WITH_CLEAN_COMMIT
+  require_clean: true
+  environment_lock_sha256: REPLACE_WITH_ENVIRONMENT_LOCK_SHA256
+expect:
+  config_count: 2
+  task_count: 23
+  tasks_per_method:
+    tri_training: 3
+    democratic_co_learning: 20
+cells:
+  - protocol_id: zhou-li-2005-wdbc-table3-j48-80pct-unlabeled
+    config: bench/configs/reproductions/tri_training/wdbc_table3_j48.yaml
+    seeds: from_config
+    resource_profile: cpu_tabular
+    site: regional
+    fidelity_status: paper_approx
+    expected_dataset_fingerprint: REPLACE_WITH_OPENML_1510_CACHE_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_OPENML_1510_CONTENT_SHA256
+  - protocol_id: zhou-goldman-2004-adult-table3
+    config: bench/configs/reproductions/democratic_co_learning/adult.yaml
+    seeds: from_config
+    resource_profile: cpu_tabular
+    site: regional
+    fidelity_status: not_claimable
+    expected_dataset_fingerprint: REPLACE_WITH_OPENML_1590_CACHE_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_OPENML_1590_CONTENT_SHA256

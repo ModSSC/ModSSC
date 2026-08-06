@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from .errors import GraphValidationError
@@ -13,7 +13,8 @@ Metric = Literal["cosine", "euclidean"]
 Scheme = Literal["knn", "epsilon", "anchor"]
 Symmetrize = Literal["none", "or", "mutual", "mean"]
 Normalize = Literal["none", "rw", "sym"]
-Backend = Literal["auto", "numpy", "sklearn", "faiss", "torch"]
+Backend = Literal["auto", "numpy", "sklearn", "faiss", "torch", "precomputed"]
+EdgeWeightDType = Literal["float32", "float64"]
 
 WeightKind = Literal["binary", "heat", "cosine", "knn_gaussian"]
 
@@ -110,6 +111,13 @@ class GraphBuilderSpec:
     faiss_ef_search: int = 64
     faiss_ef_construction: int = 200
 
+    # Features added after the original public constructor. Keep them
+    # keyword-only so all historical positional calls remain valid.
+    include_self_in_knn: bool = field(default=False, kw_only=True)
+    edge_weight_dtype: EdgeWeightDType = field(default="float32", kw_only=True)
+    precomputed_path: str | None = field(default=None, kw_only=True)
+    precomputed_sha256: str | None = field(default=None, kw_only=True)
+
     def validate(self) -> None:
         if self.metric not in ("cosine", "euclidean"):
             raise GraphValidationError(f"Unknown metric: {self.metric!r}")
@@ -140,8 +148,10 @@ class GraphBuilderSpec:
             raise GraphValidationError(f"Unknown symmetrize mode: {self.symmetrize!r}")
         if self.normalize not in ("none", "rw", "sym"):
             raise GraphValidationError(f"Unknown normalize mode: {self.normalize!r}")
+        if self.edge_weight_dtype not in ("float32", "float64"):
+            raise GraphValidationError(f"Unknown edge_weight_dtype: {self.edge_weight_dtype!r}")
 
-        if self.backend not in ("auto", "numpy", "sklearn", "faiss", "torch"):
+        if self.backend not in ("auto", "numpy", "sklearn", "faiss", "torch", "precomputed"):
             raise GraphValidationError(f"Unknown backend: {self.backend!r}")
 
         if int(self.chunk_size) <= 0:
@@ -152,6 +162,16 @@ class GraphBuilderSpec:
             raise GraphValidationError("faiss backend does not support epsilon scheme")
         if self.backend == "torch" and self.scheme != "knn":
             raise GraphValidationError("torch backend currently supports only knn scheme")
+        if self.backend == "precomputed":
+            if self.scheme != "knn":
+                raise GraphValidationError("precomputed backend supports only knn scheme")
+            if not self.precomputed_path:
+                raise GraphValidationError("precomputed_path is required for precomputed backend")
+            digest = self.precomputed_sha256 or ""
+            if len(digest) != 64 or any(
+                character not in "0123456789abcdef" for character in digest
+            ):
+                raise GraphValidationError("precomputed_sha256 must be a lowercase SHA-256 digest")
 
         if int(self.faiss_hnsw_m) <= 0:
             raise GraphValidationError("faiss_hnsw_m must be > 0")
@@ -165,7 +185,7 @@ class GraphBuilderSpec:
             raise GraphValidationError("knn_gaussian weights require scheme='knn'")
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        result = {
             "scheme": self.scheme,
             "metric": self.metric,
             "k": self.k,
@@ -186,6 +206,25 @@ class GraphBuilderSpec:
             "faiss_ef_search": int(self.faiss_ef_search),
             "faiss_ef_construction": int(self.faiss_ef_construction),
         }
+        # Keep historical fingerprints stable for every existing graph card.
+        # The new fields become part of the fingerprint only when activated.
+        if self.include_self_in_knn:
+            result["include_self_in_knn"] = True
+        if self.edge_weight_dtype != "float32":
+            result["edge_weight_dtype"] = self.edge_weight_dtype
+        if self.precomputed_path is not None:
+            result["precomputed_path"] = self.precomputed_path
+        if self.precomputed_sha256 is not None:
+            result["precomputed_sha256"] = self.precomputed_sha256
+        return result
+
+    def fingerprint_payload(self) -> dict[str, Any]:
+        """Return the semantic graph spec independent of artifact location."""
+
+        result = self.to_dict()
+        if self.precomputed_sha256 is not None:
+            result.pop("precomputed_path", None)
+        return result
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> GraphBuilderSpec:
@@ -199,8 +238,16 @@ class GraphBuilderSpec:
             weights=GraphWeightsSpec.from_dict(dict(d.get("weights", {}))),
             normalize=str(d.get("normalize", "rw")),  # type: ignore[arg-type]
             self_loops=bool(d.get("self_loops", True)),
+            include_self_in_knn=bool(d.get("include_self_in_knn", False)),
+            edge_weight_dtype=str(d.get("edge_weight_dtype", "float32")),  # type: ignore[arg-type]
             backend=str(d.get("backend", "auto")),  # type: ignore[arg-type]
             chunk_size=int(d.get("chunk_size", 512)),
+            precomputed_path=(
+                None if d.get("precomputed_path") is None else str(d["precomputed_path"])
+            ),
+            precomputed_sha256=(
+                None if d.get("precomputed_sha256") is None else str(d["precomputed_sha256"])
+            ),
             feature_field=str(d.get("feature_field", "features.X")),
             n_anchors=d.get("n_anchors"),
             anchors_k=int(d.get("anchors_k", 5)),

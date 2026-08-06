@@ -1,0 +1,127 @@
+# Reproduction card: Democratic Co-Learning, Adult, Table 3 of Zhou & Goldman (2004).
+#
+# Fidelity status: not_claimable until all source-data fingerprints are pinned
+# and the internal historical classifiers receive a fresh numerical confirmation;
+# it may then advance to paper_approx. The profile executes only ModSSC's NumPy
+# C4.5-style, nominal Naive Bayes, and mixed-feature 3-NN backends. Figure 1
+# equations (95% interval mean, e', q/q' and final Laplace correction) are covered
+# by invariant tests. Each
+# seed controls sampling from the complete canonical Adult dataset and the L/U/test
+# partition (60 labeled, 1,691 unlabeled, 1,691 test; no validation partition).
+# `bench.reproduce` prepares the OpenML Adult artifact through the ModSSC
+# provider before execution; the immutable card itself keeps downloads disabled.
+# The runner evaluates seeds 1--20 unconditionally, so every reported run must
+# verify that artifacts.method.diagnostics.pseudo_labels_added_total is positive.
+# All 20 seeds in the 2026-07-22 diagnostic pilot satisfied that condition.
+run:
+  name: reproduction_democratic_co_learning_adult
+  seed: 1
+  seeds:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+  - 17
+  - 18
+  - 19
+  - 20
+  seeded_sections:
+  - sampling
+  - preprocess
+  output_dir: ${MODSSC_OUTPUT_DIR}/reproductions/democratic_co_learning/adult
+  log_level: detailed
+  fail_fast: true
+  benchmark_mode: false
+dataset:
+  id: adult
+  download: false
+  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
+  options: {}
+sampling:
+  seed: 1
+  plan:
+    partition:
+      max_samples: 3442
+      shuffle: true
+    split:
+      kind: holdout
+      test_fraction: 0.49128413712957584
+      val_fraction: 0.0
+      stratify: false
+      shuffle: true
+    labeling:
+      mode: count
+      value: 60
+      strategy: random
+      min_per_class: 0
+      per_class: false
+      fixed_indices: null
+    imbalance:
+      kind: none
+    policy:
+      respect_official_test: true
+      use_official_graph_masks: true
+      allow_override_official: false
+preprocess:
+  seed: 1
+  fit_on: train
+  cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
+  plan:
+    output_key: features.X
+    steps:
+    - id: labels.encode
+    - id: tabular.one_hot
+    - id: core.ensure_2d
+    - id: tabular.impute
+    - id: core.to_numpy
+method:
+  kind: inductive
+  id: democratic_co_learning
+  profile: paper:zhou-goldman-2004-adult-table3
+  device:
+    device: cpu
+    dtype: float32
+  params:
+    training_mode: confidence_weighted
+    max_iter: 20
+    confidence_level: 0.95
+    min_confidence: 0.5
+    classifier_specs:
+    - classifier_id: gaussian_nb
+      classifier_backend: numpy
+      classifier_params:
+        alpha: 1.0
+        fit_prior: true
+    - classifier_id: decision_tree
+      classifier_backend: numpy
+      classifier_params:
+        min_num_obj: 2
+        unpruned: true
+        binary_splits: false
+    - classifier_id: knn
+      classifier_backend: numpy
+      classifier_params:
+        k: 3
+        metric: euclidean
+        weights: uniform
+evaluation:
+  # Table 3 reports the held-out test partition; it is never used for model selection.
+  split_for_model_selection: null
+  report_splits:
+  - test
+  metrics:
+  - accuracy
+  - macro_f1

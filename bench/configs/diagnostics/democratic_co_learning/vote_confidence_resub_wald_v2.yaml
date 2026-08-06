@@ -1,0 +1,88 @@
+# Test-blind Table 2 trajectory diagnostic. This is the exact v1 confidence
+# convention made explicit: resubstitution/training accuracy with a Wald
+# interval. Only train_labeled is reported; test metrics are forbidden.
+run:
+  name: diagnostic_democratic_co_learning_vote_confidence_resub_wald_v2
+  seed: 1
+  seeds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+  seeded_sections: [sampling, preprocess]
+  output_dir: ${MODSSC_OUTPUT_DIR}/diagnostics/democratic_co_learning/vote_confidence_resub_wald_v2
+  log_level: detailed
+  fail_fast: true
+  benchmark_mode: false
+dataset: {id: vote, download: false, cache_dir: "${MODSSC_DATASET_CACHE_DIR}", options: {}}
+sampling:
+  seed: 1
+  plan:
+    split: {kind: holdout, test_fraction: 0.4482758620689655, val_fraction: 0.0, stratify: false, shuffle: true}
+    labeling: {mode: count, value: 40, strategy: random, min_per_class: 0, per_class: false, fixed_indices: null}
+    imbalance: {kind: none}
+    policy: {respect_official_test: true, use_official_graph_masks: true, allow_override_official: false}
+preprocess:
+  seed: 1
+  fit_on: train
+  cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
+  plan:
+    output_key: features.X
+    steps: [{id: labels.encode}, {id: core.copy_raw}, {id: core.to_numpy}]
+method:
+  kind: inductive
+  id: democratic_co_learning
+  profile: paper:zhou2004-vote-diagnostic-v2
+  device: {device: cpu, dtype: float32}
+  params:
+    training_mode: confidence_weighted
+    max_iter: 20
+    confidence_level: 0.95
+    min_confidence: 0.5
+    confidence_estimator: training_accuracy
+    confidence_interval: wald
+    confidence_folds: 10
+    confidence_seed: 0
+    diagnostic_trace: true
+    control_mode: dcl
+    classifier_specs:
+      - classifier_id: gaussian_nb
+        classifier_backend: numpy
+        classifier_params:
+          alpha: 1.0
+          fit_prior: true
+          feature_schema: &vote_feature_schema
+            - {type: nominal, values: [n, y]}
+            - {type: nominal, values: [n, y]}
+            - {type: nominal, values: [n, y]}
+            - {type: nominal, values: [n, y]}
+            - {type: nominal, values: [n, y]}
+            - {type: nominal, values: [n, y]}
+            - {type: nominal, values: [n, y]}
+            - {type: nominal, values: [n, y]}
+            - {type: nominal, values: [n, y]}
+            - {type: nominal, values: [n, y]}
+            - {type: nominal, values: [n, y]}
+            - {type: nominal, values: [n, y]}
+            - {type: nominal, values: [n, y]}
+            - {type: nominal, values: [n, y]}
+            - {type: nominal, values: [n, y]}
+            - {type: nominal, values: [n, y]}
+          missing_values: &vote_missing_values ["?"]
+      - classifier_id: decision_tree
+        classifier_backend: numpy
+        classifier_params:
+          min_num_obj: 2
+          unpruned: true
+          binary_splits: false
+          feature_schema: *vote_feature_schema
+          missing_values: *vote_missing_values
+      - classifier_id: knn
+        classifier_backend: numpy
+        classifier_params:
+          k: 3
+          metric: euclidean
+          weights: uniform
+          feature_schema: *vote_feature_schema
+          missing_values: *vote_missing_values
+evaluation:
+  split_for_model_selection: null
+  report_splits: [train_labeled]
+  metrics: [accuracy, macro_f1]

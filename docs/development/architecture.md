@@ -74,13 +74,77 @@ The API reference focuses on:
 The API reference does not try to document every internal support directory as public surface area. Internal folders such as `services/`, `helpers/`, `bundle_factories/`, `adapters/`, and backend-specific implementation packages are described here as architecture, not as stable user API.
 
 
-## Bench repository layout
-The `bench/` tree has three different roles:
-- `bench/configs/experiments/`: authored examples, tutorial configs, and smaller runnable templates.
-- `bench/configs/best/`: curated benchmark configuration sets and manifests used for larger runs.
-- `bench/slurm/jean_zay/`: cluster launchers and deployment-oriented job structure for Jean Zay runs.
+## Autonomous paper replication
+The scientific implementation belongs to `src/modssc`: a supported article
+strategy must be implemented with ModSSC's own method and backend interfaces.
+Running a replication must never clone, import, or execute an upstream research
+repository. Third-party source snapshots are not part of the runtime tree.
 
-The docs reference each of these for different purposes and should not present them as one undifferentiated config directory.
+The repository is the complete execution unit for supported paper results:
+
+- ModSSC owns the algorithms and reusable backends;
+- `bench/` owns the validated runner, protocol cards, fixed protocol resources,
+  and scientific campaign orchestration;
+- datasets are resolved and prepared through ModSSC providers rather than by a
+  manually seeded cache;
+- optional Python functionality is declared through project extras;
+- no external JAR, hand-installed Weka runtime, or undeclared executable is a
+  valid prerequisite for an autonomous protocol.
+
+Article identities are also a boundary. A reproduction card may use a
+`method.profile` such as `paper:…` to identify and authenticate the campaign,
+but that value is not copied into a `modssc` method specification. The card
+must express executable behaviour through generic fields such as
+`training_mode`, `protocol`, `solver`, sampler policy, and explicit
+hyperparameters. Library code validates those mechanics without maintaining a
+catalogue of article-profile identifiers.
+
+Large datasets do not need to be committed to Git. Their provider identity,
+options, expected fingerprint, and preparation rule form part of the protocol.
+The runner may download them through the declared provider and must fail
+explicitly if their identity cannot be verified.
+
+## Bench repository layout
+`bench/` contains only scientific benchmark and replication concerns:
+
+- the end-to-end runner, schemas, and stage orchestrators;
+- `bench/configs/experiments/`: authored examples and small templates;
+- `bench/configs/best/`: the standardized benchmark matrix and manifests;
+- `bench/configs/reproductions/`: immutable article protocol cards;
+- compact fixed resources that are direct inputs to a protocol;
+- campaign generation, execution, reconciliation, and scientific acceptance.
+
+Campaign generation and reconciliation may group tasks by logical resource
+profile, but their outputs remain scheduler-neutral. Rendering submission
+scripts and translating scheduler environment variables are exclusively
+`tools/hpc/` responsibilities.
+
+Operational and archival concerns do not belong there:
+
+- `tools/hpc/` contains generic Slurm launchers and operational helpers;
+- `provenance/article10/` contains completed evidence, historical audit records,
+  and audit-only source manifests; checksums, notices, and licences required for
+  direct protocol inputs remain beside those inputs under `bench/assets/`;
+- site names, accounts, partitions, QoS settings, credentials, deployment
+  paths, caches, checkpoints, logs, and result directories are runtime state;
+- copies of external research source trees are not retained.
+
+This separation keeps the scientific path runnable on a workstation or through
+any scheduler, while preventing one cluster's policy from becoming part of the
+benchmark contract.
+
+The dependency direction is:
+
+```text
+bench runner / protocols ──> src/modssc scientific implementations
+tools/hpc ─────────────────> bench public runner and campaign interfaces
+provenance/article10 <────── immutable manifests and completed evidence
+```
+
+Package code under `src/modssc` must never import `bench`, `tools/hpc`, or a
+provenance bundle. Scientific execution may authenticate archived evidence, but
+must never import or execute code from provenance or from a third-party source
+snapshot.
 
 
 ## Documentation policy
@@ -89,8 +153,10 @@ When a page needs to explain user code, it should point to package imports such 
 When a page needs to explain repository structure, it should explicitly say whether a path is:
 - public API,
 - internal implementation,
-- benchmark config,
-- or cluster/runtime tooling.
+- benchmark or replication config,
+- scientific campaign orchestration,
+- operational HPC tooling,
+- or immutable provenance.
 
 <details class="sources" markdown="1">
 <summary>Sources</summary>

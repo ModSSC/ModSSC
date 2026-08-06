@@ -51,6 +51,47 @@ def test_vae_invalid_fit_scope() -> None:
         step.fit(store, fit_indices=np.array([0, 1]), rng=np.random.default_rng(0))
 
 
+def test_vae_expected_model_fingerprint_must_not_be_empty() -> None:
+    step = VaeStep(expected_model_fingerprint="")
+    store = ArtifactStore()
+    store.set("features.X", np.zeros((3, 2), dtype=np.float32))
+
+    with pytest.raises(PreprocessValidationError, match="must not be empty"):
+        step.fit(store, fit_indices=np.array([0, 1]), rng=np.random.default_rng(0))
+
+
+def test_vae_expected_model_fingerprint_is_not_self_referential() -> None:
+    first = VaeStep(expected_model_fingerprint="vae_first")
+    second = VaeStep(expected_model_fingerprint="vae_second")
+
+    assert "expected_model_fingerprint" not in first._params_for_fingerprint()
+    assert first._params_for_fingerprint() == second._params_for_fingerprint()
+    kwargs = {
+        "fit_shape": (4, 3),
+        "fit_data_hash": "data",
+        "fit_indices_hash": "indices",
+        "seed": 7,
+    }
+    assert first._model_fingerprint(**kwargs) == second._model_fingerprint(**kwargs)
+
+
+def test_vae_rejects_a_computed_model_fingerprint_mismatch() -> None:
+    step = VaeStep(
+        latent_dim=2,
+        hidden_dims=(4,),
+        epochs=1,
+        batch_size=2,
+        model_seed=7,
+        model_cache=False,
+        expected_model_fingerprint="vae_wrong",
+    )
+    store = ArtifactStore()
+    store.set("features.X", np.arange(12, dtype=np.float32).reshape(4, 3))
+
+    with pytest.raises(PreprocessValidationError, match="fingerprint differs"):
+        step.fit(store, fit_indices=np.arange(4), rng=np.random.default_rng(0))
+
+
 @pytest.mark.parametrize(
     ("kwargs", "message"),
     [
@@ -323,6 +364,46 @@ def test_vae_model_helpers_cache_failures_and_dropout_when_torch_available(tmp_p
     assert calls["count"] == 2
 
 
+def test_vae_verified_manifest_validation_branches_when_torch_available(tmp_path) -> None:
+    torch = pytest.importorskip("torch")
+    invalid = VaeStep(model_cache=False, require_cache_hit=True)
+    with pytest.raises(PreprocessValidationError, match="requires model_cache=true"):
+        invalid._validate_params()
+
+    cache_dir = tmp_path / "verified"
+    cache_dir.mkdir()
+    (cache_dir / "model.pt").write_bytes(b"model")
+    (cache_dir / "state.npz").write_bytes(b"state")
+    step = VaeStep(latent_dim=2, hidden_dims=(4,))
+
+    (cache_dir / "manifest.json").write_text("[]", encoding="utf-8")
+    assert not step._load_cached_model(
+        torch,
+        cache_dir=cache_dir,
+        input_dim=3,
+        device="cpu",
+        expected_fingerprint="vae_expected",
+    )
+    (cache_dir / "manifest.json").write_text(
+        '{"fingerprint":"vae_other","file_sha256":{}}', encoding="utf-8"
+    )
+    assert not step._load_cached_model(
+        torch,
+        cache_dir=cache_dir,
+        input_dim=3,
+        device="cpu",
+        expected_fingerprint="vae_expected",
+    )
+    (cache_dir / "manifest.json").write_text('{"fingerprint":"vae_expected"}', encoding="utf-8")
+    assert not step._load_cached_model(
+        torch,
+        cache_dir=cache_dir,
+        input_dim=3,
+        device="cpu",
+        expected_fingerprint="vae_expected",
+    )
+
+
 def test_vae_fit_scope_all_ignores_sampling_indices_when_torch_available() -> None:
     pytest.importorskip("torch")
     X = np.array(
@@ -467,13 +548,78 @@ def test_vae_model_cache_reuses_checkpoint_when_torch_available(tmp_path) -> Non
         model_cache_dir=str(tmp_path),
         cache_key="toy",
         model_seed=123,
+        expected_model_fingerprint=first.model_fingerprint_,
     )
     second.fit(second_store, fit_indices=np.array([0, 1, 2, 3]), rng=np.random.default_rng(999))
     second_result = second.transform(second_store, rng=np.random.default_rng(0))
 
     assert second_result["features.vae.info"]["cache"]["hit"] is True
+    assert second_result["features.vae.info"]["expected_fingerprint"] == first.model_fingerprint_
+    assert "expected_model_fingerprint" not in second_result["features.vae.info"]["params"]
     assert (
         first_result["features.vae.info"]["fingerprint"]
         == second_result["features.vae.info"]["fingerprint"]
     )
     np.testing.assert_allclose(first_result["features.vae"], second_result["features.vae"])
+
+
+def test_vae_frozen_cache_requires_verified_checkpoint_when_torch_available(tmp_path) -> None:
+    pytest.importorskip("torch")
+    X = np.array(
+        [[0.0, 1.0, 2.0], [1.0, 0.0, 3.0], [2.0, 1.0, 0.0], [3.0, 2.0, 1.0]],
+        dtype=np.float32,
+    )
+    store = ArtifactStore()
+    store.set("features.X", X)
+    frozen = VaeStep(
+        latent_dim=2,
+        hidden_dims=(4,),
+        epochs=1,
+        batch_size=2,
+        device="cpu",
+        model_cache_dir=str(tmp_path),
+        cache_key="frozen",
+        model_seed=123,
+        require_cache_hit=True,
+    )
+
+    with pytest.raises(PreprocessValidationError, match="frozen VAE cache"):
+        frozen.fit(store, fit_indices=np.arange(4), rng=np.random.default_rng(0))
+
+
+def test_vae_verified_cache_rejects_tampering_when_torch_available(tmp_path) -> None:
+    pytest.importorskip("torch")
+    X = np.array(
+        [[0.0, 1.0, 2.0], [1.0, 0.0, 3.0], [2.0, 1.0, 0.0], [3.0, 2.0, 1.0]],
+        dtype=np.float32,
+    )
+    store = ArtifactStore()
+    store.set("features.X", X)
+    first = VaeStep(
+        latent_dim=2,
+        hidden_dims=(4,),
+        epochs=1,
+        batch_size=2,
+        device="cpu",
+        model_cache_dir=str(tmp_path),
+        cache_key="tampered",
+        model_seed=123,
+    )
+    first.fit(store, fit_indices=np.arange(4), rng=np.random.default_rng(0))
+    assert first.model_cache_dir_ is not None
+    with (first.model_cache_dir_ / "state.npz").open("ab") as handle:
+        handle.write(b"tampered")
+
+    frozen = VaeStep(
+        latent_dim=2,
+        hidden_dims=(4,),
+        epochs=1,
+        batch_size=2,
+        device="cpu",
+        model_cache_dir=str(tmp_path),
+        cache_key="tampered",
+        model_seed=123,
+        require_cache_hit=True,
+    )
+    with pytest.raises(PreprocessValidationError, match="frozen VAE cache"):
+        frozen.fit(store, fit_indices=np.arange(4), rng=np.random.default_rng(0))

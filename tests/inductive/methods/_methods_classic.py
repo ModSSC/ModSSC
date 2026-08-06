@@ -576,6 +576,17 @@ def test_democratic_co_learning_numpy_fit_predict():
     data_none = DummyDataset(X_l=data.X_l, y_l=data.y_l, X_u=None)
     method2 = dcl.DemocraticCoLearningMethod(spec)
     method2.fit(data_none, device=DeviceSpec(device="cpu"), seed=0)
+    assert method2.n_iter_ == 0
+    assert method2.changed_rounds_ == 0
+    assert method2.converged_ is True
+    assert method2.pseudo_labels_added_per_learner_ == (0, 0, 0)
+    assert method2.diagnostics_ == {
+        "n_iter": 0,
+        "changed_rounds": 0,
+        "converged": True,
+        "pseudo_labels_added_per_learner": [0, 0, 0],
+        "pseudo_labels_added_total": 0,
+    }
 
 
 def test_democratic_co_learning_torch_fit_predict():
@@ -588,6 +599,57 @@ def test_democratic_co_learning_torch_fit_predict():
     assert int(proba.shape[0]) == int(data.X_l.shape[0])
     pred = method.predict(data.X_l)
     assert int(pred.shape[0]) == int(data.X_l.shape[0])
+
+
+def test_classic_methods_share_bounded_torch_inference_with_prediction_parity():
+    class _Classifier:
+        batch_size = 2
+        classes_ = np.array([0, 1], dtype=np.int64)
+        classes_t_ = torch.tensor([0, 1], dtype=torch.int64)
+
+        def __init__(self):
+            self.predict_batches = []
+            self.score_batches = []
+
+        def predict(self, X):
+            self.predict_batches.append(int(X.shape[0]))
+            return (X[:, 0] % 2).to(dtype=torch.int64)
+
+        def predict_scores(self, X):
+            self.score_batches.append(int(X.shape[0]))
+            labels = (X[:, 0] % 2).to(dtype=torch.int64)
+            return torch.nn.functional.one_hot(labels, num_classes=2).to(dtype=torch.float32)
+
+    X = torch.arange(10).reshape(5, 2)
+    labels = (X[:, 0] % 2).to(dtype=torch.int64)
+    expected_scores = torch.nn.functional.one_hot(labels, num_classes=2).to(dtype=torch.float32)
+
+    democratic_classifiers = [_Classifier() for _ in range(3)]
+    democratic = dcl.DemocraticCoLearningMethod()
+    democratic._clfs = democratic_classifiers
+    democratic._backend = "torch"
+    democratic._weights = np.ones((3,), dtype=np.float64)
+    democratic._classes = np.array([0, 1], dtype=np.int64)
+    democratic._classes_t = torch.tensor([0, 1], dtype=torch.int64)
+    assert torch.equal(democratic.predict_proba(X), expected_scores)
+    assert all(clf.predict_batches == [5] for clf in democratic_classifiers)
+
+    pseudo_classifier = _Classifier()
+    pseudo = PseudoLabelMethod()
+    pseudo._clf = pseudo_classifier
+    pseudo._backend = "torch"
+    assert torch.equal(pseudo.predict_proba(X), expected_scores)
+    assert torch.equal(pseudo.predict(X), labels)
+    assert pseudo_classifier.score_batches == [2, 2, 1]
+    assert pseudo_classifier.predict_batches == [2, 2, 1]
+
+    tri_classifiers = [_Classifier() for _ in range(3)]
+    tri = TriTrainingMethod()
+    tri._clfs = tri_classifiers
+    tri._backend = "torch"
+    tri.classes_ = np.array([0, 1], dtype=np.int64)
+    assert torch.equal(tri.predict_proba(X), expected_scores)
+    assert all(clf.score_batches == [2, 2, 1] for clf in tri_classifiers)
 
 
 def test_tri_training_numpy_and_torch():
@@ -1201,6 +1263,50 @@ def test_democratic_classifier_spec_resolution_valid():
     assert len(out) == 3
 
 
+def test_democratic_classifier_spec_resolution_from_config_mappings():
+    spec = dcl.DemocraticCoLearningSpec(
+        classifier_specs=(
+            {"classifier_id": "gaussian_nb", "classifier_backend": "sklearn"},
+            {
+                "classifier_id": "decision_tree",
+                "classifier_backend": "sklearn",
+                "classifier_params": {"criterion": "entropy"},
+            },
+            {
+                "classifier_id": "knn",
+                "classifier_backend": "sklearn",
+                "classifier_params": {"k": 3},
+            },
+        )
+    )
+
+    out = dcl._resolve_classifier_specs(spec)
+
+    assert [item.classifier_id for item in out] == ["gaussian_nb", "decision_tree", "knn"]
+    assert all(item.classifier_backend == "sklearn" for item in out)
+    assert out[1].classifier_params == {"criterion": "entropy"}
+    assert out[2].classifier_params == {"k": 3}
+
+
+def test_democratic_classifier_spec_resolution_rejects_invalid_mapping():
+    spec = dcl.DemocraticCoLearningSpec(
+        classifier_specs=(
+            {},
+            {},
+            {"classifier_id": "knn", "unknown": True},
+        )
+    )
+
+    with pytest.raises(InductiveValidationError, match=r"classifier_specs\[2\] is invalid"):
+        dcl._resolve_classifier_specs(spec)
+
+    non_mapping_spec = dcl.DemocraticCoLearningSpec(
+        classifier_specs=(dcl.BaseClassifierSpec(), dcl.BaseClassifierSpec(), object())
+    )
+    with pytest.raises(InductiveValidationError, match="instances or mappings"):
+        dcl._resolve_classifier_specs(non_mapping_spec)
+
+
 def test_democratic_resolve_classes_numpy_paths():
     y_l = np.array([0, 1, 1], dtype=np.int64)
     clfs = [_FixedPredictor(y_l, y_l), _FixedPredictor(y_l, y_l)]
@@ -1269,40 +1375,187 @@ def test_democratic_encode_predictions_torch_casts():
     assert encoded.shape == (1, 2)
 
 
-def test_democratic_weighted_majority_single_class():
-    preds_idx = np.zeros((3, 2), dtype=np.int64)
-    weights = np.ones((3,), dtype=np.float64)
-    idx, ok = dcl._weighted_majority_numpy(preds_idx, weights, n_classes=1)
-    assert ok.all()
-    preds_t = torch.zeros((3, 2), dtype=torch.int64)
-    weights_t = torch.ones((3,), dtype=torch.float32)
-    _idx_t, ok_t = dcl._weighted_majority_torch(preds_t, weights_t, n_classes=1)
-    assert bool(ok_t.all())
+@pytest.mark.parametrize(
+    "preds_idx,weights,n_classes,expected_idx,expected_ok",
+    [
+        pytest.param(
+            [[1], [0], [0]],
+            [0.99, 0.30, 0.30],
+            2,
+            [0],
+            [False],
+            id="vote-majority-loses-confidence-comparison",
+        ),
+        pytest.param(
+            [[1], [1], [0]],
+            [0.60, 0.60, 0.99],
+            2,
+            [1],
+            [True],
+            id="vote-majority-wins-confidence-comparison",
+        ),
+        pytest.param(
+            [[1], [1], [0], [0]],
+            [0.90, 0.90, 0.20, 0.20],
+            2,
+            [0],
+            [False],
+            id="two-two-tie-is-not-a-strict-majority",
+        ),
+        pytest.param(
+            [[0, 0], [0, 0], [0, 0]],
+            [1.0, 1.0, 1.0],
+            1,
+            [0, 0],
+            [True, True],
+            id="single-class",
+        ),
+    ],
+)
+def test_democratic_weighted_majority_paper_rule_numpy_torch_parity(
+    preds_idx, weights, n_classes, expected_idx, expected_ok
+):
+    preds_numpy = np.asarray(preds_idx, dtype=np.int64)
+    weights_numpy = np.asarray(weights, dtype=np.float64)
+    idx_numpy, ok_numpy = dcl._weighted_majority_numpy(
+        preds_numpy, weights_numpy, n_classes=n_classes
+    )
+
+    idx_torch, ok_torch = dcl._weighted_majority_torch(
+        torch.as_tensor(preds_idx, dtype=torch.int64),
+        torch.as_tensor(weights, dtype=torch.float64),
+        n_classes=n_classes,
+    )
+
+    assert idx_numpy.tolist() == expected_idx
+    assert ok_numpy.tolist() == expected_ok
+    assert idx_torch.tolist() == expected_idx
+    assert ok_torch.tolist() == expected_ok
+
+
+def test_democratic_proposal_error_uses_each_majority_group() -> None:
+    preds = np.array(
+        [
+            [0, 1],
+            [0, 0],
+            [1, 1],
+        ],
+        dtype=np.int64,
+    )
+    majority = np.array([0, 1], dtype=np.int64)
+    proposed = np.array([0, 1], dtype=np.int64)
+    lower = np.array([0.9, 0.7, 0.5], dtype=np.float64)
+
+    # Sample 0 is supported by learners 0/1: error 1 - .8 = .2.
+    # Sample 1 is supported by learners 0/2: error 1 - .7 = .3.
+    expected = 0.5
+    assert dcl._proposal_error_numpy(
+        preds_idx=preds,
+        majority_idx=majority,
+        proposed_idx=proposed,
+        lower_bounds=lower,
+    ) == pytest.approx(expected)
+    assert dcl._proposal_error_torch(
+        preds_idx=torch.as_tensor(preds),
+        majority_idx=torch.as_tensor(majority),
+        proposed_idx=torch.as_tensor(proposed),
+        lower_bounds=torch.as_tensor(lower),
+    ) == pytest.approx(expected)
+
+
+def test_democratic_proposal_error_empty_set() -> None:
+    preds = np.zeros((3, 1), dtype=np.int64)
+    assert (
+        dcl._proposal_error_numpy(
+            preds_idx=preds,
+            majority_idx=np.zeros(1, dtype=np.int64),
+            proposed_idx=np.array([], dtype=np.int64),
+            lower_bounds=np.ones(3),
+        )
+        == 0.0
+    )
+    assert (
+        dcl._proposal_error_torch(
+            preds_idx=torch.as_tensor(preds),
+            majority_idx=torch.zeros(1, dtype=torch.int64),
+            proposed_idx=torch.tensor([], dtype=torch.int64),
+            lower_bounds=torch.ones(3),
+        )
+        == 0.0
+    )
 
 
 def test_democratic_combine_scores_numpy_eligibility():
     preds_idx = np.array([[0, 1], [1, 0]], dtype=np.int64)
     weights_low = np.array([0.1, 0.2], dtype=np.float64)
     scores = dcl._combine_scores_numpy(preds_idx, weights_low, n_classes=2, min_confidence=0.9)
-    assert scores.shape == (2, 2)
+    assert np.all(scores.sum(axis=1) > 0.0)
+    np.testing.assert_array_equal(scores.argmax(axis=1), np.array([1, 0], dtype=np.int64))
 
     weights_mix = np.array([0.1, 0.9], dtype=np.float64)
     scores_mix = dcl._combine_scores_numpy(preds_idx, weights_mix, n_classes=2, min_confidence=0.5)
-    assert scores_mix.shape == (2, 2)
+    np.testing.assert_allclose(scores_mix, np.array([[0.0, 0.675], [0.675, 0.0]]))
 
 
 def test_democratic_combine_scores_torch_eligibility():
     preds_idx = torch.tensor([[0, 1], [1, 0]], dtype=torch.int64)
     weights = torch.tensor([1.0, 0.2], dtype=torch.float32)
     scores = dcl._combine_scores_torch(preds_idx, weights, n_classes=2, min_confidence=0.1)
-    assert scores.shape == (2, 2)
+    torch.testing.assert_close(
+        scores,
+        torch.tensor([[0.75, 0.15], [0.15, 0.75]], dtype=torch.float32),
+    )
 
 
 def test_democratic_combine_scores_torch_all_ineligible():
     preds_idx = torch.tensor([[0, 1], [1, 0]], dtype=torch.int64)
     weights = torch.tensor([0.0, 0.0], dtype=torch.float32)
     scores = dcl._combine_scores_torch(preds_idx, weights, n_classes=2, min_confidence=10.0)
-    assert scores.shape == (2, 2)
+    torch.testing.assert_close(scores, torch.full((2, 2), 0.75, dtype=torch.float32))
+    torch.testing.assert_close(scores.argmax(dim=1), torch.zeros((2,), dtype=torch.int64))
+
+
+def test_democratic_all_ineligible_falls_back_to_complete_ensemble() -> None:
+    X_numpy = np.zeros((2, 1), dtype=np.float32)
+    numpy_method = dcl.DemocraticCoLearningMethod()
+    numpy_method._clfs = [
+        _FixedPredictor([1, 0], [1, 0], classes=[0, 1]),
+        _FixedPredictor([0, 1], [0, 1], classes=[0, 1]),
+    ]
+    numpy_method._backend = "numpy"
+    numpy_method._weights = np.array([0.5, 0.2], dtype=np.float64)
+    numpy_method._classes = np.array([0, 1], dtype=np.int64)
+
+    numpy_probabilities = numpy_method.predict_proba(X_numpy)
+    np.testing.assert_allclose(numpy_probabilities.sum(axis=1), 1.0)
+    np.testing.assert_array_equal(numpy_method.predict(X_numpy), np.array([1, 0]))
+
+    X_torch = torch.zeros((2, 1), dtype=torch.float32)
+    torch_method = dcl.DemocraticCoLearningMethod(
+        dcl.DemocraticCoLearningSpec(classifier_backend="torch")
+    )
+    torch_method._clfs = [
+        _TorchPredictor(
+            torch.tensor([1, 0]),
+            torch.tensor([1, 0]),
+            classes_t=torch.tensor([0, 1]),
+        ),
+        _TorchPredictor(
+            torch.tensor([0, 1]),
+            torch.tensor([0, 1]),
+            classes_t=torch.tensor([0, 1]),
+        ),
+    ]
+    torch_method._backend = "torch"
+    torch_method._weights = np.array([0.5, 0.2], dtype=np.float64)
+    torch_method._classes_t = torch.tensor([0, 1], dtype=torch.int64)
+
+    torch_probabilities = torch_method.predict_proba(X_torch)
+    torch.testing.assert_close(torch_probabilities.sum(dim=1), torch.ones(2))
+    torch.testing.assert_close(
+        torch_method.predict(X_torch),
+        torch.tensor([1, 0], dtype=torch.int64),
+    )
 
 
 def test_democratic_fit_requires_data():
@@ -1368,6 +1621,24 @@ def test_democratic_fit_numpy_updates_labels(monkeypatch):
     method = dcl.DemocraticCoLearningMethod(dcl.DemocraticCoLearningSpec(max_iter=1, n_learners=3))
     method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
     assert method._backend == "numpy"
+    assert method.n_iter_ == 1
+    assert method.changed_rounds_ == 1
+    assert method.converged_ is False
+    assert method.pseudo_labels_added_per_learner_ == (0, 0, 3)
+    np.testing.assert_array_equal(method._weights, np.ones(3, dtype=np.float64))
+    np.testing.assert_allclose(
+        method.predict_proba(X_u),
+        np.tile(np.array([[10.0 / 19.0, 9.0 / 19.0]], dtype=np.float32), (3, 1)),
+    )
+    assert method._initial_clfs == []
+    assert method.round_trace_ == []
+    assert method.diagnostics_ == {
+        "n_iter": 1,
+        "changed_rounds": 1,
+        "converged": False,
+        "pseudo_labels_added_per_learner": [0, 0, 3],
+        "pseudo_labels_added_total": 3,
+    }
 
 
 def test_democratic_fit_numpy_no_label_updates(monkeypatch):
@@ -1389,6 +1660,17 @@ def test_democratic_fit_numpy_no_label_updates(monkeypatch):
     method = dcl.DemocraticCoLearningMethod(dcl.DemocraticCoLearningSpec(max_iter=1, n_learners=3))
     method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
     assert method._backend == "numpy"
+    assert method.n_iter_ == 0
+    assert method.changed_rounds_ == 0
+    assert method.converged_ is True
+    assert method.pseudo_labels_added_per_learner_ == (0, 0, 0)
+    assert method.diagnostics_ == {
+        "n_iter": 0,
+        "changed_rounds": 0,
+        "converged": True,
+        "pseudo_labels_added_per_learner": [0, 0, 0],
+        "pseudo_labels_added_total": 0,
+    }
 
 
 def test_democratic_fit_torch_updates_labels(monkeypatch):
@@ -1415,6 +1697,10 @@ def test_democratic_fit_torch_updates_labels(monkeypatch):
     )
     method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
     assert method._backend == "torch"
+    assert method.n_iter_ == 1
+    assert method.changed_rounds_ == 1
+    assert method.converged_ is False
+    assert method.pseudo_labels_added_per_learner_ == (0, 0, 3)
 
 
 def test_democratic_fit_torch_no_label_updates(monkeypatch):
@@ -1442,6 +1728,10 @@ def test_democratic_fit_torch_no_label_updates(monkeypatch):
     )
     method.fit(data, device=DeviceSpec(device="cpu"), seed=0)
     assert method._backend == "torch"
+    assert method.n_iter_ == 0
+    assert method.changed_rounds_ == 0
+    assert method.converged_ is True
+    assert method.pseudo_labels_added_per_learner_ == (0, 0, 0)
 
 
 def test_democratic_predict_proba_error_paths():

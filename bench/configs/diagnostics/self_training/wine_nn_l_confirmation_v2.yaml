@@ -1,0 +1,72 @@
+# Table 3 control for the Self-Training confirmation: 1-NN trained on L only.
+# Published mean test error: 0.090.  This card shares fresh seeds 51--100 with
+# the v2 confirmation and never consumes pseudo-labels.
+run:
+  name: diagnostic_self_training_wine_nn_l_confirmation_v2
+  seed: 51
+  seeds: [51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100]
+  seeded_sections: [sampling, preprocess]
+  output_dir: ${MODSSC_OUTPUT_DIR}/diagnostics/self_training/wine_nn_l_confirmation_v2
+  log_level: detailed
+  fail_fast: true
+  benchmark_mode: false
+dataset:
+  id: wine
+  download: false
+  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
+  options: {}
+sampling:
+  seed: 51
+  plan:
+    split:
+      kind: holdout
+      test_fraction: 0.25
+      val_fraction: 0.0
+      stratify: true
+      shuffle: true
+    labeling:
+      mode: fraction
+      value: 0.1
+      strategy: proportional
+      min_per_class: 1
+      per_class: false
+      fixed_indices: null
+    imbalance: {kind: none}
+    policy:
+      respect_official_test: true
+      use_official_graph_masks: true
+      allow_override_official: false
+preprocess:
+  seed: 51
+  fit_on: train_labeled
+  cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
+  plan:
+    output_key: features.X
+    steps:
+    - id: labels.encode
+    - id: core.ensure_2d
+    - id: core.to_numpy
+method:
+  kind: inductive
+  id: self_training
+  profile: paper:li-zhou-2005-wine-nn-l-confirmation-v2:diagnostic-dev
+  device: {device: cpu, dtype: float32}
+  params:
+    classifier_id: knn
+    classifier_backend: numpy
+    classifier_params: {k: 1, metric: euclidean, weights: uniform}
+    max_iter: 0
+    confidence_threshold: null
+    max_new_labels: null
+    min_new_labels: 1
+    use_group_propagation: false
+    selection_strategy: li_zhou_2005_1nn_distance
+    paper_pool_size_unspecified: 75
+    paper_candidates_per_class_unspecified: 1
+    paper_distance_confidence_unspecified: nearest_neighbor_distance
+    paper_feature_scaling_unspecified: dynamic_labeled_minmax
+evaluation:
+  split_for_model_selection: null
+  report_splits: [test]
+  metrics: [accuracy, macro_f1]

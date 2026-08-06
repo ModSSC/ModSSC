@@ -1,0 +1,49 @@
+schema_version: 1
+campaign_id: article10-canary-r3-wave2-v1
+track: standardized
+scientific_scope:
+  claim_scope_id: article10
+  stage: canary
+  claim_eligible: false
+  gate_policy_id: modssc-scientific-gates-v2
+  gate_policy_sha256: from_registry
+default_site: slurm-gpu
+selection:
+  config_root: bench/configs/best
+  dataset_lock_file: bench/campaigns/locks/article10-canary-wave1-datasets.yaml
+  methods:
+    - flexmatch
+    - free_match
+    - softmatch
+  regimes: [R3]
+  modalities: [tabular, graph, vision, text, audio]
+  datasets: [adult, cora, cifar10, ag_news, speechcommands]
+  seeds: [0]
+code:
+  git_sha: REPLACE_WITH_CLEAN_COMMIT
+  require_clean: true
+  environment_lock_sha256: REPLACE_WITH_ENVIRONMENT_LOCK_SHA256
+expect:
+  config_count: 15
+  task_count: 15
+  tasks_per_method: 5
+  tasks_by_profile:
+    a100_dev: 9
+    v100_dev: 6
+  tasks_by_site:
+    slurm-gpu: 15
+profile_rules:
+  - profile: a100_dev
+    site: slurm-gpu
+    methods:
+      - flexmatch
+      - free_match
+      - softmatch
+    modalities: [vision, text, audio]
+  - profile: v100_dev
+    site: slurm-gpu
+    methods:
+      - flexmatch
+      - free_match
+      - softmatch
+    modalities: [tabular, graph]

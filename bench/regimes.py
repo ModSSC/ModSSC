@@ -36,8 +36,6 @@ DATASET_REQUESTED_REGIMES: dict[str, tuple[str, ...]] = {
     "yelp_review_full": ("R1", "R2", "R3", "R4", "R5"),
 }
 
-SLURM_SPLIT_BY_REGIME_DATASETS: frozenset[str] = frozenset({"imdb", "mnist"})
-
 
 def labels_per_class(regime: str) -> int:
     try:

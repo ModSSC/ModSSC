@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from time import perf_counter
 from typing import Any
 
@@ -12,7 +13,6 @@ from modssc.inductive.methods.deep_utils import (
     TorchBundlePredictMixin,
     concat_data,
     cycle_batch_indices,
-    cycle_batches,
     ensure_float_tensor,
     ensure_model_bundle,
     ensure_model_device,
@@ -21,8 +21,13 @@ from modssc.inductive.methods.deep_utils import (
     get_torch_len,
     num_batches,
     sharpen_probs,
-    slice_data,
 )
+from modssc.inductive.methods.helpers.match_trainer import (
+    MatchStepResult,
+    run_fixed_step_match,
+    uses_fixed_step_match,
+)
+from modssc.inductive.methods.helpers.ssl_augmentation import ssl_batch_views
 from modssc.inductive.methods.utils import (
     detect_backend,
     ensure_1d_labels_torch,
@@ -54,6 +59,18 @@ class FreeMatchSpec:
     batch_size: int = 64
     max_epochs: int = 1
     detach_target: bool = True
+    max_steps: int | None = field(default=None, kw_only=True)
+    training_mode: str = field(default="epochs", kw_only=True)
+    reference_implementation: str = field(default="standardized", kw_only=True)
+    sampler_mode: str = field(default="replacement", kw_only=True)
+    sampler_shuffle_buffer: int = field(default=8192, kw_only=True)
+    augmentation_profile: str = field(default="", kw_only=True)
+    interleave_bn: bool = field(default=False, kw_only=True)
+    evaluation_interval_steps: int = field(default=5000, kw_only=True)
+    checkpoint_interval_steps: int = field(default=5000, kw_only=True)
+    reporting_policy: str = field(default="best_historical_checkpoint", kw_only=True)
+    reporting_window_checkpoints: int = field(default=20, kw_only=True)
+    allow_short_run: bool = field(default=False, kw_only=True)
 
 
 class FreeMatchMethod(TorchBundlePredictMixin, InductiveMethod):
@@ -77,6 +94,7 @@ class FreeMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         self._p_model: Any | None = None
         self._label_hist: Any | None = None
         self._time_p: Any | None = None
+        self.diagnostics_: dict[str, Any] = {}
 
     def _init_state(self, *, n_classes: int, device: Any) -> None:
         torch = optional_import("torch", extra="inductive-torch")
@@ -133,12 +151,123 @@ class FreeMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         ent = (mod_prob_model * torch.log(mod_mean_prob_s + 1e-12)).sum()
         return ent
 
+    def _paper_step(
+        self,
+        logits_l: Any,
+        logits_uw: Any,
+        logits_us: Any,
+        y_lb: Any,
+        _idx_u: Any,
+    ) -> MatchStepResult:
+        torch = optional_import("torch", extra="inductive-torch")
+        sup_loss = torch.nn.functional.cross_entropy(logits_l, y_lb)
+        probs = torch.softmax(logits_uw.detach(), dim=1)
+        max_probs, pseudo = probs.max(dim=1)
+        self._update_state(probs, max_probs, pseudo)
+        assert self._p_model is not None
+        assert self._label_hist is not None
+        assert self._time_p is not None
+        modulation = self._p_model / self._p_model.max().clamp_min(1e-12)
+        threshold = self._time_p * modulation[pseudo]
+        mask = (max_probs >= threshold).to(logits_us.dtype)
+        loss_u = torch.nn.functional.cross_entropy(logits_us, pseudo, reduction="none")
+        unsup_loss = (loss_u * mask).mean()
+        if bool(mask.any().item()):
+            entropy_loss = self._entropy_loss(
+                logits_us[mask.bool()],
+                self._label_hist,
+                self._p_model,
+            )
+        else:
+            entropy_loss = torch.zeros((), device=logits_us.device)
+        total = (
+            sup_loss
+            + float(self.spec.lambda_u) * unsup_loss
+            + float(self.spec.lambda_e) * entropy_loss
+        )
+        return MatchStepResult(
+            loss=total,
+            accepted=float(mask.sum().item()),
+            unlabeled=int(mask.numel()),
+            diagnostics={
+                "supervised_loss": float(sup_loss.detach().item()),
+                "unsupervised_loss": float(unsup_loss.detach().item()),
+                "entropy_loss": float(entropy_loss.detach().item()),
+                "mask_rate": float(mask.mean().item()),
+                "time_p": float(self._time_p.item()),
+                "threshold_mean": float(threshold.mean().item()),
+            },
+        )
+
+    def _paper_state(self) -> dict[str, Any]:
+        if self._p_model is None or self._label_hist is None or self._time_p is None:
+            raise InductiveValidationError("FreeMatch paper state is not initialized.")
+        return {
+            "p_model": self._p_model,
+            "label_hist": self._label_hist,
+            "time_p": self._time_p,
+        }
+
+    def _load_paper_state(self, state: Mapping[str, Any]) -> None:
+        torch = optional_import("torch", extra="inductive-torch")
+        if self.spec.model_bundle is None:
+            raise InductiveValidationError("FreeMatch checkpoint requires a model bundle.")
+        device = next(self.spec.model_bundle.model.parameters()).device
+        p_model = state.get("p_model")
+        label_hist = state.get("label_hist")
+        time_p = state.get("time_p")
+        if not all(isinstance(value, torch.Tensor) for value in (p_model, label_hist, time_p)):
+            raise InductiveValidationError("FreeMatch checkpoint state is invalid.")
+        if p_model.ndim != 1 or label_hist.shape != p_model.shape or time_p.numel() != 1:
+            raise InductiveValidationError("FreeMatch checkpoint state shapes are invalid.")
+        self._p_model = p_model.to(device=device)
+        self._label_hist = label_hist.to(device=device)
+        self._time_p = time_p.to(device=device)
+
+    def _paper_trace(self) -> dict[str, Any]:
+        time_p = float(self._time_p.item()) if self._time_p is not None else None
+        return {
+            "time_p": time_p,
+            "self_adaptive_threshold": time_p,
+            "p_model": (
+                self._p_model.detach().cpu().tolist() if self._p_model is not None else None
+            ),
+            "label_hist": (
+                self._label_hist.detach().cpu().tolist() if self._label_hist is not None else None
+            ),
+            "lambda_e": float(self.spec.lambda_e),
+        }
+
+    def _validate_fixed_step_contract(self) -> None:
+        expected = {
+            "lambda_u": (float(self.spec.lambda_u), 1.0),
+            "lambda_e": (float(self.spec.lambda_e), 0.05),
+            "temperature": (float(self.spec.temperature), 0.5),
+            "ema_p": (float(self.spec.ema_p), 0.999),
+            "mu": (int(self.spec.mu), 7),
+            "batch_size": (int(self.spec.batch_size), 64),
+        }
+        changed = [name for name, (actual, target) in expected.items() if actual != target]
+        if (
+            changed
+            or self.spec.use_quantile
+            or self.spec.clip_thresh
+            or not self.spec.hard_label
+            or not self.spec.use_cat
+            or not self.spec.detach_target
+        ):
+            raise InductiveValidationError(
+                "FreeMatch fixed-step contract changed a frozen hyperparameter: "
+                + ", ".join(changed or ["boolean training contract"])
+            )
+
     def fit(self, data: Any, *, device: DeviceSpec, seed: int = 0) -> FreeMatchMethod:
         start = perf_counter()
         logger.info("Starting %s.fit", self.info.method_id)
         logger.debug(
             "params lambda_u=%s lambda_e=%s temperature=%s ema_p=%s use_quantile=%s "
             "clip_thresh=%s hard_label=%s use_cat=%s mu=%s batch_size=%s max_epochs=%s "
+            "max_steps=%s "
             "detach_target=%s has_model_bundle=%s device=%s seed=%s",
             self.spec.lambda_u,
             self.spec.lambda_e,
@@ -151,11 +280,27 @@ class FreeMatchMethod(TorchBundlePredictMixin, InductiveMethod):
             self.spec.mu,
             self.spec.batch_size,
             self.spec.max_epochs,
+            self.spec.max_steps,
             self.spec.detach_target,
             bool(self.spec.model_bundle),
             device,
             seed,
         )
+        if uses_fixed_step_match(self.spec):
+            self._validate_fixed_step_contract()
+            run_fixed_step_match(
+                self,
+                data,
+                device=device,
+                seed=seed,
+                method_id=self.info.method_id,
+                step_fn=self._paper_step,
+                state_getter=self._paper_state,
+                state_loader=self._load_paper_state,
+                trace_getter=self._paper_trace,
+            )
+            logger.info("Finished %s.fit in %.3fs", self.info.method_id, perf_counter() - start)
+            return self
         if data is None:
             raise InductiveValidationError("data must not be None.")
 
@@ -206,6 +351,8 @@ class FreeMatchMethod(TorchBundlePredictMixin, InductiveMethod):
             raise InductiveValidationError("mu must be >= 1.")
         if int(self.spec.max_epochs) <= 0:
             raise InductiveValidationError("max_epochs must be >= 1.")
+        if self.spec.max_steps is not None and int(self.spec.max_steps) <= 0:
+            raise InductiveValidationError("max_steps must be >= 1 when provided.")
         if float(self.spec.lambda_u) < 0:
             raise InductiveValidationError("lambda_u must be >= 0.")
         if float(self.spec.lambda_e) < 0:
@@ -220,17 +367,26 @@ class FreeMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         steps_l = num_batches(int(get_torch_len(X_l)), batch_size)
         steps_u = num_batches(int(get_torch_len(X_u_w)), unlabeled_batch_size)
         steps_per_epoch = max(int(steps_l), int(steps_u))
+        target_steps = (
+            int(self.spec.max_steps)
+            if self.spec.max_steps is not None
+            else int(self.spec.max_epochs) * steps_per_epoch
+        )
+        epochs_to_run = (target_steps + steps_per_epoch - 1) // steps_per_epoch
 
         gen_l = torch.Generator().manual_seed(int(seed))
         gen_u = torch.Generator().manual_seed(int(seed) + 1)
 
         model.train()
-        for epoch in range(int(self.spec.max_epochs)):
-            iter_l = cycle_batches(
-                X_l,
-                y_l,
+        optimization_steps = 0
+        accepted_total = 0
+        unlabeled_total = 0
+        for epoch in range(epochs_to_run):
+            iter_l_idx = cycle_batch_indices(
+                int(get_torch_len(X_l)),
                 batch_size=batch_size,
                 generator=gen_l,
+                device=get_torch_device(X_l),
                 steps=steps_per_epoch,
             )
             iter_u_idx = cycle_batch_indices(
@@ -240,9 +396,20 @@ class FreeMatchMethod(TorchBundlePredictMixin, InductiveMethod):
                 device=get_torch_device(X_u_w),
                 steps=steps_per_epoch,
             )
-            for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
-                x_uw = slice_data(X_u_w, idx_u)
-                x_us = slice_data(X_u_s, idx_u)
+            for step, (idx_l, idx_u) in enumerate(zip(iter_l_idx, iter_u_idx, strict=False)):
+                global_step = epoch * steps_per_epoch + step
+                if global_step >= target_steps:
+                    break
+                x_lb, x_uw, x_us = ssl_batch_views(
+                    ds,
+                    X_l=X_l,
+                    X_u_w=X_u_w,
+                    X_u_s=X_u_s,
+                    idx_l=idx_l,
+                    idx_u=idx_u,
+                    optimization_step=global_step,
+                )
+                y_lb = y_l[idx_l]
 
                 if bool(self.spec.use_cat):
                     inputs = concat_data([x_lb, x_uw, x_us])
@@ -292,6 +459,8 @@ class FreeMatchMethod(TorchBundlePredictMixin, InductiveMethod):
                 mod = self._p_model / self._p_model.max().clamp_min(1e-12)
                 thresh = self._time_p * mod[max_idx]
                 mask = (max_probs >= thresh).to(logits_us.dtype)
+                accepted_total += int(mask.sum().item())
+                unlabeled_total += int(mask.numel())
 
                 pseudo_soft = _sharpen(probs_u, temperature=float(self.spec.temperature))
                 if bool(self.spec.hard_label):
@@ -332,8 +501,19 @@ class FreeMatchMethod(TorchBundlePredictMixin, InductiveMethod):
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+                optimization_steps += 1
 
         self._bundle = bundle
         self._backend = backend
+        self.diagnostics_ = {
+            "optimization_steps": optimization_steps,
+            "target_steps": target_steps,
+            "accepted_pseudo_labels": accepted_total,
+            "unlabeled_predictions": unlabeled_total,
+            "acceptance_rate": accepted_total / max(unlabeled_total, 1),
+            "self_adaptive_threshold": float(self._time_p.item())
+            if self._time_p is not None
+            else None,
+        }
         logger.info("Finished %s.fit in %.3fs", self.info.method_id, perf_counter() - start)
         return self

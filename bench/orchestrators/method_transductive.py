@@ -15,6 +15,7 @@ from modssc.transductive.registry import get_method_class, get_method_info
 
 from ..errors import BenchRuntimeError
 from ..schema import MethodConfig
+from .method_profile import bind_method_profile
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -211,6 +212,7 @@ def run(
 
     method_cls = get_method_class(cfg.method_id)
     spec = _build_spec(method_cls, cfg.params, strict=strict)
+    spec = bind_method_profile(spec, profile=cfg.profile, params=cfg.params)
     resolved_backend = _resolve_method_backend(cfg=cfg, spec=spec, strict=strict)
     _ensure_backend_dependencies(resolved_backend)
 
@@ -312,6 +314,9 @@ def run(
             "strict_contract_validated": bool(strict),
         },
     }
+    diagnostics = getattr(method, "diagnostics_", None)
+    if isinstance(diagnostics, Mapping):
+        method_resolution["diagnostics"] = dict(diagnostics)
 
     _LOGGER.info(
         "Transductive method done: id=%s duration_s=%.3f",

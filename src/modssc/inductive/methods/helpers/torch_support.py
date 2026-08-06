@@ -16,6 +16,76 @@ def ensure_model_bundle(bundle: TorchModelBundle) -> TorchModelBundle:
     return validate_torch_model_bundle(bundle)
 
 
+def step_scheduler(bundle: TorchModelBundle) -> None:
+    """Advance a bundle scheduler once, when one is configured."""
+    if bundle.scheduler is not None:
+        bundle.scheduler.step()
+
+
+def update_ema_model(bundle: TorchModelBundle, *, decay: float | None = None) -> None:
+    """Update all floating EMA state and copy discrete buffers from the student."""
+    ema_model = bundle.ema_model
+    if ema_model is None:
+        return
+
+    if decay is None:
+        meta = bundle.meta or {}
+        decay = float(meta.get("ema_decay", 0.999))
+    decay = float(decay)
+    if not (0.0 <= decay < 1.0):
+        raise InductiveValidationError("EMA decay must be in [0, 1).")
+
+    torch = _torch()
+    meta = bundle.meta or {}
+    if meta.get("ema_strategy") == "parameters_only_copy_buffers":
+        model_parameters = dict(bundle.model.named_parameters())
+        ema_parameters = dict(ema_model.named_parameters())
+        model_buffers = dict(bundle.model.named_buffers())
+        ema_buffers = dict(ema_model.named_buffers())
+        if tuple(model_parameters) != tuple(ema_parameters) or tuple(model_buffers) != tuple(
+            ema_buffers
+        ):
+            raise InductiveValidationError("EMA model state must match model state.")
+        with torch.no_grad():
+            for name, value in model_parameters.items():
+                ema_value = ema_parameters[name]
+                if tuple(ema_value.shape) != tuple(value.shape):
+                    raise InductiveValidationError(
+                        "EMA model parameter shapes must match model state."
+                    )
+                ema_value.mul_(decay).add_(value.detach(), alpha=1.0 - decay)
+            for name, value in model_buffers.items():
+                ema_value = ema_buffers[name]
+                if tuple(ema_value.shape) != tuple(value.shape):
+                    raise InductiveValidationError(
+                        "EMA model buffer shapes must match model state."
+                    )
+                ema_value.copy_(value)
+        return
+
+    model_state = bundle.model.state_dict()
+    ema_state = ema_model.state_dict()
+    if tuple(model_state) != tuple(ema_state):
+        raise InductiveValidationError("EMA model state must match model state.")
+
+    with torch.no_grad():
+        for name, value in model_state.items():
+            ema_value = ema_state[name]
+            if tuple(ema_value.shape) != tuple(value.shape):
+                raise InductiveValidationError("EMA model state shapes must match model state.")
+            if torch.is_floating_point(value) or torch.is_complex(value):
+                ema_value.mul_(decay).add_(value.detach(), alpha=1.0 - decay)
+            else:
+                ema_value.copy_(value)
+
+
+def optimizer_step_with_bundle(bundle: TorchModelBundle) -> None:
+    """Perform one optimizer step, then advance scheduling and model EMA state."""
+    bundle.optimizer.step()
+    step_scheduler(bundle)
+    update_ema_model(bundle)
+
+
 def ensure_model_device(model: Any, *, device: Any) -> None:
     params = list(model.parameters())
     if not params:
@@ -90,6 +160,7 @@ def predict_proba_from_bundle(
     fitted_backend: str | None,
     X: Any,
     batch_size: int,
+    use_ema: bool = False,
 ):
     if bundle is None:
         raise RuntimeError("Model is not fitted yet. Call fit() first.")
@@ -105,7 +176,13 @@ def predict_proba_from_bundle(
     if not isinstance(X, torch.Tensor) and not isinstance(X, dict):
         raise InductiveValidationError("predict_proba requires torch.Tensor or dict inputs.")
 
-    model = bundle.model
+    # Keep the public prediction contract tied to the trained student.  Paper
+    # protocols that report an EMA model must opt in at their evaluation site;
+    # bundle metadata must not silently change predictions for standardized
+    # methods.
+    if use_ema and bundle.ema_model is None:
+        raise InductiveValidationError("EMA prediction requested but bundle.ema_model is missing.")
+    model = bundle.ema_model if use_ema else bundle.model
     was_training = model.training
     model.eval()
 

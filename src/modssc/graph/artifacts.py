@@ -12,10 +12,6 @@ def _as_int64(a: Any) -> np.ndarray:
     return np.asarray(a, dtype=np.int64)
 
 
-def _as_float32(a: Any) -> np.ndarray:
-    return np.asarray(a, dtype=np.float32)
-
-
 @dataclass(frozen=True)
 class GraphArtifact:
     """Canonical graph representation.
@@ -42,7 +38,10 @@ class GraphArtifact:
         object.__setattr__(self, "edge_index", ei)
 
         if self.edge_weight is not None:
-            ew = _as_float32(self.edge_weight)
+            weight_dtype = (
+                np.float64 if self.meta.get("edge_weight_dtype") == "float64" else np.float32
+            )
+            ew = np.asarray(self.edge_weight, dtype=weight_dtype)
             if ew.ndim != 1 or ew.shape[0] != ei.shape[1]:
                 raise GraphValidationError("edge_weight must have shape (E,)")
             object.__setattr__(self, "edge_weight", ew)

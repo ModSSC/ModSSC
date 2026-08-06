@@ -1,1 +1,1 @@
-"""Utility helpers for bench orchestration."""
+"""Utility helpers for benchmark and replication orchestration."""

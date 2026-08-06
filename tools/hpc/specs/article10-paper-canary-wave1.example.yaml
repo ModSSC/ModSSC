@@ -1,0 +1,47 @@
+schema_version: 1
+campaign_id: article10-paper-canary-wave1-v2
+track: paper
+scientific_scope:
+  claim_scope_id: article10
+  stage: canary
+  claim_eligible: false
+  gate_policy_id: modssc-scientific-gates-v2
+  gate_policy_sha256: from_registry
+default_site: slurm-gpu
+# Diagnostic dev canary only. These one-seed, truncated runs exercise the
+# paper data path and equations, but are not paper repetitions and must never
+# enter scientific acceptance or paper-result aggregation.
+code:
+  git_sha: REPLACE_WITH_CLEAN_COMMIT
+  require_clean: true
+  environment_lock_sha256: REPLACE_WITH_ENVIRONMENT_LOCK_SHA256
+expect:
+  config_count: 2
+  task_count: 2
+  tasks_per_method:
+    fixmatch: 1
+    grand: 1
+  tasks_by_profile:
+    a100_dev: 1
+    v100_dev: 1
+  tasks_by_site:
+    slurm-gpu: 2
+cells:
+  - protocol_id: sohn-2020-cifar10-table2-250
+    config: bench/configs/diagnostics/paper_canaries/fixmatch/cifar10-250-dev.yaml
+    seeds: [1]
+    resource_profile: a100_dev
+    site: slurm-gpu
+    fidelity_status: not_claimable
+    expected_dataset_fingerprint: REPLACE_WITH_CIFAR10_OFFICIAL_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_CIFAR10_CONTENT_SHA256
+
+  - protocol_id: feng-2020-cora-table1-planetoid
+    config: bench/configs/diagnostics/paper_canaries/grand/cora-dev.yaml
+    seeds: [0]
+    model_seed_policy: literal
+    resource_profile: v100_dev
+    site: slurm-gpu
+    fidelity_status: not_claimable
+    expected_dataset_fingerprint: REPLACE_WITH_CORA_PLANETOID_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_CORA_CONTENT_SHA256

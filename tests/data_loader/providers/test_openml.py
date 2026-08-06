@@ -139,6 +139,7 @@ def test_load_canonical_by_id(mock_sklearn, tmp_path):
     assert call_kwargs["as_frame"] is True
     assert call_kwargs["return_X_y"] is True
     assert call_kwargs["data_home"] == str(tmp_path)
+    assert "parser" not in call_kwargs
 
     assert ds.train.X.shape == (1, 2)
     assert ds.train.y.shape == (2,)
@@ -163,6 +164,7 @@ def test_load_canonical_by_name_and_version(mock_sklearn, tmp_path):
     call_kwargs = mock_sklearn.fetch_openml.call_args[1]
     assert call_kwargs["name"] == "iris"
     assert call_kwargs["version"] == 1
+    assert call_kwargs["parser"] == "liac-arff"
     assert "data_id" not in call_kwargs
 
 

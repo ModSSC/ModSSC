@@ -191,6 +191,35 @@ BUILTIN_CLASSIFIERS = [
         ],
     },
     {
+        "key": "decision_tree",
+        "description": "Decision tree classifier (entropy criterion by default).",
+        "preferred_backends": ("sklearn", "numpy"),
+        "backends": [
+            {
+                "backend": "numpy",
+                "factory": "modssc.supervised.backends.numpy.c45:NumpyC45Classifier",
+                "required_extra": None,
+                "supports_gpu": False,
+                "notes": (
+                    "Dependency-free unpruned C4.5-like tree with gain-ratio splits and "
+                    "mixed tabular missing-value handling."
+                ),
+            },
+            {
+                "backend": "sklearn",
+                "factory": (
+                    "modssc.supervised.backends.sklearn.decision_tree:SklearnDecisionTreeClassifier"
+                ),
+                "required_extra": "sklearn",
+                "supports_gpu": False,
+                "notes": (
+                    "Uses scikit-learn DecisionTreeClassifier; entropy is an "
+                    "information-gain approximation, not an exact C4.5 implementation."
+                ),
+            },
+        ],
+    },
+    {
         "key": "extra_trees",
         "description": "Extra Trees classifier.",
         "preferred_backends": ("sklearn",),
@@ -224,8 +253,20 @@ BUILTIN_CLASSIFIERS = [
     {
         "key": "gaussian_nb",
         "description": "Gaussian Naive Bayes classifier.",
-        "preferred_backends": ("sklearn",),
+        "preferred_backends": ("sklearn", "numpy"),
         "backends": [
+            {
+                "backend": "numpy",
+                "factory": (
+                    "modssc.supervised.backends.numpy.naive_bayes:NumpyNaiveBayesClassifier"
+                ),
+                "required_extra": None,
+                "supports_gpu": False,
+                "notes": (
+                    "Dependency-free historical Naive Bayes with mixed nominal/numeric and "
+                    "missing-value handling."
+                ),
+            },
             {
                 "backend": "sklearn",
                 "factory": "modssc.supervised.backends.sklearn.naive_bayes:SklearnGaussianNBClassifier",

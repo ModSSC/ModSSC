@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "scope": "Upstream files consulted for the ModSSC FixMatch, FlexMatch, FreeMatch, and SoftMatch paper-profile parity audit.",
+  "hash_algorithm": "sha256",
+  "repositories": [
+    {
+      "id": "google_fixmatch",
+      "url": "https://github.com/google-research/fixmatch",
+      "commit": "d4985a158065947dba803e626ee9a6721709c570",
+      "source_distribution": "not_vendored",
+      "license": {
+        "upstream_path": "LICENSE",
+        "upstream_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "local_copy": "LICENSE.google-fixmatch.apache-2.0.txt",
+        "local_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      },
+      "audited_files": {
+        "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "ablation/ab_fixmatch_ra.py": "5f2bb062fe61f4764bd080a85101dcdb7cef81ed95420730cb7d8bfe199fb72c",
+        "fixmatch.py": "46fb0f881c17e2ff845c2f57394179dc128f104fa87a91d9af4296db67f83a05",
+        "libml/augment.py": "c2658b5c1db1fc06272c45d62cb2c33c690acd5beeabbdac314535c34cf8c627",
+        "libml/data.py": "9180a6b6d83022dec98e0f3ff3441ab3567aa510e15be8a1b2348acd8751960f",
+        "libml/layers.py": "7618af6b6870985723d1a431d138aee69f3cc6ec221732cccb26266f825d131a",
+        "libml/models.py": "2f3e0ba933412b912eb5cfbd511612f5a5e64cf6a9735692fed762838f177a38",
+        "libml/train.py": "89cdcfd8b2feb0c3df0f02e81c26f08a6e1f46e0ac7f2dbfcd6a2832cae765ba",
+        "libml/utils.py": "741ece24e3cc47ef1ddd73e69550e46503e5c1f9e314fa0f5db47e7d672ae5c3",
+        "scripts/create_split.py": "67358086fed9a414dbb8e50a68f1b45bb021410406d18eddde4609226c7b19b9",
+        "scripts/create_unlabeled.py": "7a9e7f1dcbe4e3fe10f81d8558f7cef778ac159436f803981927b82d59fda9cc",
+        "third_party/auto_augment/augmentations.py": "5419d28be7b7420cd077f3f8cca52871b5ec188c0ccefa9f12ea140692f77a03"
+      }
+    },
+    {
+      "id": "torchssl",
+      "url": "https://github.com/TorchSSL/TorchSSL",
+      "commit": "03193a1b7883727db1ce9c092e083091e18aedbb",
+      "source_distribution": "not_vendored",
+      "license": {
+        "upstream_path": "LICENSE",
+        "upstream_sha256": "f547e6e9535596945e214e23c2756cdc2543ada59ae199c976bf3356c410c1d0",
+        "local_copy": "LICENSE.torchssl.mit.txt",
+        "local_sha256": "f547e6e9535596945e214e23c2756cdc2543ada59ae199c976bf3356c410c1d0"
+      },
+      "audited_files": {
+        "LICENSE": "f547e6e9535596945e214e23c2756cdc2543ada59ae199c976bf3356c410c1d0",
+        "config/flexmatch/flexmatch_cifar10_250_0.yaml": "f08e99c083171e90fa83c7f9e14fa9755fd522d39273fbf73a511a3dfa57991c",
+        "config/freematch_entropy/freematch_entropy_cifar10_40_0.yaml": "40b4920c5f7656ee29a3789313d2878bcc7c0c0a8c3ab86657a58e2643776ccf",
+        "config/softmatch/softmatch_cifar10_250_0.yaml": "dbbf27008b3cf0e6e34a237fda6a7a82ecfb3dff5bfec981ff27f00d312c1981",
+        "datasets/augmentation/randaugment.py": "501137dbb0c569ab7e0cbc0cd628d0197e3eb57519a7c8810d4be4f2cb7e7a02",
+        "datasets/data_utils.py": "fa9006780643e81842ed93dfeda2dcf2de5f2795cd460a3c100a174eccadc33c",
+        "datasets/dataset.py": "67de2e02c4a2b2eece960276697e195cc77ace543e970badad874c6cf945649f",
+        "datasets/ssl_dataset.py": "2526992cc5bcd5dbe8a72c40a7d6b5a9cae158c22aa881e131750f64ed315e90",
+        "flexmatch.py": "d826e6d955b5f54f88906d91cdb29f4c9fc87b8c28db393dcd23d8cd5f0a99e7",
+        "freematch.py": "8d2c439cf5d4e1840efdeb21255954418410ae122f6d405b59565c95a3613234",
+        "freematch_entropy.py": "8699b051b49a363912bde48c09d64147c5037823e8b42611d4122d9892c0f676",
+        "models/flexmatch/flexmatch.py": "c820ea62d8167a07e011c2146e9f74779cef254be606b9d643368b9acabbb3b1",
+        "models/flexmatch/flexmatch_utils.py": "f62762e06dc7d95f200cc00b54c4979bbdc73350798651c7d59ad9e0747d22f9",
+        "models/freematch/freematch.py": "2eb1448828457c0a5979907d0d955666c4c0a1acdee6f90bac80f0fc9ac630a1",
+        "models/freematch/freematch_utils.py": "3d5d7bab9938fc6ac64cdb300a304d8f161e034c1e68cdd7df998c09be8b73e0",
+        "models/freematch_entropy/freematch.py": "026e606f2a1321464af55fac2d578348bca5500701589446e5e200cad54bbfa7",
+        "models/freematch_entropy/freematch_utils.py": "1cf29fa37420ee738ecf4507e1607cafdeafacfb47db063fc4183f78852ebc71",
+        "models/nets/wrn.py": "a22ba122f4e1581198056406d0b3bb52b6f584be056d531ac61bb7072cf1993a",
+        "models/softmatch/softmatch.py": "414c7d3e57fa536f4d3bffe8fe32253671b3ee7beec3288ae5fb41250e6b4c87",
+        "models/softmatch/softmatch_utils.py": "4e31f93305f2996dcc6514e87456af821fc918560002e2c73c17bffa8f5de427",
+        "softmatch.py": "374c33d62fdbdff0c2d4f47d7deb9eb9e24f3109aa0b849e38bd8d8be036c57e",
+        "train_utils.py": "6c36dc3e1b862123b1a19abf94ad18eb33a2c8a0f9909b699aaa9f099be037ae"
+      }
+    },
+    {
+      "id": "usb",
+      "url": "https://github.com/microsoft/Semi-supervised-learning",
+      "commit": "1ef4cbebcc0b368158315aeb425053858cf6c845",
+      "source_distribution": "not_vendored",
+      "license": {
+        "upstream_path": "LICENSE.txt",
+        "upstream_sha256": "3f72aa0ccdc6294e653e3ec1f6a2eb0a759650c0b5d3cf5208c1c30cceb7b888",
+        "local_copy": "LICENSE.usb.mit.txt",
+        "local_sha256": "3f72aa0ccdc6294e653e3ec1f6a2eb0a759650c0b5d3cf5208c1c30cceb7b888"
+      },
+      "audited_files": {
+        "LICENSE.txt": "3f72aa0ccdc6294e653e3ec1f6a2eb0a759650c0b5d3cf5208c1c30cceb7b888",
+        "config/classic_cv/fixmatch/fixmatch_cifar10_250_0.yaml": "3ec3708c173e33a19892c91fbbe6ca03da1a291d52af2d929b6a750e2f0ffc10",
+        "config/classic_cv/flexmatch/flexmatch_cifar10_250_0.yaml": "b11657b8b40a74ac2b95d8cc7c7a68626d15f9e6fe4b240e56fc5dfc07bd9dfc",
+        "config/classic_cv/freematch/freematch_cifar10_40_0.yaml": "3c6b373418e22d7cc3114b9ce0cd69ce429abe46a146b76e66c3a2400ea5b036",
+        "config/classic_cv/softmatch/softmatch_cifar10_250_0.yaml": "54b578f3e7c04e7e5794954c2b8c92ad47d578f5239fcf85ee6bcd27cb25ecaa",
+        "semilearn/algorithms/fixmatch/fixmatch.py": "338493c45352f6789fe6e3a9d7f376a73ea6f0284fcec5ac2ac12765d08ab95a",
+        "semilearn/algorithms/flexmatch/flexmatch.py": "c5c4a91a14a29140b7dc104d8f982b159d5419f3e306f8ede9ea9e39c8d283f4",
+        "semilearn/algorithms/flexmatch/utils.py": "1aecf49e00ce054d897621c17c6f3efe87c80a42ae8e963830ccc14aae7ba5f9",
+        "semilearn/algorithms/freematch/freematch.py": "5c4b22aaf99d2b95ee432b5a1409c760b4c4cb6322facd5199226b7fdb1def7a",
+        "semilearn/algorithms/freematch/utils.py": "ea32fc2a2d4502d2b2b5f3f7bf9a9b2a0754d94dc66eeb5410412da8fa536cca",
+        "semilearn/algorithms/hooks/dist_align.py": "e7bb4b6cdb1ba2fa01222726740fbc3f1ab3f708389f3e7e11162780f60e638f",
+        "semilearn/algorithms/hooks/pseudo_label.py": "3ba54b038ea2b2ef47127412bc24c08c59360fa461d1b293a2bd084be84ec8f6",
+        "semilearn/algorithms/softmatch/softmatch.py": "52695867c2760386cadaeb58d110df2a29c5130a22c02eb1ff86120ceb08d46c",
+        "semilearn/algorithms/softmatch/utils.py": "ef093f82fe42620476aafd740d2e631594069f3b9c3d36a61bb42668ef09e875"
+      }
+    }
+  ],
+  "local_artifacts": {
+    "LICENSE.google-fixmatch.apache-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "LICENSE.torchssl.mit.txt": "f547e6e9535596945e214e23c2756cdc2543ada59ae199c976bf3356c410c1d0",
+    "LICENSE.usb.mit.txt": "3f72aa0ccdc6294e653e3ec1f6a2eb0a759650c0b5d3cf5208c1c30cceb7b888",
+    "PIXEL_FIXTURES.json": "dc75f810f8f5543a0f57d9b056d28cc66b4cd1826a54cbe1b42521790c7eb4c1",
+    "README.md": "a3de14a3d43ccba80a99f9897aee54a697bd4e3cc6b8034acbfe6b494f9b716c"
+  }
+}

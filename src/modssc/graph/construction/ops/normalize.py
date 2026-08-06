@@ -29,20 +29,24 @@ def normalize_edge_weights(
 
     src = np.asarray(edge_index[0], dtype=np.int64)
     dst = np.asarray(edge_index[1], dtype=np.int64)
-    w = np.asarray(edge_weight, dtype=np.float32)
+    weight_dtype = np.float64 if np.asarray(edge_weight).dtype == np.float64 else np.float32
+    w = np.asarray(edge_weight, dtype=weight_dtype)
 
     if src.size and int(src.min()) >= 0:
-        deg = np.bincount(src, weights=w, minlength=int(n_nodes)).astype(np.float32, copy=False)
+        deg = np.bincount(src, weights=w, minlength=int(n_nodes)).astype(
+            weight_dtype,
+            copy=False,
+        )
     else:
-        deg = np.zeros(n_nodes, dtype=np.float32)
+        deg = np.zeros(n_nodes, dtype=weight_dtype)
         np.add.at(deg, src, w)
 
     if mode == "rw":
         scale = 1.0 / np.maximum(deg[src], float(eps))
-        return (w * scale).astype(np.float32)
+        return (w * scale).astype(weight_dtype)
 
     if mode == "sym":
         inv_sqrt = 1.0 / np.sqrt(np.maximum(deg, float(eps)))
-        return (w * inv_sqrt[src] * inv_sqrt[dst]).astype(np.float32)
+        return (w * inv_sqrt[src] * inv_sqrt[dst]).astype(weight_dtype)
 
     raise ValueError(f"Unknown normalization mode: {mode!r}")

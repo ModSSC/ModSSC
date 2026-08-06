@@ -1,0 +1,244 @@
+schema_version: 1
+site_id: slurm-gpu
+scheduler: slurm
+environment_lock_sha256: from_environment
+
+# Portable resource contracts only. Account, partition, QoS, accelerator
+# constraints, module loading and storage paths belong to a private site
+# overlay. At runtime the scientific preflight still verifies the accelerator
+# architecture before any task starts.
+setup:
+  - source "$MODSSC_ROOT/tools/hpc/sites/slurm/job_env.sh"
+profiles:
+  a100_dev:
+    architecture: A100
+    accelerators_per_task: 1
+    fixed_walltime: true
+    concurrency: 10
+    initial_concurrency: 10
+    promoted_concurrency: 10
+    array_block_size: 10
+    setup:
+      - modssc_slurm_env a100
+      - export CUBLAS_WORKSPACE_CONFIG=:4096:8
+      - export MODSSC_AUGMENT_THREADS="${SLURM_CPUS_PER_TASK:-8}"
+    directives:
+      nodes: 1
+      ntasks: 1
+      gres: gpu:1
+      cpus-per-task: 8
+      mem: 64G
+      time: "02:00:00"
+    max_walltime: "02:00:00"
+
+  v100_dev:
+    architecture: V100
+    accelerators_per_task: 1
+    fixed_walltime: true
+    concurrency: 10
+    initial_concurrency: 10
+    promoted_concurrency: 10
+    array_block_size: 10
+    setup:
+      - modssc_slurm_env v100
+    directives:
+      nodes: 1
+      ntasks: 1
+      gres: gpu:1
+      cpus-per-task: 10
+      mem: 64G
+      time: "02:00:00"
+    max_walltime: "02:00:00"
+
+  v100_dev_highmem:
+    architecture: V100
+    accelerators_per_task: 1
+    fixed_walltime: true
+    concurrency: 10
+    initial_concurrency: 10
+    promoted_concurrency: 10
+    array_block_size: 10
+    setup:
+      - modssc_slurm_env v100
+    directives:
+      nodes: 1
+      ntasks: 1
+      gres: gpu:1
+      cpus-per-task: 10
+      mem: 80G
+      time: "02:00:00"
+    max_walltime: "02:00:00"
+
+  h100_dev:
+    architecture: H100
+    accelerators_per_task: 1
+    fixed_walltime: true
+    concurrency: 10
+    initial_concurrency: 10
+    promoted_concurrency: 10
+    array_block_size: 10
+    setup:
+      - modssc_slurm_env h100
+      - export CUBLAS_WORKSPACE_CONFIG=:4096:8
+      - export MODSSC_AUGMENT_THREADS="${SLURM_CPUS_PER_TASK:-24}"
+    directives:
+      nodes: 1
+      ntasks: 1
+      gres: gpu:1
+      cpus-per-task: 24
+      mem: 128G
+      time: "02:00:00"
+      signal: B:USR1@300
+    max_walltime: "02:00:00"
+
+  h100_dev_resume:
+    architecture: H100
+    accelerators_per_task: 1
+    fixed_walltime: true
+    concurrency: 1
+    initial_concurrency: 1
+    promoted_concurrency: 1
+    array_block_size: 1
+    setup:
+      - modssc_slurm_env h100
+      - export CUBLAS_WORKSPACE_CONFIG=:4096:8
+      - export MODSSC_AUGMENT_THREADS="${SLURM_CPUS_PER_TASK:-24}"
+      - export MODSSC_FORCE_CONTINUATION_STEP=1024
+    directives:
+      nodes: 1
+      ntasks: 1
+      gres: gpu:1
+      cpus-per-task: 24
+      mem: 128G
+      time: "02:00:00"
+      signal: B:USR1@300
+    max_walltime: "02:00:00"
+
+  a100_gpu:
+    architecture: A100
+    accelerators_per_task: 1
+    concurrency: 64
+    initial_concurrency: 64
+    promoted_concurrency: 128
+    promotion_min_successes: 200
+    promotion_max_failure_rate: 0.02
+    array_block_size: 500
+    setup:
+      - modssc_slurm_env a100
+    directives:
+      nodes: 1
+      ntasks: 1
+      gres: gpu:1
+      cpus-per-task: 8
+      mem: 64G
+      time: "20:00:00"
+    max_walltime: "20:00:00"
+
+  v100_gpu:
+    architecture: V100
+    accelerators_per_task: 1
+    concurrency: 64
+    initial_concurrency: 64
+    promoted_concurrency: 128
+    promotion_min_successes: 200
+    promotion_max_failure_rate: 0.02
+    array_block_size: 500
+    setup:
+      - modssc_slurm_env v100
+    directives:
+      nodes: 1
+      ntasks: 1
+      gres: gpu:1
+      cpus-per-task: 10
+      mem: 64G
+      time: "20:00:00"
+    max_walltime: "20:00:00"
+
+  v100_gpu_grand10:
+    architecture: V100
+    accelerators_per_task: 1
+    concurrency: 10
+    initial_concurrency: 10
+    promoted_concurrency: 10
+    promotion_min_successes: 200
+    promotion_max_failure_rate: 0.02
+    array_block_size: 500
+    setup:
+      - modssc_slurm_env v100
+    directives:
+      nodes: 1
+      ntasks: 1
+      gres: gpu:1
+      cpus-per-task: 10
+      mem: 64G
+      time: "20:00:00"
+    max_walltime: "20:00:00"
+
+  h100_long:
+    architecture: H100
+    accelerators_per_task: 1
+    fixed_walltime: true
+    concurrency: 5
+    initial_concurrency: 5
+    promoted_concurrency: 5
+    array_block_size: 500
+    setup:
+      - modssc_slurm_env h100
+      - export CUBLAS_WORKSPACE_CONFIG=:4096:8
+      - export MODSSC_AUGMENT_THREADS="${SLURM_CPUS_PER_TASK:-24}"
+      - export MODSSC_PLANNED_SEGMENT_SECONDS=288000
+    directives:
+      nodes: 1
+      ntasks: 1
+      gres: gpu:1
+      cpus-per-task: 24
+      mem: 128G
+      time: "100:00:00"
+      signal: B:USR1@300
+    max_walltime: "100:00:00"
+
+  h100_long_adaptive:
+    architecture: H100
+    accelerators_per_task: 1
+    fixed_walltime: true
+    concurrency: 9
+    initial_concurrency: 9
+    promoted_concurrency: 9
+    array_block_size: 500
+    setup:
+      - modssc_slurm_env h100
+      - export CUBLAS_WORKSPACE_CONFIG=:4096:8
+      - export MODSSC_AUGMENT_THREADS="${SLURM_CPUS_PER_TASK:-24}"
+      - export MODSSC_PLANNED_SEGMENT_SECONDS=288000
+    directives:
+      nodes: 1
+      ntasks: 1
+      gres: gpu:1
+      cpus-per-task: 24
+      mem: 128G
+      time: "100:00:00"
+      signal: B:USR1@300
+    max_walltime: "100:00:00"
+
+  h100_t3_adaptive:
+    architecture: H100
+    accelerators_per_task: 1
+    fixed_walltime: true
+    concurrency: 9
+    initial_concurrency: 9
+    promoted_concurrency: 9
+    array_block_size: 500
+    setup:
+      - modssc_slurm_env h100
+      - export CUBLAS_WORKSPACE_CONFIG=:4096:8
+      - export MODSSC_AUGMENT_THREADS="${SLURM_CPUS_PER_TASK:-24}"
+      - export MODSSC_PLANNED_SEGMENT_SECONDS=68400
+    directives:
+      nodes: 1
+      ntasks: 1
+      gres: gpu:1
+      cpus-per-task: 24
+      mem: 128G
+      time: "20:00:00"
+      signal: B:USR1@300
+    max_walltime: "20:00:00"

@@ -1,0 +1,32 @@
+schema_version: 1
+campaign_id: article10-paper-tri-vote-v1
+track: paper
+scientific_scope:
+  claim_scope_id: article10
+  stage: production
+  claim_eligible: true
+  gate_policy_id: modssc-scientific-gates-v2
+  gate_policy_sha256: from_registry
+default_site: slurm-gpu
+code:
+  git_sha: REPLACE_WITH_CLEAN_COMMIT
+  require_clean: true
+  environment_lock_sha256: REPLACE_WITH_ENVIRONMENT_LOCK_SHA256
+expect:
+  config_count: 1
+  task_count: 3
+  tasks_per_method:
+    tri_training: 3
+  tasks_by_profile:
+    v100_gpu: 3
+  tasks_by_site:
+    slurm-gpu: 3
+cells:
+  - protocol_id: zhou-li-2005-vote-table3-j48-80pct-unlabeled
+    config: bench/configs/reproductions/tri_training/vote_table3_j48.yaml
+    seeds: [1, 2, 3]
+    resource_profile: v100_gpu
+    site: slurm-gpu
+    fidelity_status: paper_approx
+    expected_dataset_fingerprint: 98f2cf80ea8e8fb8f3f546dc87d3a231a0ec10fe6d26b5dfe490fc832079b0dd
+    expected_dataset_content_sha256: 5b95c771651aa62b985332026f63b423d7fe7dff2f0bc90ef2c336d4d2b70130

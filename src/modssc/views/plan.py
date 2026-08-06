@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from modssc.preprocess.plan import PreprocessPlan
@@ -58,10 +58,13 @@ class ViewSpec:
     preprocess: PreprocessPlan | None = None
     columns: ColumnSelectSpec | None = None
     meta: dict[str, Any] | None = None
+    input_columns: ColumnSelectSpec | None = field(default=None, kw_only=True)
 
     def validate(self) -> None:
         if not str(self.name).strip():
             raise ViewsValidationError("ViewSpec.name cannot be empty")
+        if self.input_columns is not None:
+            self.input_columns.validate()
         if self.columns is not None:
             self.columns.validate()
         if self.meta is not None and not isinstance(self.meta, dict):
@@ -86,6 +89,13 @@ class ViewsPlan:
         # Complement dependency must point to a previous view in the tuple
         seen: set[str] = set()
         for v in self.views:
+            if v.input_columns is not None and v.input_columns.mode == "complement":
+                target = str(v.input_columns.complement_of)
+                if target not in seen:
+                    raise ViewsValidationError(
+                        f"View {v.name!r} uses input complement_of={target!r} but that "
+                        "view wasn't resolved yet. Put the referenced view earlier in ViewsPlan.views."
+                    )
             if v.columns is not None and v.columns.mode == "complement":
                 target = str(v.columns.complement_of)
                 if target not in seen:

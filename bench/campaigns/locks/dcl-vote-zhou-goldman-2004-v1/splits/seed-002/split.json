@@ -1,0 +1,84 @@
+{
+  "created_at": "2026-07-24T03:53:42.211180+00:00",
+  "dataset_fingerprint": "98f2cf80ea8e8fb8f3f546dc87d3a231a0ec10fe6d26b5dfe490fc832079b0dd",
+  "mode": "inductive",
+  "plan": {
+    "imbalance": {
+      "alpha": null,
+      "apply_to": "train",
+      "kind": "none",
+      "max_per_class": null,
+      "min_per_class": 1
+    },
+    "labeling": {
+      "fixed_indices": null,
+      "min_per_class": 0,
+      "mode": "count",
+      "per_class": false,
+      "selection_order": "choice",
+      "strategy": "random",
+      "value": 40
+    },
+    "policy": {
+      "allow_override_official": false,
+      "merge_official_splits": false,
+      "respect_official_test": true,
+      "use_official_graph_masks": true
+    },
+    "split": {
+      "kind": "holdout",
+      "shuffle": true,
+      "stratify": false,
+      "test_fraction": 0.4482758620689655,
+      "val_fraction": 0.0
+    }
+  },
+  "refs": {
+    "test": "train",
+    "train": "train",
+    "train_labeled": "train",
+    "train_unlabeled": "train",
+    "val": "train"
+  },
+  "schema_version": 1,
+  "split_fingerprint": "59b451cd72d72b16188f73511d6c400dc27770c077659b05b49b74e15780557f",
+  "stats": {
+    "policy": {
+      "allow_override_official": false,
+      "has_official_test": false,
+      "official_test_ignored": false,
+      "partition_selected_n": 435,
+      "partition_source_n": 435,
+      "respect_official_test": true,
+      "test_ref": "train"
+    },
+    "test": {
+      "classes": {
+        "democrat": 123,
+        "republican": 72
+      },
+      "n": 195
+    },
+    "train": {
+      "classes": {
+        "democrat": 144,
+        "republican": 96
+      },
+      "n": 240
+    },
+    "train_labeled": {
+      "classes": {
+        "democrat": 19,
+        "republican": 21
+      },
+      "n": 40
+    },
+    "train_unlabeled": {
+      "n": 200
+    },
+    "val": {
+      "classes": {},
+      "n": 0
+    }
+  }
+}

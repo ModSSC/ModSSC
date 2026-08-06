@@ -1,0 +1,64 @@
+schema_version: 1
+campaign_id: article10-canary-r3-wave1-v1
+track: standardized
+scientific_scope:
+  claim_scope_id: article10
+  stage: canary
+  claim_eligible: false
+  gate_policy_id: modssc-scientific-gates-v2
+  gate_policy_sha256: from_registry
+default_site: slurm-gpu
+selection:
+  config_root: bench/configs/best
+  dataset_lock_file: bench/campaigns/locks/article10-canary-wave1-datasets.yaml
+  methods:
+    - pseudo_label
+    - tri_training
+    - democratic_co_learning
+    - fixmatch
+    - laplace_learning
+    - poisson_learning
+    - grand
+  regimes: [R3]
+  modalities: [tabular, graph, vision, text, audio]
+  datasets: [adult, cora, cifar10, ag_news, speechcommands]
+  seeds: [0]
+code:
+  git_sha: REPLACE_WITH_CLEAN_COMMIT
+  require_clean: true
+  environment_lock_sha256: REPLACE_WITH_ENVIRONMENT_LOCK_SHA256
+expect:
+  config_count: 35
+  task_count: 35
+  tasks_per_method: 5
+  tasks_by_profile:
+    a100_dev: 18
+    v100_dev: 12
+    cpu_graph: 5
+  tasks_by_site:
+    slurm-gpu: 30
+    regional: 5
+profile_rules:
+  - profile: cpu_graph
+    site: regional
+    methods: [poisson_learning]
+  - profile: a100_dev
+    site: slurm-gpu
+    methods:
+      - pseudo_label
+      - tri_training
+      - democratic_co_learning
+      - fixmatch
+      - laplace_learning
+      - grand
+    modalities: [vision, text, audio]
+  - profile: v100_dev
+    site: slurm-gpu
+    methods:
+      - pseudo_label
+      - tri_training
+      - democratic_co_learning
+      - fixmatch
+      - laplace_learning
+      - grand
+    modalities: [tabular, graph]

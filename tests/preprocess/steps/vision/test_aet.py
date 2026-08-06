@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import json
 import os
 
 import numpy as np
@@ -94,6 +95,20 @@ def test_aet_float32_npy_cache_helper(tmp_path) -> None:
         np.arange(6, dtype=np.float32).reshape(2, 3),
     )
 
+    aet_module._ensure_float32_npy(source64, valid_output)
+    np.testing.assert_array_equal(
+        np.load(valid_output, allow_pickle=False),
+        np.arange(6, dtype=np.float32).reshape(2, 3),
+    )
+
+    meta_path.write_text("{", encoding="utf-8")
+    aet_module._ensure_float32_npy(source64, valid_output)
+    np.testing.assert_array_equal(
+        np.load(valid_output, allow_pickle=False),
+        np.arange(6, dtype=np.float32).reshape(2, 3),
+    )
+
+    valid_output.write_bytes(b"not-an-npy")
     aet_module._ensure_float32_npy(source64, valid_output)
     np.testing.assert_array_equal(
         np.load(valid_output, allow_pickle=False),
@@ -280,11 +295,15 @@ def test_aet_precomputed(tmp_path) -> None:
     labels = np.array([1, 2, 3, 4, 8, 9, 0], dtype=np.int64)
     np.savez_compressed(features_path, data=features)
     np.savez_compressed(labels_path, labels=labels)
+    features_sha256 = aet_module._file_sha256(features_path)
+    labels_sha256 = aet_module._file_sha256(labels_path)
 
     step = AetStep(
         source="precomputed",
         features_path=str(features_path),
         labels_path=str(labels_path),
+        expected_features_sha256=features_sha256,
+        expected_labels_sha256=labels_sha256,
         train_offset=0,
         test_offset=4,
         expected_rows=7,
@@ -301,12 +320,72 @@ def test_aet_precomputed(tmp_path) -> None:
     assert info["kind"] == "precomputed_aet"
     assert info["alignment"]["row_offset"] == 4
     assert info["training"]["uses_labels"] is False
+    assert info["files"]["features_npz"]["expected_sha256"] == features_sha256
+    assert info["files"]["labels_npz"]["expected_sha256"] == labels_sha256
     assert (tmp_path / "cifar_aet.npy").exists()
 
     refreshed = step.runtime_artifacts(
         produced={"features.aet": result["features.aet"]}, split="test"
     )["features.aet.info"]
     assert refreshed["runtime"]["split"] == "test"
+
+
+def test_aet_precomputed_rebuilds_npy_cache_for_changed_or_substituted_content(
+    tmp_path,
+) -> None:
+    features_path = tmp_path / "cifar_aet.npz"
+    labels_path = tmp_path / "cifar_labels.npz"
+    extracted_path = tmp_path / "shared.npy"
+    labels = np.asarray([0, 1], dtype=np.int64)
+    first_features = np.asarray([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    second_features = np.asarray([[10.0, 20.0], [30.0, 40.0]], dtype=np.float32)
+    np.savez_compressed(features_path, data=first_features)
+    np.savez_compressed(labels_path, labels=labels)
+    store = ArtifactStore()
+    store.set("raw.y", labels)
+
+    first = AetStep(
+        source="precomputed",
+        features_path=str(features_path),
+        labels_path=str(labels_path),
+        extracted_npy_path=str(extracted_path),
+        train_offset=0,
+        test_offset=0,
+        expected_rows=2,
+        unit_normalize=False,
+    ).transform(store, rng=np.random.default_rng(0))
+    np.testing.assert_array_equal(first["features.aet"], first_features)
+
+    np.save(extracted_path, np.full_like(first_features, 99.0))
+    repaired = AetStep(
+        source="precomputed",
+        features_path=str(features_path),
+        labels_path=str(labels_path),
+        extracted_npy_path=str(extracted_path),
+        train_offset=0,
+        test_offset=0,
+        expected_rows=2,
+        unit_normalize=False,
+    ).transform(store, rng=np.random.default_rng(0))
+    np.testing.assert_array_equal(repaired["features.aet"], first_features)
+
+    np.savez_compressed(features_path, data=second_features)
+    changed = AetStep(
+        source="precomputed",
+        features_path=str(features_path),
+        labels_path=str(labels_path),
+        extracted_npy_path=str(extracted_path),
+        train_offset=0,
+        test_offset=0,
+        expected_rows=2,
+        unit_normalize=False,
+    ).transform(store, rng=np.random.default_rng(0))
+    np.testing.assert_array_equal(changed["features.aet"], second_features)
+
+    sidecar = aet_module._float32_npy_cache_meta_path(extracted_path)
+    payload = json.loads(sidecar.read_text(encoding="utf-8"))
+    assert payload["source"]["source_npz_sha256"] == aet_module._file_sha256(features_path)
+    assert payload["output_npy_sha256"] == aet_module._file_sha256(extracted_path)
 
 
 def test_aet_precomputed_requires_ordered_labels(tmp_path) -> None:
@@ -351,12 +430,39 @@ def test_aet_precomputed_error_paths_and_empty_unit_norm(tmp_path) -> None:
     features_path = tmp_path / "cifar_aet.npz"
     labels_path = tmp_path / "cifar_labels.npz"
     np.savez_compressed(features_path, data=np.zeros((2, 3), dtype=np.float32))
+    with pytest.raises(PreprocessValidationError, match="must be a SHA-256 hex digest"):
+        AetStep(
+            source="precomputed",
+            features_path=str(features_path),
+            labels_path=str(labels_path),
+            expected_rows=2,
+            expected_features_sha256="not-a-digest",
+        ).transform(store, rng=np.random.default_rng(0))
     with pytest.raises(PreprocessValidationError, match="labels not found"):
         AetStep(
             source="precomputed",
             features_path=str(features_path),
             labels_path=str(labels_path),
             expected_rows=2,
+        ).transform(store, rng=np.random.default_rng(0))
+
+    np.savez_compressed(labels_path, labels=np.array([0, 1], dtype=np.int64))
+    with pytest.raises(PreprocessValidationError, match="features SHA-256 mismatch"):
+        AetStep(
+            source="precomputed",
+            features_path=str(features_path),
+            labels_path=str(labels_path),
+            expected_rows=2,
+            expected_features_sha256="0" * 64,
+        ).transform(store, rng=np.random.default_rng(0))
+    with pytest.raises(PreprocessValidationError, match="labels SHA-256 mismatch"):
+        AetStep(
+            source="precomputed",
+            features_path=str(features_path),
+            labels_path=str(labels_path),
+            expected_rows=2,
+            expected_features_sha256=aet_module._file_sha256(features_path),
+            expected_labels_sha256="0" * 64,
         ).transform(store, rng=np.random.default_rng(0))
 
     np.savez_compressed(labels_path, other=np.array([0, 1], dtype=np.int64))

@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "artifact_id": "replication-execution-history-20260806",
+  "artifact_uri": "modssc-artifact://replication/provenance/execution-history/15f497d3e4c33b48be80dc4336fe289b204de250cfeb6e7d6e08e819d41b0bb5",
+  "media_type": "application/x-git-bundle",
+  "size_bytes": 22590072,
+  "sha256": "15f497d3e4c33b48be80dc4336fe289b204de250cfeb6e7d6e08e819d41b0bb5",
+  "complete_committed_history": true,
+  "execution_commits": [
+    "04a8f0be1009bde3a32bf44f9b352ec889c9a459",
+    "2756f2f53c6454d726be476d7d0799fc088f1898",
+    "4805771fe680c052842accca1d15522a03f5f9cf",
+    "8cbee2e53a029c39d53b0f1557b68dbbd9653e77",
+    "c024a03fce7d93a1a1ac29fc0fd31bde3e6b780f",
+    "e6e509e0840e6ee18ef55d1b5b99255798364f5a",
+    "f0fb2b7c3834f54dfd03b9aba72a32901f649ca2"
+  ],
+  "dirty_execution_provenance": [
+    {
+      "git_sha": "4805771fe680c052842accca1d15522a03f5f9cf",
+      "expected_worktree_sha256": "bd5132c6661ffdc441e53494161ae025c2be5b95b3fb3203fd71389425479f1a",
+      "snapshot_status": "incomplete",
+      "claim_eligible": false,
+      "reason": "The authenticated worktree digest is retained, but the exact dirty patch has not been recovered."
+    }
+  ],
+  "notes": [
+    "The bundle preserves the exact commits used by historical executions after branch consolidation.",
+    "Physical mirror locations are intentionally excluded from the public scientific identity.",
+    "Historical executions must never be relabelled as having run from the consolidated commit."
+  ]
+}

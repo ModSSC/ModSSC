@@ -13,6 +13,7 @@ PROVIDERS: dict[str, str] = {
     "torchvision": "modssc.data_loader.providers.torchvision:TorchvisionProvider",
     "torchaudio": "modssc.data_loader.providers.torchaudio:TorchaudioProvider",
     "pyg": "modssc.data_loader.providers.pyg:PyGProvider",
+    "webkb1998": "modssc.data_loader.providers.webkb1998:WebKB1998Provider",
 }
 
 logger = logging.getLogger(__name__)

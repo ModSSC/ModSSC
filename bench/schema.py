@@ -7,6 +7,11 @@ from typing import Any
 from modssc.evaluation import list_metrics
 from modssc.hpo import HpoError, Space
 
+from .partition_selection_schema import (
+    DCL_PARTITION_SELECTION_KIND,
+    PARTITION_SELECTION_TASK_FIELDS,
+)
+
 
 class BenchConfigError(ValueError):
     def __init__(self, message: str, *, code: str = "E_BENCH_CONFIG") -> None:
@@ -121,6 +126,7 @@ class RunConfig:
     output_dir: str
     seeds: list[int] | None = None
     seeded_sections: list[str] | None = None
+    model_seed: int | None = None
     fail_fast: bool = True
     log_level: str | None = None
     benchmark_mode: bool = False
@@ -150,6 +156,7 @@ class DatasetConfig:
 class SamplingConfig:
     seed: int | None
     plan: dict[str, Any]
+    replay: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -172,8 +179,11 @@ class GraphConfig:
     enabled: bool
     seed: int | None
     cache: bool
+    require_cache_hit: bool
     spec: dict[str, Any]
     cache_dir: str | None = None
+    expected_fingerprint: str | None = None
+    expected_preprocess_fingerprint: str | None = None
 
 
 @dataclass(frozen=True)
@@ -184,6 +194,181 @@ class AugmentationConfig:
     weak: dict[str, Any]
     strong: dict[str, Any]
     modality: str | None = None
+    reference_implementation: str | None = None
+    reference_policy: dict[str, Any] = field(default_factory=dict)
+
+
+_MATCH_PAPER_AUGMENTATION_CONTRACTS: dict[
+    str,
+    tuple[str, str, dict[str, Any], list[str]],
+] = {
+    "paper:sohn2020-cifar10-table2-250": (
+        "fixmatch",
+        "google_fixmatch_ra",
+        {
+            "source": ("google-research/fixmatch@d4985a158065947dba803e626ee9a6721709c570"),
+            "strong_order": [
+                "random_horizontal_flip",
+                "reflect_pad_4_random_crop",
+                "randaugment",
+                "cutout",
+            ],
+            "randaugment": {
+                "num_ops": 2,
+                "configured_magnitude": 10,
+                "magnitude_sampling": "integer_uniform_[1,10)",
+            },
+            "cutout": {"size_pixels": 16, "fill": 0},
+        },
+        [
+            "vision.random_horizontal_flip",
+            "vision.random_crop_pad",
+            "vision.randaugment",
+            "vision.cutout",
+        ],
+    ),
+    "paper:zhang2021-cifar10-table1-250": (
+        "flexmatch",
+        "torchssl_ra",
+        {
+            "source": ("TorchSSL/TorchSSL@03193a1b7883727db1ce9c092e083091e18aedbb"),
+            "strong_order": [
+                "randaugment_with_cutout",
+                "random_horizontal_flip",
+                "reflect_pad_4_random_crop",
+            ],
+            "randaugment": {
+                "num_ops": 3,
+                "configured_magnitude": 5,
+                "magnitude_sampling": "per_operation_uniform_full_range",
+            },
+            "cutout": {
+                "size_fraction_sampling": "uniform_[0,0.5)",
+                "fill_rgb": [125, 123, 114],
+            },
+        },
+        [
+            "vision.randaugment",
+            "vision.random_horizontal_flip",
+            "vision.random_crop_pad",
+        ],
+    ),
+    "paper:wang2023-cifar10-table1-40": (
+        "free_match",
+        "torchssl_ra",
+        {
+            "source": ("TorchSSL/TorchSSL@03193a1b7883727db1ce9c092e083091e18aedbb"),
+            "strong_order": [
+                "randaugment_with_cutout",
+                "random_horizontal_flip",
+                "reflect_pad_4_random_crop",
+            ],
+            "randaugment": {
+                "num_ops": 3,
+                "configured_magnitude": 5,
+                "magnitude_sampling": "per_operation_uniform_full_range",
+            },
+            "cutout": {
+                "size_fraction_sampling": "uniform_[0,0.5)",
+                "fill_rgb": [125, 123, 114],
+            },
+        },
+        [
+            "vision.randaugment",
+            "vision.random_horizontal_flip",
+            "vision.random_crop_pad",
+        ],
+    ),
+    "paper:chen2023-cifar10-table2-250": (
+        "softmatch",
+        "torchssl_ra",
+        {
+            "source": ("TorchSSL/TorchSSL@03193a1b7883727db1ce9c092e083091e18aedbb"),
+            "strong_order": [
+                "randaugment_with_cutout",
+                "random_horizontal_flip",
+                "reflect_pad_4_random_crop",
+            ],
+            "randaugment": {
+                "num_ops": 3,
+                "configured_magnitude": 5,
+                "magnitude_sampling": "per_operation_uniform_full_range",
+            },
+            "cutout": {
+                "size_fraction_sampling": "uniform_[0,0.5)",
+                "fill_rgb": [125, 123, 114],
+            },
+        },
+        [
+            "vision.randaugment",
+            "vision.random_horizontal_flip",
+            "vision.random_crop_pad",
+        ],
+    ),
+}
+
+
+def _augmentation_step_ids(plan: Mapping[str, Any]) -> list[str]:
+    steps = plan.get("steps")
+    if not isinstance(steps, list):
+        return []
+    return [
+        str(step.get("id") or step.get("op_id") or "")
+        for step in steps
+        if isinstance(step, Mapping)
+    ]
+
+
+def _validate_match_paper_augmentation(
+    *,
+    method_id: str,
+    profile: str,
+    augmentation: AugmentationConfig | None,
+) -> None:
+    contract = _MATCH_PAPER_AUGMENTATION_CONTRACTS.get(profile)
+    if contract is None:
+        return
+    expected_method, implementation, policy, strong_ids = contract
+    if method_id != expected_method:
+        raise BenchConfigError(f"method.profile={profile!r} requires method.id={expected_method!r}")
+    if (
+        augmentation is None
+        or not augmentation.enabled
+        or augmentation.mode != "online"
+        or augmentation.modality != "vision"
+    ):
+        raise BenchConfigError(f"method.profile={profile!r} requires online vision augmentation")
+    if augmentation.reference_implementation != implementation:
+        raise BenchConfigError(
+            f"method.profile={profile!r} requires "
+            f"augmentation.reference_implementation={implementation!r}"
+        )
+    if augmentation.reference_policy != policy:
+        raise BenchConfigError(
+            f"augmentation.reference_policy contradicts method.profile={profile!r}"
+        )
+    if _augmentation_step_ids(augmentation.weak) != [
+        "vision.random_horizontal_flip",
+        "vision.random_crop_pad",
+    ]:
+        raise BenchConfigError(f"augmentation.weak contradicts method.profile={profile!r}")
+    if _augmentation_step_ids(augmentation.strong) != strong_ids:
+        raise BenchConfigError(f"augmentation.strong contradicts method.profile={profile!r}")
+    strong_steps = augmentation.strong["steps"]
+    randaugment = next(step for step in strong_steps if step.get("id") == "vision.randaugment")
+    expected_ra = {"num_ops": 2, "magnitude": 10, "num_magnitude_bins": 31}
+    if implementation == "torchssl_ra":
+        expected_ra = {"num_ops": 3, "magnitude": 5, "num_magnitude_bins": 31}
+    if randaugment.get("params") != expected_ra:
+        raise BenchConfigError(
+            f"augmentation RandAugment parameters contradict method.profile={profile!r}"
+        )
+    if implementation == "google_fixmatch_ra":
+        cutout = next(step for step in strong_steps if step.get("id") == "vision.cutout")
+        if cutout.get("params") != {"length": 16, "n_holes": 1, "fill": 0.0}:
+            raise BenchConfigError(
+                f"augmentation Cutout parameters contradict method.profile={profile!r}"
+            )
 
 
 @dataclass(frozen=True)
@@ -210,6 +395,7 @@ class MethodConfig:
     device: DeviceConfig
     params: dict[str, Any] = field(default_factory=dict)
     model: ModelConfig | None = None
+    profile: str = "standardized"
 
 
 @dataclass(frozen=True)
@@ -217,6 +403,10 @@ class EvaluationConfig:
     report_splits: list[str]
     metrics: list[str]
     split_for_model_selection: str | None = None
+    evaluation_interval_steps: int | None = None
+    checkpoint_policy: str | None = None
+    reporting_policy: str | None = None
+    reporting_window_checkpoints: int | None = None
 
 
 @dataclass(frozen=True)
@@ -281,6 +471,7 @@ class ExperimentConfig:
                 "seed",
                 "seeds",
                 "seeded_sections",
+                "model_seed",
                 "output_dir",
                 "fail_fast",
                 "log_level",
@@ -306,6 +497,7 @@ class ExperimentConfig:
             output_dir=str(run.get("output_dir", "modssc_cache/output")),
             seeds=_optional_seed_list(run, "seeds", name="run"),
             seeded_sections=seeded_sections,
+            model_seed=_optional_int(run, "model_seed"),
             fail_fast=fail_fast,
             log_level=_optional_str(run, "log_level"),
             benchmark_mode=benchmark_mode,
@@ -366,11 +558,39 @@ class ExperimentConfig:
         )
 
         sampling = _as_mapping(data.get("sampling", {}), name="sampling")
-        _check_unknown(sampling, {"seed", "plan"}, name="sampling")
+        _check_unknown(sampling, {"seed", "plan", "replay"}, name="sampling")
         plan = _optional_mapping(sampling, "plan")
         if not plan:
             raise BenchConfigError("sampling.plan must be provided")
-        sampling_cfg = SamplingConfig(seed=_optional_int(sampling, "seed"), plan=plan)
+        replay_cfg: dict[str, Any] | None = None
+        if "replay" in sampling:
+            replay = _as_mapping(sampling.get("replay"), name="sampling.replay")
+            replay_fields = PARTITION_SELECTION_TASK_FIELDS
+            _check_unknown(replay, replay_fields, name="sampling.replay")
+            missing = replay_fields - set(replay)
+            if missing:
+                raise BenchConfigError(
+                    f"sampling.replay is missing required keys: {sorted(missing)}"
+                )
+            if replay.get("kind") != DCL_PARTITION_SELECTION_KIND:
+                raise BenchConfigError(
+                    "sampling.replay.kind must identify the DCL Vote partition selection"
+                )
+            for key in replay_fields - {"selection_rank"}:
+                _require_str(replay, key, name="sampling.replay")
+            selection_rank = replay.get("selection_rank")
+            if (
+                isinstance(selection_rank, bool)
+                or not isinstance(selection_rank, int)
+                or selection_rank <= 0
+            ):
+                raise BenchConfigError("sampling.replay.selection_rank must be a positive integer")
+            replay_cfg = dict(replay)
+        sampling_cfg = SamplingConfig(
+            seed=_optional_int(sampling, "seed"),
+            plan=plan,
+            replay=replay_cfg,
+        )
 
         preprocess = _as_mapping(data.get("preprocess", {}), name="preprocess")
         _check_unknown(
@@ -399,12 +619,30 @@ class ExperimentConfig:
         graph_cfg = None
         if "graph" in data:
             graph = _as_mapping(data.get("graph", {}), name="graph")
-            _check_unknown(graph, {"enabled", "seed", "cache", "cache_dir", "spec"}, name="graph")
+            _check_unknown(
+                graph,
+                {
+                    "enabled",
+                    "seed",
+                    "cache",
+                    "require_cache_hit",
+                    "cache_dir",
+                    "expected_fingerprint",
+                    "expected_preprocess_fingerprint",
+                    "spec",
+                },
+                name="graph",
+            )
             graph_cfg = GraphConfig(
                 enabled=_optional_bool(graph, "enabled", default=False),
                 seed=_optional_int(graph, "seed"),
                 cache=_optional_bool(graph, "cache", default=True),
+                require_cache_hit=_optional_bool(graph, "require_cache_hit", default=False),
                 cache_dir=_optional_str(graph, "cache_dir"),
+                expected_fingerprint=_optional_str(graph, "expected_fingerprint"),
+                expected_preprocess_fingerprint=_optional_str(
+                    graph, "expected_preprocess_fingerprint"
+                ),
                 spec=_optional_mapping(graph, "spec"),
             )
 
@@ -412,7 +650,18 @@ class ExperimentConfig:
         if "augmentation" in data:
             aug = _as_mapping(data.get("augmentation", {}), name="augmentation")
             _check_unknown(
-                aug, {"enabled", "seed", "mode", "weak", "strong", "modality"}, name="augmentation"
+                aug,
+                {
+                    "enabled",
+                    "seed",
+                    "mode",
+                    "weak",
+                    "strong",
+                    "modality",
+                    "reference_implementation",
+                    "reference_policy",
+                },
+                name="augmentation",
             )
             augmentation_cfg = AugmentationConfig(
                 enabled=_optional_bool(aug, "enabled", default=True),
@@ -421,10 +670,16 @@ class ExperimentConfig:
                 weak=_optional_mapping(aug, "weak"),
                 strong=_optional_mapping(aug, "strong"),
                 modality=_optional_str(aug, "modality"),
+                reference_implementation=_optional_str(aug, "reference_implementation"),
+                reference_policy=_optional_mapping(aug, "reference_policy"),
             )
 
         method = _as_mapping(data.get("method", {}), name="method")
-        _check_unknown(method, {"kind", "id", "device", "params", "model"}, name="method")
+        _check_unknown(
+            method,
+            {"kind", "id", "device", "profile", "params", "model"},
+            name="method",
+        )
         kind = _require_str(method, "kind", name="method")
         if kind not in {"inductive", "transductive"}:
             raise BenchConfigError("method.kind must be 'inductive' or 'transductive'")
@@ -487,13 +742,39 @@ class ExperimentConfig:
             kind=kind,
             method_id=_require_str(method, "id", name="method"),
             device=device,
+            profile=_optional_str(method, "profile") or "standardized",
             params=_optional_mapping(method, "params"),
             model=model_cfg,
         )
+        _validate_match_paper_augmentation(
+            method_id=method_cfg.method_id,
+            profile=method_cfg.profile,
+            augmentation=augmentation_cfg,
+        )
+        partition_raw = plan.get("partition")
+        if isinstance(partition_raw, Mapping):
+            artifact_raw = partition_raw.get("ordered_indices_artifact")
+            if isinstance(artifact_raw, Mapping):
+                inclusive_pool = artifact_raw.get("unlabeled_pool") == "includes_labeled"
+                if inclusive_pool and not method_cfg.profile.startswith("paper:"):
+                    raise BenchConfigError(
+                        "partition.ordered_indices_artifact with "
+                        "unlabeled_pool=includes_labeled is restricted to paper profiles"
+                    )
 
         evaluation = _as_mapping(data.get("evaluation", {}), name="evaluation")
         _check_unknown(
-            evaluation, {"report_splits", "metrics", "split_for_model_selection"}, name="evaluation"
+            evaluation,
+            {
+                "report_splits",
+                "metrics",
+                "split_for_model_selection",
+                "evaluation_interval_steps",
+                "checkpoint_policy",
+                "reporting_policy",
+                "reporting_window_checkpoints",
+            },
+            name="evaluation",
         )
         report_splits = [str(s) for s in _optional_list(evaluation, "report_splits")]
         metrics = [str(m) for m in _optional_list(evaluation, "metrics")]
@@ -501,10 +782,23 @@ class ExperimentConfig:
             raise BenchConfigError("evaluation.report_splits must be provided")
         if not metrics:
             raise BenchConfigError("evaluation.metrics must be provided")
+        evaluation_interval_steps = _optional_int(evaluation, "evaluation_interval_steps")
+        reporting_window_checkpoints = _optional_int(
+            evaluation,
+            "reporting_window_checkpoints",
+        )
+        if evaluation_interval_steps is not None and evaluation_interval_steps <= 0:
+            raise BenchConfigError("evaluation.evaluation_interval_steps must be positive")
+        if reporting_window_checkpoints is not None and reporting_window_checkpoints <= 0:
+            raise BenchConfigError("evaluation.reporting_window_checkpoints must be positive")
         evaluation_cfg = EvaluationConfig(
             report_splits=report_splits,
             metrics=metrics,
             split_for_model_selection=_optional_str(evaluation, "split_for_model_selection"),
+            evaluation_interval_steps=evaluation_interval_steps,
+            checkpoint_policy=_optional_str(evaluation, "checkpoint_policy"),
+            reporting_policy=_optional_str(evaluation, "reporting_policy"),
+            reporting_window_checkpoints=reporting_window_checkpoints,
         )
 
         search_cfg = None

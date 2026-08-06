@@ -1,0 +1,199 @@
+schema_version: 1
+campaign_id: article10-paper-v1
+track: paper
+scientific_scope:
+  claim_scope_id: article10
+  stage: production
+  claim_eligible: true
+  gate_policy_id: modssc-scientific-gates-v2
+  gate_policy_sha256: from_registry
+default_site: regional
+code:
+  git_sha: REPLACE_WITH_CLEAN_COMMIT
+  require_clean: true
+  environment_lock_sha256: REPLACE_WITH_ENVIRONMENT_LOCK_SHA256
+expect:
+  config_count: 18
+  task_count: 1147
+  tasks_per_method:
+    pseudo_label: 10
+    tri_training: 3
+    democratic_co_learning: 20
+    fixmatch: 5
+    flexmatch: 3
+    free_match: 3
+    softmatch: 3
+    grand: 100
+    laplace_learning: 500
+    poisson_learning: 500
+  tasks_by_profile:
+    a100_gpu: 14
+    v100_gpu: 100
+    cpu_graph: 1000
+    cpu_tabular: 33
+  tasks_by_site:
+    slurm-gpu: 114
+    regional: 1033
+cells:
+  - protocol_id: lee-2013-mnist-table2-600
+    config: bench/configs/reproductions/pseudo_label/mnist.yaml
+    seeds: from_config
+    resource_profile: cpu_tabular
+    site: regional
+    fidelity_status: paper_approx
+    expected_dataset_fingerprint: REPLACE_WITH_MNIST_OFFICIAL_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_MNIST_CONTENT_SHA256
+
+  - protocol_id: zhou-li-2005-wdbc-table3-j48-80pct-unlabeled
+    config: bench/configs/reproductions/tri_training/wdbc_table3_j48.yaml
+    seeds: from_config
+    resource_profile: cpu_tabular
+    site: regional
+    fidelity_status: paper_approx
+    expected_dataset_fingerprint: REPLACE_WITH_OPENML_1510_CACHE_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_OPENML_1510_CONTENT_SHA256
+
+  - protocol_id: zhou-goldman-2004-adult-table3
+    config: bench/configs/reproductions/democratic_co_learning/adult.yaml
+    seeds: from_config
+    resource_profile: cpu_tabular
+    site: regional
+    fidelity_status: not_claimable
+    expected_dataset_fingerprint: REPLACE_WITH_OPENML_1590_CACHE_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_OPENML_1590_CONTENT_SHA256
+
+  - protocol_id: sohn-2020-cifar10-table2-250
+    config: bench/configs/reproductions/fixmatch/cifar10-250.yaml
+    seeds: from_config
+    resource_profile: a100_gpu
+    site: slurm-gpu
+    fidelity_status: paper_matched
+    expected_dataset_fingerprint: REPLACE_WITH_CIFAR10_OFFICIAL_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_CIFAR10_CONTENT_SHA256
+
+  - protocol_id: zhang-2021-cifar10-table1-250
+    config: bench/configs/reproductions/flexmatch/cifar10-250.yaml
+    seeds: from_config
+    resource_profile: a100_gpu
+    site: slurm-gpu
+    fidelity_status: paper_matched
+    expected_dataset_fingerprint: REPLACE_WITH_CIFAR10_OFFICIAL_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_CIFAR10_CONTENT_SHA256
+
+  - protocol_id: wang-2023-cifar10-table1-40
+    config: bench/configs/reproductions/free_match/cifar10-40.yaml
+    seeds: from_config
+    resource_profile: a100_gpu
+    site: slurm-gpu
+    fidelity_status: paper_matched
+    expected_dataset_fingerprint: REPLACE_WITH_CIFAR10_OFFICIAL_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_CIFAR10_CONTENT_SHA256
+
+  - protocol_id: chen-2023-cifar10-table2-250
+    config: bench/configs/reproductions/softmatch/cifar10-250.yaml
+    seeds: from_config
+    resource_profile: a100_gpu
+    site: slurm-gpu
+    fidelity_status: paper_matched
+    expected_dataset_fingerprint: REPLACE_WITH_CIFAR10_OFFICIAL_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_CIFAR10_CONTENT_SHA256
+
+  - protocol_id: feng-2020-cora-table1-planetoid
+    config: bench/configs/reproductions/grand/cora.yaml
+    seeds: from_config
+    model_seed_policy: literal
+    resource_profile: v100_gpu
+    site: slurm-gpu
+    fidelity_status: paper_matched
+    expected_dataset_fingerprint: REPLACE_WITH_CORA_PLANETOID_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_CORA_CONTENT_SHA256
+
+  - protocol_id: calder-2020-mnist-table1-laplace-1-label-per-class
+    config: bench/configs/reproductions/laplace_learning/mnist-table1-1-label-per-class.yaml
+    seeds: from_config
+    resource_profile: cpu_graph
+    site: regional
+    fidelity_status: paper_approx
+    expected_dataset_fingerprint: REPLACE_WITH_MNIST_70000_MERGED_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_MNIST_CONTENT_SHA256
+
+  - protocol_id: calder-2020-mnist-table1-laplace-2-label-per-class
+    config: bench/configs/reproductions/laplace_learning/mnist-table1-2-label-per-class.yaml
+    seeds: from_config
+    resource_profile: cpu_graph
+    site: regional
+    fidelity_status: paper_approx
+    expected_dataset_fingerprint: REPLACE_WITH_MNIST_70000_MERGED_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_MNIST_CONTENT_SHA256
+
+  - protocol_id: calder-2020-mnist-table1-laplace-3-label-per-class
+    config: bench/configs/reproductions/laplace_learning/mnist-table1-3-label-per-class.yaml
+    seeds: from_config
+    resource_profile: cpu_graph
+    site: regional
+    fidelity_status: paper_approx
+    expected_dataset_fingerprint: REPLACE_WITH_MNIST_70000_MERGED_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_MNIST_CONTENT_SHA256
+
+  - protocol_id: calder-2020-mnist-table1-laplace-4-label-per-class
+    config: bench/configs/reproductions/laplace_learning/mnist-table1-4-label-per-class.yaml
+    seeds: from_config
+    resource_profile: cpu_graph
+    site: regional
+    fidelity_status: paper_approx
+    expected_dataset_fingerprint: REPLACE_WITH_MNIST_70000_MERGED_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_MNIST_CONTENT_SHA256
+
+  - protocol_id: calder-2020-mnist-table1-laplace-5-label-per-class
+    config: bench/configs/reproductions/laplace_learning/mnist-table1-5-label-per-class.yaml
+    seeds: from_config
+    resource_profile: cpu_graph
+    site: regional
+    fidelity_status: paper_approx
+    expected_dataset_fingerprint: REPLACE_WITH_MNIST_70000_MERGED_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_MNIST_CONTENT_SHA256
+
+  - protocol_id: calder-2020-mnist-table1-poisson-1-label-per-class
+    config: bench/configs/reproductions/poisson_learning/mnist-table1-1-label-per-class.yaml
+    seeds: from_config
+    resource_profile: cpu_graph
+    site: regional
+    fidelity_status: paper_approx
+    expected_dataset_fingerprint: REPLACE_WITH_MNIST_70000_MERGED_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_MNIST_CONTENT_SHA256
+
+  - protocol_id: calder-2020-mnist-table1-poisson-2-label-per-class
+    config: bench/configs/reproductions/poisson_learning/mnist-table1-2-label-per-class.yaml
+    seeds: from_config
+    resource_profile: cpu_graph
+    site: regional
+    fidelity_status: paper_approx
+    expected_dataset_fingerprint: REPLACE_WITH_MNIST_70000_MERGED_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_MNIST_CONTENT_SHA256
+
+  - protocol_id: calder-2020-mnist-table1-poisson-3-label-per-class
+    config: bench/configs/reproductions/poisson_learning/mnist-table1-3-label-per-class.yaml
+    seeds: from_config
+    resource_profile: cpu_graph
+    site: regional
+    fidelity_status: paper_approx
+    expected_dataset_fingerprint: REPLACE_WITH_MNIST_70000_MERGED_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_MNIST_CONTENT_SHA256
+
+  - protocol_id: calder-2020-mnist-table1-poisson-4-label-per-class
+    config: bench/configs/reproductions/poisson_learning/mnist-table1-4-label-per-class.yaml
+    seeds: from_config
+    resource_profile: cpu_graph
+    site: regional
+    fidelity_status: paper_approx
+    expected_dataset_fingerprint: REPLACE_WITH_MNIST_70000_MERGED_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_MNIST_CONTENT_SHA256
+
+  - protocol_id: calder-2020-mnist-table1-poisson-5-label-per-class
+    config: bench/configs/reproductions/poisson_learning/mnist-table1-5-label-per-class.yaml
+    seeds: from_config
+    resource_profile: cpu_graph
+    site: regional
+    fidelity_status: paper_approx
+    expected_dataset_fingerprint: REPLACE_WITH_MNIST_70000_MERGED_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_MNIST_CONTENT_SHA256

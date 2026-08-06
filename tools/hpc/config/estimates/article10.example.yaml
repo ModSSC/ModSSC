@@ -1,0 +1,6 @@
+schema_version: 1
+profiles:
+  slurm-gpu.a100_gpu:
+    p95_seconds: REPLACE_WITH_CANARY_P95_SECONDS
+  slurm-gpu.v100_gpu:
+    p95_seconds: REPLACE_WITH_CANARY_P95_SECONDS

@@ -32,13 +32,13 @@ def default_cache_dir() -> Path:
 
     root_override = os.environ.get(CACHE_ROOT_ENV)
     if root_override:
-        return Path(root_override).expanduser().resolve() / "graphs"
+        return Path(root_override).expanduser().resolve() / "graph"
 
-    local = default_local_cache_subdir("graphs")
+    local = default_local_cache_subdir("graph")
     if local is not None:
         return local
 
-    return Path(user_cache_dir("modssc")) / "graphs"
+    return Path(user_cache_dir("modssc")) / "graph"
 
 
 def default_views_cache_dir() -> Path:
@@ -151,6 +151,9 @@ class GraphCache(_FingerprintCacheOps):
 
         storage: dict[str, Any]
         if shard_size and shard_size < E:
+            weight_dtype = (
+                np.float64 if graph.meta.get("edge_weight_dtype") == "float64" else np.float32
+            )
             n_shards = int((E + shard_size - 1) // shard_size)
             for i in range(n_shards):
                 s = i * shard_size
@@ -158,7 +161,10 @@ class GraphCache(_FingerprintCacheOps):
                 shard_path = d / f"edges_{i:04d}.npz"
                 payload = {"edge_index": np.asarray(graph.edge_index[:, s:e], dtype=np.int64)}
                 if graph.edge_weight is not None:
-                    payload["edge_weight"] = np.asarray(graph.edge_weight[s:e], dtype=np.float32)
+                    payload["edge_weight"] = np.asarray(
+                        graph.edge_weight[s:e],
+                        dtype=weight_dtype,
+                    )
                 np.savez_compressed(shard_path, **payload)
 
             storage = {
@@ -167,14 +173,25 @@ class GraphCache(_FingerprintCacheOps):
         else:
             np.save(d / "edge_index.npy", np.asarray(graph.edge_index, dtype=np.int64))
             if graph.edge_weight is not None:
-                np.save(d / "edge_weight.npy", np.asarray(graph.edge_weight, dtype=np.float32))
+                weight_dtype = (
+                    np.float64 if graph.meta.get("edge_weight_dtype") == "float64" else np.float32
+                )
+                np.save(
+                    d / "edge_weight.npy",
+                    np.asarray(graph.edge_weight, dtype=weight_dtype),
+                )
             storage = {"edge": {"kind": "single"}}
 
         payload = {**manifest, **graph.to_dict(), "_storage": storage}
         _safe_write_json(d / "manifest.json", payload)
         return d
 
-    def _load_edges_single(self, d: Path) -> tuple[np.ndarray, np.ndarray | None]:
+    def _load_edges_single(
+        self,
+        d: Path,
+        *,
+        weight_dtype: type[np.float32] | type[np.float64] = np.float32,
+    ) -> tuple[np.ndarray, np.ndarray | None]:
         try:
             edge_index = np.load(d / "edge_index.npy", allow_pickle=False)
         except Exception as e:
@@ -189,11 +206,15 @@ class GraphCache(_FingerprintCacheOps):
                 raise GraphCacheError("Corrupted cached edge_weight.npy") from e
 
         return np.asarray(edge_index, dtype=np.int64), (
-            np.asarray(edge_weight, dtype=np.float32) if edge_weight is not None else None
+            np.asarray(edge_weight, dtype=weight_dtype) if edge_weight is not None else None
         )
 
     def _load_edges_sharded(
-        self, d: Path, *, num_shards: int
+        self,
+        d: Path,
+        *,
+        num_shards: int,
+        weight_dtype: type[np.float32] | type[np.float64] = np.float32,
     ) -> tuple[np.ndarray, np.ndarray | None]:
         shard_lengths: list[int] = []
         has_w: bool | None = None
@@ -216,11 +237,11 @@ class GraphCache(_FingerprintCacheOps):
         total = int(sum(shard_lengths))
         if total == 0:
             return np.zeros((2, 0), dtype=np.int64), (
-                np.zeros((0,), dtype=np.float32) if has_w else None
+                np.zeros((0,), dtype=weight_dtype) if has_w else None
             )
 
         edge_index = np.empty((2, total), dtype=np.int64)
-        edge_weight = np.empty((total,), dtype=np.float32) if has_w else None
+        edge_weight = np.empty((total,), dtype=weight_dtype) if has_w else None
 
         offset = 0
         for i, length in enumerate(shard_lengths):
@@ -235,7 +256,7 @@ class GraphCache(_FingerprintCacheOps):
                 if has_w:
                     if "edge_weight" not in npz:
                         raise GraphCacheError(f"Shard missing edge_weight: {shard_path}")
-                    w = np.asarray(npz["edge_weight"], dtype=np.float32)
+                    w = np.asarray(npz["edge_weight"], dtype=weight_dtype)
                     edge_weight[offset : offset + length] = w
             offset += length
 
@@ -248,20 +269,25 @@ class GraphCache(_FingerprintCacheOps):
             raise GraphCacheError(f"Missing cached graph manifest: {manifest_path}")
 
         manifest = _safe_read_json(manifest_path)
+        meta = dict(manifest.get("meta", {}))
+        weight_dtype = np.float64 if meta.get("edge_weight_dtype") == "float64" else np.float32
 
         storage = manifest.get("_storage", {}).get("edge", {"kind": "single"})
         kind = storage.get("kind", "single")
         if kind == "sharded":
             edge_index, edge_weight = self._load_edges_sharded(
-                d, num_shards=int(storage["num_shards"])
+                d,
+                num_shards=int(storage["num_shards"]),
+                weight_dtype=weight_dtype,
             )
         else:
-            edge_index, edge_weight = self._load_edges_single(d)
+            edge_index, edge_weight = self._load_edges_single(
+                d,
+                weight_dtype=weight_dtype,
+            )
 
         n_nodes = int(manifest.get("n_nodes"))
         directed = bool(manifest.get("directed", False))
-        meta = dict(manifest.get("meta", {}))
-
         graph = GraphArtifact(
             n_nodes=n_nodes,
             edge_index=edge_index,

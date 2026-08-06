@@ -1,0 +1,36 @@
+schema_version: 1
+campaign_id: article10-grand-paper-production-v1
+track: paper
+scientific_scope:
+  claim_scope_id: article10
+  stage: production
+  claim_eligible: true
+  gate_policy_id: modssc-scientific-gates-v2
+  gate_policy_sha256: from_registry
+default_site: slurm-gpu
+
+# Reportable Cora/Table 1 campaign. The pinned reproduction card supplies the
+# literal seed sequence 0..99 and the cell preserves it as the model RNG.
+code:
+  git_sha: REPLACE_WITH_CLEAN_COMMIT
+  require_clean: true
+  environment_lock_sha256: REPLACE_WITH_ENVIRONMENT_LOCK_SHA256
+expect:
+  config_count: 1
+  task_count: 100
+  tasks_per_method:
+    grand: 100
+  tasks_by_profile:
+    v100_gpu_grand10: 100
+  tasks_by_site:
+    slurm-gpu: 100
+cells:
+  - protocol_id: feng-2020-cora-table1-planetoid
+    config: bench/configs/reproductions/grand/cora.yaml
+    seeds: from_config
+    model_seed_policy: literal
+    resource_profile: v100_gpu_grand10
+    site: slurm-gpu
+    fidelity_status: paper_matched
+    expected_dataset_fingerprint: 774b6f9406cdd219aabdea52e411cfc28931fc2007878145b472e58e469e1471
+    expected_dataset_content_sha256: 0db92e9492bbe2f32d6d70018fa205b351cb5a44c3f742b2585547e8160922a6

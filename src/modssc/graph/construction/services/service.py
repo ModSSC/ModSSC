@@ -8,7 +8,7 @@ from typing import Any
 import numpy as np
 
 from ...artifacts import GraphArtifact
-from ...cache import GraphCache
+from ...cache import GraphCache, GraphCacheError
 from ...errors import GraphValidationError
 from ...fingerprint import fingerprint_array, fingerprint_dict
 from ...specs import GraphBuilderSpec
@@ -38,7 +38,7 @@ def _graph_fingerprint(
     payload = {
         "dataset_fingerprint": dataset_fingerprint,
         "preprocess_fingerprint": preprocess_fingerprint,
-        "spec": spec.to_dict(),
+        "spec": spec.fingerprint_payload(),
         "seed": int(seed),
     }
     return fingerprint_dict(payload)
@@ -52,6 +52,9 @@ def build_graph(
     dataset_fingerprint: str | None = None,
     preprocess_fingerprint: str | None = None,
     cache: bool = True,
+    require_cache_hit: bool = False,
+    expected_fingerprint: str | None = None,
+    expected_preprocess_fingerprint: str | None = None,
     cache_dir: str | Path | None = None,
     edge_shard_size: int | None = None,
     resume: bool = True,
@@ -74,6 +77,15 @@ def build_graph(
         Whether to cache the built graph on disk.
     cache_dir:
         Override the default cache directory.
+    require_cache_hit:
+        If True, require a complete pre-existing cache entry and never build a
+        graph in this process. Used by frozen scientific paper profiles.
+    expected_fingerprint:
+        Optional immutable pin for the graph fingerprint computed from the
+        dataset, preprocessing, graph specification, and seed.
+    expected_preprocess_fingerprint:
+        Optional immutable pin for the preprocessing fingerprint used to build
+        the graph.
     edge_shard_size:
         If provided, store the edge arrays in sharded `.npz` files with at most this many
         edges per shard.
@@ -93,18 +105,36 @@ def build_graph(
     n_nodes = int(X_arr.shape[0])
 
     ds_fp = dataset_fingerprint or fingerprint_array(X_arr)
-    spec_fp = fingerprint_dict(spec.to_dict())
+    spec_fp = fingerprint_dict(spec.fingerprint_payload())
+    if (
+        expected_preprocess_fingerprint is not None
+        and preprocess_fingerprint != expected_preprocess_fingerprint
+    ):
+        raise GraphValidationError(
+            "Graph preprocessing fingerprint differs from "
+            "expected_preprocess_fingerprint: "
+            f"computed {preprocess_fingerprint!r}, expected "
+            f"{expected_preprocess_fingerprint!r}"
+        )
     g_fp = _graph_fingerprint(
         dataset_fingerprint=ds_fp,
         preprocess_fingerprint=preprocess_fingerprint,
         spec=spec,
         seed=int(seed),
     )
+    if expected_fingerprint is not None and g_fp != expected_fingerprint:
+        raise GraphValidationError(
+            "Graph fingerprint differs from expected_fingerprint: "
+            f"computed {g_fp}, expected {expected_fingerprint}"
+        )
 
     cache_store = GraphCache(
         root=Path(cache_dir) if cache_dir is not None else GraphCache.default().root,
         edge_shard_size=edge_shard_size,
     )
+
+    if require_cache_hit and not cache:
+        raise GraphCacheError("require_cache_hit=True requires cache=True")
 
     if cache and cache_store.exists(g_fp):
         graph, _ = cache_store.load(g_fp)
@@ -116,6 +146,12 @@ def build_graph(
             perf_counter() - start,
         )
         return graph
+
+    if require_cache_hit:
+        raise GraphCacheError(
+            "Frozen graph cache entry is missing: "
+            f"{cache_store.entry_dir(g_fp)}. Build and verify it during preflight."
+        )
 
     # Optional resumable work directory inside the cache entry (only used by numpy backend).
     work_dir: Path | None = None
@@ -152,6 +188,7 @@ def build_graph(
         metric=spec.metric,
         edge_index=edge_index,
         n_nodes=n_nodes,
+        dtype=spec.edge_weight_dtype,
     )
 
     # Post-process graph
@@ -189,6 +226,7 @@ def build_graph(
             "preprocess_fingerprint": preprocess_fingerprint,
             "spec_fingerprint": spec_fp,
             "seed": int(seed),
+            "edge_weight_dtype": spec.edge_weight_dtype,
         },
     )
 

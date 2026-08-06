@@ -1,0 +1,14 @@
+{
+  "dataset_fingerprint": "98f2cf80ea8e8fb8f3f546dc87d3a231a0ec10fe6d26b5dfe490fc832079b0dd",
+  "files": {
+    "arrays.npz": {
+      "sha256": "99d7eb4183c892a5f97d8bdc3e7e958ffeeff378ccb7b476989de424db154905"
+    },
+    "split.json": {
+      "sha256": "fbb60cb570ab0efd30857e4a884ff98321a70fdbbc70a793b9f1299c6f5d02cc"
+    }
+  },
+  "format": "modssc.sampling.storage.v1",
+  "schema_version": 1,
+  "split_fingerprint": "8b693275a8a78e7fd57de93af16b1011e99a950b6b4e648e5485c430f95de14b"
+}

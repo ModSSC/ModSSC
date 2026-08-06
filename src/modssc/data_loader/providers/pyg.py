@@ -13,6 +13,13 @@ from modssc.data_loader.providers.common import normalize_filter as _normalize_f
 from modssc.data_loader.types import DatasetIdentity, LoadedDataset, Split
 from modssc.data_loader.uri import ParsedURI
 
+_DATASET_CONSTRUCTOR_OPTION_KEYS = (
+    "split",
+    "num_train_per_class",
+    "num_val",
+    "num_test",
+)
+
 
 class PyGProvider(BaseProvider):
     name = "pyg"
@@ -32,6 +39,15 @@ class PyGProvider(BaseProvider):
         # Allow overriding via options
         if "dataset_class" in options:
             cls_name = options["dataset_class"]
+
+        # These options are part of the dataset definition (not ModSSC's
+        # post-load filtering), so retain them in the resolved identity and
+        # pass them to the PyG constructor.  In particular, Planetoid's
+        # ``split`` selects different official masks and must affect the cache
+        # fingerprint.
+        for key in _DATASET_CONSTRUCTOR_OPTION_KEYS:
+            if key in options and options[key] is not None:
+                kwargs[key] = options[key]
 
         max_nodes = options.get("max_nodes")
         class_filter = _normalize_filter(options.get("class_filter"))

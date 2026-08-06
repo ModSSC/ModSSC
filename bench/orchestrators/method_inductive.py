@@ -21,6 +21,7 @@ from modssc.views.types import ViewsResult
 from ..errors import BenchRuntimeError
 from ..schema import MethodConfig
 from ..utils.import_tools import load_object
+from .method_profile import bind_method_profile
 from .slicing import select_rows
 
 _LOGGER = logging.getLogger(__name__)
@@ -154,6 +155,30 @@ def _labels_for_backend(pre: PreprocessResult, X_l: Any, idx: np.ndarray, *, str
     if _is_torch_container(X_l):
         torch = _torch_module()
         device = _torch_container_device(X_l) or "cpu"
+        return torch.as_tensor(y_arr, device=device, dtype=torch.int64)
+    return y_arr
+
+
+def _test_labels_for_backend(pre: PreprocessResult, X_test: Any) -> Any:
+    if pre.dataset.test is None:
+        raise BenchRuntimeError(
+            "E_BENCH_EVAL_SPLIT_INVALID",
+            "paper Match profile requires the official test split",
+        )
+    labels = (
+        pre.test_artifacts.get("labels.y")
+        if pre.test_artifacts is not None and pre.test_artifacts.has("labels.y")
+        else pre.dataset.test.y
+    )
+    if is_torch_tensor(labels):
+        if _is_torch_container(X_test):
+            device = _torch_container_device(X_test) or "cpu"
+            return labels.to(device=device, dtype=_torch_module().int64)
+        return labels
+    y_arr = np.asarray(labels, dtype=np.int64)
+    if _is_torch_container(X_test):
+        torch = _torch_module()
+        device = _torch_container_device(X_test) or "cpu"
         return torch.as_tensor(y_arr, device=device, dtype=torch.int64)
     return y_arr
 
@@ -507,6 +532,17 @@ def _should_auto_to_torch(cfg: MethodConfig, *, requires_torch: bool) -> bool:
     return False
 
 
+def _partition_artifact_sha256(stats: Mapping[str, Any]) -> Any | None:
+    """Read the authenticated partition hash from current or legacy stats."""
+
+    policy = stats.get("policy")
+    if isinstance(policy, Mapping):
+        nested = policy.get("partition_artifact_sha256")
+        if nested is not None:
+            return nested
+    return stats.get("partition_artifact_sha256")
+
+
 def run(
     pre: PreprocessResult,
     sampling: SamplingResult,
@@ -515,6 +551,7 @@ def run(
     X_u_w: Any | None,
     X_u_s: Any | None,
     X_u_s_1: Any | None,
+    online_augmentation: Any | None = None,
     cfg: MethodConfig,
     seed: int,
     strict: bool = False,
@@ -611,17 +648,45 @@ def run(
         else:
             _LOGGER.debug("Skipping X_u_s_1 injection because views payload is non-empty")
 
+    paper_match = cfg.method_id in {
+        "fixmatch",
+        "flexmatch",
+        "free_match",
+        "softmatch",
+    } and cfg.profile.startswith("paper:")
     meta: dict[str, Any] = {
         "dataset_fingerprint": pre.dataset.meta.get("dataset_fingerprint"),
         "split_fingerprint": sampling.split_fingerprint,
+        "partition_sha256": _partition_artifact_sha256(sampling.stats),
         "preprocess_fingerprint": pre.preprocess_fingerprint,
     }
+    meta["idx_l"] = _indices_for(X_l, idx_l)
+    meta["source_idx_l"] = _indices_for(X_l, idx_l)
     if X_u is not None:
-        meta["idx_u"] = _indices_for(X_u, idx_u)
-        if isinstance(X_train, Mapping) and "x" in X_train:
-            meta["ulb_size"] = int(X_train["x"].shape[0])
+        source_idx_u = _indices_for(X_u, idx_u)
+        meta["source_idx_u"] = source_idx_u
+        if paper_match:
+            local_idx_u = np.arange(int(idx_u.size), dtype=np.int64)
+            meta["idx_u"] = _indices_for(X_u, local_idx_u)
+            meta["ulb_size"] = int(idx_u.size)
         else:
-            meta["ulb_size"] = int(X_train.shape[0])
+            meta["idx_u"] = source_idx_u
+            if isinstance(X_train, Mapping) and "x" in X_train:
+                meta["ulb_size"] = int(X_train["x"].shape[0])
+            else:
+                meta["ulb_size"] = int(X_train.shape[0])
+    if online_augmentation is not None:
+        meta["online_augmentation"] = online_augmentation
+        meta["augmentation_seed"] = int(getattr(online_augmentation, "seed", seed))
+    if paper_match:
+        if pre.dataset.test is None:
+            raise BenchRuntimeError(
+                "E_BENCH_EVAL_SPLIT_INVALID",
+                "paper Match profile requires the official CIFAR-10 test split",
+            )
+        X_test = pre.dataset.test.X
+        y_test = _test_labels_for_backend(pre, X_test)
+        meta["paper_evaluation"] = {"X_test": X_test, "y_test": y_test}
 
     data = InductiveDataset(
         X_l=X_l,
@@ -636,6 +701,7 @@ def run(
     spec = _build_spec(method_cls, cfg.params, strict=strict) if cfg.params else None
     if spec is None and cfg.model is not None:
         spec = _default_spec(method_cls, strict=strict)
+    spec = bind_method_profile(spec, profile=cfg.profile, params=cfg.params)
     spec = _inject_model_bundle(
         spec,
         cfg.model,
@@ -670,6 +736,9 @@ def run(
             "strict_contract_validated": bool(strict),
         },
     }
+    diagnostics = getattr(method, "diagnostics_", None)
+    if isinstance(diagnostics, Mapping):
+        method_resolution["diagnostics"] = dict(diagnostics)
 
     _LOGGER.info(
         "Inductive method done: id=%s duration_s=%.3f", cfg.method_id, perf_counter() - start

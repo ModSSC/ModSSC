@@ -17,7 +17,9 @@ python -m bench.main --config bench/configs/experiments/toy_inductive.yaml --log
 ## Common failure patterns
 
 ### `modssc` works but `bench/` commands or configs are missing
-The benchmark runner lives in the repository and is not shipped to PyPI. Use a source checkout when you need `bench.main`, authored configs, examples, or notebooks.
+The benchmark and article-replication runner is shipped in the top-level
+`bench` package. Use `modssc-reproduce` for frozen article cards. A source
+checkout is still needed only for development-only examples and notebooks.
 
 ### Optional dependency error during dataset load, preprocess, or method execution
 Install the extra suggested by the error message. Dataset specs expose `required_extra`, preprocess steps expose step metadata, and method registries rely on the extras declared in `pyproject.toml`.

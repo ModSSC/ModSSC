@@ -1,0 +1,66 @@
+# Table 3 localization controls on the exact 20 immutable v1 partitions.
+# Submit seeds 1, 10, and 20 for every protocol as dev canaries before the
+# remaining tasks. These diagnostics are not paper repetitions.
+schema_version: 1
+campaign_id: dcl-vote-controls-slurm-v2
+track: paper
+scientific_scope:
+  claim_scope_id: article10
+  stage: diagnostic
+  claim_eligible: false
+  gate_policy_id: modssc-scientific-gates-v2
+  gate_policy_sha256: from_registry
+default_site: slurm-gpu
+code:
+  git_sha: REPLACE_WITH_CLEAN_COMMIT
+  require_clean: true
+  environment_lock_sha256: REPLACE_WITH_ENVIRONMENT_LOCK_SHA256
+expect:
+  config_count: 4
+  task_count: 80
+  tasks_per_method: {democratic_co_learning: 80}
+  tasks_by_profile: {v100_gpu: 80}
+  tasks_by_site: {slurm-gpu: 80}
+cells:
+  - protocol_id: zhou-goldman-2004-vote-table3-control-naive-bayes-v2
+    config: bench/configs/diagnostics/democratic_co_learning/vote_control_naive_bayes_v2.yaml
+    seeds: from_partition_selection
+    partition_selection: &vote_v1_partitions
+      path: bench/campaigns/locks/dcl-vote-zhou-goldman-2004-v1/selected-partitions.json
+      sha256: 5f586b2ab21bd6c2b0e058ab9d588ec1fc04b41b7d93e5a125d0a5f2ea1b36fb
+      replay_root: bench/campaigns/locks/dcl-vote-zhou-goldman-2004-v1/splits
+    resource_profile: v100_gpu
+    site: slurm-gpu
+    fidelity_status: not_claimable
+    expected_dataset_fingerprint: &vote_fingerprint 98f2cf80ea8e8fb8f3f546dc87d3a231a0ec10fe6d26b5dfe490fc832079b0dd
+    expected_dataset_content_sha256: &vote_content 5b95c771651aa62b985332026f63b423d7fe7dff2f0bc90ef2c336d4d2b70130
+
+  - protocol_id: zhou-goldman-2004-vote-table3-control-c45-v2
+    config: bench/configs/diagnostics/democratic_co_learning/vote_control_c45_v2.yaml
+    seeds: from_partition_selection
+    partition_selection: *vote_v1_partitions
+    resource_profile: v100_gpu
+    site: slurm-gpu
+    fidelity_status: not_claimable
+    expected_dataset_fingerprint: *vote_fingerprint
+    expected_dataset_content_sha256: *vote_content
+
+  - protocol_id: zhou-goldman-2004-vote-table3-control-3nn-v2
+    config: bench/configs/diagnostics/democratic_co_learning/vote_control_3nn_v2.yaml
+    seeds: from_partition_selection
+    partition_selection: *vote_v1_partitions
+    resource_profile: v100_gpu
+    site: slurm-gpu
+    fidelity_status: not_claimable
+    expected_dataset_fingerprint: *vote_fingerprint
+    expected_dataset_content_sha256: *vote_content
+
+  - protocol_id: zhou-goldman-2004-vote-table3-control-combining-only-v2
+    config: bench/configs/diagnostics/democratic_co_learning/vote_control_combining_only_v2.yaml
+    seeds: from_partition_selection
+    partition_selection: *vote_v1_partitions
+    resource_profile: v100_gpu
+    site: slurm-gpu
+    fidelity_status: not_claimable
+    expected_dataset_fingerprint: *vote_fingerprint
+    expected_dataset_content_sha256: *vote_content

@@ -67,6 +67,9 @@ class CacheLayout:
     def manifest_path(self, fingerprint: str) -> Path:
         return self.manifests_root / f"{fingerprint}.json"
 
+    def content_manifest_path(self, fingerprint: str) -> Path:
+        return self.manifests_root / f"{fingerprint}.content.json"
+
     def lock_path(self, fingerprint: str) -> Path:
         return self.locks_root / f"{fingerprint}.lock"
 
@@ -268,6 +271,8 @@ def purge_fingerprint(layout: CacheLayout, fingerprint: str) -> None:
     shutil.rmtree(layout.processed_dir(fingerprint), ignore_errors=True)
     with contextlib.suppress(Exception):
         layout.manifest_path(fingerprint).unlink(missing_ok=True)
+    with contextlib.suppress(Exception):
+        layout.content_manifest_path(fingerprint).unlink(missing_ok=True)
     index_delete(layout, [fingerprint])
 
 

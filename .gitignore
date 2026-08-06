@@ -45,7 +45,7 @@ modssc_cache/*
 !modssc_cache/datasets/
 !modssc_cache/preprocess/
 !modssc_cache/output/
-!modssc_cache/graphs/
+!modssc_cache/graph/
 !modssc_cache/graph_views/
 !modssc_cache/splits/
 modssc_cache/datasets/*
@@ -54,8 +54,8 @@ modssc_cache/preprocess/*
 !modssc_cache/preprocess/.gitkeep
 modssc_cache/output/*
 !modssc_cache/output/.gitkeep
-modssc_cache/graphs/*
-!modssc_cache/graphs/.gitkeep
+modssc_cache/graph/*
+!modssc_cache/graph/.gitkeep
 modssc_cache/graph_views/*
 !modssc_cache/graph_views/.gitkeep
 modssc_cache/splits/*
@@ -64,8 +64,10 @@ modssc_cache/splits/*
 coverage.xml
 /analysis/
 /dev_wip/
-/logs_jeanzay/
 /audit_artifacts/
+/.modssc-private/
+/tools/hpc/config/profiles/private/
+/tools/hpc/sites/private/
 /bench/generated/
 bench/configs/experiments/
 bench/configs/benchmarks/

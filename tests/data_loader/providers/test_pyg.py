@@ -63,6 +63,68 @@ def test_resolve_with_optional_kwargs():
     assert identity.resolved_kwargs["seed"] == 7
 
 
+def test_resolve_retains_planetoid_constructor_options_in_identity():
+    provider = PyGProvider()
+    parsed = ParsedURI(provider="pyg", reference="Planetoid/Cora")
+
+    identity = provider.resolve(
+        parsed,
+        options={
+            "split": "random",
+            "num_train_per_class": 20,
+            "num_val": 500,
+            "num_test": 1000,
+        },
+    )
+
+    assert identity.resolved_kwargs["dataset_kwargs"] == {
+        "name": "Cora",
+        "split": "random",
+        "num_train_per_class": 20,
+        "num_val": 500,
+        "num_test": 1000,
+    }
+    assert identity.fingerprint(schema_version=1) != provider.resolve(
+        parsed, options={"split": "public"}
+    ).fingerprint(schema_version=1)
+
+
+def test_load_canonical_passes_planetoid_split_to_constructor(tmp_path):
+    provider = PyGProvider()
+    parsed = ParsedURI(provider="pyg", reference="Planetoid/Cora")
+    identity = provider.resolve(parsed, options={"split": "public"})
+    received: dict[str, object] = {}
+
+    class Data:
+        x = np.array([[1.0]])
+        y = np.array([0])
+        edge_index = np.array([[0], [0]])
+
+    class Planetoid:
+        def __init__(self, root, name, split):
+            received.update(root=root, name=name, split=split)
+            self._items = [Data()]
+
+        def __len__(self):
+            return len(self._items)
+
+        def __getitem__(self, idx):
+            return self._items[idx]
+
+    with patch("modssc.data_loader.providers.pyg.optional_import") as mock_import:
+        mock_module = MagicMock()
+        mock_module.Planetoid = Planetoid
+        mock_import.return_value = mock_module
+
+        provider.load_canonical(identity, raw_dir=tmp_path)
+
+    assert received == {
+        "root": str(tmp_path / "source"),
+        "name": "Cora",
+        "split": "public",
+    }
+
+
 def test_load_canonical_missing_dataset_class(tmp_path):
     provider = PyGProvider()
     identity = DatasetIdentity(

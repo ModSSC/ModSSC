@@ -1,0 +1,164 @@
+schema_version: 2
+registry_id: modssc-scientific-gates-v2
+
+# Claim scopes are scientific taxonomies, not campaign-name prefixes.  The
+# historical replacement keeps Co-Training available without silently adding
+# it to the original Article10 benchmark.
+claim_scopes:
+  article10:
+    - pseudo_label
+    - tri_training
+    - democratic_co_learning
+    - fixmatch
+    - flexmatch
+    - free_match
+    - softmatch
+    - laplace_learning
+    - poisson_learning
+    - grand
+  historical-replacements:
+    - co_training
+
+# Algorithmic conformity below currently validates the paper profiles only.
+# The standardized track remains closed until the shared Match stack has its
+# own standardized-protocol review. Named canaries stay exempt from this
+# track-level lock while dependency ordering remains enforced.
+track_statuses:
+  paper: passed
+  standardized: pending
+
+# This is an execution gate, not a progress note. A method may be changed to
+# `passed` only after the equation/invariant tests and a reviewed comparison
+# have succeeded. `conformity_basis` must be either
+# `pinned_official_implementation` or `independent_equation_oracle`. The latter
+# is allowed only under the fail-closed policy in
+# docs/development/scientific-conformity-oracles.md when the primary source
+# supplies no usable official implementation; its fidelity ceiling is
+# paper_approx. `passed` also requires non-empty evidence, reviewed_by and an
+# ISO-8601 reviewed_at value.
+methods:
+  pseudo_label:
+    algorithmic_conformity: passed
+    conformity_basis: independent_equation_oracle
+    evidence:
+      - docs/development/pseudo-label-lee2013-equation-oracle.md
+      - docs/development/easy-wave1-v5-canary-evidence.md
+      - tests/inductive/methods/test_pseudo_label_lee2013_oracle.py
+      - provenance/article10/evidence/easy-wave1-v5-canaries.json
+      - article10-paper-pseudo-label-mnist-canary-v1 (1/1 SUCCESS after signed retry; manifest c475ed0b5e3bae2af2d9b3d7a9f51ec517d79e943dd9ce5dfaba5ebd900db07b)
+    reviewed_by: codex:lee2013_equation_oracle+easy_wave1_v5_canary
+    reviewed_at: "2026-07-24T17:57:42+02:00"
+  tri_training:
+    algorithmic_conformity: passed
+    conformity_basis: pinned_official_implementation
+    evidence:
+      - docs/development/tri-training-official-parity.md
+      - docs/development/easy-wave1-v5-canary-evidence.md
+      - tests/inductive/methods/test_tri_training_official_oracle.py
+      - tests/inductive/methods/fixtures/tri_training_official_oracle.json
+      - provenance/article10/evidence/easy-wave1-v5-canaries.json
+      - article10-paper-tri-vote-canary-v1 (1/1 SUCCESS after signed retry; manifest 3c0d30b897282d89ed3920ac92145623ca49144131a5d2bbd89f1a2c0471366b)
+    reviewed_by: codex:official_tritrain_java+easy_wave1_v5_canary
+    reviewed_at: "2026-07-24T17:57:42+02:00"
+  democratic_co_learning:
+    algorithmic_conformity: passed
+    conformity_basis: independent_equation_oracle
+    evidence:
+      - docs/development/scientific-conformity-oracles.md
+      - tests/inductive/methods/test_democratic_co_learning_oracle.py
+      - tests/inductive/methods/_methods_classic.py
+      - bench/campaigns/locks/dcl-vote-zhou-goldman-2004-v1/selected-partitions.json
+      - public alias dcl-vote-partition-screening-v6 (100/100 SUCCESS; test-blind selection; source campaign identifier SHA-256 f9a03e169898482256fdf0c6da40b4a065db02152309bc3353ed1abe17c3a88b)
+    reviewed_by: codex:dcl_gate_oracle_implementation+root_pdf_crosscheck
+    reviewed_at: "2026-07-24T06:18:54+02:00"
+  fixmatch:
+    algorithmic_conformity: passed
+    conformity_basis: pinned_official_implementation
+    evidence:
+      - docs/development/match-wave1-scientific-audit.md
+      - provenance/article10/match_audit/MANIFEST.json
+      - tests/inductive/methods/test_match_paper_oracles.py
+      - tests/inductive/deep/test_match_primitives.py
+      - tests/data_augmentation/test_cifar_reference.py
+    reviewed_by: codex:match_wave1_source_parity
+    reviewed_at: "2026-07-25T12:00:00+02:00"
+  flexmatch:
+    algorithmic_conformity: passed
+    conformity_basis: pinned_official_implementation
+    evidence:
+      - docs/development/match-wave1-scientific-audit.md
+      - provenance/article10/match_audit/MANIFEST.json
+      - tests/inductive/methods/test_match_paper_oracles.py
+      - tests/inductive/methods/test_match_paper_coverage.py
+    reviewed_by: codex:match_wave1_source_parity
+    reviewed_at: "2026-07-25T12:00:00+02:00"
+  free_match:
+    algorithmic_conformity: passed
+    conformity_basis: pinned_official_implementation
+    evidence:
+      - docs/development/match-wave1-scientific-audit.md
+      - provenance/article10/match_audit/MANIFEST.json
+      - tests/inductive/methods/test_match_paper_oracles.py
+      - tests/inductive/methods/test_match_paper_coverage.py
+    reviewed_by: codex:match_wave1_torchssl_source_parity+paper_lambda_e
+    reviewed_at: "2026-07-25T12:00:00+02:00"
+  softmatch:
+    algorithmic_conformity: passed
+    conformity_basis: pinned_official_implementation
+    evidence:
+      - docs/development/match-wave1-scientific-audit.md
+      - tests/inductive/methods/test_match_paper_oracles.py
+      - tests/inductive/methods/test_match_paper_coverage.py
+    reviewed_by: codex:match_wave1_torchssl_source_parity
+    reviewed_at: "2026-07-25T12:00:00+02:00"
+  laplace_learning:
+    algorithmic_conformity: passed
+    conformity_basis: independent_equation_oracle
+    evidence:
+      - docs/development/calder2020-official-parity.md
+      - tests/bench/test_calder_graphlearning_parity.py
+      - tests/transductive/methods/classic/test_laplace_learning.py
+      - bench/assets/calder2020/protocol_inputs/MANIFEST.json
+    reviewed_by: codex:calder_protocol_oracle_parity
+    reviewed_at: "2026-07-24T13:44:13+02:00"
+  poisson_learning:
+    algorithmic_conformity: passed
+    conformity_basis: independent_equation_oracle
+    evidence:
+      - docs/development/calder2020-official-parity.md
+      - tests/bench/test_calder_graphlearning_parity.py
+      - tests/transductive/methods/pde/test_poisson_learning.py
+      - bench/assets/calder2020/protocol_inputs/MANIFEST.json
+    reviewed_by: codex:calder_protocol_oracle_parity
+    reviewed_at: "2026-07-24T13:44:13+02:00"
+  grand:
+    algorithmic_conformity: passed
+    conformity_basis: pinned_official_implementation
+    evidence:
+      - docs/development/grand-official-parity.md
+      - tests/transductive/methods/gnn/fixtures/grand_official_7a2fd6e7.json
+      - tests/transductive/methods/gnn/test_grand_official_parity.py
+      - bench/configs/reproductions/grand/cora.yaml
+    reviewed_by: codex:grand_integration_official_parity
+    reviewed_at: "2026-07-24T13:46:09+02:00"
+  co_training:
+    algorithmic_conformity: passed
+    conformity_basis: independent_equation_oracle
+    evidence:
+      - docs/development/co-training-nigam-ghani-2000-protocol.md
+      - tests/inductive/methods/test_co_training_paper.py
+      - tests/bench/test_historical_acceptance.py
+    reviewed_by: codex:nigam_ghani_protocol_reconstruction
+    reviewed_at: "2026-08-06T22:00:00+02:00"
+
+# The three adaptive Match variants cannot execute before the shared FixMatch
+# training stack has passed its own conformity review.
+dependencies:
+  flexmatch: [fixmatch]
+  free_match: [fixmatch]
+  softmatch: [fixmatch]
+
+# Legacy name-based fields remain empty solely so schema-v1 tooling can emit a
+# clear migration error.  Gate decisions never consult them in schema v2.
+protected_campaign_prefixes: []
+exempt_campaign_ids: []

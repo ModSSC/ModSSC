@@ -48,6 +48,7 @@ modssc-inductive = "modssc.cli.inductive:app"
 modssc-transductive = "modssc.cli.transductive:app"
 modssc-augmentation = "modssc.cli.augmentation:app"
 modssc-evaluation = "modssc.cli.evaluation:app"
+modssc-reproduce = "bench.reproduce:main"
 
 [project.optional-dependencies]
 dev = [
@@ -236,7 +237,9 @@ path = "src/modssc/__about__.py"
 
 [tool.hatch.build]
 exclude = [
-  "/bench",
+  "/tools",
+  "/provenance",
+  "/tests/tools",
   "/runs",
   "/modssc_cache",
   "/artifacts",
@@ -245,6 +248,9 @@ exclude = [
   "/site",
   "/docs/article_code",
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/modssc", "bench"]
 
 [tool.pytest.ini_options]
 minversion = "7.0"

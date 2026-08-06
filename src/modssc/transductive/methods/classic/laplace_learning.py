@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from time import perf_counter
 from typing import Any, Literal
 
@@ -102,6 +103,63 @@ class LaplaceLearningSpec:
 
     cg_tol: float = 1e-5
     cg_max_iter: int = 2000
+    backend: Literal["numpy", "torch", "auto"] = field(default="auto", kw_only=True)
+    solver: Literal["scipy_cg", "calder2020_conjugate_gradient"] = field(
+        default="scipy_cg", kw_only=True
+    )
+
+
+def _validate_solver(spec: LaplaceLearningSpec) -> None:
+    if spec.solver not in {"scipy_cg", "calder2020_conjugate_gradient"}:
+        raise ValueError(f"Unknown Laplace solver: {spec.solver!r}")
+
+
+def _calder2020_conjugate_gradient(
+    matrix: sparse.spmatrix,
+    rhs: np.ndarray,
+    *,
+    tol: float,
+    max_iter: int,
+) -> tuple[np.ndarray, int, float]:
+    """GraphLearning v0.0.3's Jacobi-preconditioned multi-RHS CG.
+
+    The stopping quantity is the joint absolute residual over all active class
+    columns, matching commit ``04bece45`` used to produce Calder et al.'s
+    archived Table 1 CSV files.
+    """
+
+    if rhs.ndim != 2:
+        raise ValueError("rhs must have shape (n_unknowns, n_classes)")
+    diagonal = np.asarray(matrix.diagonal(), dtype=np.float64)
+    scale = 1.0 / np.sqrt(diagonal + 1.0e-10)
+    preconditioned = sparse.diags(scale) @ matrix.astype(np.float64) @ sparse.diags(scale)
+    b = scale[:, None] * np.asarray(rhs, dtype=np.float64)
+    if np.any(~np.any(b != 0.0, axis=0)):
+        raise ValueError("calder2020_conjugate_gradient requires a non-zero source for every class")
+
+    x = np.zeros_like(b)
+    residual = b.copy()
+    # This alias is intentional. The archived GraphLearning implementation
+    # used ``p = r`` (not ``r.copy()``), so its first in-place residual update
+    # also updates p. Reproducing that quirk is required for exact Table 1
+    # score and iteration parity.
+    direction = residual
+    squared = np.sum(residual * residual, axis=0)
+    error = 1.0
+    iteration = 0
+    while error > float(tol) and iteration < int(max_iter):
+        iteration += 1
+        product = preconditioned @ direction
+        denominator = np.sum(direction * product, axis=0)
+        alpha = squared / denominator
+        x += direction * alpha[None, :]
+        residual -= product * alpha[None, :]
+        squared_new = np.sum(residual * residual, axis=0)
+        error = float(np.sqrt(np.sum(squared_new)))
+        direction = residual + direction * (squared_new / squared)[None, :]
+        squared = squared_new
+
+    return scale[:, None] * x, iteration, error
 
 
 def laplace_learning_numpy(
@@ -115,9 +173,13 @@ def laplace_learning_numpy(
 ) -> DiffusionResult:
     if spec is None:
         spec = LaplaceLearningSpec()
+    _validate_solver(spec)
 
     edge_index, w = _validate_graph_inputs(
-        n_nodes=n_nodes, edge_index=edge_index, edge_weight=edge_weight
+        n_nodes=n_nodes,
+        edge_index=edge_index,
+        edge_weight=edge_weight,
+        preserve_float64=spec.solver == "calder2020_conjugate_gradient",
     )
 
     y = np.asarray(y, dtype=np.int64).reshape(-1)
@@ -130,20 +192,21 @@ def laplace_learning_numpy(
         raise ValueError("LaplaceLearning requires at least 1 labeled node.")
 
     n_classes = _infer_num_classes(y)
-    Y = labels_to_onehot(y, n_classes=n_classes).astype(np.float32, copy=False)
+    solve_dtype = np.float64 if spec.solver == "calder2020_conjugate_gradient" else np.float32
+    Y = labels_to_onehot(y, n_classes=n_classes).astype(solve_dtype, copy=False)
     Y[~labeled_mask] = 0.0
 
     src = edge_index[0]
     dst = edge_index[1]
     W = sparse.coo_matrix(
-        (w.astype(np.float32, copy=False), (dst, src)),
+        (w.astype(solve_dtype, copy=False), (dst, src)),
         shape=(n_nodes, n_nodes),
-        dtype=np.float32,
+        dtype=solve_dtype,
     ).tocsr()
     W.sum_duplicates()
 
-    deg = np.asarray(W.sum(axis=1)).reshape(-1).astype(np.float32, copy=False)
-    L = sparse.diags(deg, offsets=0, format="csr", dtype=np.float32) - W
+    deg = np.asarray(W.sum(axis=1)).reshape(-1).astype(solve_dtype, copy=False)
+    L = sparse.diags(deg, offsets=0, format="csr", dtype=solve_dtype) - W
 
     labeled_idx = np.flatnonzero(labeled_mask)
     unlabeled_idx = np.flatnonzero(~labeled_mask)
@@ -161,43 +224,55 @@ def laplace_learning_numpy(
     W_ul = W[unlabeled_idx][:, labeled_idx]
     B = W_ul @ Y[labeled_idx]
 
-    F_u = np.zeros((unlabeled_idx.size, n_classes), dtype=np.float32)
-    residual = 0.0
-    n_iter = 0
-    for c in range(n_classes):
-        b = np.asarray(B[:, c]).reshape(-1).astype(np.float32, copy=False)
-        if not np.any(b):
-            continue
-        x, info = sparse_linalg.cg(
+    if spec.solver == "calder2020_conjugate_gradient":
+        F_u_exact, n_iter, absolute_residual = _calder2020_conjugate_gradient(
             L_uu,
-            b,
-            rtol=float(spec.cg_tol),
-            atol=0.0,
-            maxiter=int(spec.cg_max_iter),
+            np.asarray(B, dtype=np.float64),
+            tol=float(spec.cg_tol),
+            max_iter=int(spec.cg_max_iter),
         )
-        if info < 0:
-            raise ValueError(
-                "LaplaceLearning sparse CG failed; check graph connectivity and weights."
+        F_u = F_u_exact
+        residual = absolute_residual
+    elif spec.solver != "scipy_cg":
+        raise ValueError(f"Unknown Laplace solver: {spec.solver!r}")
+    else:
+        F_u = np.zeros((unlabeled_idx.size, n_classes), dtype=np.float32)
+        residual = 0.0
+        n_iter = 0
+        for c in range(n_classes):
+            b = np.asarray(B[:, c]).reshape(-1).astype(np.float32, copy=False)
+            if not np.any(b):
+                continue
+            x, info = sparse_linalg.cg(
+                L_uu,
+                b,
+                rtol=float(spec.cg_tol),
+                atol=0.0,
+                maxiter=int(spec.cg_max_iter),
             )
-        if info > 0:
-            logger.warning(
-                "LaplaceLearning CG reached max iterations: class=%s max_iter=%s",
-                c,
-                info,
-            )
-        x = np.asarray(x, dtype=np.float32)
-        F_u[:, c] = x
-        r = L_uu @ x - b
-        denom = max(float(np.linalg.norm(b)), 1e-12)
-        residual = max(residual, float(np.linalg.norm(r) / denom))
-        n_iter = max(n_iter, int(info) if info > 0 else 0)
+            if info < 0:
+                raise ValueError(
+                    "LaplaceLearning sparse CG failed; check graph connectivity and weights."
+                )
+            if info > 0:
+                logger.warning(
+                    "LaplaceLearning CG reached max iterations: class=%s max_iter=%s",
+                    c,
+                    info,
+                )
+            x = np.asarray(x, dtype=np.float32)
+            F_u[:, c] = x
+            r = L_uu @ x - b
+            denom = max(float(np.linalg.norm(b)), 1e-12)
+            residual = max(residual, float(np.linalg.norm(r) / denom))
+            n_iter = max(n_iter, int(info) if info > 0 else 0)
     if not np.all(np.isfinite(F_u)):
         raise ValueError(
             "LaplaceLearning requires L_uu to be nonsingular; "
             "check graph connectivity and labeled coverage."
         )
 
-    F = np.zeros((n_nodes, n_classes), dtype=np.float32)
+    F = np.zeros((n_nodes, n_classes), dtype=solve_dtype)
     F[labeled_idx] = Y[labeled_idx]
     F[unlabeled_idx] = F_u
     return DiffusionResult(F=F, n_iter=n_iter, residual=residual)
@@ -216,6 +291,9 @@ def laplace_learning_torch(
         raise ImportError("torch is required for laplace_learning_torch")
     if spec is None:
         spec = LaplaceLearningSpec()
+    _validate_solver(spec)
+    if spec.solver != "scipy_cg":
+        raise ValueError("calder2020_conjugate_gradient is a NumPy/CPU-only solver")
 
     if edge_index.ndim != 2 or int(edge_index.shape[0]) != 2:
         raise ValueError("edge_index must have shape (2, E)")
@@ -331,11 +409,15 @@ def laplace_learning(
 ) -> DiffusionResult:
     if spec is None:
         spec = LaplaceLearningSpec()
+    _validate_solver(spec)
 
-    if backend not in ("numpy", "torch", "auto"):
+    requested_backend = spec.backend if backend == "auto" else backend
+    if requested_backend not in ("numpy", "torch", "auto"):
         raise ValueError("backend must be one of: numpy, torch, auto")
 
-    if backend == "numpy" or (backend == "auto" and (torch is None or device is None)):
+    if requested_backend == "numpy" or (
+        requested_backend == "auto" and (torch is None or device is None)
+    ):
         return laplace_learning_numpy(
             n_nodes=n_nodes,
             edge_index=edge_index,
@@ -385,11 +467,13 @@ class LaplaceLearningMethod(TransductiveMethod):
         self.spec = spec or LaplaceLearningSpec()
         self._result: DiffusionResult | None = None
         self._backend: str | None = None
+        self.diagnostics_: dict[str, Any] = {}
 
     def fit(self, data: Any, *, device: str | None = None, seed: int = 0) -> LaplaceLearningMethod:
         start = perf_counter()
         logger.info("Starting %s.fit", self.info.method_id)
         logger.debug("spec=%s device=%s seed=%s", self.spec, device, seed)
+        _validate_solver(self.spec)
         validate_node_dataset(data)
 
         masks = getattr(data, "masks", None) or {}
@@ -399,7 +483,9 @@ class LaplaceLearningMethod(TransductiveMethod):
         labeled_mask = np.asarray(masks["train_mask"], dtype=bool)
         g = data.graph
 
-        backend = "torch" if device is not None else "numpy"
+        backend = self.spec.backend
+        if backend == "auto":
+            backend = "torch" if device is not None else "numpy"
         self._backend = backend
         logger.debug("backend=%s", backend)
         logger.info(
@@ -419,10 +505,42 @@ class LaplaceLearningMethod(TransductiveMethod):
             backend=backend,
             device=device,
         )
+        scores = np.ascontiguousarray(self._result.F, dtype="<f8")
+        predictions = np.ascontiguousarray(
+            np.argmax(scores, axis=1),
+            dtype="<i8",
+        )
+        self.diagnostics_ = {
+            "solver": (
+                "conjugate_gradient" if self.spec.solver == "scipy_cg" else self.spec.solver
+            ),
+            "backend": backend,
+            "iterations": int(self._result.n_iter),
+            (
+                "absolute_residual"
+                if self.spec.solver == "calder2020_conjugate_gradient"
+                else "relative_residual"
+            ): float(self._result.residual),
+            "tolerance": float(self.spec.cg_tol),
+            "converged": bool(self._result.residual <= float(self.spec.cg_tol)),
+            "prediction_evidence": {
+                "encoding": "numpy-int64-little-endian-c-order",
+                "shape": [int(predictions.size)],
+                "count": int(predictions.size),
+                "byte_count": int(predictions.nbytes),
+                "sha256": hashlib.sha256(predictions.tobytes(order="C")).hexdigest(),
+            },
+            "score_evidence": {
+                "encoding": "numpy-float64-little-endian-c-order",
+                "shape": [int(value) for value in scores.shape],
+                "byte_count": int(scores.nbytes),
+                "sha256": hashlib.sha256(scores.tobytes(order="C")).hexdigest(),
+            },
+        }
         logger.info("Finished %s.fit in %.3fs", self.info.method_id, perf_counter() - start)
         return self
 
     def predict_proba(self, data: Any) -> np.ndarray:
         if self._result is None:
             raise RuntimeError("LaplaceLearningMethod is not fitted yet. Call fit() first.")
-        return np.asarray(self._result.F, dtype=np.float32)
+        return np.asarray(self._result.F)

@@ -1,0 +1,203 @@
+# Reproduction card: FreeMatch, CIFAR-10, 40 labels, Table 1.
+#
+# Profile: paper:wang2023-cifar10-table1-40
+# Fidelity ceiling: paper_matched, awarded only by the complete acceptance run.
+# Published target: 4.90 +/- 0.04 % test error (95.10 +/- 0.04 % accuracy)
+# over three runs.
+# Paper/code provenance:
+#   https://arxiv.org/pdf/2205.07246
+#   Appendix Table 6: w_f=0.01 only for CIFAR-10 (10 labels), and 0.05 for
+#   the other CIFAR-10 settings, including this 40-label profile.
+#   microsoft/Semi-supervised-learning@1ef4cbebcc0b368158315aeb425053858cf6c845
+#   config/classic_cv/freematch/freematch_cifar10_40_0.yaml
+#
+# The paper is authoritative for the pre-registered entropy weight 0.05. The
+# current USB card at the pinned commit records 0.001; this source discrepancy
+# is retained as a test-blind audit and does not silently change the paper
+# profile. The card pins the TorchSSL ordered pools,
+# B_l/B_u=64/448, 2^20 steps and best-evaluation checkpoint policy.
+run:
+  name: reproduction_free_match_cifar10_table1_40
+  seed: 0
+  seeds:
+  - 0
+  - 1
+  - 2
+  seeded_sections:
+  - sampling
+  - preprocess
+  - augmentation
+  output_dir: ${MODSSC_OUTPUT_DIR}/reproductions/free_match/cifar10-40
+  log_level: detailed
+  fail_fast: true
+  benchmark_mode: true
+dataset:
+  id: cifar10
+  download: false
+  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
+sampling:
+  seed: 0
+  plan:
+    partition:
+      ordered_indices_artifact:
+        path: bench/assets/cifar10_paper_splits/torchssl-cifar10-40-seeds0-2.npz
+        sha256: ad150af57f936b00a30ccdc461e767392c3c77459cba0163055ad8d292a14cd8
+        unlabeled_pool: includes_labeled
+        test_ref: test
+        expected_train_size: 50000
+        expected_val_size: 0
+        expected_test_size: 10000
+        expected_labeled_size: 40
+        expected_unlabeled_size: 50000
+        expected_per_class: 4
+    split:
+      kind: holdout
+      test_fraction: 0.0
+      val_fraction: 0.0
+      stratify: true
+      shuffle: true
+    labeling:
+      mode: per_class
+      value: 4
+      strategy: balanced
+      min_per_class: 4
+      per_class: true
+      fixed_indices: null
+    imbalance:
+      kind: none
+    policy:
+      respect_official_test: true
+      use_official_graph_masks: true
+      allow_override_official: false
+preprocess:
+  seed: 0
+  fit_on: train_labeled
+  cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
+  plan:
+    output_key: features.X
+    steps:
+    - id: labels.encode
+    - id: labels.to_torch
+      params:
+        device: cuda
+        dtype: int64
+    - id: vision.ensure_num_channels
+      params:
+        num_channels: 3
+    - id: vision.channels_order
+      params:
+        order: NCHW
+    - id: vision.normalize
+      params:
+        mean: [0.0, 0.0, 0.0]
+        std: [255.0, 255.0, 255.0]
+    - id: core.copy_raw
+    - id: core.to_torch
+      params:
+        device: cuda
+        dtype: float32
+augmentation:
+  enabled: true
+  seed: 0
+  mode: online
+  modality: vision
+  # TorchSSL's RandAugment(3, 5) samples each operation magnitude over its
+  # full range; the constructor's 5 is retained as published metadata.
+  # Cutout is part of that reference transform and precedes flip/crop.
+  reference_implementation: torchssl_ra
+  reference_policy:
+    source: TorchSSL/TorchSSL@03193a1b7883727db1ce9c092e083091e18aedbb
+    strong_order:
+    - randaugment_with_cutout
+    - random_horizontal_flip
+    - reflect_pad_4_random_crop
+    randaugment:
+      num_ops: 3
+      configured_magnitude: 5
+      magnitude_sampling: per_operation_uniform_full_range
+    cutout:
+      size_fraction_sampling: uniform_[0,0.5)
+      fill_rgb: [125, 123, 114]
+  weak:
+    steps:
+    - id: vision.random_horizontal_flip
+    - id: vision.random_crop_pad
+      params:
+        padding: 4
+  strong:
+    steps:
+    - id: vision.randaugment
+      params:
+        num_ops: 3
+        magnitude: 5
+        num_magnitude_bins: 31
+    - id: vision.random_horizontal_flip
+    - id: vision.random_crop_pad
+      params:
+        padding: 4
+method:
+  kind: inductive
+  id: free_match
+  profile: paper:wang2023-cifar10-table1-40
+  device:
+    device: cuda
+    dtype: float32
+  params:
+    lambda_u: 1.0
+    lambda_e: 0.05
+    temperature: 0.5
+    ema_p: 0.999
+    use_quantile: false
+    clip_thresh: false
+    hard_label: true
+    use_cat: true
+    mu: 7
+    batch_size: 64
+    max_epochs: 1024
+    max_steps: 1048576
+    detach_target: true
+    training_mode: fixed_steps
+    reference_implementation: torchssl
+    sampler_mode: replacement
+    sampler_shuffle_buffer: 8192
+    augmentation_profile: torchssl_ra
+    interleave_bn: false
+    evaluation_interval_steps: 5000
+    checkpoint_interval_steps: 5000
+    reporting_policy: best_historical_checkpoint
+    reporting_window_checkpoints: 20
+    allow_short_run: false
+  model:
+    classifier_id: wide_resnet_cifar
+    classifier_backend: torch
+    classifier_params:
+      depth: 28
+      widen_factor: 2
+      input_layout: channels_first
+      reference_implementation: torchssl
+      input_mean: [0.4913725490196078, 0.4823529411764706, 0.44666666666666666]
+      input_std: [0.24705882352941178, 0.24352941176470588, 0.2615686274509804]
+      bn_momentum: 0.001
+      bn_eps: 0.001
+      optimizer: sgd
+      lr: 0.03
+      momentum: 0.9
+      nesterov: true
+      weight_decay: 0.0005
+      decay_bias_and_norm: false
+      scheduler: cosine
+      max_steps: 1048576
+      cosine_cycles: 0.4375
+      ema_decay: 0.999
+      predict_with_ema: true
+    ema: true
+evaluation:
+  split_for_model_selection: test
+  evaluation_interval_steps: 5000
+  checkpoint_policy: best_evaluation_accuracy
+  reporting_policy: test_at_best_evaluation_checkpoint
+  report_splits:
+  - test
+  metrics:
+  - accuracy

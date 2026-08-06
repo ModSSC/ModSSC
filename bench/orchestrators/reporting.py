@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import json
 import logging
+import math
+import resource
+import sys
 from collections.abc import Mapping
-from dataclasses import asdict
+from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from statistics import fmean, pstdev
@@ -18,10 +21,184 @@ from ..utils.io import write_json
 _LOGGER = logging.getLogger(__name__)
 
 
-def _detect_gpu_device() -> str:
+@dataclass(frozen=True)
+class RunResourceMeasurement:
+    """State captured before a run for process and CUDA peak measurements."""
+
+    peak_ram_at_start_bytes: int | None
+    peak_ram_native_unit: str | None
+    torch_module: Any | None = field(repr=False, compare=False)
+    cuda_status: str
+    cuda_device_indices: tuple[int, ...]
+    cuda_reset_device_indices: tuple[int, ...]
+
+
+def _load_torch_safely() -> Any | None:
     try:
         import torch  # type: ignore
     except Exception:
+        return None
+    return torch
+
+
+def _peak_ram_bytes() -> tuple[int | None, str | None]:
+    """Normalize ``ru_maxrss`` to bytes on supported Unix platforms."""
+
+    try:
+        native_value = float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+    except Exception:
+        return None, None
+    if not math.isfinite(native_value) or native_value < 0.0:
+        return None, None
+    if sys.platform == "darwin":
+        multiplier = 1
+        native_unit = "bytes"
+    elif sys.platform.startswith("linux"):
+        multiplier = 1024
+        native_unit = "kibibytes"
+    else:
+        # ``ru_maxrss`` has platform-dependent units. Do not invent a byte value
+        # when the host convention is unknown.
+        return None, "unknown"
+    return int(native_value * multiplier), native_unit
+
+
+def begin_run_resource_measurement() -> RunResourceMeasurement:
+    """Reset per-run CUDA peaks and capture the process high-water baseline.
+
+    The function is deliberately best-effort: instrumentation must never turn a
+    CPU run, a missing optional torch installation, or a failed CUDA context into
+    a benchmark failure.
+    """
+
+    peak_ram_at_start_bytes, peak_ram_native_unit = _peak_ram_bytes()
+    torch_module = _load_torch_safely()
+    if torch_module is None:
+        return RunResourceMeasurement(
+            peak_ram_at_start_bytes=peak_ram_at_start_bytes,
+            peak_ram_native_unit=peak_ram_native_unit,
+            torch_module=None,
+            cuda_status="torch_unavailable",
+            cuda_device_indices=(),
+            cuda_reset_device_indices=(),
+        )
+
+    try:
+        cuda = torch_module.cuda
+        if not bool(cuda.is_available()):
+            raise RuntimeError("CUDA is unavailable")
+        device_indices = tuple(range(int(cuda.device_count())))
+        if not device_indices:
+            raise RuntimeError("CUDA exposes no device")
+    except Exception:
+        return RunResourceMeasurement(
+            peak_ram_at_start_bytes=peak_ram_at_start_bytes,
+            peak_ram_native_unit=peak_ram_native_unit,
+            torch_module=torch_module,
+            cuda_status="cuda_unavailable",
+            cuda_device_indices=(),
+            cuda_reset_device_indices=(),
+        )
+
+    reset_devices: list[int] = []
+    for device_index in device_indices:
+        try:
+            cuda.reset_peak_memory_stats(device_index)
+        except Exception:
+            continue
+        reset_devices.append(device_index)
+    status = "ready" if len(reset_devices) == len(device_indices) else "reset_partial"
+    return RunResourceMeasurement(
+        peak_ram_at_start_bytes=peak_ram_at_start_bytes,
+        peak_ram_native_unit=peak_ram_native_unit,
+        torch_module=torch_module,
+        cuda_status=status,
+        cuda_device_indices=device_indices,
+        cuda_reset_device_indices=tuple(reset_devices),
+    )
+
+
+def _cuda_resource_usage(measurement: RunResourceMeasurement) -> dict[str, Any]:
+    usage: dict[str, Any] = {
+        "cuda_measurement_status": measurement.cuda_status,
+        "cuda_counter_reset": bool(measurement.cuda_device_indices)
+        and len(measurement.cuda_reset_device_indices) == len(measurement.cuda_device_indices),
+        "cuda_visible_device_count": len(measurement.cuda_device_indices),
+        "cuda_devices": [],
+    }
+    torch_module = measurement.torch_module
+    if torch_module is None or not measurement.cuda_reset_device_indices:
+        return usage
+
+    cuda = torch_module.cuda
+    device_measurements: list[dict[str, Any]] = []
+    for device_index in measurement.cuda_reset_device_indices:
+        synchronized = True
+        try:
+            cuda.synchronize(device_index)
+        except Exception:
+            synchronized = False
+        try:
+            allocated = int(cuda.max_memory_allocated(device_index))
+            reserved = int(cuda.max_memory_reserved(device_index))
+        except Exception:
+            continue
+        if allocated < 0 or reserved < 0:
+            continue
+        device_measurements.append(
+            {
+                "device_index": device_index,
+                "synchronized": synchronized,
+                "max_memory_allocated_bytes": allocated,
+                "max_memory_reserved_bytes": reserved,
+            }
+        )
+
+    usage["cuda_devices"] = device_measurements
+    if not device_measurements:
+        usage["cuda_measurement_status"] = "collection_failed"
+        return usage
+    if measurement.cuda_status == "reset_partial":
+        # Do not publish a campaign-sizing aggregate when any visible device
+        # retained counters from work that preceded this run.
+        usage["cuda_measurement_status"] = "reset_partial"
+        return usage
+
+    max_allocated = max(item["max_memory_allocated_bytes"] for item in device_measurements)
+    max_reserved = max(item["max_memory_reserved_bytes"] for item in device_measurements)
+    usage.update(
+        {
+            "cuda_measurement_status": (
+                "ok"
+                if all(item["synchronized"] for item in device_measurements)
+                else "synchronize_partial"
+            ),
+            "max_gpu_memory_allocated_bytes": max_allocated,
+            "max_gpu_memory_reserved_bytes": max_reserved,
+            # Resource sizing must use the allocator reservation, not only live tensors.
+            "peak_vram_bytes": max_reserved,
+            "peak_vram_semantics": "maximum reserved bytes on any visible CUDA device",
+        }
+    )
+    return usage
+
+
+def collect_run_resource_usage(measurement: RunResourceMeasurement) -> dict[str, Any]:
+    peak_ram_bytes, native_unit = _peak_ram_bytes()
+    usage: dict[str, Any] = {
+        "peak_ram_bytes": peak_ram_bytes,
+        "peak_ram_at_start_bytes": measurement.peak_ram_at_start_bytes,
+        "peak_ram_source": "resource.getrusage(RUSAGE_SELF).ru_maxrss",
+        "peak_ram_scope": "process lifetime high-water mark observed at run completion",
+        "peak_ram_native_unit": native_unit or measurement.peak_ram_native_unit,
+    }
+    usage.update(_cuda_resource_usage(measurement))
+    return usage
+
+
+def _detect_gpu_device() -> str:
+    torch = _load_torch_safely()
+    if torch is None:
         return "Unknown"
 
     try:
@@ -63,6 +240,7 @@ def _build_run_info(
     ctx: RunContext,
     cfg: ExperimentConfig,
     artifacts: dict[str, Any],
+    resource_measurement: RunResourceMeasurement,
 ) -> dict[str, Any]:
     method_block = artifacts.get("method", {})
     method_device = method_block.get("device", {}) if isinstance(method_block, Mapping) else {}
@@ -79,7 +257,8 @@ def _build_run_info(
         elapsed_seconds = (datetime.now(UTC) - started_at).total_seconds()
     except Exception:
         elapsed_seconds = 0.0
-    return {
+    resource_usage = collect_run_resource_usage(resource_measurement)
+    run_info = {
         "run_time_seconds": float(max(0.0, elapsed_seconds)),
         "device_requested": (
             method_device.get("requested") if isinstance(method_device, Mapping) else None
@@ -90,7 +269,18 @@ def _build_run_info(
         "hardware_profile": hardware_profile,
         "hardware_mismatch": mismatch_reason is not None,
         "hardware_mismatch_reason": mismatch_reason,
+        "resource_usage": resource_usage,
     }
+    for key in (
+        "peak_ram_bytes",
+        "peak_vram_bytes",
+        "max_gpu_memory_allocated_bytes",
+        "max_gpu_memory_reserved_bytes",
+    ):
+        value = resource_usage.get(key)
+        if isinstance(value, int) and not isinstance(value, bool):
+            run_info[key] = value
+    return run_info
 
 
 def _class_counts(stats: Any, split: str) -> dict[str, int] | None:
@@ -173,12 +363,18 @@ def write_run_summary(
     protocol: dict[str, Any],
     versions: dict[str, Any],
     fallback_events: list[dict[str, Any]],
+    resource_measurement: RunResourceMeasurement,
     error: str | None = None,
     error_code: str | None = None,
 ) -> None:
     start = perf_counter()
     finished_at = datetime.now(UTC).isoformat()
-    run_info = _build_run_info(ctx=ctx, cfg=cfg, artifacts=artifacts)
+    run_info = _build_run_info(
+        ctx=ctx,
+        cfg=cfg,
+        artifacts=artifacts,
+        resource_measurement=resource_measurement,
+    )
     task_info = _build_task_info(cfg=cfg, artifacts=artifacts)
     graph_info = _build_graph_info(artifacts=artifacts)
     payload = {

@@ -1,0 +1,64 @@
+#!/bin/bash
+
+set -euo pipefail
+
+: "${MODSSC_ROOT:?MODSSC_ROOT must point to the staged ModSSC repository}"
+: "${MODSSC_ENV:?MODSSC_ENV must point to the prepared Python environment}"
+: "${MODSSC_SCRATCH:?MODSSC_SCRATCH must point to persistent project storage}"
+
+MODSSC_PYTHON="$MODSSC_ENV/bin/python"
+if [[ ! -x "$MODSSC_PYTHON" ]]; then
+  echo "Prepared Python interpreter is not executable: $MODSSC_PYTHON" >&2
+  return 66 2>/dev/null || exit 66
+fi
+
+# Use the prepared environment as-is.  In particular, this script never runs
+# pip/conda and imports ModSSC directly from the staged repository.
+export MODSSC_PYTHON
+export MODSSC_ACCELERATOR_ARCH=cpu
+export PATH="$MODSSC_ENV/bin:$PATH"
+export PYTHONPATH="$MODSSC_ROOT/src:$MODSSC_ROOT${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONNOUSERSITE=1
+
+export MODSSC_CACHE_ROOT="${MODSSC_CACHE_ROOT:-$MODSSC_SCRATCH/modssc_cache}"
+export MODSSC_OUTPUT_DIR="${MODSSC_OUTPUT_DIR:-$MODSSC_SCRATCH/outputs}"
+export MODSSC_DATASET_CACHE_DIR="${MODSSC_DATASET_CACHE_DIR:-$MODSSC_CACHE_ROOT/datasets}"
+export MODSSC_CACHE_DIR="${MODSSC_CACHE_DIR:-$MODSSC_DATASET_CACHE_DIR}"
+export MODSSC_PREPROCESS_CACHE_DIR="${MODSSC_PREPROCESS_CACHE_DIR:-$MODSSC_CACHE_ROOT/preprocess}"
+export MODSSC_SPLIT_CACHE_DIR="${MODSSC_SPLIT_CACHE_DIR:-$MODSSC_CACHE_ROOT/splits}"
+export MODSSC_GRAPH_CACHE_DIR="${MODSSC_GRAPH_CACHE_DIR:-$MODSSC_CACHE_ROOT/graph}"
+export MODSSC_GRAPH_VIEWS_CACHE_DIR="${MODSSC_GRAPH_VIEWS_CACHE_DIR:-$MODSSC_CACHE_ROOT/graph_views}"
+
+export MODSSC_MODEL_CACHE_ROOT="${MODSSC_MODEL_CACHE_ROOT:-$MODSSC_SCRATCH/models}"
+export HF_HOME="${HF_HOME:-$MODSSC_MODEL_CACHE_ROOT/hf}"
+export HUGGINGFACE_HUB_CACHE="${HUGGINGFACE_HUB_CACHE:-$HF_HOME/hub}"
+export TRANSFORMERS_CACHE="${TRANSFORMERS_CACHE:-$HF_HOME/transformers}"
+export HF_DATASETS_CACHE="${HF_DATASETS_CACHE:-$HF_HOME/datasets}"
+export SENTENCE_TRANSFORMERS_HOME="${SENTENCE_TRANSFORMERS_HOME:-$HF_HOME/sentence_transformers}"
+export TORCH_HOME="${TORCH_HOME:-$MODSSC_MODEL_CACHE_ROOT/torch}"
+export MODSSC_OPENCLIP_CACHE_DIR="${MODSSC_OPENCLIP_CACHE_DIR:-$MODSSC_MODEL_CACHE_ROOT/open_clip}"
+
+export HF_HUB_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
+export HF_DATASETS_OFFLINE=1
+export MODSSC_HF_LOCAL_FILES_ONLY=1
+
+mkdir -p \
+  "$MODSSC_OUTPUT_DIR" \
+  "$MODSSC_DATASET_CACHE_DIR" \
+  "$MODSSC_PREPROCESS_CACHE_DIR" \
+  "$MODSSC_SPLIT_CACHE_DIR" \
+  "$MODSSC_GRAPH_CACHE_DIR" \
+  "$MODSSC_GRAPH_VIEWS_CACHE_DIR" \
+  "$HF_HOME" \
+  "$HUGGINGFACE_HUB_CACHE" \
+  "$TRANSFORMERS_CACHE" \
+  "$HF_DATASETS_CACHE" \
+  "$SENTENCE_TRANSFORMERS_HOME" \
+  "$TORCH_HOME" \
+  "$MODSSC_OPENCLIP_CACHE_DIR"
+
+if [[ -n "${JOBSCRATCH:-}" ]]; then
+  export TMPDIR="$JOBSCRATCH"
+  mkdir -p "$TMPDIR"
+fi

@@ -1,0 +1,55 @@
+schema_version: 1
+campaign_id: article10-paper-canary-wave2-v1
+track: paper
+scientific_scope:
+  claim_scope_id: article10
+  stage: canary
+  claim_eligible: false
+  gate_policy_id: modssc-scientific-gates-v2
+  gate_policy_sha256: from_registry
+default_site: slurm-gpu
+# Diagnostic dev canary only. These one-seed, truncated runs exercise the
+# paper data path and equations, but are not paper repetitions and must never
+# enter scientific acceptance or paper-result aggregation.
+code:
+  git_sha: REPLACE_WITH_CLEAN_COMMIT
+  require_clean: true
+  environment_lock_sha256: REPLACE_WITH_ENVIRONMENT_LOCK_SHA256
+expect:
+  config_count: 3
+  task_count: 3
+  tasks_per_method:
+    flexmatch: 1
+    free_match: 1
+    softmatch: 1
+  tasks_by_profile:
+    a100_dev: 3
+  tasks_by_site:
+    slurm-gpu: 3
+cells:
+  - protocol_id: zhang-2021-cifar10-table1-250
+    config: bench/configs/diagnostics/paper_canaries/flexmatch/cifar10-250-dev.yaml
+    seeds: [0]
+    resource_profile: a100_dev
+    site: slurm-gpu
+    fidelity_status: not_claimable
+    expected_dataset_fingerprint: REPLACE_WITH_CIFAR10_OFFICIAL_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_CIFAR10_CONTENT_SHA256
+
+  - protocol_id: wang-2023-cifar10-table1-40
+    config: bench/configs/diagnostics/paper_canaries/free_match/cifar10-40-dev.yaml
+    seeds: [0]
+    resource_profile: a100_dev
+    site: slurm-gpu
+    fidelity_status: not_claimable
+    expected_dataset_fingerprint: REPLACE_WITH_CIFAR10_OFFICIAL_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_CIFAR10_CONTENT_SHA256
+
+  - protocol_id: chen-2023-cifar10-table2-250
+    config: bench/configs/diagnostics/paper_canaries/softmatch/cifar10-250-dev.yaml
+    seeds: [0]
+    resource_profile: a100_dev
+    site: slurm-gpu
+    fidelity_status: not_claimable
+    expected_dataset_fingerprint: REPLACE_WITH_CIFAR10_OFFICIAL_DATASET_FINGERPRINT
+    expected_dataset_content_sha256: REPLACE_WITH_CIFAR10_CONTENT_SHA256
