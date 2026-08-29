@@ -1,0 +1,280 @@
+# Reproduction card: FlexMatch, CIFAR-10, 250 labels, Table 1.
+#
+# Profile: paper:zhang2021-cifar10-table1-250
+# Fidelity ceiling: paper_matched, awarded only by the complete acceptance run.
+# Published target: 4.98 +/- 0.09 % test error (95.02 +/- 0.09 % accuracy)
+# over three runs.
+# Paper/code provenance:
+#   https://arxiv.org/pdf/2110.08263
+#   microsoft/Semi-supervised-learning@1ef4cbebcc0b368158315aeb425053858cf6c845
+#   config/classic_cv/flexmatch/flexmatch_cifar10_250_0.yaml
+#
+# The card reuses the FixMatch training stack and adds CPL. It pins the
+# TorchSSL seed-0..2 split algorithm (including labeled examples in the unlabeled pool),
+# B_l/B_u=64/448, 2^20 steps and best-evaluation checkpoint policy.
+acceptance:
+  protocol_id: zhang-2021-cifar10-table1-250
+  method_id: flexmatch
+  repetitions: 3
+  fidelity_ceiling: paper_matched
+  conformity:
+    status: passed
+    basis: pinned_official_implementation
+    evidence:
+    - docs/replications/protocols/flexmatch-zhang-2021.md
+    review:
+      reviewed_by: codex:article_protocol_source_review
+      reviewed_at: '2026-08-30T00:00:00+02:00'
+  target:
+    path: artifacts.method.diagnostics.paper_metrics.historical_paper_metric.test_accuracy
+    transform: one_minus
+    published_mean: 0.0498
+    published_std: 0.0009
+    margin_absolute: 0.01
+  informational_targets:
+  - id: fixed-terminal-without-test-selection
+    path: artifacts.method.diagnostics.paper_metrics.fixed_terminal_metric.test_accuracy
+    transform: one_minus
+    published_mean: 0.0498
+    published_std: 0.0009
+    margin_absolute: 0.01
+  required_diagnostics:
+  - path: artifacts.method.diagnostics.optimization_steps
+    op: eq
+    value: 1048576
+  - path: artifacts.method.diagnostics.target_steps
+    op: eq
+    value: 1048576
+  - path: artifacts.method.diagnostics.accepted_pseudo_labels
+    op: gt
+    value: 0
+  - path: artifacts.method.diagnostics.selected_label_count
+    op: gt
+    value: 0
+  - path: artifacts.method.diagnostics.reference_stack
+    op: eq
+    value: torchssl
+  - path: artifacts.method.diagnostics.batch_size_labeled
+    op: eq
+    value: 64
+  - path: artifacts.method.diagnostics.batch_size_unlabeled
+    op: eq
+    value: 448
+  - path: artifacts.method.diagnostics.checkpoint_policy.checkpoint_interval_steps
+    op: eq
+    value: 5000
+  - path: artifacts.method.diagnostics.checkpoint_policy.evaluation_interval_steps
+    op: eq
+    value: 5000
+  - path: artifacts.method.diagnostics.sampler_contract.mode
+    op: eq
+    value: replacement
+  - path: artifacts.method.diagnostics.sampler_contract.reference_algorithm
+    op: eq
+    value: torch.utils.data.RandomSampler(replacement=True)
+  - path: artifacts.method.diagnostics.sampler_contract.rng_backend
+    op: eq
+    value: torch_cpu_generator
+  - path: artifacts.method.diagnostics.sampler_contract.seed_policy
+    op: eq
+    value: explicit_independent_loader_seeds_from_torch_root_generator
+  - path: artifacts.method.diagnostics.sampler_contract.historical_bitstream_claimed
+    op: eq
+    value: false
+  deviations: []
+  equivalences:
+  - Index sampling uses the pinned CPU `RandomSampler(replacement=True)`/`torch.randint` algorithm exactly
+    with serialized `torch.Generator` state. Explicit per-loader seeds replace TorchSSL's process-global
+    implicit seed allocation, whose value depends on unrelated model and worker RNG consumption.
+  - Augmentation primitives and distributions match TorchSSL, while an authenticated stateless stream
+    replaces its multiprocessing worker draw order and permits exact continuation.
+  - The three ordered pools, including labeled examples in the unlabeled loader, are authenticated deterministic
+    reconstructions because USB did not publish its generated NPY index files.
+  - TorchSSL leaves conflicting updates undefined when replacement sampling repeats an unlabeled index
+    in one CUDA batch; ModSSC explicitly applies the last accepted occurrence in batch order before writing
+    unique CPL indices.
+  unknowns: []
+run:
+  name: reproduction_flexmatch_cifar10_table1_250
+  seed: 0
+  seeds:
+  - 0
+  - 1
+  - 2
+  seeded_sections:
+  - sampling
+  - preprocess
+  - augmentation
+  output_dir: ${MODSSC_OUTPUT_DIR}/reproductions/flexmatch/cifar10-250
+  log_level: detailed
+  fail_fast: true
+  benchmark_mode: true
+  resume_policy: auto
+dataset:
+  id: cifar10
+  download: false
+  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
+  integrity:
+    fingerprint: 46bfdd98e26ed954f611b41565bc64a3ba5b5497773f2f92a7ebeaa8ff465a58
+    content_sha256: 2ab0d29a8fa44ec94f2d282630b74d31a4fc9986c706173dada6e3a52d75dcfb
+sampling:
+  seed: 0
+  plan:
+    component_seeds:
+      labeling: run
+    split:
+      kind: holdout
+      test_fraction: 0.0
+      val_fraction: 0.0
+      stratify: false
+      shuffle: false
+    labeling:
+      mode: per_class
+      value: 25
+      strategy: balanced
+      min_per_class: 25
+      per_class: true
+      fixed_indices: null
+      selection_order: permutation
+      rng_backend: legacy_random_state
+      unlabeled_pool: includes_labeled
+    imbalance:
+      kind: none
+    policy:
+      respect_official_test: true
+      use_official_graph_masks: true
+      allow_override_official: false
+preprocess:
+  seed: 0
+  fit_on: train_labeled
+  cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
+  plan:
+    output_key: features.X
+    steps:
+    - id: labels.encode
+    - id: labels.to_torch
+      params:
+        device: cuda
+        dtype: int64
+    - id: vision.ensure_num_channels
+      params:
+        num_channels: 3
+    - id: vision.channels_order
+      params:
+        order: NCHW
+    - id: vision.normalize
+      params:
+        mean: [0.0, 0.0, 0.0]
+        std: [255.0, 255.0, 255.0]
+    - id: core.copy_raw
+    - id: core.to_torch
+      params:
+        device: cuda
+        dtype: float32
+augmentation:
+  enabled: true
+  seed: 0
+  mode: online
+  modality: vision
+  # TorchSSL's RandAugment(3, 5) samples each operation magnitude over its
+  # full range; the constructor's 5 is retained as published metadata.
+  # Cutout is part of that reference transform and precedes flip/crop.
+  online_augmenter_id: vision.cifar_reference
+  online_augmenter_params:
+    profile: torchssl_ra
+  online_augmenter_metadata:
+    source: TorchSSL/TorchSSL@03193a1b7883727db1ce9c092e083091e18aedbb
+    strong_order:
+    - randaugment_with_cutout
+    - random_horizontal_flip
+    - reflect_pad_4_random_crop
+    randaugment:
+      num_ops: 3
+      configured_magnitude: 5
+      magnitude_sampling: per_operation_uniform_full_range
+    cutout:
+      size_fraction_sampling: uniform_[0,0.5)
+      fill_rgb: [125, 123, 114]
+  weak:
+    steps:
+    - id: vision.random_horizontal_flip
+    - id: vision.random_crop_pad
+      params:
+        padding: 4
+  strong:
+    steps:
+    - id: vision.randaugment
+      params:
+        num_ops: 3
+        magnitude: 5
+        num_magnitude_bins: 31
+    - id: vision.random_horizontal_flip
+    - id: vision.random_crop_pad
+      params:
+        padding: 4
+method:
+  kind: inductive
+  id: flexmatch
+  profile: paper:zhang2021-cifar10-table1-250
+  device:
+    device: cuda
+    dtype: float32
+  params:
+    lambda_u: 1.0
+    p_cutoff: 0.95
+    temperature: 0.5
+    mu: 7
+    hard_label: true
+    thresh_warmup: true
+    use_cat: true
+    batch_size: 64
+    max_epochs: 1024
+    max_steps: 1048576
+    detach_target: true
+    training_mode: fixed_steps
+    reference_implementation: torchssl
+    sampler_mode: replacement
+    sampler_shuffle_buffer: 8192
+    augmentation_profile: torchssl_ra
+    interleave_bn: false
+    evaluation_interval_steps: 5000
+    evaluation_tail_interval_steps: 1000
+    evaluation_tail_start_fraction: 0.8
+    checkpoint_interval_steps: 5000
+    reporting_policy: best_historical_checkpoint
+    reporting_window_checkpoints: 20
+    allow_short_run: false
+  model:
+    classifier_id: wide_resnet_cifar
+    classifier_backend: torch
+    classifier_params:
+      depth: 28
+      widen_factor: 2
+      input_layout: channels_first
+      reference_implementation: torchssl
+      input_mean: [0.4913725490196078, 0.4823529411764706, 0.44666666666666666]
+      input_std: [0.24705882352941178, 0.24352941176470588, 0.2615686274509804]
+      bn_momentum: 0.001
+      bn_eps: 0.001
+      optimizer: sgd
+      lr: 0.03
+      momentum: 0.9
+      nesterov: true
+      weight_decay: 0.0005
+      decay_bias_and_norm: false
+      scheduler: cosine
+      max_steps: 1048576
+      cosine_cycles: 0.4375
+      ema_decay: 0.999
+      predict_with_ema: true
+    ema: true
+evaluation:
+  during_fit_splits:
+  - test
+  split_for_model_selection: test
+  test_selection_policy: paper_protocol
+  report_splits:
+  - test
+  metrics:
+  - accuracy

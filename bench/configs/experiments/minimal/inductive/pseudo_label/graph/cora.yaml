@@ -14,6 +14,7 @@ dataset:
     max_test_samples: 200
     seed: 0
 sampling:
+  inductive_graph_policy: masks_to_indices
   seed: 5
   plan:
     split:

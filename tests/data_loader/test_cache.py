@@ -1,4 +1,5 @@
 import os
+import threading
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -86,14 +87,20 @@ def test_dir_size_bytes_skips_non_files(tmp_path):
         assert dir_size_bytes(tmp_path) == 0
 
 
-def test_cache_lock_cleanup(layout):
+def test_cache_lock_releases_after_error(layout):
     fp = "lock_test"
 
-    with pytest.raises(RuntimeError), cache_lock(layout, fp):
-        assert layout.lock_path(fp).exists()
-        raise RuntimeError("Boom")
+    def raise_while_locked() -> None:
+        with cache_lock(layout, fp):
+            assert layout.lock_path(fp).exists()
+            raise RuntimeError("Boom")
 
-    assert not layout.lock_path(fp).exists()
+    with pytest.raises(RuntimeError):
+        raise_while_locked()
+
+    assert layout.lock_path(fp).exists()
+    with cache_lock(layout, fp):
+        assert layout.lock_path(fp).read_text(encoding="utf-8") == str(os.getpid())
 
 
 def test_default_cache_dir_dev_repo():
@@ -163,14 +170,39 @@ def test_atomic_write_text_and_dir_size(tmp_path: Path) -> None:
     assert dir_size_bytes(tmp_path) >= 5
 
 
-def test_cache_lock_creates_and_removes_lock(tmp_path: Path) -> None:
+def test_cache_lock_serializes_concurrent_writers(tmp_path: Path) -> None:
     layout = CacheLayout(root=tmp_path)
     fp = "abc123"
     lock_path = layout.lock_path(fp)
     assert not lock_path.exists()
-    with cache_lock(layout, fp):
-        assert lock_path.exists()
-    assert not lock_path.exists()
+    first_acquired = threading.Event()
+    release_first = threading.Event()
+    second_acquired = threading.Event()
+
+    def _first_writer() -> None:
+        with cache_lock(layout, fp):
+            first_acquired.set()
+            release_first.wait(timeout=2.0)
+
+    def _second_writer() -> None:
+        with cache_lock(layout, fp):
+            second_acquired.set()
+
+    first = threading.Thread(target=_first_writer)
+    second = threading.Thread(target=_second_writer)
+    first.start()
+    try:
+        assert first_acquired.wait(timeout=2.0)
+        second.start()
+        assert not second_acquired.wait(timeout=0.05)
+    finally:
+        release_first.set()
+        first.join(timeout=2.0)
+    assert second_acquired.wait(timeout=2.0)
+    second.join(timeout=2.0)
+    assert not first.is_alive()
+    assert not second.is_alive()
+    assert lock_path.exists()
 
 
 def test_default_cache_dir_no_env(monkeypatch, tmp_path):

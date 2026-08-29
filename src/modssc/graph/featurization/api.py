@@ -3,12 +3,19 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from time import perf_counter
+from typing import Any
 
 import numpy as np
 
 from ..artifacts import DatasetViews, NodeDataset
-from ..cache import ViewsCache
-from ..fingerprint import fingerprint_dict
+from ..cache import (
+    GraphCacheError,
+    ViewsCache,
+    graph_content_sha256,
+    graph_implementation_identity,
+)
+from ..errors import GraphValidationError
+from ..fingerprint import fingerprint_array, fingerprint_dict
 from ..specs import GraphFeaturizerSpec
 from ..validation import validate_featurizer_spec, validate_view_matrix
 from .views.attr import attr_view
@@ -18,11 +25,22 @@ from .views.struct import StructParams, struct_embeddings
 logger = logging.getLogger(__name__)
 
 
-def _views_fingerprint(*, graph_fingerprint: str, spec: GraphFeaturizerSpec, seed: int) -> str:
+def _views_fingerprint(
+    *,
+    graph_fingerprint: str,
+    graph_content_fingerprint: str,
+    features_fingerprint: str,
+    spec: GraphFeaturizerSpec,
+    seed: int,
+    producer_identity: dict[str, Any],
+) -> str:
     payload = {
         "graph_fingerprint": graph_fingerprint,
+        "graph_content_fingerprint": graph_content_fingerprint,
+        "features_fingerprint": features_fingerprint,
         "spec": spec.to_dict(),
         "seed": int(seed),
+        "producer_identity": producer_identity,
     }
     return fingerprint_dict(payload)
 
@@ -38,35 +56,64 @@ def graph_to_views(
     """Compute one or more views from a (graph, X) dataset."""
     start = perf_counter()
     validate_featurizer_spec(spec)
+    if dataset.graph is None:
+        raise GraphValidationError("graph featurization requires dataset.graph")
+
+    graph_content_fp = graph_content_sha256(dataset.graph)
+    features_fp = fingerprint_array(dataset.X)
+    producer_identity = graph_implementation_identity(component="views")
 
     graph_fp = str(dataset.graph.meta.get("fingerprint", "")) if dataset.graph.meta else ""
     if not graph_fp:
-        # fallback: fingerprint of graph structure not available
-        graph_fp = fingerprint_dict(
-            {
-                "n_nodes": int(dataset.graph.n_nodes),
-                "edge_index": dataset.graph.edge_index[
-                    :2, : min(1000, dataset.graph.edge_index.shape[1])
-                ].tolist(),
-            }
-        )
+        graph_fp = f"graph-content:{graph_content_fp}"
 
-    views_fp = _views_fingerprint(graph_fingerprint=graph_fp, spec=spec, seed=int(seed))
+    spec_fp = fingerprint_dict(spec.to_dict())
+    views_fp = _views_fingerprint(
+        graph_fingerprint=graph_fp,
+        graph_content_fingerprint=graph_content_fp,
+        features_fingerprint=features_fp,
+        spec=spec,
+        seed=int(seed),
+        producer_identity=producer_identity,
+    )
 
     cache_enabled = bool(spec.cache) if cache is None else bool(cache)
     cache_store = ViewsCache(
         root=Path(cache_dir) if cache_dir is not None else ViewsCache.default().root
     )
 
-    if cache_enabled and cache_store.exists(views_fp):
-        cached, _ = cache_store.load(views_fp, y=np.asarray(dataset.y), masks=dataset.masks)
-        logger.info(
-            "Graph views cached: fingerprint=%s views=%s duration_s=%.3f",
-            views_fp,
-            list(spec.views),
-            perf_counter() - start,
-        )
-        return cached
+    if cache_enabled:
+        entry_exists = cache_store.entry_dir(views_fp).exists()
+        try:
+            cached, _ = cache_store.load(
+                views_fp,
+                y=np.asarray(dataset.y),
+                masks=dataset.masks,
+                expected_manifest={
+                    "graph_fingerprint": graph_fp,
+                    "graph_content_fingerprint": graph_content_fp,
+                    "features_fingerprint": features_fp,
+                    "spec_fingerprint": spec_fp,
+                    "seed": int(seed),
+                    "producer_identity": producer_identity,
+                },
+            )
+        except GraphCacheError as exc:
+            if entry_exists:
+                logger.warning(
+                    "Ignoring invalid graph views cache entry and rebuilding: "
+                    "fingerprint=%s error=%s",
+                    views_fp,
+                    exc,
+                )
+        else:
+            logger.info(
+                "Graph views cached: fingerprint=%s views=%s duration_s=%.3f",
+                views_fp,
+                list(spec.views),
+                perf_counter() - start,
+            )
+            return cached
 
     views: dict[str, np.ndarray] = {}
     for name in spec.views:
@@ -117,8 +164,11 @@ def graph_to_views(
         meta={
             "fingerprint": views_fp,
             "graph_fingerprint": graph_fp,
-            "spec_fingerprint": fingerprint_dict(spec.to_dict()),
+            "graph_content_fingerprint": graph_content_fp,
+            "features_fingerprint": features_fp,
+            "spec_fingerprint": spec_fp,
             "seed": int(seed),
+            "producer_identity": producer_identity,
         },
     )
 
@@ -126,9 +176,12 @@ def graph_to_views(
         manifest = {
             "fingerprint": views_fp,
             "graph_fingerprint": graph_fp,
+            "graph_content_fingerprint": graph_content_fp,
+            "features_fingerprint": features_fp,
             "spec": spec.to_dict(),
             "spec_fingerprint": out.meta.get("spec_fingerprint"),
             "seed": int(seed),
+            "producer_identity": producer_identity,
         }
         cache_store.save(fingerprint=views_fp, views=out, manifest=manifest)
 

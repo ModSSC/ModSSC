@@ -97,6 +97,17 @@ def test_validate_node_dataset_no_graph():
         validate_node_dataset(data)
 
 
+def test_validate_node_dataset_allows_explicit_graph_optional_contract():
+    data = SimpleNamespace(
+        X=np.array([[1], [2]]),
+        y=np.array([0, 1]),
+        graph=None,
+        masks={"train_mask": np.array([True, False])},
+    )
+
+    validate_node_dataset(data, require_graph=False)
+
+
 def test_validate_node_dataset_no_edge_index():
     data = SimpleNamespace(
         X=np.array([[1], [2]]),

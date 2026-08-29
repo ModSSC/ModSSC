@@ -4,7 +4,7 @@ from typing import Literal
 
 import numpy as np
 
-SymmetrizeMode = Literal["none", "or", "mutual", "mean"]
+SymmetrizeMode = Literal["none", "or", "mutual", "mean", "sum"]
 
 
 def symmetrize_edges(
@@ -23,20 +23,33 @@ def symmetrize_edges(
 
     Weight aggregation
     ------------------
-    If both directions exist, the undirected weight is the average of the two.
-    If only one direction exists and mode is "or", the existing weight is used for both
-    directions. If mode is "mean", missing reverse edges are treated as weight zero,
-    matching `(W + W.T) / 2` for directed KNN weights.
+    ``"or"`` and ``"mutual"`` average weights when both directions exist.
+    ``"or"`` copies a unilateral weight to both directions. ``"mean"`` treats
+    missing reverse edges as zero and computes ``(W + W.T) / 2``. ``"sum"``
+    computes exactly ``W + W.T``: an already symmetric pair is therefore
+    doubled, as are explicit diagonal entries. For an unweighted input,
+    implicit unit weights are materialized so this sum remains representable.
     """
     if mode == "none":
         return edge_index, edge_weight
 
-    if mode not in ("or", "mutual", "mean"):
+    if mode not in ("or", "mutual", "mean", "sum"):
         raise ValueError(f"Unknown symmetrization mode: {mode!r}")
 
     src = np.asarray(edge_index[0], dtype=np.int64)
     dst = np.asarray(edge_index[1], dtype=np.int64)
-    w = np.asarray(edge_weight, dtype=np.float32) if edge_weight is not None else None
+    weight_dtype = (
+        np.float64
+        if edge_weight is not None and np.asarray(edge_weight).dtype == np.float64
+        else np.float32
+    )
+    materialize_weights = edge_weight is not None or mode == "sum"
+    if edge_weight is not None:
+        w = np.asarray(edge_weight, dtype=weight_dtype)
+    elif mode == "sum":
+        w = np.ones(src.shape[0], dtype=weight_dtype)
+    else:
+        w = None
     if w is not None and w.shape[0] != src.shape[0]:
         m = min(int(src.shape[0]), int(dst.shape[0]), int(w.shape[0]))
         src = src[:m]
@@ -46,7 +59,7 @@ def symmetrize_edges(
     if src.size == 0:
         return (
             np.zeros((2, 0), dtype=np.int64),
-            np.zeros((0,), dtype=np.float32) if edge_weight is not None else None,
+            np.zeros((0,), dtype=weight_dtype) if materialize_weights else None,
         )
 
     order = np.lexsort((dst, src))
@@ -103,18 +116,20 @@ def symmetrize_edges(
         b_keep = b_group[keep]
 
         if w_s2 is not None:
-            w_fwd = np.full(n_groups, np.nan, dtype=np.float32)
-            w_bwd = np.full(n_groups, np.nan, dtype=np.float32)
+            w_fwd = np.full(n_groups, np.nan, dtype=weight_dtype)
+            w_bwd = np.full(n_groups, np.nan, dtype=weight_dtype)
             w_fwd[group_id[forward_s]] = w_s2[forward_s]
             w_bwd[group_id[~forward_s]] = w_s2[~forward_s]
             if mode == "mutual":
                 w_pair = 0.5 * (w_fwd + w_bwd)
             elif mode == "mean":
                 w_pair = 0.5 * (np.where(has_fwd, w_fwd, 0.0) + np.where(has_bwd, w_bwd, 0.0))
+            elif mode == "sum":
+                w_pair = np.where(has_fwd, w_fwd, 0.0) + np.where(has_bwd, w_bwd, 0.0)
             else:
                 both = has_fwd & has_bwd
                 w_pair = np.where(both, 0.5 * (w_fwd + w_bwd), np.where(has_fwd, w_fwd, w_bwd))
-            w_keep = w_pair[keep].astype(np.float32, copy=False)
+            w_keep = w_pair[keep].astype(weight_dtype, copy=False)
             out_w = np.concatenate([w_keep, w_keep])
         else:
             out_w = None
@@ -124,22 +139,24 @@ def symmetrize_edges(
     else:
         out_src = np.asarray([], dtype=np.int64)
         out_dst = np.asarray([], dtype=np.int64)
-        out_w = np.asarray([], dtype=np.float32) if edge_weight is not None else None
+        out_w = np.asarray([], dtype=weight_dtype) if materialize_weights else None
 
     if loops_src.size:
+        if mode == "sum" and loops_w is not None:
+            loops_w = (2.0 * loops_w).astype(weight_dtype, copy=False)
         if out_src.size:
             out_src = np.concatenate([out_src, loops_src])
             out_dst = np.concatenate([out_dst, loops_dst])
             if out_w is not None and loops_w is not None:
-                out_w = np.concatenate([out_w, loops_w.astype(np.float32, copy=False)])
+                out_w = np.concatenate([out_w, loops_w.astype(weight_dtype, copy=False)])
         else:
             out_src = loops_src.astype(np.int64, copy=False)
             out_dst = loops_dst.astype(np.int64, copy=False)
             if out_w is not None and loops_w is not None:
-                out_w = loops_w.astype(np.float32, copy=False)
+                out_w = loops_w.astype(weight_dtype, copy=False)
 
     ei = np.vstack([out_src.astype(np.int64, copy=False), out_dst.astype(np.int64, copy=False)])
-    ew = out_w if edge_weight is not None else None
+    ew = out_w if materialize_weights else None
 
     # sanity: clip nodes
     if ei.size:

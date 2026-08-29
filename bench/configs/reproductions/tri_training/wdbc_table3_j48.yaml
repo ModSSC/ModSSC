@@ -1,0 +1,154 @@
+# Reproduction card: Tri-Training, WDBC, J4.8 block of Table III in
+# Zhou & Li (2005), under the 80% unlabeled-rate protocol.
+#
+# Published target: initial/final test error 0.094/0.075 (20.0% improvement),
+# averaged over three independent L/U partitions. About 25% of WDBC is retained
+# as one test set; the three runs redraw only the 20%/80% labeled/unlabeled
+# partition of the remaining pool, with preserved class proportions. With 569
+# rows this requests 142 test, 85 labeled, and 342 unlabeled examples per seed.
+#
+# Fidelity status: paper_approx, never paper_matched before acceptance. OpenML
+# data_id=1510 is WDBC. The paper profile executes ModSSC's internal unpruned
+# C4.5-style classifier and requires no external runtime. The paper does not
+# publish test indices, RNG, or its exact classifier version. The fixed component
+# seed below is therefore a replayable replacement, not a recovered historical split.
+# No validation split or test-based selection is performed. The 100-round safety
+# cap is not from the paper and a run is acceptable only if it converges before
+# reaching that cap.
+acceptance:
+  protocol_id: zhou-li-2005-wdbc-table3-j48-80pct-unlabeled
+  method_id: tri_training
+  repetitions: 3
+  fidelity_ceiling: paper_approx
+  conformity:
+    status: passed
+    basis: pinned_official_implementation
+    evidence:
+    - docs/replications/protocols/tri-training-zhou-li-2005.md
+    review:
+      reviewed_by: codex:article_protocol_source_review
+      reviewed_at: '2026-08-30T00:00:00+02:00'
+  target:
+    split: test
+    metric: accuracy
+    transform: one_minus
+    published_mean: 0.075
+    margin_absolute: 0.02
+  secondary_targets:
+  - id: round0-initial-ensemble-error
+    split: test_initial
+    metric: accuracy
+    transform: one_minus
+    published_mean: 0.094
+    margin_absolute: 0.02
+  required_diagnostics:
+  - path: artifacts.method.diagnostics.converged
+    op: eq
+    value: true
+  - path: artifacts.method.diagnostics.initial_ensemble_retained
+    op: eq
+    value: true
+  - path: artifacts.method.diagnostics.n_iter
+    op: lt
+    value: 100
+  - path: artifacts.method.diagnostics.rounds
+    op: present
+  deviations:
+  - Original test indices and exact RNG state were not published.
+  - The released code averages Weka probabilities although Table I prints a hard majority vote.
+  - The released demonstration uses unpruned J48, while the paper states only J4.8.
+  equivalences: []
+  unknowns: []
+run:
+  name: reproduction_tri_training_wdbc_table3_j48
+  seed: 1
+  seeds:
+  - 1
+  - 2
+  - 3
+  seeded_sections:
+  - sampling
+  - preprocess
+  output_dir: ${MODSSC_OUTPUT_DIR}/reproductions/tri_training/wdbc_table3_j48
+  log_level: detailed
+  fail_fast: true
+  benchmark_mode: true
+dataset:
+  id: wdbc
+  download: false
+  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
+  integrity:
+    fingerprint: b4c81b9f26e810a53c52c65cf8f3ea2533be8b1ca36917dc6d2d289240d61f41
+    content_sha256: a74495c0877d7fd6edbef21b4b774b2d9cf698ed6c46feed1ee8607f8af6baef
+sampling:
+  seed: 1
+  plan:
+    component_seeds:
+      # The paper performs three L/U redraws inside one retained training pool.
+      # Exact historical test indices/RNG were not published.
+      split: 2005
+    split:
+      kind: holdout
+      test_fraction: 0.25
+      val_fraction: 0.0
+      stratify: true
+      shuffle: true
+    labeling:
+      mode: fraction
+      value: 0.2
+      strategy: proportional
+      min_per_class: 1
+      per_class: false
+      fixed_indices: null
+    imbalance:
+      kind: none
+    policy:
+      respect_official_test: true
+      use_official_graph_masks: true
+      allow_override_official: false
+preprocess:
+  seed: 1
+  fit_on: train
+  cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
+  plan:
+    output_key: features.X
+    steps:
+    - id: labels.encode
+    - id: core.ensure_2d
+    - id: tabular.impute
+    - id: core.to_numpy
+method:
+  kind: inductive
+  id: tri_training
+  profile: paper:zhou-li-2005-wdbc-table3-j48
+  device:
+    device: cpu
+    dtype: float32
+  params:
+    training_mode: error_bound_subsample
+    classifier_id: decision_tree
+    classifier_backend: numpy
+    classifier_params:
+      min_num_obj: 2
+      # TriTrain.java's executable demonstration explicitly calls
+      # J48.setUnpruned(true).
+      unpruned: true
+      binary_splits: false
+    max_iter: 100
+    require_convergence: true
+    confidence_threshold: null
+    max_new_labels: null
+    bootstrap_ratio: 1.0
+    retain_initial_ensemble: true
+    # The authors' released TriTrain.java sums the three class-probability
+    # distributions before argmax, despite Table I describing a hard vote.
+    # The internal classifiers preserve that strategy-level rule.
+    prediction_rule: soft_average
+evaluation:
+  split_for_model_selection: null
+  report_splits:
+  - test
+  metrics:
+  - accuracy
+  - macro_f1

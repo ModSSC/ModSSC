@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from modssc.data_loader.types import LoadedDataset, Split
-from modssc.preprocess.api import preprocess, resolve_plan
+from modssc.preprocess.api import _dataset_fingerprint, preprocess, resolve_plan
 from modssc.preprocess.cache import CacheManager
 from modssc.preprocess.errors import OptionalDependencyError, PreprocessValidationError
 from modssc.preprocess.optional import is_available
@@ -61,6 +61,51 @@ def test_resolve_plan_skips_by_modality() -> None:
     assert resolved.fingerprint.startswith("resolved_plan:")
 
 
+def test_yaml_modalities_can_restrict_but_not_widen_native_step_modalities() -> None:
+    text_plan = PreprocessPlan(
+        steps=(StepConfig("text.ensure_strings", modalities=("text", "tabular")),)
+    )
+
+    resolved_text = resolve_plan(_text_dataset(), text_plan)
+    assert [step.step_id for step in resolved_text.steps] == ["text.ensure_strings"]
+
+    resolved_tabular = resolve_plan(_tabular_dataset(), text_plan)
+    assert resolved_tabular.steps == ()
+    assert len(resolved_tabular.skipped) == 1
+    assert "modality 'tabular' not in ['text']" in resolved_tabular.skipped[0].reason
+
+    unrestricted_native_plan = PreprocessPlan(
+        steps=(StepConfig("core.ensure_2d", modalities=("text",)),)
+    )
+    assert resolve_plan(_text_dataset(), unrestricted_native_plan).steps
+    assert resolve_plan(_tabular_dataset(), unrestricted_native_plan).steps == ()
+
+
+def test_missing_dataset_modality_does_not_bypass_native_restriction() -> None:
+    X = np.arange(6, dtype=np.float32).reshape(3, 2)
+    dataset = LoadedDataset(
+        train=Split(X=X, y=np.arange(3, dtype=np.int64), edges=None, masks=None),
+        test=None,
+        meta={"dataset_fingerprint": "dataset:no-modality"},
+    )
+
+    restricted = resolve_plan(
+        dataset,
+        PreprocessPlan(steps=(StepConfig("text.ensure_strings"),)),
+    )
+    assert restricted.steps == ()
+    assert len(restricted.skipped) == 1
+    assert restricted.skipped[0].reason == (
+        "dataset modality is missing; step accepts only ['text']"
+    )
+
+    unrestricted = resolve_plan(
+        dataset,
+        PreprocessPlan(steps=(StepConfig("core.ensure_2d"),)),
+    )
+    assert [step.step_id for step in unrestricted.steps] == ["core.ensure_2d"]
+
+
 def test_preprocess_requires_fit_indices_for_fittable_step() -> None:
     ds = _tabular_dataset()
     plan = PreprocessPlan(
@@ -88,7 +133,7 @@ def test_preprocess_tabular_deterministic_and_cache(tmp_path) -> None:
     assert X1.shape == (10, 1)
     assert np.allclose(X1, X2)
 
-    steps_dir = tmp_path / ds.meta["dataset_fingerprint"] / "steps"
+    steps_dir = tmp_path / _dataset_fingerprint(ds) / "steps"
     assert steps_dir.exists()
 
 

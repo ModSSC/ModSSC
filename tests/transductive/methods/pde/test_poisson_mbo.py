@@ -120,6 +120,7 @@ def test_poisson_mbo_method_fit_predict():
 
     assert proba.shape == (n, 2)
     assert np.allclose(proba.sum(axis=1), 1.0, atol=1e-6)
+    assert method.execution_resolution() == {"backend": "numpy"}
 
 
 @pytest.mark.skipif(torch is None, reason="torch not installed")

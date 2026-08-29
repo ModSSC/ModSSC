@@ -94,13 +94,6 @@ def validate(
     y_train = ds.train.y
     n_train = len(y_train)
     n_test = len(ds.test.y) if ds.test is not None else None
-    n_nodes = (
-        len(ds.train.y)
-        if (
-            getattr(ds.train, "edges", None) is not None
-            or getattr(ds.train, "masks", None) is not None
-        )
-        else None
-    )
+    n_nodes = len(ds.train.y) if ds.has_graph else None
     res.validate(n_train=n_train, n_test=n_test, n_nodes=n_nodes)
     typer.echo("OK")

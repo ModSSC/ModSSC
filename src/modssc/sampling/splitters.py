@@ -6,7 +6,10 @@ from modssc.sampling.common import class_counts as _class_counts
 
 
 def random_split(
-    indices: np.ndarray, *, n_holdout: int, rng: np.random.Generator
+    indices: np.ndarray,
+    *,
+    n_holdout: int,
+    rng: np.random.Generator | np.random.RandomState,
 ) -> tuple[np.ndarray, np.ndarray]:
     if n_holdout <= 0:
         return indices.copy(), np.asarray([], dtype=np.int64)
@@ -23,7 +26,7 @@ def stratified_holdout(
     y: np.ndarray,
     *,
     n_holdout: int,
-    rng: np.random.Generator,
+    rng: np.random.Generator | np.random.RandomState,
 ) -> tuple[np.ndarray, np.ndarray]:
     # If y cannot be indexed, fallback to random.
     if n_holdout <= 0:
@@ -63,6 +66,40 @@ def stratified_holdout(
     return keep, holdout
 
 
+def ordered_holdout(
+    indices: np.ndarray,
+    *,
+    n_holdout: int,
+    holdout_from: str,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Split an already ordered pool without consuming random state."""
+
+    if n_holdout <= 0:
+        return indices.copy(), np.asarray([], dtype=np.int64)
+    if n_holdout >= indices.size:
+        return np.asarray([], dtype=np.int64), indices.copy()
+    if holdout_from == "start":
+        return indices[n_holdout:].copy(), indices[:n_holdout].copy()
+    if holdout_from == "end":
+        return indices[:-n_holdout].copy(), indices[-n_holdout:].copy()
+    raise ValueError("holdout_from must be 'start' or 'end'")
+
+
+def _resolve_holdout_size(
+    *,
+    pool_size: int,
+    fraction: float,
+    exact_size: int | None,
+    name: str,
+) -> int:
+    if exact_size is not None:
+        if exact_size < 0 or exact_size > pool_size:
+            raise ValueError(f"{name} must satisfy 0 <= {name} <= {pool_size}")
+        return int(exact_size)
+    count = int(round(float(fraction) * float(pool_size)))
+    return max(0, min(pool_size, count))
+
+
 def make_holdout_split(
     *,
     n_samples: int,
@@ -70,26 +107,50 @@ def make_holdout_split(
     test_fraction: float,
     val_fraction: float,
     stratify: bool,
-    rng: np.random.Generator,
+    rng: np.random.Generator | np.random.RandomState,
+    shuffle: bool = True,
+    test_size: int | None = None,
+    val_size: int | None = None,
+    holdout_from: str = "start",
 ) -> dict[str, np.ndarray]:
     if n_samples < 0:
         raise ValueError("n_samples must be >= 0")
 
     all_idx = np.arange(n_samples, dtype=np.int64)
 
-    n_test = int(round(float(test_fraction) * float(n_samples)))
-    n_test = max(0, min(n_samples, n_test))
+    n_test = _resolve_holdout_size(
+        pool_size=n_samples,
+        fraction=test_fraction,
+        exact_size=test_size,
+        name="test_size",
+    )
 
-    if stratify:
+    if not shuffle:
+        train_val, test = ordered_holdout(
+            all_idx,
+            n_holdout=n_test,
+            holdout_from=holdout_from,
+        )
+    elif stratify:
         train_val, test = stratified_holdout(all_idx, y, n_holdout=n_test, rng=rng)
     else:
         train_val, test = random_split(all_idx, n_holdout=n_test, rng=rng)
 
     n_train_val = int(train_val.size)
-    n_val = int(round(float(val_fraction) * float(n_train_val)))
-    n_val = max(0, min(n_train_val, n_val))
+    n_val = _resolve_holdout_size(
+        pool_size=n_train_val,
+        fraction=val_fraction,
+        exact_size=val_size,
+        name="val_size",
+    )
 
-    if stratify:
+    if not shuffle:
+        train, val = ordered_holdout(
+            train_val,
+            n_holdout=n_val,
+            holdout_from=holdout_from,
+        )
+    elif stratify:
         train, val = stratified_holdout(train_val, y, n_holdout=n_val, rng=rng)
     else:
         train, val = random_split(train_val, n_holdout=n_val, rng=rng)

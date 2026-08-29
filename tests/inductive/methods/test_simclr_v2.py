@@ -15,6 +15,7 @@ from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.simclr_v2 import SimCLRv2Method, SimCLRv2Spec
 from modssc.inductive.types import DeviceSpec, InductiveDataset
+from modssc.runtime.contracts import ModelContract
 
 from ..conftest import (
     SimpleNet,
@@ -86,16 +87,43 @@ class _BadLogits1D(torch.nn.Module):
 
 
 def _make_bundle(
-    model: torch.nn.Module | None = None, *, meta: dict | None = None
+    model: torch.nn.Module | None = None,
+    *,
+    meta: dict | None = None,
+    contract: ModelContract | None = None,
 ) -> TorchModelBundle:
     bundle_model = model if model is not None else SimpleNet()
     optimizer = torch.optim.SGD(bundle_model.parameters(), lr=0.1)
-    return TorchModelBundle(model=bundle_model, optimizer=optimizer, meta=meta)
+    return TorchModelBundle(
+        model=bundle_model,
+        optimizer=optimizer,
+        meta=meta,
+        contract=contract,
+    )
+
+
+def _make_projection_bundle() -> TorchModelBundle:
+    model = _MetaNet()
+    return _make_bundle(
+        model,
+        meta={
+            "forward_features": model.encode,
+            "forward_projection": model.forward_projection,
+            "forward_head": model.forward_head,
+        },
+        contract=ModelContract(
+            outputs=frozenset({"feat", "forward_features", "forward_projection", "logits", "proj"}),
+            input_representations=frozenset({"dense"}),
+            input_dtype_kinds=frozenset({"float"}),
+            input_ranks=frozenset({2}),
+            source="test.simclrv2_projection",
+        ),
+    )
 
 
 def _make_spec(**overrides) -> SimCLRv2Spec:
     base = SimCLRv2Spec(
-        pretrain_bundle=make_model_bundle(),
+        pretrain_bundle=_make_projection_bundle(),
         finetune_bundle=make_model_bundle(),
         student_bundle=None,
         temperature=0.5,
@@ -147,6 +175,25 @@ def test_simclr_v2_tensor_helpers() -> None:
         simclr_v2._tensor_from_output({"other": tensor}, keys=("feat",), name="out")
 
 
+def test_simclr_v2_contract_requires_a_real_projection_for_pretraining() -> None:
+    spec = SimCLRv2Spec(
+        pretrain_epochs=1,
+        finetune_epochs=0,
+        distill_epochs=0,
+    )
+    contract = SimCLRv2Method.execution_contract(
+        spec,
+        SimCLRv2Method.info.capabilities,
+        SimCLRv2Method.info.model_binding,
+    )
+    requirement = contract.components[0]
+
+    assert frozenset({"projection"}) in requirement.output_alternatives
+    assert frozenset({"forward_projection"}) in requirement.output_alternatives
+    assert frozenset({"feat"}) not in requirement.output_alternatives
+    assert frozenset({"logits"}) not in requirement.output_alternatives
+
+
 def test_simclr_v2_forward_helpers_cover_meta_paths() -> None:
     x = torch.randn(3, 2)
     model = _MetaNet()
@@ -159,6 +206,14 @@ def test_simclr_v2_forward_helpers_cover_meta_paths() -> None:
     assert simclr_v2._forward_features(model, {"encoder": model.encode}, x).shape == (3, 2)
     assert simclr_v2._forward_features(model, {"forward_features": 1}, x).shape == (3, 2)
     assert simclr_v2._forward_features(model, None, x).shape == (3, 2)
+    for feature_key in ("features", "embedding"):
+
+        def feature_model(_value, key=feature_key):
+            return {key: torch.ones(3, 2)}
+
+        assert simclr_v2._forward_features(feature_model, None, x).shape == (3, 2)
+    with pytest.raises(InductiveValidationError, match="requires an explicit encoder feature"):
+        simclr_v2._forward_features(lambda _value: {"logits": torch.ones(3, 2)}, None, x)
 
     assert simclr_v2._forward_projection(
         model, {"forward_projection": model.forward_projection}, x
@@ -180,6 +235,48 @@ def test_simclr_v2_forward_helpers_cover_meta_paths() -> None:
         2,
     )
     assert simclr_v2._forward_projection(model, None, x).shape == (3, 2)
+    for projection_key in ("projection", "z"):
+
+        def projection_model(_value, key=projection_key):
+            return {key: torch.ones(3, 2)}
+
+        assert simclr_v2._forward_projection(projection_model, None, x).shape == (3, 2)
+
+    with pytest.raises(InductiveValidationError, match="requires an explicit projection head"):
+        simclr_v2._forward_projection(
+            lambda _value: {"logits": torch.ones(3, 2)},
+            None,
+            x,
+        )
+
+    def declared_tensor_model(_value):
+        return torch.ones(3, 2)
+
+    assert simclr_v2._forward_projection(
+        declared_tensor_model,
+        None,
+        x,
+        contract=ModelContract(
+            outputs=frozenset({"projection"}),
+            source="test.declared_tensor_projection",
+        ),
+    ).shape == (3, 2)
+
+    logits_only = _BadLogits1D()
+    with pytest.raises(InductiveValidationError, match="requires an explicit encoder feature"):
+        simclr_v2._forward_features(logits_only, None, x)
+    with pytest.raises(InductiveValidationError, match="requires an explicit projection head"):
+        simclr_v2._forward_projection(logits_only, None, x)
+    with pytest.raises(InductiveValidationError, match="requires a declared encoder feature"):
+        simclr_v2._forward_projection(
+            model,
+            {"projection_head": model.project},
+            x,
+            contract=ModelContract(
+                outputs=frozenset({"logits", "projection_head"}),
+                source="test.contradictory_projection",
+            ),
+        )
 
     assert simclr_v2._forward_logits(model, {"forward_logits": model.forward_logits}, x).shape == (
         3,
@@ -241,6 +338,158 @@ def test_simclr_v2_rebind_meta_and_check_distill_models() -> None:
         simclr_v2._check_distill_models(torch.nn.Sequential(shared), torch.nn.Sequential(shared))
 
 
+def test_simclr_v2_projection_state_must_be_model_owned_and_optimized() -> None:
+    valid = _make_projection_bundle()
+    simclr_v2._validate_projection_optimization(valid)
+    assert any(key.startswith("proj.") for key in valid.model.state_dict())
+
+    restored = _MetaNet()
+    restored.load_state_dict(valid.model.state_dict())
+    assert torch.allclose(restored.proj.weight, valid.model.proj.weight)
+
+    model = _MetaNet()
+    incomplete = TorchModelBundle(
+        model=model,
+        optimizer=torch.optim.SGD(
+            [*model.feat.parameters(), *model.fc.parameters()],
+            lr=0.1,
+        ),
+        meta={"forward_projection": model.forward_projection},
+    )
+    with pytest.raises(InductiveValidationError, match="must own every trainable"):
+        simclr_v2._validate_projection_optimization(incomplete)
+
+    base = SimpleNet()
+    external = torch.nn.Linear(2, 2)
+    external_bundle = TorchModelBundle(
+        model=base,
+        optimizer=torch.optim.SGD(
+            [*base.parameters(), *external.parameters()],
+            lr=0.1,
+        ),
+        meta={"projection_head": external},
+    )
+    with pytest.raises(InductiveValidationError, match="registered inside bundle.model"):
+        simclr_v2._validate_projection_optimization(external_bundle)
+
+    functional = _make_bundle(_MetaNet(), meta={"forward_projection": lambda value: value})
+    with pytest.raises(InductiveValidationError, match="bound module method"):
+        simclr_v2._validate_projection_optimization(functional)
+
+    no_meta = _make_bundle(_MetaNet())
+    simclr_v2._validate_projection_optimization(no_meta)
+    no_projection = _make_bundle(_MetaNet(), meta={"forward_features": 1})
+    simclr_v2._validate_projection_optimization(no_projection)
+
+    projector_model = _MetaNet()
+    projector_bundle = _make_bundle(
+        projector_model,
+        meta={"projector": projector_model.proj},
+    )
+    simclr_v2._validate_projection_optimization(projector_bundle)
+
+    class _ParameterlessProjection(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.encoder = torch.nn.Linear(2, 2)
+            self.projector = torch.nn.Identity()
+
+        def forward(self, value):
+            return self.projector(self.encoder(value))
+
+    parameterless_model = _ParameterlessProjection()
+    parameterless_bundle = _make_bundle(
+        parameterless_model,
+        meta={"projection_head": parameterless_model.projector},
+    )
+    with pytest.raises(InductiveValidationError, match="must expose trainable parameters"):
+        simclr_v2._validate_projection_optimization(parameterless_bundle)
+
+
+def test_simclr_v2_contract_fallback_and_student_labeled_input_branches() -> None:
+    spec = SimCLRv2Spec(
+        pretrain_epochs=0,
+        finetune_epochs=0,
+        distill_epochs=0,
+    )
+    fallback = SimCLRv2Method.execution_contract(
+        spec,
+        SimCLRv2Method.info.capabilities,
+        None,
+    )
+    assert fallback.components == ()
+
+    with_student = SimCLRv2Spec(
+        pretrain_epochs=0,
+        finetune_epochs=1,
+        distill_epochs=1,
+        use_labeled_in_distill=True,
+        student_bundle=_make_bundle(),
+    )
+    contract = SimCLRv2Method.execution_contract(
+        with_student,
+        SimCLRv2Method.info.capabilities,
+        SimCLRv2Method.info.model_binding,
+    )
+    student = next(
+        component for component in contract.components if component.slot == "student_bundle"
+    )
+    assert "fit.X_l" in student.input_roles
+
+    shared_slot = SimCLRv2Spec(
+        pretrain_epochs=1,
+        finetune_epochs=1,
+        distill_epochs=1,
+        use_labeled_in_distill=True,
+    )
+    shared_contract = SimCLRv2Method.execution_contract(
+        shared_slot,
+        SimCLRv2Method.info.capabilities,
+        SimCLRv2Method.info.model_binding,
+    )
+    assert len(shared_contract.components) == 1
+    assert "fit.X_l" in shared_contract.components[0].input_roles
+
+    selected_finetune = SimCLRv2Spec(
+        pretrain_bundle=None,
+        finetune_bundle=_make_projection_bundle(),
+        pretrain_epochs=1,
+        finetune_epochs=1,
+        distill_epochs=1,
+        use_labeled_in_distill=True,
+    )
+    selected_contract = SimCLRv2Method.execution_contract(
+        selected_finetune,
+        SimCLRv2Method.info.capabilities,
+        SimCLRv2Method.info.model_binding,
+    )
+    assert len(selected_contract.components) == 1
+    assert "fit.X_l" in selected_contract.components[0].input_roles
+
+    finetune_only = SimCLRv2Method.execution_contract(
+        SimCLRv2Spec(pretrain_epochs=0, finetune_epochs=1, distill_epochs=0),
+        SimCLRv2Method.info.capabilities,
+        SimCLRv2Method.info.model_binding,
+    )
+    assert finetune_only.components[0].input_roles == ("fit.X_l",)
+
+    distill_only = SimCLRv2Method.execution_contract(
+        SimCLRv2Spec(
+            pretrain_epochs=0,
+            finetune_epochs=0,
+            distill_epochs=1,
+            use_labeled_in_distill=False,
+            student_bundle=_make_bundle(),
+        ),
+        SimCLRv2Method.info.capabilities,
+        SimCLRv2Method.info.model_binding,
+    )
+    distill_student = next(
+        component for component in distill_only.components if component.slot == "student_bundle"
+    )
+    assert "fit.X_l" not in distill_student.input_roles
+
+
 def test_simclr_v2_loss_helpers() -> None:
     z = torch.tensor(
         [[1.0, 0.0], [0.0, 1.0], [1.0, 0.0], [0.0, 1.0]],
@@ -283,7 +532,7 @@ def test_simclr_v2_loss_helpers() -> None:
 def test_simclr_v2_fit_pretrain_only_uses_unlabeled_fallback() -> None:
     base = make_torch_dataset()
     data = InductiveDataset(X_l=base.X_l, y_l=base.y_l, X_u=base.X_u, X_u_w=None, X_u_s=None)
-    bundle = make_model_bundle()
+    bundle = _make_projection_bundle()
     spec = _make_spec(
         pretrain_bundle=None,
         finetune_bundle=bundle,
@@ -300,7 +549,7 @@ def test_simclr_v2_fit_pretrain_only_uses_unlabeled_fallback() -> None:
 
 def test_simclr_v2_fit_pretrain_finetune_and_distill_without_student() -> None:
     data = make_torch_ssl_dataset()
-    pretrain_bundle = make_model_bundle()
+    pretrain_bundle = _make_projection_bundle()
     finetune_bundle = make_model_bundle()
     spec = _make_spec(
         pretrain_bundle=pretrain_bundle,

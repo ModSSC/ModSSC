@@ -9,17 +9,57 @@ from modssc.sampling.errors import SamplingValidationError
 from modssc.sampling.result import SamplingResult
 
 
-def _make_result(indices=None, refs=None, masks=None):
+def _make_result(indices=None, refs=None, masks=None, plan=None):
+    return SamplingResult(
+        schema_version=1,
+        created_at="now",
+        dataset_fingerprint="d",
+        split_fingerprint="s",
+        plan=plan or {},
+        indices=indices or {},
+        refs=refs or {},
+        masks=masks or {},
+    )
+
+
+def _result_with_stats(stats) -> SamplingResult:
     return SamplingResult(
         schema_version=1,
         created_at="now",
         dataset_fingerprint="d",
         split_fingerprint="s",
         plan={},
-        indices=indices or {},
-        refs=refs or {},
-        masks=masks or {},
+        stats=stats,
     )
+
+
+@pytest.mark.parametrize(
+    ("stats", "expected"),
+    [
+        ({"train_labeled": {"n": np.int64(3)}}, 3),
+        ({"train_labeled": {"n": True}, "labeled": 4}, 4),
+        ({"train_labeled": "legacy", "labeled": np.int64(5)}, 5),
+        ({"labeled": True, "labeled_class_dist": {"n": 6}}, 6),
+        ({"labeled_class_dist": {"n": False}}, None),
+        ({"labeled_class_dist": "legacy"}, None),
+    ],
+)
+def test_expected_labeled_count_supports_all_native_stats_shapes(stats, expected) -> None:
+    assert _result_with_stats(stats).expected_labeled_count() == expected
+
+
+@pytest.mark.parametrize(
+    ("plan", "expected"),
+    [
+        ({"labeling": {"unlabeled_pool": "includes_labeled"}}, "includes_labeled"),
+        ({"labeling": "legacy"}, "complement"),
+        ({"partition": "legacy"}, "complement"),
+        ({"partition": {"ordered_indices_artifact": "legacy"}}, "complement"),
+        ({"partition": {"ordered_indices_artifact": {}}}, "complement"),
+    ],
+)
+def test_unlabeled_pool_semantics_supports_native_and_legacy_plans(plan, expected) -> None:
+    assert _make_result(plan=plan)._unlabeled_pool_semantics() == expected
 
 
 def test_result_inductive_invalid_dtype():
@@ -154,6 +194,72 @@ def test_result_inductive_labeled_unlabeled_mismatch():
         res.validate(n_train=10, n_test=5, n_nodes=None)
 
 
+def test_result_inductive_accepts_explicit_inclusive_unlabeled_pool():
+    res = _make_result(
+        indices={
+            "train": np.array([3, 1, 0]),
+            "val": np.array([2]),
+            "test": np.array([0]),
+            "train_labeled": np.array([1, 3]),
+            "train_unlabeled": np.array([1, 0, 3]),
+        },
+        refs={"test": "test"},
+        plan={
+            "partition": {
+                "ordered_indices_artifact": {
+                    "unlabeled_pool": "includes_labeled",
+                }
+            }
+        },
+    )
+
+    res.validate(n_train=4, n_test=1, n_nodes=None)
+
+
+def test_result_inductive_inclusive_pool_requires_labeled_subset():
+    res = _make_result(
+        indices={
+            "train": np.array([0, 1]),
+            "val": np.array([], dtype=int),
+            "test": np.array([], dtype=int),
+            "train_labeled": np.array([1]),
+            "train_unlabeled": np.array([0]),
+        },
+        plan={
+            "partition": {
+                "ordered_indices_artifact": {
+                    "unlabeled_pool": "includes_labeled",
+                }
+            }
+        },
+    )
+
+    with pytest.raises(SamplingValidationError, match="subset of the inclusive"):
+        res.validate(n_train=2, n_test=None, n_nodes=None)
+
+
+def test_result_inductive_inclusive_pool_must_cover_train():
+    res = _make_result(
+        indices={
+            "train": np.array([0, 1]),
+            "val": np.array([], dtype=int),
+            "test": np.array([], dtype=int),
+            "train_labeled": np.array([0]),
+            "train_unlabeled": np.array([0]),
+        },
+        plan={
+            "partition": {
+                "ordered_indices_artifact": {
+                    "unlabeled_pool": "includes_labeled",
+                }
+            }
+        },
+    )
+
+    with pytest.raises(SamplingValidationError, match="must cover train exactly"):
+        res.validate(n_train=2, n_test=None, n_nodes=None)
+
+
 def test_result_graph_missing_nnodes():
     """Test missing n_nodes for graph."""
     res = _make_result(masks={"train": np.array([])})
@@ -186,6 +292,39 @@ def test_result_graph_invalid_shape():
     res = _make_result(masks=masks)
     with pytest.raises(SamplingValidationError, match="must have shape"):
         res.validate(n_train=10, n_test=5, n_nodes=10)
+
+
+def test_result_graph_inclusive_unlabeled_pool_must_equal_train() -> None:
+    masks = {
+        "train": np.array([True, True, False]),
+        "val": np.array([False, False, True]),
+        "test": np.zeros(3, dtype=bool),
+        "labeled": np.array([True, False, False]),
+        "unlabeled": np.array([True, False, False]),
+    }
+    result = _make_result(
+        masks=masks,
+        plan={"labeling": {"unlabeled_pool": "includes_labeled"}},
+    )
+
+    with pytest.raises(SamplingValidationError, match="must equal train_mask"):
+        result.validate(n_train=3, n_test=None, n_nodes=3)
+
+
+def test_result_graph_accepts_valid_inclusive_unlabeled_pool() -> None:
+    masks = {
+        "train": np.array([True, True, False]),
+        "val": np.array([False, False, True]),
+        "test": np.zeros(3, dtype=bool),
+        "labeled": np.array([True, False, False]),
+        "unlabeled": np.array([True, True, False]),
+    }
+    result = _make_result(
+        masks=masks,
+        plan={"labeling": {"unlabeled_pool": "includes_labeled"}},
+    )
+
+    result.validate(n_train=3, n_test=None, n_nodes=3)
 
 
 def test_result_graph_labeled_not_subset():

@@ -41,11 +41,258 @@ class DummyNodeDataset:
 def test_poisson_learning_spec_defaults():
     spec = PoissonLearningSpec()
     assert spec.backend == "numpy"
+    assert spec.solver == "conjugate_gradient"
     assert spec.laplacian_kind == "paper_normalized"
     assert spec.eps == pytest.approx(0.0)
     assert spec.center_sources is True
     assert spec.tol == pytest.approx(1e-3)
+    assert spec.min_iter == 50
     assert spec.max_iter == 1000
+
+
+def test_poisson_solver_is_fail_closed() -> None:
+    pl._validate_solver(PoissonLearningSpec())
+    pl._validate_solver(PoissonLearningSpec(solver="paper_iteration"))
+    with pytest.raises(ValueError, match="Unknown Poisson solver"):
+        pl._validate_solver(PoissonLearningSpec(solver="unknown"))
+
+
+def test_poisson_paper_iteration_matches_reference_recurrence():
+    n, edge_index, edge_weight = _two_cluster_graph()
+    y = np.array([0, 0, 0, 1, 1, 1], dtype=np.int64)
+    labeled_mask = np.array([True, False, False, True, False, False])
+
+    spec = PoissonLearningSpec(
+        backend="numpy",
+        solver="paper_iteration",
+        laplacian_kind="unnormalized",
+        min_iter=5,
+        max_iter=5,
+    )
+    result = pl.poisson_learning_numpy(
+        n_nodes=n,
+        edge_index=edge_index,
+        edge_weight=edge_weight,
+        y=y,
+        labeled_mask=labeled_mask,
+        spec=spec,
+    )
+
+    W = np.zeros((n, n), dtype=np.float64)
+    for src, dst, weight in zip(edge_index[0], edge_index[1], edge_weight, strict=True):
+        if src != dst:
+            W[int(dst), int(src)] += float(weight)
+    degree = W.sum(axis=1)
+    onehot = np.eye(2, dtype=np.float64)[y]
+    source = np.zeros_like(onehot)
+    source[labeled_mask] = onehot[labeled_mask] - onehot[labeled_mask].mean(axis=0)
+    expected = np.zeros_like(source)
+    inverse_degree_denominator = degree + 1.0e-10
+    for _ in range(5):
+        expected = (
+            source / inverse_degree_denominator[:, None]
+            + (W @ expected) / inverse_degree_denominator[:, None]
+        )
+
+    np.testing.assert_allclose(result.F, expected, rtol=0.0, atol=1.0e-14)
+    assert result.n_iter == 5
+    assert result.F.argmax(axis=1).tolist() == y.tolist()
+
+
+def test_poisson_paper_iteration_ignores_shared_graph_self_loops() -> None:
+    n, edge_index, edge_weight = _two_cluster_graph()
+    labels = np.array([0, 0, 0, 1, 1, 1], dtype=np.int64)
+    labeled_mask = np.array([True, False, False, True, False, False])
+    spec = PoissonLearningSpec(
+        solver="paper_iteration",
+        min_iter=7,
+        max_iter=7,
+    )
+
+    without_loops = pl.poisson_learning_numpy(
+        n_nodes=n,
+        edge_index=edge_index,
+        edge_weight=edge_weight,
+        y=labels,
+        labeled_mask=labeled_mask,
+        spec=spec,
+    )
+    nodes = np.arange(n, dtype=np.int64)
+    with_loops = pl.poisson_learning_numpy(
+        n_nodes=n,
+        edge_index=np.concatenate([edge_index, np.vstack([nodes, nodes])], axis=1),
+        edge_weight=np.concatenate([edge_weight, np.full(n, 23.0, dtype=np.float32)]),
+        y=labels,
+        labeled_mask=labeled_mask,
+        spec=spec,
+    )
+
+    np.testing.assert_array_equal(with_loops.F, without_loops.F)
+    assert with_loops.n_iter == without_loops.n_iter
+    assert with_loops.residual == without_loops.residual
+
+
+def test_poisson_paper_decision_rule_matches_graphlearning_training_balance() -> None:
+    scores = np.array([[2.0, 4.0], [1.0, 3.0]], dtype=np.float64)
+    onehot = np.array(
+        [
+            [1.0, 0.0],
+            [1.0, 0.0],
+            [0.0, 1.0],
+            [0.0, 0.0],
+        ],
+        dtype=np.float64,
+    )
+    labeled_mask = np.array([True, True, True, False])
+
+    unchanged = pl._apply_paper_decision_rule(
+        scores,
+        Y_labeled=onehot,
+        labeled_mask=labeled_mask,
+        spec=PoissonLearningSpec(balance_scores=False),
+    )
+    assert unchanged is scores
+
+    archived_default = pl._apply_paper_decision_rule(
+        scores,
+        Y_labeled=onehot,
+        labeled_mask=labeled_mask,
+        spec=PoissonLearningSpec(balance_scores=True),
+    )
+    np.testing.assert_array_equal(
+        archived_default,
+        scores * np.array([1.5, 3.0])[None, :],
+    )
+
+    explicit_priors = pl._apply_paper_decision_rule(
+        scores,
+        Y_labeled=onehot,
+        labeled_mask=labeled_mask,
+        spec=PoissonLearningSpec(
+            balance_scores=True,
+            class_priors=(3.0, 1.0),
+        ),
+    )
+    np.testing.assert_array_equal(
+        explicit_priors,
+        scores * np.array([1.125, 0.75])[None, :],
+    )
+
+
+@pytest.mark.parametrize(
+    ("priors", "message"),
+    [
+        ((1.0,), "one value per labeled class"),
+        ((1.0, 0.0), "finite and strictly positive"),
+        ((1.0, np.nan), "finite and strictly positive"),
+    ],
+)
+def test_poisson_paper_decision_rule_rejects_invalid_priors(priors, message) -> None:
+    scores = np.ones((2, 2), dtype=np.float64)
+    onehot = np.eye(2, dtype=np.float64)
+    labeled_mask = np.ones(2, dtype=bool)
+    with pytest.raises(ValueError, match=message):
+        pl._apply_paper_decision_rule(
+            scores,
+            Y_labeled=onehot,
+            labeled_mask=labeled_mask,
+            spec=PoissonLearningSpec(
+                balance_scores=True,
+                class_priors=priors,
+            ),
+        )
+
+
+def test_poisson_paper_decision_rule_requires_every_class_in_labels() -> None:
+    with pytest.raises(ValueError, match="at least one label from every class"):
+        pl._apply_paper_decision_rule(
+            np.ones((2, 2), dtype=np.float64),
+            Y_labeled=np.array([[1.0, 0.0], [0.0, 0.0]]),
+            labeled_mask=np.ones(2, dtype=bool),
+            spec=PoissonLearningSpec(balance_scores=True),
+        )
+
+
+@pytest.mark.parametrize(
+    ("min_iter", "max_iter", "message"),
+    [(-1, 2, "non-negative"), (0, 0, "positive"), (3, 2, "less than")],
+)
+def test_poisson_paper_iteration_validates_iteration_bounds(min_iter, max_iter, message):
+    n, edge_index, edge_weight = _two_cluster_graph()
+    with pytest.raises(ValueError, match=message):
+        pl.poisson_learning_numpy(
+            n_nodes=n,
+            edge_index=edge_index,
+            edge_weight=edge_weight,
+            y=np.array([0, 0, 0, 1, 1, 1]),
+            labeled_mask=np.array([True, False, False, True, False, False]),
+            spec=PoissonLearningSpec(
+                solver="paper_iteration",
+                min_iter=min_iter,
+                max_iter=max_iter,
+            ),
+        )
+
+
+def test_poisson_paper_iteration_rejects_isolated_vertices_and_torch():
+    with pytest.raises(ValueError, match="strictly positive degrees"):
+        pl.poisson_learning_numpy(
+            n_nodes=2,
+            edge_index=np.zeros((2, 0), dtype=np.int64),
+            edge_weight=np.zeros((0,), dtype=np.float32),
+            y=np.array([0, 1]),
+            labeled_mask=np.array([True, True]),
+            spec=PoissonLearningSpec(
+                solver="paper_iteration",
+                min_iter=0,
+            ),
+        )
+
+    if torch is not None:
+        with pytest.raises(ValueError, match="NumPy/CPU-only"):
+            pl.poisson_learning_torch(
+                n_nodes=2,
+                edge_index=torch.tensor([[0, 1], [1, 0]]),
+                edge_weight=torch.ones(2),
+                y=torch.tensor([0, 1]),
+                labeled_mask=torch.tensor([True, True]),
+                spec=PoissonLearningSpec(
+                    solver="paper_iteration",
+                ),
+            )
+
+
+def test_poisson_numpy_rejects_unknown_solver() -> None:
+    n, edge_index, edge_weight = _two_cluster_graph()
+    spec = PoissonLearningSpec(solver="unknown")  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError, match="Unknown Poisson solver"):
+        pl.poisson_learning_numpy(
+            n_nodes=n,
+            edge_index=edge_index,
+            edge_weight=edge_weight,
+            y=np.array([0, 0, 0, 1, 1, 1]),
+            labeled_mask=np.array([True, False, False, True, False, False]),
+            spec=spec,
+        )
+
+
+def test_poisson_numpy_solver_dispatch_is_fail_closed(monkeypatch) -> None:
+    n, edge_index, edge_weight = _two_cluster_graph()
+    spec = PoissonLearningSpec(solver="unknown")  # type: ignore[arg-type]
+    # Exercise the solver dispatch's defensive guard independently from the
+    # public solver validation performed at the entry point.
+    monkeypatch.setattr(pl, "_validate_solver", lambda _spec: None)
+
+    with pytest.raises(ValueError, match="Unknown Poisson solver"):
+        pl.poisson_learning_numpy(
+            n_nodes=n,
+            edge_index=edge_index,
+            edge_weight=edge_weight,
+            y=np.array([0, 0, 0, 1, 1, 1]),
+            labeled_mask=np.array([True, False, False, True, False, False]),
+            spec=spec,
+        )
 
 
 def _two_cluster_graph() -> tuple[int, np.ndarray, np.ndarray]:
@@ -224,6 +471,8 @@ def test_poisson_learning_method_fit_predict():
 
     assert proba.shape == (n, 2)
     assert proba.argmax(axis=1).tolist() == y.tolist()
+    assert method.diagnostics_["solver"] == "conjugate_gradient"
+    assert method.diagnostics_["converged"] is True
 
 
 def test_build_sources_requires_labeled_nodes():

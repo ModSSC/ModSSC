@@ -8,6 +8,7 @@ from modssc.graph.specs import (
     GraphBuilderSpec,
     GraphFeaturizerSpec,
     GraphWeightsSpec,
+    graph_backend_required_extra,
 )
 from modssc.graph.validation import (
     validate_edge_index,
@@ -31,6 +32,17 @@ def test_weights_validation() -> None:
         GraphWeightsSpec(kind="knn_gaussian").validate(metric="cosine")
 
 
+def test_resolved_graph_backend_optional_extra_contract() -> None:
+    assert graph_backend_required_extra("numpy") is None
+    assert graph_backend_required_extra("precomputed") is None
+    assert graph_backend_required_extra("sklearn") == "sklearn"
+    assert graph_backend_required_extra("faiss") == "graph-faiss"
+    assert graph_backend_required_extra("annoy") == "graph-annoy"
+    assert graph_backend_required_extra("torch") == "inductive-torch"
+    with pytest.raises(GraphValidationError, match="must be resolved"):
+        graph_backend_required_extra("auto")
+
+
 def test_builder_spec_validation_knn_epsilon_anchor() -> None:
     GraphBuilderSpec(scheme="knn", k=5).validate()
     GraphBuilderSpec(
@@ -42,6 +54,24 @@ def test_builder_spec_validation_knn_epsilon_anchor() -> None:
     GraphBuilderSpec(scheme="epsilon", radius=0.3).validate()
     GraphBuilderSpec(scheme="anchor", k=5, n_anchors=10, anchors_k=3, candidate_limit=50).validate()
     GraphBuilderSpec(scheme="knn", k=5, backend="torch").validate()
+    GraphBuilderSpec(
+        scheme="knn",
+        metric="euclidean",
+        k=10,
+        backend="annoy",
+        include_self_in_knn=True,
+        annoy_n_trees=10,
+        annoy_query_k=30,
+        annoy_search_k=-1,
+    ).validate()
+    GraphBuilderSpec(
+        scheme="knn",
+        metric="euclidean",
+        k=5,
+        backend="precomputed",
+        precomputed_path="/immutable/knn.npz",
+        precomputed_sha256="a" * 64,
+    ).validate()
 
     with pytest.raises(GraphValidationError):
         GraphBuilderSpec(scheme="knn", k=0).validate()
@@ -58,12 +88,57 @@ def test_builder_spec_validation_knn_epsilon_anchor() -> None:
     with pytest.raises(GraphValidationError):
         GraphBuilderSpec(scheme="epsilon", radius=1.0, backend="torch").validate()
 
+    with pytest.raises(GraphValidationError, match="supports only knn"):
+        GraphBuilderSpec(
+            scheme="epsilon",
+            radius=1.0,
+            backend="precomputed",
+            precomputed_path="/immutable/knn.npz",
+            precomputed_sha256="a" * 64,
+        ).validate()
+
+    with pytest.raises(GraphValidationError, match="precomputed_path"):
+        GraphBuilderSpec(scheme="knn", k=5, backend="precomputed").validate()
+
+    with pytest.raises(GraphValidationError, match="lowercase SHA-256"):
+        GraphBuilderSpec(
+            scheme="knn",
+            k=5,
+            backend="precomputed",
+            precomputed_path="/immutable/knn.npz",
+            precomputed_sha256="A" * 64,
+        ).validate()
+
+    with pytest.raises(GraphValidationError, match="edge_weight_dtype"):
+        GraphBuilderSpec(edge_weight_dtype="float16").validate()  # type: ignore[arg-type]
+
     with pytest.raises(GraphValidationError):
         GraphBuilderSpec(
             scheme="epsilon",
             radius=1.0,
             metric="euclidean",
             weights=GraphWeightsSpec(kind="knn_gaussian"),
+        ).validate()
+
+    with pytest.raises(GraphValidationError, match="requires metric='euclidean'"):
+        GraphBuilderSpec(scheme="knn", k=5, backend="annoy", metric="cosine").validate()
+
+    with pytest.raises(GraphValidationError, match="supports only knn"):
+        GraphBuilderSpec(
+            scheme="epsilon",
+            radius=1.0,
+            backend="annoy",
+            metric="euclidean",
+        ).validate()
+
+    with pytest.raises(GraphValidationError, match="annoy_query_k"):
+        GraphBuilderSpec(
+            scheme="knn",
+            k=10,
+            backend="annoy",
+            metric="euclidean",
+            include_self_in_knn=True,
+            annoy_query_k=9,
         ).validate()
 
 
@@ -81,6 +156,85 @@ def test_builder_roundtrip_dict() -> None:
     d = spec.to_dict()
     spec2 = GraphBuilderSpec.from_dict(d)
     assert spec2.to_dict() == d
+
+    legacy = GraphBuilderSpec().to_dict()
+    assert "include_self_in_knn" not in legacy
+    assert "precomputed_path" not in legacy
+    assert "precomputed_sha256" not in legacy
+    assert "annoy_n_trees" not in legacy
+
+    precomputed = GraphBuilderSpec(
+        metric="euclidean",
+        include_self_in_knn=True,
+        edge_weight_dtype="float64",
+        backend="precomputed",
+        precomputed_path="/immutable/knn.npz",
+        precomputed_sha256="a" * 64,
+    )
+    assert GraphBuilderSpec.from_dict(precomputed.to_dict()) == precomputed
+
+    annoy = GraphBuilderSpec(
+        metric="euclidean",
+        k=10,
+        include_self_in_knn=True,
+        backend="annoy",
+        annoy_n_trees=10,
+        annoy_search_k=-1,
+        annoy_query_k=30,
+        annoy_rerank=False,
+    )
+    assert GraphBuilderSpec.from_dict(annoy.to_dict()) == annoy
+    assert annoy.to_dict()["annoy_query_k"] == 30
+    assert annoy.to_dict()["annoy_rerank"] is False
+
+
+def test_builder_preserves_historical_positional_constructor() -> None:
+    weights = GraphWeightsSpec("binary")
+    values = (
+        "epsilon",
+        "euclidean",
+        9,
+        0.25,
+        "or",
+        weights,
+        "none",
+        False,
+        "numpy",
+        64,
+        "features.custom",
+        20,
+        4,
+        "kmeans",
+        123,
+        True,
+        16,
+        80,
+        160,
+    )
+
+    spec = GraphBuilderSpec(*values)  # type: ignore[arg-type]
+
+    assert spec.backend == "numpy"
+    assert spec.chunk_size == 64
+    assert spec.feature_field == "features.custom"
+    assert spec.faiss_ef_construction == 160
+    assert spec.include_self_in_knn is False
+    with pytest.raises(TypeError):
+        GraphBuilderSpec(*values, True)  # type: ignore[arg-type,misc]
+
+
+def test_precomputed_builder_identity_uses_authenticated_content_not_path() -> None:
+    common = {
+        "metric": "euclidean",
+        "backend": "precomputed",
+        "precomputed_sha256": "a" * 64,
+    }
+    first = GraphBuilderSpec(precomputed_path="/machine-a/knn.npz", **common)
+    second = GraphBuilderSpec(precomputed_path="/machine-b/knn.npz", **common)
+
+    assert first.to_dict() != second.to_dict()
+    assert first.fingerprint_payload() == second.fingerprint_payload()
+    assert "precomputed_path" not in first.fingerprint_payload()
 
 
 def test_featurizer_spec_struct_validation_and_roundtrip() -> None:
@@ -172,6 +326,10 @@ def test_builder_spec_validation_general():
         GraphBuilderSpec(faiss_ef_search=0).validate()
     with pytest.raises(GraphValidationError, match="faiss_ef_construction must be > 0"):
         GraphBuilderSpec(faiss_ef_construction=0).validate()
+    with pytest.raises(GraphValidationError, match="annoy_n_trees must be > 0"):
+        GraphBuilderSpec(annoy_n_trees=0).validate()
+    with pytest.raises(GraphValidationError, match="annoy_search_k must be -1 or > 0"):
+        GraphBuilderSpec(annoy_search_k=0).validate()
 
 
 def test_featurizer_spec_validation():

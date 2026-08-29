@@ -3,9 +3,12 @@ name: Release
 on:
   push:
     branches: ["main"]
+    tags: ["v*"]
     paths:
       - "src/**"
+      - "bench/**"
       - "pyproject.toml"
+      - ".github/scripts/audit_distribution.py"
       - ".github/workflows/release.yml"
   workflow_dispatch:
 
@@ -29,6 +32,12 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install build
           python -m build
+
+      - name: Audit autonomous reproduction artifacts
+        run: |
+          python .github/scripts/audit_distribution.py \
+            --wheel "$(find dist -maxdepth 1 -name '*.whl' -print -quit)" \
+            --sdist "$(find dist -maxdepth 1 -name '*.tar.gz' -print -quit)"
 
       - name: Upload dist artifacts
         uses: actions/upload-artifact@v7

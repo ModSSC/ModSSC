@@ -8,6 +8,7 @@ from typing import Any
 
 import numpy as np
 
+from modssc.capabilities import DENSE_TRANSDUCTIVE_CAPABILITIES
 from modssc.transductive.base import MethodInfo, TransductiveMethod
 from modssc.transductive.optional import optional_import
 
@@ -172,6 +173,7 @@ class GraFNMethod(TransductiveMethod):
         ),
         paper_pdf="https://arxiv.org/pdf/2204.01303",
         official_code="https://github.com/Junseok0207/GraFN",
+        capabilities=DENSE_TRANSDUCTIVE_CAPABILITIES,
     )
 
     def __init__(self, spec: GraFNSpec | None = None) -> None:

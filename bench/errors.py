@@ -3,7 +3,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-_CODE_RE = re.compile(r"^(E_BENCH_[A-Z0-9_]+):")
+_CODE_RE = re.compile(r"^(E_[A-Z0-9_]+):")
+_VALID_CODE_RE = re.compile(r"^E_[A-Z0-9_]+$")
 
 
 @dataclass(frozen=True)
@@ -19,7 +20,9 @@ class BenchRuntimeError(RuntimeError):
 
 def extract_error_code(exc: BaseException) -> str:
     code = getattr(exc, "code", None)
-    if isinstance(code, str) and code.startswith("E_BENCH_"):
+    # Native bricks own their failure taxonomy.  The runner records that code
+    # verbatim instead of collapsing every non-bench failure to a generic one.
+    if isinstance(code, str) and _VALID_CODE_RE.fullmatch(code):
         return code
     msg = str(exc)
     match = _CODE_RE.match(msg)

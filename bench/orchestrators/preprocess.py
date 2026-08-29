@@ -9,17 +9,10 @@ import numpy as np
 
 from modssc.data_loader.types import LoadedDataset
 from modssc.preprocess import preprocess
-from modssc.preprocess.plan import PreprocessPlan, StepConfig
+from modssc.preprocess.plan import PreprocessPlan
 from modssc.preprocess.types import PreprocessResult
-from modssc.sampling.result import SamplingResult
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _check_unknown_keys(data: Mapping[str, Any], *, allowed: set[str], path: str) -> None:
-    unknown = set(data.keys()) - allowed
-    if unknown:
-        raise ValueError(f"Unknown keys in {path}: {sorted(unknown)}")
 
 
 def _shape_of(value: Any) -> tuple[int, ...] | None:
@@ -32,84 +25,6 @@ def _shape_of(value: Any) -> tuple[int, ...] | None:
         return None
 
 
-def _plan_from_dict(obj: Mapping[str, Any]) -> PreprocessPlan:
-    if not isinstance(obj, Mapping):
-        raise ValueError("preprocess.plan must be a mapping")
-    _check_unknown_keys(obj, allowed={"output_key", "steps"}, path="preprocess.plan")
-
-    output_key = str(obj.get("output_key", "features.X"))
-    steps_raw = obj.get("steps", [])
-    if not isinstance(steps_raw, list):
-        raise ValueError("preprocess.plan.steps must be a list")
-
-    steps: list[StepConfig] = []
-    for index, item in enumerate(steps_raw):
-        if not isinstance(item, Mapping):
-            raise ValueError("Each preprocess step must be a mapping")
-        _check_unknown_keys(
-            item,
-            allowed={"id", "step_id", "params", "modalities", "requires_fields", "enabled"},
-            path=f"preprocess.plan.steps[{index}]",
-        )
-        if "id" in item and "step_id" in item and str(item["id"]) != str(item["step_id"]):
-            raise ValueError(
-                f"preprocess.plan.steps[{index}] has conflicting 'id' and 'step_id' values"
-            )
-        step_id = str(item.get("id") or item.get("step_id") or "")
-        if not step_id:
-            raise ValueError("Each preprocess step must define 'id'")
-        params = item.get("params", {}) or {}
-        if not isinstance(params, Mapping):
-            raise ValueError(f"params for step {step_id!r} must be a mapping")
-        modalities = tuple(str(m) for m in (item.get("modalities") or ()))
-        requires_fields = tuple(str(k) for k in (item.get("requires_fields") or ()))
-        enabled = bool(item.get("enabled", True))
-        steps.append(
-            StepConfig(
-                step_id=step_id,
-                params=dict(params),
-                modalities=modalities,
-                requires_fields=requires_fields,
-                enabled=enabled,
-            )
-        )
-
-    return PreprocessPlan(steps=tuple(steps), output_key=output_key)
-
-
-def resolve_fit_indices(
-    *,
-    dataset: LoadedDataset,
-    sampling: SamplingResult,
-    fit_on: str | None,
-) -> np.ndarray | None:
-    if fit_on is None:
-        return None
-
-    if sampling.is_graph():
-        masks = sampling.masks
-        if fit_on == "train":
-            return np.where(np.asarray(masks["train"]))[0]
-        if fit_on == "train_labeled":
-            return np.where(np.asarray(masks["labeled"]))[0]
-        if fit_on == "train_unlabeled":
-            return np.where(np.asarray(masks["unlabeled"]))[0]
-        if fit_on == "val":
-            return np.where(np.asarray(masks["val"]))[0]
-        raise ValueError(f"Unsupported fit_on for graph sampling: {fit_on!r}")
-
-    if fit_on == "train":
-        return np.asarray(sampling.indices["train"], dtype=np.int64)
-    if fit_on == "train_labeled":
-        return np.asarray(sampling.indices["train_labeled"], dtype=np.int64)
-    if fit_on == "train_unlabeled":
-        return np.asarray(sampling.indices["train_unlabeled"], dtype=np.int64)
-    if fit_on == "val":
-        return np.asarray(sampling.indices["val"], dtype=np.int64)
-
-    raise ValueError(f"Unsupported fit_on: {fit_on!r}")
-
-
 def run(
     dataset: LoadedDataset,
     *,
@@ -120,7 +35,7 @@ def run(
     cache_dir: str | None = None,
 ) -> PreprocessResult:
     start = perf_counter()
-    plan = _plan_from_dict(plan_dict)
+    plan = PreprocessPlan.from_dict(plan_dict)
     step_ids = [step.step_id for step in plan.steps if step.enabled]
     _LOGGER.info(
         "Preprocess start: seed=%s cache=%s n_steps=%s fit_indices=%s",

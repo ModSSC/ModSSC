@@ -35,6 +35,29 @@ print(available_methods())
 The registry and dataset types are in [`src/modssc/inductive/registry.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/inductive/registry.py) and [`src/modssc/inductive/types.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/inductive/types.py). <sup class="cite"><a href="#source-1">[1]</a><a href="#source-2">[2]</a></sup>
 
 
+## Composed execution contract
+
+`execute_inductive_method` is the native build-and-fit boundary used by the
+benchmark runner. Immediately before `fit`, it composes three independently
+owned descriptions:
+
+- the resolved method spec and its exact input/component requirements;
+- metadata from the materialized labeled, unlabeled, augmented, view, graph,
+  target, and prediction inputs;
+- static contracts attached to the model bundles that were actually bound.
+
+Known incompatibilities always fail before training. Missing proof is recorded
+as `unverified`; strict execution rejects it, while non-strict library use may
+continue with that status preserved. The canonical report and its SHA-256 are
+returned in the execution resolution. The gate never calls a model forward and
+never infers an output merely from a method or classifier name.
+
+Custom Torch factories used in strict execution must return bundles with an
+explicit `ModelContract`. The contract must describe actual callable behaviour;
+for example, declaring `feat` requires a real feature-producing path rather
+than treating logits as an embedding.
+
+
 ## API reference
 
 ::: modssc.inductive

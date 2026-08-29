@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -31,6 +31,60 @@ class PreprocessPlan:
     steps: tuple[StepConfig, ...]
     output_key: str = "features.X"
 
+    @classmethod
+    def from_dict(cls, obj: Mapping[str, Any]) -> PreprocessPlan:
+        """Parse a strict serialized preprocessing plan."""
+
+        if not isinstance(obj, Mapping):
+            raise ValueError("preprocess plan must be a mapping")
+        unknown = set(obj) - {"output_key", "steps"}
+        if unknown:
+            raise ValueError(f"Unknown keys in preprocess plan: {sorted(unknown)}")
+        steps_raw = obj.get("steps", [])
+        if not isinstance(steps_raw, list):
+            raise ValueError("'steps' must be a sequence")
+
+        steps: list[StepConfig] = []
+        allowed = {"id", "step_id", "params", "modalities", "requires_fields", "enabled"}
+        for index, item in enumerate(steps_raw):
+            if not isinstance(item, Mapping):
+                raise ValueError("Each step must be a mapping")
+            unknown_step = set(item) - allowed
+            if unknown_step:
+                raise ValueError(
+                    f"Unknown keys in preprocess plan steps[{index}]: {sorted(unknown_step)}"
+                )
+            if "id" in item and "step_id" in item and str(item["id"]) != str(item["step_id"]):
+                raise ValueError(
+                    f"preprocess plan steps[{index}] has conflicting 'id' and 'step_id' values"
+                )
+            step_id = str(item.get("id") or item.get("step_id") or "")
+            if not step_id:
+                raise ValueError("Each step must define 'id'")
+            params = item.get("params", {}) or {}
+            if not isinstance(params, Mapping):
+                raise ValueError(f"params for {step_id!r} must be a mapping")
+            steps.append(
+                StepConfig(
+                    step_id=step_id,
+                    params=dict(params),
+                    modalities=tuple(str(value) for value in (item.get("modalities") or ())),
+                    requires_fields=tuple(
+                        str(value) for value in (item.get("requires_fields") or ())
+                    ),
+                    enabled=bool(item.get("enabled", True)),
+                )
+            )
+        return cls(
+            steps=tuple(steps),
+            output_key=str(obj.get("output_key", "features.X")),
+        )
+
+    def enabled_step_ids(self) -> tuple[str, ...]:
+        """Return registry identifiers for enabled steps in execution order."""
+
+        return tuple(step.step_id for step in self.steps if step.enabled)
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "output_key": self.output_key,
@@ -56,38 +110,29 @@ def load_plan(path: str | Path) -> PreprocessPlan:
     if not isinstance(data, Mapping):
         raise ValueError("Plan file must contain a mapping at the root")
 
-    output_key = str(data.get("output_key", "features.X"))
-    steps_raw = data.get("steps", [])
-    if not isinstance(steps_raw, Sequence):
-        raise ValueError("'steps' must be a sequence")
-
-    steps: list[StepConfig] = []
-    for item in steps_raw:
-        if not isinstance(item, Mapping):
-            raise ValueError("Each step must be a mapping")
-        step_id = str(item.get("id") or item.get("step_id"))
-        if not step_id:
-            raise ValueError("Each step must define 'id'")
-        params = item.get("params", {}) or {}
-        if not isinstance(params, Mapping):
-            raise ValueError(f"params for {step_id!r} must be a mapping")
-
-        modalities = tuple(str(m) for m in (item.get("modalities") or ()))
-        requires_fields = tuple(str(k) for k in (item.get("requires_fields") or ()))
-        enabled = bool(item.get("enabled", True))
-        steps.append(
-            StepConfig(
-                step_id=step_id,
-                params=dict(params),
-                modalities=modalities,
-                requires_fields=requires_fields,
-                enabled=enabled,
-            )
-        )
-
-    return PreprocessPlan(steps=tuple(steps), output_key=output_key)
+    return PreprocessPlan.from_dict(data)
 
 
 def dump_plan(plan: PreprocessPlan, path: str | Path) -> None:
     p = Path(path)
     p.write_text(yaml.safe_dump(plan.to_dict(), sort_keys=False))
+
+
+def steps_require_fit_indices(step_ids: Iterable[str]) -> bool:
+    """Return whether any enabled native preprocessing step is fittable."""
+
+    from modssc.preprocess.registry import step_info
+
+    return any(step_info(step_id).get("kind") == "fittable" for step_id in step_ids)
+
+
+def steps_with_runtime_role(step_ids: Iterable[str], *, role: str) -> tuple[str, ...]:
+    """Select enabled native steps declaring a runtime reporting role."""
+
+    if not isinstance(role, str) or not role.strip():
+        raise ValueError("role must be a non-empty string")
+
+    from modssc.preprocess.registry import default_step_registry
+
+    registry = default_step_registry()
+    return tuple(step_id for step_id in step_ids if role in registry.spec(step_id).runtime_roles)

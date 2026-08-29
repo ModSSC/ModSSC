@@ -20,7 +20,7 @@ Use this guide to choose the smallest dependency set that matches your workflow.
 
 | Extra | Unlocks | Typical use |
 | --- | --- | --- |
-| `openml` | OpenML-backed tabular datasets | `iris`, `adult`, `breast_cancer` |
+| `openml` | OpenML-backed tabular datasets | `iris`, `adult`, `breast_cancer`, `wdbc`, `vote` |
 | `hf` | Hugging Face datasets provider | `ag_news`, `imdb`, `amazon_polarity` |
 | `text` | Alias used for text dataset installs | Text datasets backed by `datasets` |
 | `tfds` | TensorFlow Datasets provider | TFDS-backed datasets |
@@ -42,6 +42,7 @@ Use this guide to choose the smallest dependency set that matches your workflow.
 | `transductive-pyg` | PyG-backed transductive support | graph-native torch workflows |
 | `transductive-advanced` | Advanced transductive torch/PyG stack | larger graph method surface |
 | `graph-faiss` | FAISS graph construction backend | fast approximate kNN on supported platforms |
+| `graph-annoy` | Annoy graph construction backend | seeded approximate Euclidean kNN |
 
 
 ## Preprocess extras

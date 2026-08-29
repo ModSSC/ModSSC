@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from time import perf_counter
 from typing import Any, Literal
 
@@ -62,6 +62,98 @@ class PoissonLearningSpec:
     center_sources: bool = True
     tol: float = 1e-3
     max_iter: int = 1000
+    solver: Literal["conjugate_gradient", "paper_iteration"] = field(
+        default="conjugate_gradient", kw_only=True
+    )
+    balance_scores: bool = field(default=False, kw_only=True)
+    class_priors: tuple[float, ...] | None = field(default=None, kw_only=True)
+    min_iter: int = field(default=50, kw_only=True)
+    require_convergence: bool = field(default=False, kw_only=True)
+
+
+def _validate_solver(spec: PoissonLearningSpec) -> None:
+    if spec.solver not in {"conjugate_gradient", "paper_iteration"}:
+        raise ValueError(f"Unknown Poisson solver: {spec.solver!r}")
+
+
+def _paper_iteration_numpy(
+    *,
+    n_nodes: int,
+    edge_index: np.ndarray,
+    edge_weight: np.ndarray,
+    source: np.ndarray,
+    labeled_mask: np.ndarray,
+    spec: PoissonLearningSpec,
+) -> DiffusionResult:
+    """Run Algorithm 1's degree-scaled Poisson iteration.
+
+    This is the ``gradient_descent`` solver in the authors' GraphLearning
+    implementation.  Self loops are removed before computing the degree, the
+    Poisson source is scaled by ``D^-1``, and convergence is checked with the
+    mixing chain used in the paper.  The implementation deliberately remains
+    NumPy-only: the paper profile is a CPU profile and this keeps its arithmetic
+    and stopping rule identical on every cluster.
+    """
+
+    min_iter = int(spec.min_iter)
+    max_iter = int(spec.max_iter)
+    if min_iter < 0:
+        raise ValueError("min_iter must be non-negative")
+    if max_iter <= 0:
+        raise ValueError("max_iter must be positive")
+    if min_iter > max_iter:
+        raise ValueError("min_iter must be less than or equal to max_iter")
+
+    src_all, dst_all = edge_index
+    keep = src_all != dst_all
+    src = src_all[keep]
+    dst = dst_all[keep]
+    weights = edge_weight[keep].astype(np.float64, copy=False)
+
+    degree = np.zeros(n_nodes, dtype=np.float64)
+    np.add.at(degree, dst, weights)
+    if np.any(degree <= 0.0):
+        raise ValueError("paper_iteration requires a graph with strictly positive degrees")
+    # Archived GraphLearningOld builds D from W + 1e-10 I after removing the
+    # actual graph diagonal. The 1e-10 is therefore present in every inverse
+    # degree used by Algorithm 1, but not in the stationary distribution.
+    inverse_degree_denominator = degree + 1.0e-10
+
+    rhs = np.asarray(source, dtype=np.float64) / inverse_degree_denominator[:, None]
+    scores = np.zeros_like(rhs)
+
+    # The auxiliary distribution detects when the random walk has mixed.  It
+    # starts uniformly on the labeled vertices exactly as in Algorithm 1.
+    mixing = labeled_mask.astype(np.float64)
+    mixing /= float(mixing.sum())
+    stationary = degree / float(degree.sum())
+    stopping_tolerance = 1.0 / float(n_nodes)
+    residual = float(np.max(np.abs(mixing - stationary)))
+
+    iteration = 0
+    while (iteration < min_iter or residual > stopping_tolerance) and iteration < max_iter:
+        propagated = np.zeros_like(scores)
+        np.add.at(propagated, dst, weights[:, None] * scores[src])
+        scores = rhs + propagated / inverse_degree_denominator[:, None]
+
+        # W^T D^-1 p, expressed with the repository's A[dst, src] edge
+        # convention.  On the symmetric paper graph this is the invariant
+        # distribution iteration stated by Calder et al.
+        next_mixing = np.zeros_like(mixing)
+        np.add.at(
+            next_mixing,
+            src,
+            weights * (mixing[dst] / inverse_degree_denominator[dst]),
+        )
+        mixing = next_mixing
+        residual = float(np.max(np.abs(mixing - stationary)))
+        iteration += 1
+
+    return DiffusionResult(
+        F=scores,
+        n_iter=iteration,
+        residual=residual,
+    )
 
 
 def _build_sources(
@@ -76,11 +168,12 @@ def _build_sources(
     if m <= 0:
         raise ValueError("PoissonLearning requires at least 1 labeled node.")
 
-    mask_f = labeled_mask.astype(np.float32)
-    B = np.zeros((n, c), dtype=np.float32)
+    source_dtype = np.float64 if np.asarray(Y_labeled).dtype == np.float64 else np.float32
+    mask_f = labeled_mask.astype(source_dtype)
+    B = np.zeros((n, c), dtype=source_dtype)
 
     for k in range(c):
-        yk = Y_labeled[:, k].astype(np.float32, copy=False)
+        yk = Y_labeled[:, k].astype(source_dtype, copy=False)
         if center_sources:
             pi = float(yk[labeled_mask].mean())
             bk = mask_f * (yk - pi)
@@ -93,6 +186,40 @@ def _build_sources(
     return B
 
 
+def _apply_paper_decision_rule(
+    scores: np.ndarray,
+    *,
+    Y_labeled: np.ndarray,
+    labeled_mask: np.ndarray,
+    spec: PoissonLearningSpec,
+) -> np.ndarray:
+    """Apply Equation (2.4), ``diag(b / y_bar)``, to class scores."""
+
+    if not spec.balance_scores:
+        return scores
+    observed = np.asarray(
+        Y_labeled[labeled_mask].mean(axis=0),
+        dtype=np.float64,
+    )
+    if np.any(observed <= 0.0):
+        raise ValueError("paper decision rule requires at least one label from every class")
+    n_classes = int(observed.size)
+    if spec.class_priors is None:
+        # GraphLearningOld's ``training_balance=True`` branch uses
+        # ``diag(1 / c)`` when beta is absent. This is a global factor away
+        # from a uniform probability prior, but retaining the archived scale
+        # is required for exact score parity.
+        target = np.ones(n_classes, dtype=np.float64)
+    else:
+        target = np.asarray(spec.class_priors, dtype=np.float64).reshape(-1)
+        if target.shape != (n_classes,):
+            raise ValueError("class_priors must contain one value per labeled class")
+        if not np.all(np.isfinite(target)) or np.any(target <= 0.0):
+            raise ValueError("class_priors must be finite and strictly positive")
+        target = target / float(target.sum())
+    return np.asarray(scores) * (target / observed)[None, :]
+
+
 def poisson_learning_numpy(
     *,
     n_nodes: int,
@@ -102,10 +229,12 @@ def poisson_learning_numpy(
     labeled_mask: np.ndarray,
     spec: PoissonLearningSpec,
 ) -> DiffusionResult:
+    _validate_solver(spec)
     edge_index, edge_weight = _validate_graph_inputs(
         n_nodes=n_nodes,
         edge_index=edge_index,
         edge_weight=edge_weight,
+        preserve_float64=spec.solver == "paper_iteration",
     )
 
     y = np.asarray(y).reshape(-1).astype(np.int64, copy=False)
@@ -124,12 +253,35 @@ def poisson_learning_numpy(
     classes = np.unique(y[labeled_idx])
     n_classes = int(classes.size)
 
-    Y = labels_to_onehot(y, n_classes=n_classes).astype(np.float32, copy=False)
+    score_dtype = np.float64 if spec.solver == "paper_iteration" else np.float32
+    Y = labels_to_onehot(y, n_classes=n_classes).astype(score_dtype, copy=False)
     Y[~labeled_mask] = 0.0
 
     B = _build_sources(
         Y_labeled=Y, labeled_mask=labeled_mask, center_sources=bool(spec.center_sources)
     )
+
+    if spec.solver == "paper_iteration":
+        result = _paper_iteration_numpy(
+            n_nodes=int(n_nodes),
+            edge_index=edge_index,
+            edge_weight=edge_weight,
+            source=B,
+            labeled_mask=labeled_mask,
+            spec=spec,
+        )
+        return DiffusionResult(
+            F=_apply_paper_decision_rule(
+                result.F,
+                Y_labeled=Y,
+                labeled_mask=labeled_mask,
+                spec=spec,
+            ),
+            n_iter=result.n_iter,
+            residual=result.residual,
+        )
+    if spec.solver != "conjugate_gradient":
+        raise ValueError(f"Unknown Poisson solver: {spec.solver!r}")
 
     laplacian_kind = str(spec.laplacian_kind)
     matvec_kind = "sym" if laplacian_kind == "paper_normalized" else laplacian_kind
@@ -190,6 +342,12 @@ def poisson_learning_numpy(
         n_iter_max = max(n_iter_max, int(cg.n_iter))
         residual_max = max(residual_max, float(cg.residual_norm))
 
+    F = _apply_paper_decision_rule(
+        F,
+        Y_labeled=Y,
+        labeled_mask=labeled_mask,
+        spec=spec,
+    ).astype(np.float32, copy=False)
     return DiffusionResult(F=F, n_iter=n_iter_max, residual=residual_max)
 
 
@@ -203,6 +361,9 @@ def poisson_learning_torch(
     spec: PoissonLearningSpec,
     device: str | None = None,
 ) -> DiffusionResult:
+    _validate_solver(spec)
+    if spec.solver != "conjugate_gradient":
+        raise ValueError("paper_iteration is a NumPy/CPU-only solver")
     torch = optional_import("torch", extra="transductive-torch")
 
     if device is None and hasattr(y, "device"):
@@ -313,7 +474,13 @@ def poisson_learning_torch(
         n_iter_max = max(n_iter_max, int(info.get("n_iter", 0)))
         residual_max = max(residual_max, float(info.get("residual_norm", 0.0)))
 
-    return DiffusionResult(F=to_numpy(F), n_iter=n_iter_max, residual=residual_max)
+    F_numpy = _apply_paper_decision_rule(
+        to_numpy(F),
+        Y_labeled=Y_np,
+        labeled_mask=to_numpy(labeled_mask_t),
+        spec=spec,
+    ).astype(np.float32, copy=False)
+    return DiffusionResult(F=F_numpy, n_iter=n_iter_max, residual=residual_max)
 
 
 def poisson_learning(
@@ -329,6 +496,7 @@ def poisson_learning(
     """Backend-dispatching wrapper."""
     if spec is None:
         spec = PoissonLearningSpec()
+    _validate_solver(spec)
 
     backend = str(spec.backend)
     if backend == "auto":
@@ -378,6 +546,7 @@ class PoissonLearningMethod(TransductiveMethod):
     def __init__(self, spec: PoissonLearningSpec | None = None) -> None:
         self.spec = spec or PoissonLearningSpec()
         self._result: DiffusionResult | None = None
+        self.diagnostics_: dict[str, Any] = {}
 
     def fit(self, data: Any, *, device: str | None = None, seed: int = 0) -> PoissonLearningMethod:
         start = perf_counter()
@@ -389,6 +558,7 @@ class PoissonLearningMethod(TransductiveMethod):
             seed,
             self.spec.backend,
         )
+        _validate_solver(self.spec)
         validate_node_dataset(data)
 
         masks = getattr(data, "masks", None) or {}
@@ -414,10 +584,23 @@ class PoissonLearningMethod(TransductiveMethod):
             spec=self.spec,
             device=device,
         )
+        self.diagnostics_ = {
+            "solver": self.spec.solver,
+            "decision_rule": (
+                "paper_class_prior_correction" if self.spec.balance_scores else "raw_argmax"
+            ),
+            "iterations": int(self._result.n_iter),
+            "mixing_residual": float(self._result.residual),
+            "mixing_tolerance": 1.0 / float(np.asarray(data.y).shape[0]),
+            "converged": bool(
+                self.spec.solver != "paper_iteration"
+                or self._result.residual <= 1.0 / float(np.asarray(data.y).shape[0])
+            ),
+        }
         logger.info("Finished %s.fit in %.3fs", self.info.method_id, perf_counter() - start)
         return self
 
     def predict_proba(self, data: Any) -> np.ndarray:
         if self._result is None:
             raise RuntimeError("PoissonLearningMethod is not fitted yet. Call fit() first.")
-        return np.asarray(self._result.F, dtype=np.float32)
+        return np.asarray(self._result.F)

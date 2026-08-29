@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 
+from modssc.capabilities import DENSE_TRANSDUCTIVE_CAPABILITIES
 from modssc.transductive.base import MethodInfo, TransductiveMethod
 from modssc.transductive.optional import optional_import
 
@@ -201,6 +202,7 @@ class GATMethod(TransductiveMethod):
         paper_title="Graph Attention Networks",
         paper_pdf="https://arxiv.org/pdf/1710.10903",
         official_code="https://github.com/PetarV-/GAT",
+        capabilities=DENSE_TRANSDUCTIVE_CAPABILITIES,
     )
 
     def __init__(self, spec: GATSpec | None = None) -> None:

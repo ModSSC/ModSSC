@@ -148,6 +148,16 @@ The mode uses labels only to align rows with the expected train/test order; it d
 The pipeline also supports a checkpoint-backed `vision.aet` mode for PyTorch AET checkpoints, but the linked AET README documents CIFAR-10 training rather than publishing a CIFAR-10 checkpoint. <sup class="cite"><a href="#source-9">[9]</a></sup>
 
 
+## Annoy candidate search
+
+For a seeded Annoy candidate search, set `backend="annoy"` with a Euclidean
+kNN graph. `annoy_n_trees` controls index construction, `annoy_query_k` controls
+how many candidates are retrieved before retaining the final `k`, and
+`annoy_search_k` controls Annoy's search effort. Set `annoy_rerank=true` to
+reorder those candidates using exact Euclidean distances; its default is false.
+The `seed` passed to `build_graph` builds the index and enters the graph cache key.
+
+
 ## Pitfalls
 !!! warning
     `GraphBuilderSpec` validation is strict; unsupported combinations (for example, `backend=faiss` with `scheme=epsilon`) raise `GraphValidationError`. <sup class="cite"><a href="#source-1">[1]</a><a href="#source-6">[6]</a></sup>

@@ -27,6 +27,21 @@ print(available_providers())
 print(dataset_info("toy").as_dict())
 ```
 
+Resolve and fingerprint a declarative dataset request without downloading or
+creating a cache:
+
+```python
+from modssc.data_loader import dataset_fingerprint, resolve_dataset_identity
+
+identity = resolve_dataset_identity("mnist")
+print(identity.canonical_uri, dataset_fingerprint("mnist"))
+```
+
+This preflight uses the same catalog and provider identity resolution as
+`load_dataset`. It is suitable for rejecting stale reproduction-card pins
+before a scheduler job starts; it does not authenticate the downloaded content,
+which remains a separate cache-manifest check.
+
 The public API is exported from [`src/modssc/data_loader/__init__.py`](https://github.com/ModSSC/ModSSC/blob/main/src/modssc/data_loader/__init__.py). Provider resolution, cache layout, manifests, and orchestration are implemented in dedicated subpackages such as `catalog/`, `providers/`, `storage/`, and internal `services/`. <sup class="cite"><a href="#source-3">[3]</a></sup>
 
 !!! warning

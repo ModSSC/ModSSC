@@ -17,7 +17,9 @@ python -m bench.main --config bench/configs/experiments/toy_inductive.yaml --log
 ## Common failure patterns
 
 ### `modssc` works but `bench/` commands or configs are missing
-The benchmark runner lives in the repository and is not shipped to PyPI. Use a source checkout when you need `bench.main`, authored configs, examples, or notebooks.
+The benchmark runner is shipped in the top-level `bench` package. Use
+`modssc-bench --config ...` for both standardized configs and frozen article
+cards. A source checkout is needed only for repository tools and development.
 
 ### Optional dependency error during dataset load, preprocess, or method execution
 Install the extra suggested by the error message. Dataset specs expose `required_extra`, preprocess steps expose step metadata, and method registries rely on the extras declared in `pyproject.toml`.
@@ -38,15 +40,23 @@ Graph specification validation is strict. If a backend/scheme combination is uns
 This extension hook is disabled by default. You must set `run.allow_custom_factories: true` explicitly, and you should only do that for configs you control.
 
 ### A rerun seems to reuse stale artifacts
-Check which cache root is active (`MODSSC_CACHE_ROOT` or per-cache overrides). Dataset, preprocess, graph, and views caches are separate layers. If code changed inside one stage, clear only the impacted cache subtree and rerun.
+Check which cache root is active (`MODSSC_CACHE_ROOT` or per-cache overrides).
+Dataset, preprocess, graph, and views caches are separate layers. Current
+preprocess, graph, and graph-view keys include the relevant implementation and
+software identity, so a code or backend change creates a cache miss
+automatically. Clearing a subtree is useful for a deliberate clean-room run,
+but is not required to prevent reuse of an incompatible entry.
 
 
 ## Trusted-input boundaries
 - Benchmark configs are trusted local inputs.
 - Custom factories are for trusted configs only.
-- Dataset and preprocess cache artifacts are trusted local artifacts only.
+- Dataset and runtime cache artifacts are local inputs. Authenticated cache
+  manifests detect incomplete, stale-schema, and modified entries before reuse.
 
-If you are debugging behavior and you do not trust a cached artifact, clear the relevant cache entry and regenerate it.
+If you are debugging behavior and do not trust a cached artifact, clear the
+relevant entry and regenerate it. A `require_cache_hit: true` protocol instead
+fails closed and requires an explicit preparation step.
 
 
 ## When to escalate from CLI to code inspection

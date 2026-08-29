@@ -28,6 +28,7 @@ dependencies = [
   "PyYAML>=6.0",
   "platformdirs>=4.0",
   "numpy>=1.24,<2.4",
+  "scipy>=1.10",
   "typer>=0.12.0",
 ]
 
@@ -48,6 +49,7 @@ modssc-inductive = "modssc.cli.inductive:app"
 modssc-transductive = "modssc.cli.transductive:app"
 modssc-augmentation = "modssc.cli.augmentation:app"
 modssc-evaluation = "modssc.cli.evaluation:app"
+modssc-bench = "bench.main:main"
 
 [project.optional-dependencies]
 dev = [
@@ -83,6 +85,7 @@ hf = [
 
 openml = [
   "scikit-learn",
+  "pandas>=2.2,<3",
 ]
 
 tfds = [
@@ -143,8 +146,13 @@ graph-faiss = [
   "faiss-cpu; platform_system != 'Darwin'",
 ]
 
+graph-annoy = [
+  "annoy>=1.17.3",
+]
+
 datasets = [
   "scikit-learn",
+  "pandas>=2.2,<3",
   "datasets",
   "tensorflow-datasets",
   "tensorflow",
@@ -159,6 +167,7 @@ datasets = [
 # Optional alias if you prefer: pip install "modssc[data]"
 data = [
   "scikit-learn",
+  "pandas>=2.2,<3",
   "datasets",
   "tensorflow-datasets",
   "tensorflow",
@@ -214,6 +223,7 @@ preprocess = [
 # One-shot install for full-feature runs: pip install "modssc[full]"
 full = [
   "scikit-learn",
+  "pandas>=2.2,<3",
   "datasets",
   "tensorflow-datasets",
   "tensorflow",
@@ -224,6 +234,7 @@ full = [
   "torchcodec",
   "torch-geometric",
   "faiss-cpu; platform_system != 'Darwin'",
+  "annoy>=1.17.3",
   "sentence-transformers",
   "transformers",
   "Pillow",
@@ -236,15 +247,22 @@ path = "src/modssc/__about__.py"
 
 [tool.hatch.build]
 exclude = [
-  "/bench",
+  "/tools",
+  "/provenance",
+  "/tests/tools",
   "/runs",
   "/modssc_cache",
+  "/modssc_cache/**",
+  "/uv.lock",
   "/artifacts",
   "/outputs",
   "/data",
   "/site",
   "/docs/article_code",
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/modssc", "bench"]
 
 [tool.pytest.ini_options]
 minversion = "7.0"

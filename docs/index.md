@@ -22,7 +22,7 @@ ModSSC is a modular framework for semi-supervised classification across heteroge
 
 - CLI tools for datasets, sampling, preprocessing, graphs, augmentation, and evaluation. <sup class="cite"><a href="#source-2">[2]</a><a href="#source-3">[3]</a></sup>
 
-- Benchmark runner with YAML experiment configs (repository-only, not shipped to PyPI). <sup class="cite"><a href="#source-17">[17]</a><a href="#source-2">[2]</a></sup>
+- Benchmark and autonomous article-replication runner with shipped YAML cards and fixed inputs. <sup class="cite"><a href="#source-17">[17]</a><a href="#source-2">[2]</a></sup>
 
 
 ## Quickstart links

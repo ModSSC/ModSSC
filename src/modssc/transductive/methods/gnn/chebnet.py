@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 
+from modssc.capabilities import DENSE_TRANSDUCTIVE_CAPABILITIES
 from modssc.transductive.base import MethodInfo, TransductiveMethod
 from modssc.transductive.optional import optional_import
 
@@ -96,6 +97,7 @@ class ChebNetMethod(TransductiveMethod):
         paper_title="Convolutional Neural Networks on Graphs with Fast Localized Spectral Filtering",
         paper_pdf="https://arxiv.org/pdf/1606.09375",
         official_code="https://github.com/mdeff/cnn_graph",
+        capabilities=DENSE_TRANSDUCTIVE_CAPABILITIES,
     )
 
     def __init__(self, spec: ChebNetSpec | None = None) -> None:

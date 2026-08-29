@@ -6,6 +6,8 @@ from typing import Any
 
 import numpy as np
 
+from modssc.runtime.execution import ExecutionContext
+
 from ..base import InductiveDatasetLike
 from ..errors import InductiveValidationError
 from ..validation import validate_inductive_dataset
@@ -48,8 +50,11 @@ class NumpyDataset:
     X_u: np.ndarray | None = None
     X_u_w: np.ndarray | None = None
     X_u_s: np.ndarray | None = None
+    X_u_s_1: np.ndarray | None = None
     views: Mapping[str, np.ndarray] | None = None
+    graph: Any | None = None
     meta: Mapping[str, Any] | None = None
+    execution_context: ExecutionContext | None = None
 
 
 def to_numpy_dataset(data: InductiveDatasetLike) -> NumpyDataset:
@@ -59,14 +64,18 @@ def to_numpy_dataset(data: InductiveDatasetLike) -> NumpyDataset:
     X_u = getattr(data, "X_u", None)
     X_u_w = getattr(data, "X_u_w", None)
     X_u_s = getattr(data, "X_u_s", None)
+    X_u_s_1 = getattr(data, "X_u_s_1", None)
     views = getattr(data, "views", None)
+    graph = getattr(data, "graph", None)
     meta = getattr(data, "meta", None)
+    execution_context = getattr(data, "execution_context", None)
 
     X_l = _require_numpy(data.X_l, name="X_l")
     y_l = _require_numpy(data.y_l, name="y_l")
     X_u = _require_numpy(X_u, name="X_u") if X_u is not None else None
     X_u_w = _require_numpy(X_u_w, name="X_u_w") if X_u_w is not None else None
     X_u_s = _require_numpy(X_u_s, name="X_u_s") if X_u_s is not None else None
+    X_u_s_1 = _require_numpy(X_u_s_1, name="X_u_s_1") if X_u_s_1 is not None else None
     views = _require_numpy_views(views)
 
     return NumpyDataset(
@@ -75,6 +84,9 @@ def to_numpy_dataset(data: InductiveDatasetLike) -> NumpyDataset:
         X_u=X_u,
         X_u_w=X_u_w,
         X_u_s=X_u_s,
+        X_u_s_1=X_u_s_1,
         views=views,
+        graph=graph,
         meta=meta,
+        execution_context=execution_context,
     )

@@ -330,6 +330,66 @@ def test_comatch_fit_uses_view_fallbacks_second_key():
     CoMatchMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=3)
 
 
+def test_comatch_fit_uses_canonical_second_strong_view():
+    base = _make_comatch_dataset(with_views=False)
+    data = InductiveDataset(
+        X_l=base.X_l,
+        y_l=base.y_l,
+        X_u_w=base.X_u_w,
+        X_u_s=base.X_u_s,
+        X_u_s_1=base.X_u_s + 0.03,
+        views=None,
+    )
+    spec = _make_base_spec(_CoMatchNet(), use_cat=False)
+
+    method = CoMatchMethod(spec).fit(data, device=DeviceSpec(device="cpu"), seed=4)
+
+    assert method._bundle is not None
+
+
+@pytest.mark.parametrize(
+    "key",
+    ("X_u_s0", "X_u_s_0", "X_u_s", "X_u_strong0"),
+)
+def test_comatch_resolves_all_first_strong_view_fallbacks(key):
+    base = _make_comatch_dataset(with_views=False)
+    expected = base.X_u_s + 0.03
+    data = InductiveDataset(
+        X_l=base.X_l,
+        y_l=base.y_l,
+        X_u_w=base.X_u_w,
+        X_u_s=None,
+        X_u_s_1=base.X_u_s + 0.04,
+        views={key: expected},
+    )
+
+    first, second = comatch._resolve_strong_views(data)
+
+    assert first is expected
+    assert second is data.X_u_s_1
+
+
+@pytest.mark.parametrize(
+    "key",
+    ("X_u_s1", "X_u_s_1", "X_u_strong1", "X_u_s2", "X_u_s_2"),
+)
+def test_comatch_resolves_all_second_strong_view_fallbacks(key):
+    base = _make_comatch_dataset(with_views=False)
+    expected = base.X_u_s + 0.04
+    data = InductiveDataset(
+        X_l=base.X_l,
+        y_l=base.y_l,
+        X_u_w=base.X_u_w,
+        X_u_s=base.X_u_s,
+        views={key: expected},
+    )
+
+    first, second = comatch._resolve_strong_views(data)
+
+    assert first is base.X_u_s
+    assert second is expected
+
+
 def test_comatch_fit_missing_strong_view_in_views():
     base = _make_comatch_dataset()
     data = InductiveDataset(

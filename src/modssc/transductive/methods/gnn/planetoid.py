@@ -7,6 +7,8 @@ from typing import Any
 
 import numpy as np
 
+from modssc.capabilities import DENSE_TRANSDUCTIVE_CAPABILITIES
+
 # Re-use the node2vec walk machinery (Planetoid uses a related context objective).
 from modssc.graph.featurization.node2vec import (
     _build_adjacency,
@@ -64,6 +66,7 @@ class PlanetoidMethod(TransductiveMethod):
         paper_title="Revisiting Semi-Supervised Learning with Graph Embeddings",
         paper_pdf="https://arxiv.org/pdf/1603.08861",
         official_code="https://github.com/kimiyoung/planetoid",
+        capabilities=DENSE_TRANSDUCTIVE_CAPABILITIES,
     )
 
     def __init__(self, spec: PlanetoidSpec | None = None) -> None:

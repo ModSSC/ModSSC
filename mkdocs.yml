@@ -76,6 +76,7 @@ nav:
       - Catalogs and registries: reference/catalogs.md
       - Paper methods: reference/paper-methods.md
       - Configuration reference: reference/configuration.md
+      - External artifact integrity: reference/artifact-integrity.md
       - Benchmarks: reference/benchmarks.md
       - API reference:
           - Overview: reference/api/index.md
@@ -92,8 +93,33 @@ nav:
           - HPO: reference/api/hpo.md
           - Runtime logging: reference/api/logging.md
           - Runtime device: reference/api/device.md
+  - Replications:
+      - Overview: replications/index.md
+      - Publication policy: replications/publication-policy.md
+      - Publication schema v1: replications/publication-schema-v1.md
+      - Article protocols:
+          - Source-only protocol index: replications/protocols/index.md
+          - Pseudo-Label: replications/protocols/pseudo-label-lee-2013.md
+          - Tri-Training: replications/protocols/tri-training-zhou-li-2005.md
+          - Democratic Co-Learning: replications/protocols/democratic-co-learning-zhou-goldman-2004.md
+          - FixMatch: replications/protocols/fixmatch-sohn-2020.md
+          - FlexMatch: replications/protocols/flexmatch-zhang-2021.md
+          - FreeMatch: replications/protocols/freematch-wang-2023.md
+          - SoftMatch: replications/protocols/softmatch-chen-2023.md
+          - Laplace Learning: replications/protocols/laplace-learning-calder-2020.md
+          - Poisson Learning: replications/protocols/poisson-learning-calder-2020.md
+          - GRAND: replications/protocols/grand-feng-2020.md
+      - Campaigns:
+          - Native ten-method replication v1: replications/campaigns/native-10-methods-v1.md
+          - Calder MNIST VAE2 reconstruction v1: replications/campaigns/calder-mnist-vae2-v1.md
+      - Results:
+          - Result registry: replications/results/index.md
+          - Paper replications: replications/results/paper/index.md
   - Development:
       - Architecture: development/architecture.md
+      - Scheduler execution:
+          - Portable HPC execution: development/hpc-campaigns.md
+          - Native Match continuation: development/match-continuation-controller.md
       - Contributing and development: development/contributing.md
       - Release process: development/release-process.md
 
@@ -105,6 +131,7 @@ plugins:
           options:
             docstring_style: google
             show_signature: true
+            show_source: false
             heading_level: 2
             filters:
               - "!^__"

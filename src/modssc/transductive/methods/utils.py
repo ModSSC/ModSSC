@@ -36,7 +36,11 @@ class DiffusionResult:
 
 
 def _validate_graph_inputs(
-    *, n_nodes: int, edge_index: np.ndarray, edge_weight: np.ndarray | None
+    *,
+    n_nodes: int,
+    edge_index: np.ndarray,
+    edge_weight: np.ndarray | None,
+    preserve_float64: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:
     edge_index = np.asarray(edge_index)
     if edge_index.ndim != 2 or edge_index.shape[0] != 2:
@@ -47,7 +51,11 @@ def _validate_graph_inputs(
     if edge_weight is None:
         w = np.ones(edge_index.shape[1], dtype=np.float32)
     else:
-        w = np.asarray(edge_weight, dtype=np.float32)
+        raw_weight = np.asarray(edge_weight)
+        weight_dtype = (
+            np.float64 if preserve_float64 and raw_weight.dtype == np.float64 else np.float32
+        )
+        w = np.asarray(raw_weight, dtype=weight_dtype)
         if w.shape != (edge_index.shape[1],):
             raise ValueError("edge_weight must have shape (E,)")
 

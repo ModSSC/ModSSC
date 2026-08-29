@@ -14,20 +14,31 @@ from modssc.sampling.api import (
     save_split,
     split_dir_for,
 )
+from modssc.sampling.dataset import prepare_dataset
 from modssc.sampling.errors import (
     MissingDatasetFingerprintError,
     SamplingError,
     SamplingValidationError,
 )
 from modssc.sampling.plan import (
+    FixedIndicesArtifactSpec,
     HoldoutSplitSpec,
     ImbalanceSpec,
     KFoldSplitSpec,
     LabelingSpec,
+    OrderedPartitionArtifactSpec,
+    PartitionSpec,
+    SamplingComponentSeeds,
     SamplingPlan,
     SamplingPolicy,
 )
 from modssc.sampling.result import SamplingResult
+from modssc.sampling.routing import (
+    InductiveGraphSamplingPolicy,
+    SamplingRoutingEvent,
+    SamplingRoutingResult,
+    route_sampling_for_regime,
+)
 
 __all__ = [
     "SamplingError",
@@ -35,14 +46,23 @@ __all__ = [
     "SamplingValidationError",
     "HoldoutSplitSpec",
     "KFoldSplitSpec",
+    "FixedIndicesArtifactSpec",
+    "OrderedPartitionArtifactSpec",
+    "PartitionSpec",
+    "SamplingComponentSeeds",
     "LabelingSpec",
     "ImbalanceSpec",
     "SamplingPolicy",
     "SamplingPlan",
     "SamplingResult",
+    "InductiveGraphSamplingPolicy",
+    "SamplingRoutingEvent",
+    "SamplingRoutingResult",
+    "prepare_dataset",
     "sample",
     "save_split",
     "load_split",
     "default_split_cache_dir",
     "split_dir_for",
+    "route_sampling_for_regime",
 ]

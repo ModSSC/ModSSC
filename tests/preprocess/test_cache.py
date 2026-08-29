@@ -1,4 +1,5 @@
 import json
+import multiprocessing
 import os
 import sys
 from pathlib import Path
@@ -17,6 +18,28 @@ from modssc.preprocess.cache import (
     json_load,
 )
 from modssc.preprocess.errors import OptionalDependencyError, PreprocessCacheError
+
+
+def _concurrent_cache_save(
+    root: str,
+    split: str,
+    value: int,
+    start: object,
+    results: object,
+) -> None:
+    start.wait()
+    manager = CacheManager(root=Path(root), dataset_fingerprint="ds")
+    try:
+        manager.save_step_outputs(
+            step_fingerprint="step1",
+            split=split,
+            produced={"value": np.array([value], dtype=np.int64)},
+            manifest={"split": split},
+        )
+    except Exception as exc:  # pragma: no cover - surfaced in the parent process
+        results.put(f"{type(exc).__name__}: {exc}")
+    else:
+        results.put("ok")
 
 
 def test_default_cache_dir_override():
@@ -200,9 +223,9 @@ def test_save_step_outputs_skips_unsupported(tmp_path):
 
     cm.save_step_outputs(step_fingerprint="step1", split="train", produced=produced, manifest={})
 
-    manifest_path = cm.step_dir("step1") / "manifest.json"
-    data = json.loads(manifest_path.read_text())
-    saved = data["saved"]["train"]
+    generation_path = cm.split_dir("step1", "train") / "generation.json"
+    data = json.loads(generation_path.read_text())
+    saved = data["saved"]
 
     assert "valid" in saved
     assert "invalid" not in saved
@@ -220,14 +243,13 @@ def test_save_step_outputs_manifest_update(tmp_path):
         manifest={"b": 2, "saved": "should_be_ignored"},
     )
 
-    manifest_path = cm.step_dir("step1") / "manifest.json"
-    data = json.loads(manifest_path.read_text())
+    train = json.loads((cm.split_dir("step1", "train") / "generation.json").read_text())
+    test = json.loads((cm.split_dir("step1", "test") / "generation.json").read_text())
 
-    assert data["a"] == 1
-    assert data["b"] == 2
-    assert isinstance(data["saved"], dict)
-    assert "train" in data["saved"]
-    assert "test" in data["saved"]
+    assert train["metadata"]["a"] == 1
+    assert test["metadata"]["b"] == 2
+    assert isinstance(train["saved"], dict)
+    assert isinstance(test["saved"], dict)
 
 
 def test_save_step_outputs_recovers_corrupt_manifest(tmp_path):
@@ -243,10 +265,11 @@ def test_save_step_outputs_recovers_corrupt_manifest(tmp_path):
         manifest={"a": 1},
     )
 
-    data = json.loads((step_dir / "manifest.json").read_text(encoding="utf-8"))
-    assert data["a"] == 1
-    assert "train" in data["saved"]
-    assert "value" in data["saved"]["train"]
+    data = json.loads(
+        (cm.split_dir("step1", "train") / "generation.json").read_text(encoding="utf-8")
+    )
+    assert data["metadata"]["a"] == 1
+    assert "value" in data["saved"]
 
 
 def test_load_step_outputs_missing_manifest(tmp_path):
@@ -262,13 +285,13 @@ def test_load_step_outputs_invalid_structure(tmp_path):
 
     (step_dir / "manifest.json").write_text(json.dumps({"saved": {"train": "not_a_dict"}}))
 
-    with pytest.raises(PreprocessCacheError, match="Invalid cache manifest structure"):
+    with pytest.raises(PreprocessCacheError, match="Unsupported preprocess cache schema"):
         cm.load_step_outputs(step_fingerprint="step1", split="train")
 
     (step_dir / "manifest.json").write_text(json.dumps({"saved": {"train": {"key": "not_a_dict"}}}))
 
-    out = cm.load_step_outputs(step_fingerprint="step1", split="train")
-    assert "key" not in out
+    with pytest.raises(PreprocessCacheError, match="Unsupported preprocess cache schema"):
+        cm.load_step_outputs(step_fingerprint="step1", split="train")
 
 
 def test_json_load_not_dict():
@@ -376,11 +399,99 @@ def test_cache_manager_roundtrip(tmp_path):
     assert loaded["complex/key"] == produced["complex/key"]
 
     manifest_path = cm.step_dir("step1") / "manifest.json"
-    saved_manifest = json.loads(manifest_path.read_text())
-    assert saved_manifest["params"] == manifest["params"]
-    assert "saved" in saved_manifest
-    assert "train" in saved_manifest["saved"]
-    assert "complex/key" in saved_manifest["saved"]["train"]
+    pointer = json.loads(manifest_path.read_text())
+    saved_manifest = json.loads((cm.split_dir("step1", "train") / "generation.json").read_text())
+    assert pointer["schema_version"] == 2
+    assert len(pointer["manifest_sha256"]) == 64
+    assert saved_manifest["metadata"]["params"] == manifest["params"]
+    assert "complex/key" in saved_manifest["saved"]
+    matrix = saved_manifest["saved"]["matrix"]
+    assert len(matrix["sha256"]) == 64
+    assert matrix["dtype"] == "int64"
+    assert matrix["shape"] == [3]
+
+
+def test_cache_manager_rejects_same_shape_value_tamper_and_rebuilds(tmp_path: Path) -> None:
+    manager = CacheManager(root=tmp_path, dataset_fingerprint="ds")
+    original = np.array([1, 2, 3], dtype=np.int64)
+    manager.save_step_outputs(
+        step_fingerprint="step1",
+        split="train",
+        produced={"matrix": original},
+        manifest={"step": "native"},
+    )
+
+    value_path = manager.split_dir("step1", "train") / "matrix.npy"
+    np.save(value_path, np.array([9, 8, 7], dtype=np.int64), allow_pickle=False)
+
+    with pytest.raises(PreprocessCacheError, match="sha256 differs"):
+        manager.load_step_outputs(step_fingerprint="step1", split="train")
+
+    manager.save_step_outputs(
+        step_fingerprint="step1",
+        split="train",
+        produced={"matrix": original},
+        manifest={"step": "native"},
+    )
+    rebuilt = manager.load_step_outputs(step_fingerprint="step1", split="train")
+    assert np.array_equal(rebuilt["matrix"], original)
+
+
+def test_cache_manager_rejects_manifest_tamper(tmp_path: Path) -> None:
+    manager = CacheManager(root=tmp_path, dataset_fingerprint="ds")
+    manager.save_step_outputs(
+        step_fingerprint="step1",
+        split="train",
+        produced={"value": np.array([1], dtype=np.int64)},
+        manifest={},
+    )
+    pointer_path = manager.step_dir("step1") / "manifest.json"
+    pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
+    pointer["dataset_fingerprint"] = "another-dataset"
+    pointer_path.write_text(json.dumps(pointer), encoding="utf-8")
+
+    assert not manager.has_step_outputs("step1", split="train")
+    with pytest.raises(PreprocessCacheError, match="manifest digest differs"):
+        manager.load_step_outputs(step_fingerprint="step1", split="train")
+
+
+def test_cache_manager_treats_legacy_entry_as_miss(tmp_path: Path) -> None:
+    manager = CacheManager(root=tmp_path, dataset_fingerprint="ds")
+    step_root = manager.step_dir("step1")
+    (step_root / "train").mkdir(parents=True)
+    (step_root / "manifest.json").write_text(json.dumps({"saved": {"train": {}}}), encoding="utf-8")
+
+    assert not manager.has_step_outputs("step1", split="train")
+    with pytest.raises(PreprocessCacheError, match="Unsupported preprocess cache schema"):
+        manager.load_step_outputs(step_fingerprint="step1", split="train")
+
+
+def test_cache_manager_serializes_concurrent_split_publication(tmp_path: Path) -> None:
+    context = multiprocessing.get_context("spawn")
+    start = context.Event()
+    results = context.Queue()
+    processes = [
+        context.Process(
+            target=_concurrent_cache_save,
+            args=(str(tmp_path), split, value, start, results),
+        )
+        for split, value in (("train", 1), ("test", 2))
+    ]
+    for process in processes:
+        process.start()
+    start.set()
+    for process in processes:
+        process.join(timeout=15)
+        assert process.exitcode == 0
+    assert sorted(results.get(timeout=2) for _ in processes) == ["ok", "ok"]
+
+    manager = CacheManager(root=tmp_path, dataset_fingerprint="ds")
+    train = manager.load_step_outputs(step_fingerprint="step1", split="train")
+    test = manager.load_step_outputs(step_fingerprint="step1", split="test")
+    assert train["value"].tolist() == [1]
+    assert test["value"].tolist() == [2]
+    generations = manager.step_dir("step1") / "generations"
+    assert not list(generations.glob(".staging-*"))
 
 
 def test_save_load_sparse_success(tmp_path):

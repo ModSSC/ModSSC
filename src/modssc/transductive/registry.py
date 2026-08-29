@@ -28,6 +28,17 @@ class MethodRef:
 
 _REGISTRY: dict[str, MethodRef] = {}
 register_method = make_register_method(registry=_REGISTRY, ref_factory=MethodRef)
+_BUILTIN_METHOD_IDS: set[str] = set()
+
+
+def _register_builtin_method(
+    method_id: str,
+    import_path: str,
+    *,
+    status: Literal["implemented", "planned"] = "implemented",
+) -> None:
+    register_method(method_id, import_path, status=status)
+    _BUILTIN_METHOD_IDS.add(method_id)
 
 
 def register_builtin_methods() -> None:
@@ -35,6 +46,11 @@ def register_builtin_methods() -> None:
 
     This function is idempotent and safe to call multiple times.
     """
+    # Keep the declarations below as the single source of truth: runtime
+    # extensions still use the public ``register_method`` but are not added to
+    # the built-in inventory used by release audits.
+    register_method = _register_builtin_method
+
     # Classic diffusion
     register_method(
         "label_propagation",
@@ -90,6 +106,16 @@ def register_builtin_methods() -> None:
     register_method("grafn", "modssc.transductive.methods.gnn.grafn:GraFNMethod")
     register_method("gcnii", "modssc.transductive.methods.gnn.gcnii:GCNIIMethod")
     register_method("grand", "modssc.transductive.methods.gnn.grand:GRANDMethod")
+
+
+def builtin_methods(*, available_only: bool = True) -> list[str]:
+    """Return method IDs shipped by ModSSC, excluding runtime extensions."""
+
+    register_builtin_methods()
+    method_ids = sorted(_BUILTIN_METHOD_IDS)
+    if not available_only:
+        return method_ids
+    return [method_id for method_id in method_ids if _REGISTRY[method_id].status != "planned"]
 
 
 available_methods = make_available_methods(

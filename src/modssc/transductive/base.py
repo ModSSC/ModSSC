@@ -6,6 +6,8 @@ from typing import Any, Protocol, runtime_checkable
 
 import numpy as np
 
+from modssc.capabilities import DEFAULT_TRANSDUCTIVE_CAPABILITIES, MethodCapabilities
+
 from .types import DeviceSpec
 
 
@@ -23,7 +25,7 @@ class NodeDatasetLike(Protocol):
 
     X: Any
     y: Any
-    graph: GraphLike
+    graph: GraphLike | None
     masks: Mapping[str, Any] | None
     meta: Mapping[str, Any] | None
 
@@ -41,6 +43,7 @@ class MethodInfo:
     paper_title: str | None = None
     paper_pdf: str | None = None
     official_code: str | None = None
+    capabilities: MethodCapabilities = DEFAULT_TRANSDUCTIVE_CAPABILITIES
 
 
 class TransductiveMethod(Protocol):

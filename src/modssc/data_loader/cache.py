@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import os
+import re
 import shutil
 import sqlite3
+import stat
+import tempfile
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -61,11 +65,18 @@ class CacheLayout:
     def index_path(self) -> Path:
         return self.root / "index.sqlite"
 
+    @property
+    def index_lock_path(self) -> Path:
+        return self.locks_root / "index.lock"
+
     def processed_dir(self, fingerprint: str) -> Path:
         return self.processed_root / fingerprint
 
     def manifest_path(self, fingerprint: str) -> Path:
         return self.manifests_root / f"{fingerprint}.json"
+
+    def content_manifest_path(self, fingerprint: str) -> Path:
+        return self.manifests_root / f"{fingerprint}.content.json"
 
     def lock_path(self, fingerprint: str) -> Path:
         return self.locks_root / f"{fingerprint}.lock"
@@ -88,22 +99,96 @@ def ensure_layout(layout: CacheLayout) -> None:
 
 @contextmanager
 def cache_lock(layout: CacheLayout, fingerprint: str) -> Iterator[None]:
-    """Simple file lock using O_EXCL creation."""
+    """Serialize writers for one dataset fingerprint across processes.
+
+    The lock file is intentionally persistent.  Ownership is carried by the
+    operating-system lock on its descriptor, so a killed process releases the
+    lock without leaving a stale ``O_EXCL`` sentinel behind.  Keeping the path
+    also avoids the unlink/recreate race where two writers could otherwise
+    lock different inodes for the same fingerprint.
+    """
+
     ensure_layout(layout)
     lock_path = layout.lock_path(fingerprint)
     lock_path.parent.mkdir(parents=True, exist_ok=True)
 
-    fd: int | None = None
+    descriptor = _open_lock_file(lock_path)
+    locked = False
     try:
-        fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        os.write(fd, str(os.getpid()).encode("utf-8"))
+        if os.name == "nt":  # pragma: no cover - exercised on Windows CI
+            import msvcrt
+
+            if os.fstat(descriptor).st_size == 0:
+                os.write(descriptor, b"\0")
+            os.lseek(descriptor, 0, os.SEEK_SET)
+            msvcrt.locking(descriptor, msvcrt.LK_LOCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(descriptor, fcntl.LOCK_EX)
+        locked = True
+        os.ftruncate(descriptor, 0)
+        os.write(descriptor, str(os.getpid()).encode("utf-8"))
         yield
     finally:
-        if fd is not None:
-            os.close(fd)
-        # best effort cleanup
-        with contextlib.suppress(Exception):
-            lock_path.unlink(missing_ok=True)
+        if locked:
+            if os.name == "nt":  # pragma: no cover - exercised on Windows CI
+                import msvcrt
+
+                os.lseek(descriptor, 0, os.SEEK_SET)
+                msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+
+                fcntl.flock(descriptor, fcntl.LOCK_UN)
+        os.close(descriptor)
+
+
+@contextmanager
+def index_lock(layout: CacheLayout) -> Iterator[None]:
+    """Serialize mutations of the replaceable cache index."""
+
+    layout.locks_root.mkdir(parents=True, exist_ok=True)
+    descriptor = _open_lock_file(layout.index_lock_path)
+    locked = False
+    try:
+        if os.name == "nt":  # pragma: no cover - exercised on Windows CI
+            import msvcrt
+
+            if os.fstat(descriptor).st_size == 0:
+                os.write(descriptor, b"\0")
+            os.lseek(descriptor, 0, os.SEEK_SET)
+            msvcrt.locking(descriptor, msvcrt.LK_LOCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(descriptor, fcntl.LOCK_EX)
+        locked = True
+        yield
+    finally:
+        if locked:
+            if os.name == "nt":  # pragma: no cover - exercised on Windows CI
+                import msvcrt
+
+                os.lseek(descriptor, 0, os.SEEK_SET)
+                msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+
+                fcntl.flock(descriptor, fcntl.LOCK_UN)
+        os.close(descriptor)
+
+
+def _open_lock_file(path: Path) -> int:
+    flags = os.O_CREAT | os.O_RDWR
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    descriptor = os.open(str(path), flags, 0o600)
+    lock_stat = os.fstat(descriptor)
+    if not stat.S_ISREG(lock_stat.st_mode) or lock_stat.st_nlink != 1:
+        os.close(descriptor)
+        raise ManifestError(f"Cache lock must be a single-link regular file: {path}")
+    return descriptor
 
 
 def is_cached(layout: CacheLayout, fingerprint: str) -> bool:
@@ -163,45 +248,14 @@ def _ensure_index(path: Path) -> None:
 
 
 def index_upsert(layout: CacheLayout, *, fingerprint: str, manifest: Manifest) -> None:
-    con = sqlite3.connect(layout.index_path)
-    try:
-        processed = str(layout.processed_dir(fingerprint))
-        mpath = str(layout.manifest_path(fingerprint))
-        size = dir_size_bytes(Path(processed))
-        ident = manifest.identity
-        con.execute(
-            """
-            INSERT INTO variants (
-                fingerprint, canonical_uri, provider, dataset_id, version, modality, created_at,
-                processed_dir, manifest_path, size_bytes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(fingerprint) DO UPDATE SET
-                canonical_uri=excluded.canonical_uri,
-                provider=excluded.provider,
-                dataset_id=excluded.dataset_id,
-                version=excluded.version,
-                modality=excluded.modality,
-                created_at=excluded.created_at,
-                processed_dir=excluded.processed_dir,
-                manifest_path=excluded.manifest_path,
-                size_bytes=excluded.size_bytes
-            """,
-            (
-                fingerprint,
-                str(ident.get("canonical_uri")),
-                str(ident.get("provider")),
-                str(ident.get("dataset_id")),
-                ident.get("version"),
-                ident.get("modality"),
-                manifest.created_at,
-                processed,
-                mpath,
-                int(size),
-            ),
-        )
-        con.commit()
-    finally:
-        con.close()
+    with index_lock(layout):
+        _ensure_index(layout.index_path)
+        con = sqlite3.connect(layout.index_path)
+        try:
+            _index_upsert_connection(con, layout, fingerprint=fingerprint, manifest=manifest)
+            con.commit()
+        finally:
+            con.close()
 
 
 def index_list(layout: CacheLayout) -> list[dict[str, Any]]:
@@ -228,14 +282,145 @@ def index_find_by_dataset(layout: CacheLayout, canonical_uri: str) -> list[dict[
 
 
 def index_delete(layout: CacheLayout, fingerprints: Iterable[str]) -> None:
-    con = sqlite3.connect(layout.index_path)
+    with index_lock(layout):
+        _ensure_index(layout.index_path)
+        con = sqlite3.connect(layout.index_path)
+        try:
+            con.executemany(
+                "DELETE FROM variants WHERE fingerprint = ?", [(fp,) for fp in fingerprints]
+            )
+            con.commit()
+        finally:
+            con.close()
+
+
+def _index_upsert_connection(
+    con: sqlite3.Connection,
+    layout: CacheLayout,
+    *,
+    fingerprint: str,
+    manifest: Manifest,
+) -> None:
+    processed = str(layout.processed_dir(fingerprint))
+    mpath = str(layout.manifest_path(fingerprint))
+    size = dir_size_bytes(Path(processed))
+    ident = manifest.identity
+    con.execute(
+        """
+        INSERT INTO variants (
+            fingerprint, canonical_uri, provider, dataset_id, version, modality, created_at,
+            processed_dir, manifest_path, size_bytes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(fingerprint) DO UPDATE SET
+            canonical_uri=excluded.canonical_uri,
+            provider=excluded.provider,
+            dataset_id=excluded.dataset_id,
+            version=excluded.version,
+            modality=excluded.modality,
+            created_at=excluded.created_at,
+            processed_dir=excluded.processed_dir,
+            manifest_path=excluded.manifest_path,
+            size_bytes=excluded.size_bytes
+        """,
+        (
+            fingerprint,
+            str(ident.get("canonical_uri")),
+            str(ident.get("provider")),
+            str(ident.get("dataset_id")),
+            ident.get("version"),
+            ident.get("modality"),
+            manifest.created_at,
+            processed,
+            mpath,
+            int(size),
+        ),
+    )
+
+
+_MAIN_MANIFEST_NAME = re.compile(r"^(?P<fingerprint>[0-9a-f]{64})\.json$")
+
+
+def _fsync_directory(path: Path) -> None:
+    if os.name == "nt":  # pragma: no cover - Windows has no directory fsync
+        return
+    descriptor = os.open(path, os.O_RDONLY)
     try:
-        con.executemany(
-            "DELETE FROM variants WHERE fingerprint = ?", [(fp,) for fp in fingerprints]
-        )
-        con.commit()
+        os.fsync(descriptor)
     finally:
-        con.close()
+        os.close(descriptor)
+
+
+def rebuild_index_atomic(layout: CacheLayout, *, strict: bool = True) -> str:
+    """Build a complete index beside the live one and atomically replace it.
+
+    Only canonical main-manifest names are considered.  With ``strict=True`` an
+    invalid published entry aborts the rebuild and leaves the previous index
+    untouched.  The returned digest attests the new SQLite file bytes.
+    """
+
+    with index_lock(layout):
+        return _rebuild_index_atomic_locked(layout, strict=strict)
+
+
+def _rebuild_index_atomic_locked(layout: CacheLayout, *, strict: bool) -> str:
+    """Rebuild the index while the caller holds ``index_lock(layout)``."""
+
+    layout.root.mkdir(parents=True, exist_ok=True)
+    layout.locks_root.mkdir(parents=True, exist_ok=True)
+    if layout.index_path.is_symlink():
+        raise ManifestError(f"Cache index must not be a symlink: {layout.index_path}")
+
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=".index.sqlite.", suffix=".tmp", dir=layout.root
+    )
+    os.close(descriptor)
+    temporary = Path(temporary_name)
+    try:
+        _ensure_index(temporary)
+        con = sqlite3.connect(temporary)
+        try:
+            con.execute("BEGIN IMMEDIATE")
+            manifests = sorted(layout.manifests_root.glob("*.json"))
+            for path in manifests:
+                match = _MAIN_MANIFEST_NAME.fullmatch(path.name)
+                if match is None:
+                    continue
+                fingerprint = match.group("fingerprint")
+                try:
+                    manifest = read_manifest(path)
+                    if manifest.fingerprint != fingerprint:
+                        raise ManifestError(f"Manifest fingerprint differs from filename: {path}")
+                    if not layout.processed_dir(fingerprint).is_dir():
+                        raise ManifestError(f"Published manifest has no processed cache: {path}")
+                    _index_upsert_connection(
+                        con,
+                        layout,
+                        fingerprint=fingerprint,
+                        manifest=manifest,
+                    )
+                except Exception as exc:
+                    if strict:
+                        if isinstance(exc, ManifestError):
+                            raise
+                        raise ManifestError(f"Invalid published cache manifest: {path}") from exc
+            con.commit()
+            result = con.execute("PRAGMA integrity_check").fetchone()
+            if result != ("ok",):
+                raise ManifestError(f"Cache index integrity check failed: {result!r}")
+        finally:
+            con.close()
+
+        with temporary.open("rb") as stream:
+            os.fsync(stream.fileno())
+        os.replace(temporary, layout.index_path)
+        _fsync_directory(layout.root)
+        digest = hashlib.sha256()
+        with layout.index_path.open("rb") as stream:
+            for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def rebuild_index(layout: CacheLayout) -> None:
@@ -268,6 +453,8 @@ def purge_fingerprint(layout: CacheLayout, fingerprint: str) -> None:
     shutil.rmtree(layout.processed_dir(fingerprint), ignore_errors=True)
     with contextlib.suppress(Exception):
         layout.manifest_path(fingerprint).unlink(missing_ok=True)
+    with contextlib.suppress(Exception):
+        layout.content_manifest_path(fingerprint).unlink(missing_ok=True)
     index_delete(layout, [fingerprint])
 
 

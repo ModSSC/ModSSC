@@ -32,6 +32,20 @@ def test_daso_spec_defaults():
     assert spec.batch_size == 64
 
 
+def test_daso_contract_requires_logits_and_a_real_encoder_feature() -> None:
+    contract = DASOMethod.execution_contract(
+        DASOSpec(),
+        DASOMethod.info.capabilities,
+        DASOMethod.info.model_binding,
+    )
+    requirement = contract.components[0]
+
+    assert requirement.outputs == frozenset({"logits"})
+    assert frozenset({"feat"}) in requirement.output_alternatives
+    assert frozenset({"forward_features"}) in requirement.output_alternatives
+    assert frozenset({"logits"}) not in requirement.output_alternatives
+
+
 class _DASONet(torch.nn.Module):
     def __init__(self, in_dim: int = 2, feat_dim: int = 2, n_classes: int = 2) -> None:
         super().__init__()
@@ -62,7 +76,8 @@ class _BadLogits1D(torch.nn.Module):
         self.dummy = torch.nn.Parameter(torch.zeros(1))
 
     def forward(self, x):
-        return torch.zeros((int(x.shape[0]),), device=x.device)
+        logits = torch.zeros((int(x.shape[0]),), device=x.device)
+        return logits, x
 
 
 class _BadLogitsMap1D(torch.nn.Module):
@@ -155,8 +170,11 @@ class _OffsetFeatNet(torch.nn.Module):
         self.offset = float(offset)
         self.dummy = torch.nn.Parameter(torch.zeros(1))
 
+    def forward_features(self, x):
+        return x + self.offset
+
     def forward(self, x):
-        feat = x + self.offset
+        feat = self.forward_features(x)
         logits = torch.zeros((int(x.shape[0]), 2), device=x.device)
         return {"logits": logits, "feat": feat}
 
@@ -270,6 +288,14 @@ def test_daso_forward_helpers_and_ema_checks():
     feats_override = daso._forward_features(bundle_override, x, model_override=teacher)
     assert torch.allclose(feats_override, x + 5.0)
 
+    bound_override = TorchModelBundle(
+        model=student,
+        optimizer=torch.optim.SGD(student.parameters(), lr=0.1),
+        meta={"forward_features": student.forward_features},
+    )
+    bound_feats = daso._forward_features(bound_override, x, model_override=teacher)
+    assert torch.allclose(bound_feats, x + 5.0)
+
     with pytest.raises(InductiveValidationError, match="ema_model must be distinct"):
         daso._check_ema(bundle.model, bundle.model)
     with pytest.raises(InductiveValidationError, match="parameter count"):
@@ -300,7 +326,7 @@ def test_daso_forward_helpers_and_ema_checks():
         def forward(self, _x):
             return {"oops": torch.zeros((1,))}
 
-    with pytest.raises(InductiveValidationError, match="requires feature representations"):
+    with pytest.raises(InductiveValidationError, match="requires encoder features"):
         daso._forward_features(
             TorchModelBundle(model=_BadOut(), optimizer=bundle.optimizer), torch.randn(2, 2)
         )
@@ -311,8 +337,8 @@ def test_daso_forward_logits_features_meta_nonmapping():
     bundle = TorchModelBundle(
         model=model, optimizer=torch.optim.SGD(model.parameters(), lr=0.1), meta="bad"
     )
-    logits, feats = daso._forward_logits_features(bundle, torch.randn(2, 2))
-    assert torch.allclose(logits, feats)
+    with pytest.raises(InductiveValidationError, match="requires encoder features"):
+        daso._forward_logits_features(bundle, torch.randn(2, 2))
 
 
 def test_daso_forward_logits_features_forward_head_branch():
@@ -330,8 +356,8 @@ def test_daso_forward_logits_features_forward_head_branch():
 def test_daso_forward_logits_features_mapping_no_feat():
     model = _LogitsMapNet()
     bundle = TorchModelBundle(model=model, optimizer=torch.optim.SGD(model.parameters(), lr=0.1))
-    logits, feats = daso._forward_logits_features(bundle, torch.randn(2, 2))
-    assert torch.allclose(logits, feats)
+    with pytest.raises(InductiveValidationError, match="requires encoder features"):
+        daso._forward_logits_features(bundle, torch.randn(2, 2))
 
 
 def test_daso_forward_logits_features_forward_features_fallback_error():
@@ -430,6 +456,20 @@ def test_daso_call_feature_extractor_and_model_override_fallbacks():
 
     out_plain = daso._call_feature_extractor(_plain_forward, x, model_override=object())
     assert torch.allclose(out_plain, x + 1.0)
+
+    class _BoundSource:
+        def forward(self, value):
+            return value + 4.0
+
+    class _NonCallableOverride:
+        forward = 1
+
+    out_non_callable_rebind = daso._call_feature_extractor(
+        _BoundSource().forward,
+        x,
+        model_override=_NonCallableOverride(),
+    )
+    assert torch.allclose(out_non_callable_rebind, x + 4.0)
 
     model_non_mapping = _TupleNet()
     bundle_non_mapping = TorchModelBundle(

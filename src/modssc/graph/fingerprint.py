@@ -54,45 +54,44 @@ def fingerprint_spec(spec: Any) -> str:
 
 
 def fingerprint_array(arr: Any, *, max_bytes: int = 2_000_000) -> str:
-    """Fingerprint a dense or sparse array deterministically.
+    """Fingerprint the full logical content of a dense or sparse array.
 
-    This is intended as a fallback when no dataset-level fingerprint is available.
-    For large arrays, it hashes only a prefix and a suffix of the raw bytes.
-
-    Notes
-    -----
-    This is not a cryptographic commitment of the entire array when it is huge.
-    For reproducible runs, you should pass dataset_fingerprint from data_loader whenever possible.
+    ``max_bytes`` is retained for API compatibility and now controls only the
+    streaming chunk size. No content is sampled or omitted.
     """
+    chunk_size = max(1, int(max_bytes))
+
+    def update_array(digest: Any, value: Any) -> None:
+        array = np.ascontiguousarray(value)
+        if array.dtype.hasobject:
+            raise TypeError("Object arrays cannot be fingerprinted reproducibly")
+        dtype = array.dtype.str.encode("ascii")
+        shape = json.dumps(list(array.shape), separators=(",", ":")).encode("ascii")
+        digest.update(len(dtype).to_bytes(8, "big"))
+        digest.update(dtype)
+        digest.update(len(shape).to_bytes(8, "big"))
+        digest.update(shape)
+        if array.nbytes == 0:
+            return
+        raw = memoryview(array).cast("B")
+        for offset in range(0, len(raw), chunk_size):
+            digest.update(raw[offset : offset + chunk_size])
+
     # scipy sparse support without importing scipy at module import
     if hasattr(arr, "tocoo") and hasattr(arr, "data") and hasattr(arr, "indices"):
-        # likely sparse matrix
         coo = arr.tocoo()
-        pieces = [
-            str(getattr(coo, "shape", None)).encode("utf-8"),
-            str(getattr(coo, "dtype", None)).encode("utf-8"),
-            np.asarray(coo.row, dtype=np.int64).tobytes()[:max_bytes],
-            np.asarray(coo.col, dtype=np.int64).tobytes()[:max_bytes],
-            np.asarray(coo.data).tobytes()[:max_bytes],
-        ]
         h = hashlib.sha256()
-        for p in pieces:
-            h.update(p)
+        h.update(b"modssc:sparse-array:v2")
+        update_array(h, np.asarray(coo.row, dtype=np.int64))
+        update_array(h, np.asarray(coo.col, dtype=np.int64))
+        update_array(h, np.asarray(coo.data))
+        shape = json.dumps(list(coo.shape), separators=(",", ":")).encode("ascii")
+        h.update(len(shape).to_bytes(8, "big"))
+        h.update(shape)
         return h.hexdigest()
 
     a = np.asarray(arr)
-    meta = f"shape={a.shape};dtype={a.dtype};".encode()
-    raw = np.ascontiguousarray(a).view(np.uint8)
-    n = int(raw.size)
-
     h = hashlib.sha256()
-    h.update(meta)
-
-    if n <= max_bytes:
-        h.update(raw.tobytes())
-        return h.hexdigest()
-
-    # prefix + suffix to reduce cost while keeping determinism
-    h.update(raw[:max_bytes].tobytes())
-    h.update(raw[-max_bytes:].tobytes())
+    h.update(b"modssc:dense-array:v2")
+    update_array(h, a)
     return h.hexdigest()

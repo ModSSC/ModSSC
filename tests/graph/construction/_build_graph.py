@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+import hashlib
+from pathlib import Path
+
 import numpy as np
+import pytest
 
 from modssc.graph import GraphBuilderSpec, GraphWeightsSpec, build_graph
-from modssc.graph.cache import GraphCache
+from modssc.graph.cache import GraphCache, GraphCacheError
+from modssc.graph.errors import GraphValidationError
 
 
 def test_build_knn_graph_shapes_and_meta(tmp_path) -> None:
@@ -35,6 +40,247 @@ def test_build_knn_graph_shapes_and_meta(tmp_path) -> None:
     assert g2.meta["fingerprint"] == g.meta["fingerprint"]
     np.testing.assert_array_equal(g2.edge_index, g.edge_index)
     np.testing.assert_allclose(g2.edge_weight, g.edge_weight)
+
+    frozen = build_graph(
+        X,
+        spec=spec,
+        seed=0,
+        cache=True,
+        require_cache_hit=True,
+        cache_dir=tmp_path,
+    )
+    assert frozen.meta["fingerprint"] == g.meta["fingerprint"]
+
+
+def test_frozen_graph_requires_prebuilt_cache(tmp_path) -> None:
+    X = np.arange(12, dtype=np.float32).reshape(6, 2)
+    spec = GraphBuilderSpec(
+        scheme="knn",
+        metric="euclidean",
+        k=2,
+        weights=GraphWeightsSpec(kind="binary"),
+        backend="numpy",
+    )
+    with pytest.raises(GraphCacheError, match="requires cache=True"):
+        build_graph(X, spec=spec, cache=False, require_cache_hit=True, cache_dir=tmp_path)
+    with pytest.raises(GraphCacheError, match="Frozen graph cache entry is missing"):
+        build_graph(X, spec=spec, cache=True, require_cache_hit=True, cache_dir=tmp_path)
+
+
+def test_frozen_graph_never_rebuilds_legacy_or_corrupted_entries(tmp_path) -> None:
+    X = np.arange(16, dtype=np.float32).reshape(8, 2)
+    spec = GraphBuilderSpec(
+        scheme="knn",
+        metric="euclidean",
+        k=2,
+        symmetrize="none",
+        self_loops=False,
+        normalize="none",
+        weights=GraphWeightsSpec(kind="binary"),
+        backend="numpy",
+    )
+
+    computed = build_graph(X, spec=spec, cache=False)
+    legacy_root = tmp_path / "legacy"
+    legacy_cache = GraphCache(root=legacy_root)
+    legacy_entry = legacy_cache.entry_dir(computed.meta["fingerprint"])
+    legacy_entry.mkdir(parents=True)
+    np.save(legacy_entry / "edge_index.npy", computed.edge_index, allow_pickle=False)
+    (legacy_entry / "manifest.json").write_text('{"n_nodes": 8, "fingerprint": "legacy"}')
+    with pytest.raises(GraphCacheError, match="Frozen graph cache entry is invalid"):
+        build_graph(
+            X,
+            spec=spec,
+            cache=True,
+            require_cache_hit=True,
+            cache_dir=legacy_root,
+        )
+    assert "_cache" not in (legacy_entry / "manifest.json").read_text()
+
+    corrupt_root = tmp_path / "corrupt"
+    cached = build_graph(X, spec=spec, cache=True, cache_dir=corrupt_root)
+    corrupt_cache = GraphCache(root=corrupt_root)
+    edge_path = corrupt_cache.entry_dir(cached.meta["fingerprint"]) / "edge_index.npy"
+    tampered = np.load(edge_path, allow_pickle=False)
+    tampered = tampered.copy()
+    tampered[0, 0] = (tampered[0, 0] + 1) % X.shape[0]
+    np.save(edge_path, tampered, allow_pickle=False)
+    with pytest.raises(GraphCacheError, match="SHA-256 mismatch"):
+        build_graph(
+            X,
+            spec=spec,
+            cache=True,
+            require_cache_hit=True,
+            cache_dir=corrupt_root,
+        )
+
+    rebuilt = build_graph(X, spec=spec, cache=True, cache_dir=corrupt_root)
+    assert rebuilt.meta["fingerprint"] == cached.meta["fingerprint"]
+    assert corrupt_cache.exists(cached.meta["fingerprint"])
+    np.testing.assert_array_equal(rebuilt.edge_index, cached.edge_index)
+
+
+def test_graph_rejects_fingerprint_pin_mismatches(tmp_path) -> None:
+    X = np.arange(12, dtype=np.float32).reshape(6, 2)
+    spec = GraphBuilderSpec(
+        scheme="knn",
+        metric="euclidean",
+        k=2,
+        weights=GraphWeightsSpec(kind="binary"),
+        backend="numpy",
+    )
+    graph = build_graph(
+        X,
+        spec=spec,
+        preprocess_fingerprint="preprocess:expected",
+        cache=False,
+        cache_dir=tmp_path,
+    )
+    pinned = build_graph(
+        X,
+        spec=spec,
+        preprocess_fingerprint="preprocess:expected",
+        expected_preprocess_fingerprint="preprocess:expected",
+        expected_fingerprint=graph.meta["fingerprint"],
+        cache=False,
+        cache_dir=tmp_path,
+    )
+    assert pinned.meta["fingerprint"] == graph.meta["fingerprint"]
+
+    with pytest.raises(GraphValidationError, match="preprocessing fingerprint differs"):
+        build_graph(
+            X,
+            spec=spec,
+            preprocess_fingerprint="preprocess:actual",
+            expected_preprocess_fingerprint="preprocess:expected",
+            cache=False,
+            cache_dir=tmp_path,
+        )
+    with pytest.raises(GraphValidationError, match="Graph fingerprint differs"):
+        build_graph(
+            X,
+            spec=spec,
+            preprocess_fingerprint="preprocess:expected",
+            expected_preprocess_fingerprint="preprocess:expected",
+            expected_fingerprint="graph-wrong",
+            cache=False,
+            cache_dir=tmp_path,
+        )
+
+
+def test_graph_fingerprint_binds_producer_identity(monkeypatch, tmp_path) -> None:
+    X = np.arange(12, dtype=np.float32).reshape(6, 2)
+    spec = GraphBuilderSpec(
+        scheme="knn",
+        metric="euclidean",
+        k=2,
+        symmetrize="none",
+        self_loops=False,
+        normalize="none",
+        weights=GraphWeightsSpec(kind="binary"),
+        backend="numpy",
+    )
+    monkeypatch.setattr(
+        "modssc.graph.construction.services.service.graph_implementation_identity",
+        lambda **_kwargs: {"source_sha256": "implementation-a", "backend": "numpy"},
+    )
+    first = build_graph(X, spec=spec, cache=False, cache_dir=tmp_path)
+    monkeypatch.setattr(
+        "modssc.graph.construction.services.service.graph_implementation_identity",
+        lambda **_kwargs: {"source_sha256": "implementation-b", "backend": "numpy"},
+    )
+    second = build_graph(X, spec=spec, cache=False, cache_dir=tmp_path)
+
+    assert first.meta["fingerprint"] != second.meta["fingerprint"]
+    assert first.meta["producer_identity"] != second.meta["producer_identity"]
+
+
+def test_declared_dataset_fingerprint_never_hides_feature_changes(tmp_path) -> None:
+    first_X = np.zeros((6, 2), dtype=np.float32)
+    second_X = first_X.copy()
+    second_X[3, 1] = 1.0
+    spec = GraphBuilderSpec(
+        scheme="knn",
+        metric="euclidean",
+        k=2,
+        symmetrize="none",
+        self_loops=False,
+        normalize="none",
+        weights=GraphWeightsSpec(kind="binary"),
+        backend="numpy",
+    )
+
+    first = build_graph(
+        first_X,
+        spec=spec,
+        dataset_fingerprint="declared-dataset",
+        cache=False,
+        cache_dir=tmp_path,
+    )
+    second = build_graph(
+        second_X,
+        spec=spec,
+        dataset_fingerprint="declared-dataset",
+        cache=False,
+        cache_dir=tmp_path,
+    )
+
+    assert first.meta["dataset_fingerprint"] == second.meta["dataset_fingerprint"]
+    assert first.meta["features_fingerprint"] != second.meta["features_fingerprint"]
+    assert first.meta["fingerprint"] != second.meta["fingerprint"]
+
+
+def test_precomputed_graph_identity_depends_on_content_not_path(tmp_path) -> None:
+    first_path = tmp_path / "first" / "knn.npz"
+    second_path = tmp_path / "second" / "knn.npz"
+    first_path.parent.mkdir()
+    second_path.parent.mkdir()
+    np.savez(
+        first_path,
+        I=np.repeat(np.arange(3, dtype=np.int64)[:, None], 3, axis=1),
+        J=np.array([[0, 1, 2], [1, 0, 2], [2, 1, 0]], dtype=np.int64),
+        D=np.array(
+            [[0.0, 1.0, 2.0], [0.0, 1.0, 1.5], [0.0, 0.5, 2.0]],
+            dtype=np.float64,
+        ),
+    )
+    artifact = first_path.read_bytes()
+    second_path.write_bytes(artifact)
+    digest = hashlib.sha256(artifact).hexdigest()
+
+    def _spec(path: Path) -> GraphBuilderSpec:
+        return GraphBuilderSpec(
+            scheme="knn",
+            metric="euclidean",
+            k=2,
+            symmetrize="none",
+            weights=GraphWeightsSpec(kind="binary"),
+            normalize="none",
+            self_loops=False,
+            backend="precomputed",
+            include_self_in_knn=True,
+            precomputed_path=str(path),
+            precomputed_sha256=digest,
+        )
+
+    X = np.zeros((3, 1), dtype=np.float32)
+    first = build_graph(
+        X,
+        spec=_spec(first_path),
+        dataset_fingerprint="dataset:fixed",
+        cache=False,
+    )
+    second = build_graph(
+        X,
+        spec=_spec(second_path),
+        dataset_fingerprint="dataset:fixed",
+        cache=False,
+    )
+
+    assert first.meta["fingerprint"] == second.meta["fingerprint"]
+    assert first.meta["spec_fingerprint"] == second.meta["spec_fingerprint"]
+    np.testing.assert_array_equal(first.edge_index, second.edge_index)
+    np.testing.assert_array_equal(first.edge_weight, second.edge_weight)
 
 
 def test_build_epsilon_graph(tmp_path) -> None:

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import logging
+import sys
 from collections.abc import Mapping, Sequence
 from functools import lru_cache
+from importlib import metadata as importlib_metadata
 from pathlib import Path
 from time import perf_counter
 from typing import Any
@@ -19,6 +22,8 @@ from modssc.preprocess.registry import StepRegistry, default_step_registry
 from modssc.preprocess.store import ArtifactStore
 from modssc.preprocess.types import PreprocessResult, ResolvedPlan, ResolvedStep, SkippedStep
 from modssc.runtime.device import _try_import_torch, resolve_device_name
+from modssc.runtime.software import collect_software_manifest
+from modssc.utils.numpy import to_numpy as _as_numpy
 from modssc.utils.shape import shape_of as _shape_of
 
 logger = logging.getLogger(__name__)
@@ -32,6 +37,17 @@ _IMPLICIT_CONSUMES: dict[str, tuple[str, ...]] = {
 
 _MAX_ESTIMATE_ITEMS = 1024
 _MAX_ESTIMATE_DEPTH = 2
+
+_PREPROCESS_CACHE_IDENTITY_SCHEMA_VERSION = 2
+_PREPROCESS_EXTRA_DISTRIBUTIONS: dict[str, tuple[str, ...]] = {
+    "inductive-torch": ("torch",),
+    "preprocess-audio": ("torch", "torchaudio"),
+    "preprocess-graph": ("scipy",),
+    "preprocess-sklearn": ("scikit-learn",),
+    "preprocess-text": ("sentence-transformers", "transformers"),
+    "preprocess-vision": ("open-clip-torch", "pillow", "torch", "torchvision"),
+    "transductive-torch": ("torch",),
+}
 
 
 @lru_cache(maxsize=1)
@@ -261,8 +277,155 @@ def _maybe_warn_nonfinite(name: str, value: Any, *, max_elems: int = 1_000_000) 
         return
     if int(value.size) > max_elems:
         return
+    if not np.issubdtype(value.dtype, np.number):
+        return
     if not np.isfinite(value).all():
         logger.warning("Non-finite values detected in %s", name)
+
+
+def _update_content_digest(digest: Any, value: Any) -> None:
+    """Hash full in-memory content with explicit type and shape framing."""
+
+    def framed(payload: bytes) -> None:
+        digest.update(len(payload).to_bytes(8, "big"))
+        digest.update(payload)
+
+    if value is None:
+        framed(b"none")
+        return
+    if isinstance(value, Mapping):
+        framed(b"mapping")
+        for key in sorted(value, key=lambda item: (type(item).__qualname__, repr(item))):
+            framed(b"key")
+            _update_content_digest(digest, key)
+            framed(b"value")
+            _update_content_digest(digest, value[key])
+        return
+    if isinstance(value, (list, tuple)):
+        framed(b"sequence")
+        for item in value:
+            _update_content_digest(digest, item)
+        return
+    if hasattr(value, "tocoo"):
+        coo = value.tocoo()
+        framed(b"sparse-coo")
+        framed(str(tuple(int(dimension) for dimension in coo.shape)).encode("ascii"))
+        _update_content_digest(digest, np.asarray(coo.row, dtype=np.int64))
+        _update_content_digest(digest, np.asarray(coo.col, dtype=np.int64))
+        _update_content_digest(digest, np.asarray(coo.data))
+        return
+
+    array = _as_numpy(value)
+    if array.ndim == 0 and array.dtype.hasobject:
+        item = array.item()
+        if item is not value:
+            _update_content_digest(digest, item)
+            return
+        framed(type(item).__qualname__.encode("utf-8"))
+        framed(repr(item).encode("utf-8"))
+        return
+    framed(b"array")
+    framed(str(array.dtype).encode("ascii"))
+    framed(str(tuple(int(dimension) for dimension in array.shape)).encode("ascii"))
+    if array.dtype.hasobject:
+        for item in array.flat:
+            if isinstance(item, np.generic):
+                item = item.item()
+            if isinstance(item, str):
+                framed(b"str")
+                framed(item.encode("utf-8"))
+            elif isinstance(item, bytes):
+                framed(b"bytes")
+                framed(item)
+            elif item is None:
+                framed(b"none")
+            elif isinstance(item, (bool, int, float, complex)):
+                framed(type(item).__name__.encode("ascii"))
+                framed(repr(item).encode("ascii"))
+            else:
+                _update_content_digest(digest, item)
+        return
+    digest.update(memoryview(np.ascontiguousarray(array)).cast("B"))
+
+
+def _dataset_content_sha256(dataset: LoadedDataset) -> str:
+    digest = hashlib.sha256()
+    for split_name, split in (("train", dataset.train), ("test", dataset.test)):
+        digest.update(split_name.encode("ascii"))
+        if split is None:
+            digest.update(b"absent")
+            continue
+        _update_content_digest(digest, split.X)
+        _update_content_digest(digest, split.y)
+        _update_content_digest(digest, split.edges)
+        _update_content_digest(digest, split.masks)
+    return digest.hexdigest()
+
+
+@lru_cache(maxsize=1)
+def _preprocess_implementation_sha256() -> str:
+    """Commit every native preprocessing source file into cache compatibility."""
+
+    package_root = Path(__file__).resolve().parents[1]
+    digest = hashlib.sha256()
+    for source in sorted(package_root.rglob("*.py")):
+        relative = source.relative_to(package_root).as_posix().encode("utf-8")
+        digest.update(len(relative).to_bytes(8, "big"))
+        digest.update(relative)
+        with source.open("rb") as stream:
+            for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(chunk)
+    return digest.hexdigest()
+
+
+@lru_cache(maxsize=128)
+def _step_import_identity(import_path: str) -> dict[str, Any]:
+    module_name = import_path.partition(":")[0]
+    payload: dict[str, Any] = {"import_path": import_path, "module": module_name}
+    try:
+        module_spec = importlib.util.find_spec(module_name)
+    except (ImportError, ModuleNotFoundError, ValueError):
+        module_spec = None
+    origin = None if module_spec is None else module_spec.origin
+    if isinstance(origin, str):
+        source = Path(origin)
+        if source.is_file() and not source.is_symlink():
+            digest = hashlib.sha256()
+            with source.open("rb") as stream:
+                for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                    digest.update(chunk)
+            payload["module_file_sha256"] = digest.hexdigest()
+
+    root_package = module_name.partition(".")[0]
+    distributions = importlib_metadata.packages_distributions().get(root_package, ())
+    payload["distributions"] = {
+        distribution: importlib_metadata.version(distribution)
+        for distribution in sorted(distributions)
+    }
+    return payload
+
+
+def _preprocess_cache_identity(steps: tuple[ResolvedStep, ...]) -> dict[str, Any]:
+    distributions = {"numpy", "scipy"}
+    for step in steps:
+        required_extra = step.spec.required_extra
+        if required_extra is not None:
+            distributions.update(_PREPROCESS_EXTRA_DISTRIBUTIONS.get(required_extra, ()))
+    software = collect_software_manifest(distributions, require_complete=False)
+    return {
+        "schema_version": _PREPROCESS_CACHE_IDENTITY_SCHEMA_VERSION,
+        "implementation_sha256": _preprocess_implementation_sha256(),
+        "python": ".".join(str(value) for value in sys.version_info[:3]),
+        "python_implementation": sys.implementation.name,
+        "software_manifest": software.to_dict(),
+        "steps": [
+            {
+                "id": step.step_id,
+                "implementation": _step_import_identity(step.spec.import_path),
+            }
+            for step in steps
+        ],
+    }
 
 
 def _cache_outputs_complete(outputs: dict[str, Any], produces: tuple[str, ...]) -> bool:
@@ -271,24 +434,22 @@ def _cache_outputs_complete(outputs: dict[str, Any], produces: tuple[str, ...]) 
 
 
 def _dataset_fingerprint(dataset: LoadedDataset) -> str:
-    fp = dataset.meta.get("dataset_fingerprint") if hasattr(dataset, "meta") else None
-    if isinstance(fp, str) and fp:
-        return fp
-
-    # Fallback: structural fingerprint only (no full data hashing).
-    train_x = getattr(dataset.train, "X", None)
-    train_y = getattr(dataset.train, "y", None)
-    payload = {
-        "modality": dataset.meta.get("modality") if hasattr(dataset, "meta") else None,
-        "train": {
-            "x_shape": getattr(train_x, "shape", None),
-            "y_shape": getattr(train_y, "shape", None),
-            "has_edges": dataset.train.edges is not None,
-            "has_masks": dataset.train.masks is not None,
+    meta = dataset.meta if hasattr(dataset, "meta") and isinstance(dataset.meta, Mapping) else {}
+    declared_fingerprint = meta.get("dataset_fingerprint")
+    declared_content_sha256 = meta.get("dataset_content_sha256")
+    return fingerprint(
+        {
+            "dataset_fingerprint": (
+                declared_fingerprint if isinstance(declared_fingerprint, str) else None
+            ),
+            "declared_content_sha256": (
+                declared_content_sha256 if isinstance(declared_content_sha256, str) else None
+            ),
+            "observed_content_sha256": _dataset_content_sha256(dataset),
+            "modality": meta.get("modality"),
         },
-        "has_test": dataset.test is not None,
-    }
-    return fingerprint(payload, prefix="dataset:")
+        prefix="dataset:",
+    )
 
 
 def _initial_store(split: Split) -> ArtifactStore:
@@ -343,6 +504,29 @@ def _purge_store(store: ArtifactStore, *, keep: set[str]) -> None:
     store.data = {k: v for k, v in store.data.items() if k in keep}
 
 
+def _effective_step_modalities(
+    native_modalities: Sequence[str],
+    configured_modalities: Sequence[str],
+) -> tuple[str, ...] | None:
+    """Resolve YAML modality filters without widening the native step contract.
+
+    ``None`` means unrestricted.  An empty tuple is intentionally distinct: it
+    means that native and configured restrictions are disjoint, so the step can
+    never run for the resolved plan.
+    """
+
+    native = tuple(dict.fromkeys(str(value) for value in native_modalities))
+    configured = tuple(dict.fromkeys(str(value) for value in configured_modalities))
+    if native and configured:
+        configured_set = set(configured)
+        return tuple(value for value in native if value in configured_set)
+    if native:
+        return native
+    if configured:
+        return configured
+    return None
+
+
 def resolve_plan(
     dataset: LoadedDataset,
     plan: PreprocessPlan,
@@ -366,12 +550,17 @@ def resolve_plan(
             continue
 
         spec = reg.spec(step_cfg.step_id)
-        allowed = step_cfg.modalities or spec.modalities
-        if allowed and modality and modality not in allowed:
+        allowed = _effective_step_modalities(spec.modalities, step_cfg.modalities)
+        if allowed is not None and modality not in allowed:
+            reason = (
+                f"dataset modality is missing; step accepts only {list(allowed)!r}"
+                if not modality
+                else f"modality {modality!r} not in {list(allowed)!r}"
+            )
             skipped.append(
                 SkippedStep(
                     step_id=step_cfg.step_id,
-                    reason=f"modality {modality!r} not in {list(allowed)!r}",
+                    reason=reason,
                     index=i,
                 )
             )
@@ -436,6 +625,7 @@ def preprocess(
     reg = registry or default_step_registry()
     resolved = resolve_plan(dataset, plan, registry=reg)
     dataset_fp = _dataset_fingerprint(dataset)
+    cache_identity = _preprocess_cache_identity(resolved.steps)
 
     fit_fp = "fit:none"
     if fit_indices is not None:
@@ -449,6 +639,7 @@ def preprocess(
             "resolved_plan_fp": resolved.fingerprint,
             "fit_fp": fit_fp,
             "seed": int(seed),
+            "cache_identity": cache_identity,
         },
         prefix="preprocess:",
     )
@@ -528,6 +719,7 @@ def preprocess(
                 "fit_fp": fit_fp if spec.kind == "fittable" else None,
                 "inputs_train": inputs_train,
                 "inputs_test": inputs_test,
+                "cache_identity": cache_identity,
             },
             prefix="step:",
         )
@@ -582,6 +774,7 @@ def preprocess(
                         "inputs_train": inputs_train,
                         "fit_fp": fit_fp if spec.kind == "fittable" else None,
                         "seed": int(derived),
+                        "cache_identity": cache_identity,
                     },
                 )
 
@@ -635,6 +828,7 @@ def preprocess(
                             "inputs_test": inputs_test,
                             "fit_fp": fit_fp if spec.kind == "fittable" else None,
                             "seed": int(derived),
+                            "cache_identity": cache_identity,
                         },
                     )
 

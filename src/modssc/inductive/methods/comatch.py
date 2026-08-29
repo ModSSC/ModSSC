@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from time import perf_counter
 from typing import Any
 
+from modssc.capabilities import DUAL_STRONG_TORCH_INDUCTIVE_CAPABILITIES, MethodCapabilities
 from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
@@ -25,10 +26,41 @@ from modssc.inductive.methods.utils import (
     ensure_1d_labels_torch,
     ensure_torch_data,
 )
+from modssc.inductive.model_binding import ModelBindingSpec
 from modssc.inductive.optional import optional_import
 from modssc.inductive.types import DeviceSpec
+from modssc.runtime.contracts import MethodExecutionContract
+from modssc.runtime.method_contracts import (
+    fallback_method_execution_contract,
+    with_inductive_input_roles,
+)
 
 logger = logging.getLogger(__name__)
+
+_FIRST_STRONG_VIEW_KEYS = ("X_u_s0", "X_u_s_0", "X_u_s", "X_u_strong0")
+_SECOND_STRONG_VIEW_KEYS = ("X_u_s1", "X_u_s_1", "X_u_strong1", "X_u_s2", "X_u_s_2")
+
+
+def _resolve_strong_views(data: Any) -> tuple[Any | None, Any | None]:
+    """Resolve canonical strong views before historical ``views`` aliases."""
+
+    views = data.views if isinstance(getattr(data, "views", None), Mapping) else {}
+
+    first = getattr(data, "X_u_s", None)
+    if first is None:
+        first = next(
+            (views[key] for key in _FIRST_STRONG_VIEW_KEYS if views.get(key) is not None),
+            None,
+        )
+
+    second = getattr(data, "X_u_s_1", None)
+    if second is None:
+        second = next(
+            (views[key] for key in _SECOND_STRONG_VIEW_KEYS if views.get(key) is not None),
+            None,
+        )
+
+    return first, second
 
 
 def _extract_logits_and_features(output: Any) -> tuple[Any, Any]:
@@ -131,7 +163,42 @@ class CoMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         paper_title="CoMatch: Semi-Supervised Learning With Contrastive Graph Regularization",
         paper_pdf="https://openaccess.thecvf.com/content/ICCV2021/papers/Li_CoMatch_Semi-Supervised_Learning_With_Contrastive_Graph_Regularization_ICCV_2021_paper.pdf",
         official_code="https://github.com/salesforce/CoMatch/",
+        capabilities=DUAL_STRONG_TORCH_INDUCTIVE_CAPABILITIES,
+        model_binding=ModelBindingSpec.single(),
     )
+
+    @classmethod
+    def execution_contract(
+        cls,
+        spec: CoMatchSpec,
+        capabilities: MethodCapabilities,
+        model_binding: Any | None = None,
+    ) -> MethodExecutionContract:
+        feature_roles = (
+            "fit.X_l",
+            "fit.X_u_w",
+            "fit.X_u_s.0",
+            "fit.X_u_s.1",
+        )
+        contract = with_inductive_input_roles(
+            fallback_method_execution_contract(cls, capabilities, model_binding),
+            feature_roles=feature_roles,
+            row_groups=(
+                ("fit.X_l", "fit.y_l"),
+                ("fit.X_u_w", "fit.X_u_s.0", "fit.X_u_s.1"),
+            ),
+        )
+        return replace(
+            contract,
+            components=tuple(
+                replace(
+                    requirement,
+                    outputs=frozenset({"logits", "feat"}),
+                    input_roles=feature_roles,
+                )
+                for requirement in contract.components
+            ),
+        )
 
     def __init__(self, spec: CoMatchSpec | None = None) -> None:
         self.spec = spec or CoMatchSpec()
@@ -269,31 +336,18 @@ class CoMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         X_l = ds.X_l
         y_l = ensure_1d_labels_torch(ds.y_l, name="y_l")
         X_u_w = ds.X_u_w
-        X_u_s0 = ds.X_u_s
+        X_u_s0, X_u_s1 = _resolve_strong_views(ds)
 
         if X_u_w is None:
             raise InductiveValidationError("CoMatch requires X_u_w.")
 
-        if X_u_s0 is None and ds.views:
-            for key in ("X_u_s0", "X_u_s_0", "X_u_s", "X_u_strong0"):
-                cand = ds.views.get(key)
-                if cand is not None:
-                    X_u_s0 = cand
-                    break
-
         if X_u_s0 is None:
             raise InductiveValidationError("CoMatch requires X_u_s (first strong view).")
 
-        X_u_s1 = None
-        if ds.views:
-            for key in ("X_u_s1", "X_u_s_1", "X_u_strong1", "X_u_s2", "X_u_s_2"):
-                cand = ds.views.get(key)
-                if cand is not None:
-                    X_u_s1 = cand
-                    break
         if X_u_s1 is None:
             raise InductiveValidationError(
-                "CoMatch requires a second strong unlabeled view in views (e.g. views['X_u_s_1'])."
+                "CoMatch requires a second strong unlabeled view via X_u_s_1 or views "
+                "(e.g. views['X_u_s_1'])."
             )
 
         def _len(x):

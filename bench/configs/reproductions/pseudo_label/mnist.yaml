@@ -1,0 +1,165 @@
+# Reproduction card: Pseudo-Label (+PL without DAE), MNIST, Table 2 of Lee (2013).
+#
+# Published target for 600 balanced labels: 5.03% mean test error (94.97%
+# accuracy) over 10 random splits; 1,000 additional examples form validation
+# and the remaining official training examples are unlabeled.
+#
+# Fidelity status: paper-aligned diagnostic reproduction, not yet an exact
+# replication claim. The paper does not report its weight initialization or
+# final stopping epoch. This card uses PyTorch's Linear initialization and the
+# minimum 601-epoch horizon covering t=0 through T2=600, where alpha first
+# reaches alpha_f=3. The method artifact records the alpha trace and
+# pseudo-label counts for audit.
+acceptance:
+  protocol_id: lee-2013-mnist-table2-600
+  method_id: pseudo_label
+  repetitions: 10
+  fidelity_ceiling: paper_approx
+  conformity:
+    status: passed
+    basis: independent_equation_oracle
+    evidence:
+    - docs/replications/protocols/pseudo-label-lee-2013.md
+    review:
+      reviewed_by: codex:article_protocol_source_review
+      reviewed_at: '2026-08-30T00:00:00+02:00'
+  target:
+    split: test
+    metric: accuracy
+    transform: one_minus
+    published_mean: 0.0503
+    margin_absolute: 0.01
+  required_diagnostics:
+  - path: artifacts.method.diagnostics.alpha_reached_final
+    op: eq
+    value: true
+  - path: artifacts.method.diagnostics.confidence_threshold_applied
+    op: eq
+    value: false
+  - path: artifacts.method.diagnostics.pseudo_labels_assigned_total
+    op: gt
+    value: 0
+  deviations:
+  - The paper does not publish weight initialization or an unambiguous final stopping rule.
+  - The original ten split indices are unavailable, and the paper does not state whether the optional
+    20% visible-unit dropout was used for Table 2.
+  - The card scales pixels by 1/255 and defines an epoch as 229 unlabeled batches while recycling labeled
+    examples; the paper does not specify either traversal detail.
+  equivalences: []
+  unknowns: []
+run:
+  name: reproduction_pseudo_label_mnist_table2_600
+  seed: 1
+  seeds:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  seeded_sections:
+  - sampling
+  - preprocess
+  output_dir: ${MODSSC_OUTPUT_DIR}/reproductions/pseudo_label/mnist_600
+  log_level: detailed
+  fail_fast: true
+  benchmark_mode: true
+dataset:
+  id: mnist
+  download: false
+  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
+  integrity:
+    fingerprint: a509362fa8ce20622694ff1f4d85b7a5a2009a412d9e6ab54d1c35a2f8a6ab01
+    content_sha256: a918159751de8d67828d471643f73e70781ae5986e63d7d544be33e04139a89d
+sampling:
+  seed: 1
+  plan:
+    split:
+      kind: holdout
+      test_fraction: 0.2
+      val_fraction: 0.016666666666666666
+      stratify: true
+      shuffle: true
+    labeling:
+      mode: per_class
+      value: 60
+      strategy: balanced
+      min_per_class: 60
+      per_class: true
+      fixed_indices: null
+    imbalance:
+      kind: none
+    policy:
+      respect_official_test: true
+      use_official_graph_masks: true
+      allow_override_official: false
+preprocess:
+  seed: 1
+  fit_on: train
+  cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
+  plan:
+    output_key: features.X
+    steps:
+    - id: labels.encode
+    - id: labels.to_torch
+      params:
+        device: cuda
+        dtype: int64
+    - id: vision.ensure_num_channels
+      params:
+        num_channels: 1
+    - id: vision.channels_order
+      params:
+        order: NCHW
+    - id: vision.normalize
+      params:
+        mean:
+        - 0.0
+        std:
+        - 255.0
+    - id: core.copy_raw
+    - id: core.to_torch
+      params:
+        device: cuda
+        dtype: float32
+method:
+  kind: inductive
+  id: pseudo_label
+  profile: paper:lee2013-mnist-table2-600
+  device:
+    device: cuda
+    dtype: float32
+  params:
+    training_mode: joint_mlp
+    classifier_id: mlp
+    classifier_backend: torch
+    classifier_params: {}
+    paper_input_dim: 784
+    paper_hidden_units: 5000
+    paper_num_classes: 10
+    paper_epochs: 601
+    paper_labeled_batch_size: 32
+    paper_unlabeled_batch_size: 256
+    paper_hidden_dropout: 0.5
+    paper_input_dropout: 0.0
+    paper_initial_learning_rate: 1.5
+    paper_learning_rate_decay: 0.998
+    paper_momentum_initial: 0.5
+    paper_momentum_final: 0.99
+    paper_momentum_ramp_epochs: 500
+    paper_alpha_final: 3.0
+    paper_alpha_start_epoch: 100
+    paper_alpha_end_epoch: 600
+evaluation:
+  split_for_model_selection: val
+  report_splits:
+  - val
+  - test
+  metrics:
+  - accuracy
+  - macro_f1

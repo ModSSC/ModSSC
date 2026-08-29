@@ -1,1 +1,1 @@
-"""Repo-only benchmark orchestrator package."""
+"""Declarative benchmark runner shipped with ModSSC."""

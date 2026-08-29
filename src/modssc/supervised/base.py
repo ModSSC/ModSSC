@@ -16,6 +16,42 @@ class FitResult:
     n_classes: int
 
 
+@dataclass(frozen=True)
+class ClassifierCapabilities:
+    """Explicit semantic capabilities exposed by a classifier backend."""
+
+    predict: bool
+    scores: bool
+    probabilities: bool
+    classes: bool
+
+    @property
+    def supports_proba(self) -> bool:
+        """Backward-compatible spelling for probability support."""
+
+        return self.probabilities
+
+
+def classifier_capabilities(classifier: Any) -> ClassifierCapabilities:
+    """Return an explicit capability contract for native and external classifiers."""
+
+    declared = getattr(classifier, "capabilities", None)
+    if isinstance(declared, ClassifierCapabilities):
+        return declared
+
+    supports_proba = getattr(classifier, "supports_proba", None)
+    if isinstance(supports_proba, (bool, np.bool_)):
+        probabilities = bool(supports_proba)
+    else:
+        probabilities = callable(getattr(classifier, "predict_proba", None))
+    return ClassifierCapabilities(
+        predict=callable(getattr(classifier, "predict", None)),
+        scores=callable(getattr(classifier, "predict_scores", None)) or probabilities,
+        probabilities=probabilities,
+        classes=hasattr(classifier, "classes_") or hasattr(classifier, "classes_t_"),
+    )
+
+
 class SupportsProbaMixin:
     @property
     def supports_proba(self) -> bool:
@@ -75,6 +111,15 @@ class BaseSupervisedClassifier:
     @property
     def supports_proba(self) -> bool:
         return False
+
+    @property
+    def capabilities(self) -> ClassifierCapabilities:
+        return ClassifierCapabilities(
+            predict=True,
+            scores=True,
+            probabilities=bool(self.supports_proba),
+            classes=True,
+        )
 
     @property
     def n_classes_(self) -> int:

@@ -1,3 +1,5 @@
+import tomllib
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -139,6 +141,7 @@ def test_load_canonical_by_id(mock_sklearn, tmp_path):
     assert call_kwargs["as_frame"] is True
     assert call_kwargs["return_X_y"] is True
     assert call_kwargs["data_home"] == str(tmp_path)
+    assert "parser" not in call_kwargs
 
     assert ds.train.X.shape == (1, 2)
     assert ds.train.y.shape == (2,)
@@ -163,7 +166,17 @@ def test_load_canonical_by_name_and_version(mock_sklearn, tmp_path):
     call_kwargs = mock_sklearn.fetch_openml.call_args[1]
     assert call_kwargs["name"] == "iris"
     assert call_kwargs["version"] == 1
+    assert "parser" not in call_kwargs
     assert "data_id" not in call_kwargs
+
+
+def test_pandas_is_declared_for_openml_and_aggregate_data_extras() -> None:
+    root = Path(__file__).resolve().parents[3]
+    project = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+    extras = project["project"]["optional-dependencies"]
+
+    for name in ("openml", "datasets", "data", "full"):
+        assert "pandas>=2.2,<3" in extras[name]
 
 
 def test_to_numpy_ndarray():

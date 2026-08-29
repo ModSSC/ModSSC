@@ -44,9 +44,18 @@ Ruff configuration is in [`pyproject.toml`](https://github.com/ModSSC/ModSSC/blo
 
 
 ## Project structure explanation
-- [`src/modssc/`](https://github.com/ModSSC/ModSSC/tree/main/src/modssc): core library and CLI implementations. <sup class="cite"><a href="#source-4">[4]</a></sup>
+- [`src/modssc/`](https://github.com/ModSSC/ModSSC/tree/main/src/modssc): core
+  library, method implementations, reusable backends, and installed CLIs.
+  <sup class="cite"><a href="#source-4">[4]</a></sup>
 
-- [`bench/`](https://github.com/ModSSC/ModSSC/tree/main/bench): benchmark runner and experiment configs (repository-only). <sup class="cite"><a href="#source-5">[5]</a></sup>
+- [`bench/`](https://github.com/ModSSC/ModSSC/tree/main/bench): separately
+  packaged benchmark and paper-replication runner, validated configs, schemas,
+  and scientific orchestration. <sup class="cite"><a href="#source-5">[5]</a></sup>
+
+- Private scheduler/deployment wrappers and historical evidence archives remain
+  outside the runtime repository. External research source snapshots are not
+  retained. Site-specific accounts, partitions, paths, credentials, caches,
+  checkpoints, and results never belong in the public repository.
 
 - [`examples/`](https://github.com/ModSSC/ModSSC/tree/main/examples) and [`notebooks/`](https://github.com/ModSSC/ModSSC/tree/main/notebooks): runnable demos and exploratory workflows. <sup class="cite"><a href="#source-4">[4]</a><a href="#source-6">[6]</a></sup>
 
@@ -55,13 +64,35 @@ Ruff configuration is in [`pyproject.toml`](https://github.com/ModSSC/ModSSC/blo
 
 ## Adding a new algorithm or dataset
 Inductive methods:
-- Implement the `InductiveMethod` protocol and define a `MethodInfo` object. <sup class="cite"><a href="#source-7">[7]</a></sup>
+- Implement the `InductiveMethod` protocol and define a `MethodInfo` object,
+  including its explicit capability contract. <sup class="cite"><a href="#source-7">[7]</a></sup>
+
+- When requirements depend on the resolved spec, implement the method class's
+  native `execution_contract` hook. Declare the exact labeled, unlabeled,
+  weak/strong, named-view, graph, and prediction roles that `fit` consumes;
+  declare every required model output, optimizer, EMA model, scheduler, and
+  component relation. Do not reproduce this logic in `bench`.
+
+- A native Torch bundle factory must attach a static `ModelContract` describing
+  its accepted representations, dtype kinds, ranks, and real callable outputs.
+  An external bundle without that contract is deliberately `unverified` and is
+  rejected by strict benchmark execution.
 
 - Register the method ID in `register_builtin_methods`. <sup class="cite"><a href="#source-8">[8]</a></sup>
 
+- Add a negative test that supplies one incompatible input or component and
+  asserts that the native execution gate rejects it before the first `fit`
+  call. Also exercise every spec-dependent branch of the contract hook.
+
 
 Transductive methods:
-- Implement the `TransductiveMethod` protocol and define `MethodInfo`. <sup class="cite"><a href="#source-9">[9]</a></sup>
+- Implement the `TransductiveMethod` protocol and define `MethodInfo`, including
+  its explicit capability contract. <sup class="cite"><a href="#source-9">[9]</a></sup>
+
+- Keep input requirements in the method's native execution contract. A source
+  modality is not an execution representation: declare the materialized
+  feature, graph, target, backend, dtype, rank, and row relations that the
+  solver actually reads.
 
 - Register the method ID in `register_builtin_methods`. <sup class="cite"><a href="#source-10">[10]</a></sup>
 

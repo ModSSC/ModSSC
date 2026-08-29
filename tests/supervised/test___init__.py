@@ -6,7 +6,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from modssc.supervised.api import available_classifiers, classifier_info, create_classifier
+import modssc.supervised as supervised
+from modssc.supervised.api import (
+    available_classifiers,
+    classifier_info,
+    create_classifier,
+    resolve_classifier_backend_spec,
+)
 from modssc.supervised.errors import (
     OptionalDependencyError,
     UnknownBackendError,
@@ -68,6 +74,11 @@ def test_classifier_info_smoke() -> None:
     assert info["key"] == "knn"
     assert "backends" in info
     assert "numpy" in info["backends"]
+
+
+def test_public_backend_resolution_api_is_exported() -> None:
+    assert supervised.resolve_classifier_backend_spec is resolve_classifier_backend_spec
+    assert resolve_classifier_backend_spec("knn", backend="numpy").backend == "numpy"
 
 
 def test_unknown_classifier_raises() -> None:

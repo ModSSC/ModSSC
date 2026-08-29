@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 
+from modssc.capabilities import MethodCapabilities
 from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.deep_utils import get_torch_len
@@ -41,6 +42,7 @@ class SupervisedMethod(InductiveMethod):
         name="Supervised",
         family="baseline",
         supports_gpu=True,
+        capabilities=MethodCapabilities(regime="inductive"),
     )
 
     def __init__(self, spec: SupervisedSpec | None = None) -> None:

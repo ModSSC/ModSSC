@@ -1,0 +1,170 @@
+# Minimal-dataset reproduction card: Tri-Training, Congressional Voting
+# Records, J4.8 block of Table III in Zhou & Li (2005), at 80% unlabeled.
+#
+# Published target: initial/final error 0.076/0.055 (28.0% improvement),
+# averaged over three independent L/U partitions. The paper first holds out
+# about 25% as test, then redraws L/U within the remaining pool. The explicit
+# split component seed below therefore keeps the 109-example test set fixed,
+# while run seeds 1--3 redraw 65 labeled and 261 unlabeled examples.
+#
+# Scientific ceiling: paper_approx, never paper_matched. OpenML data_id=56 is
+# byte-equivalent to UCI Congressional Voting Records. The executable card passes all 16
+# attributes to ModSSC's internal unpruned C4.5-style tree as native {n,y}
+# nominal columns and preserves '?' as missing. The exact historical classifier
+# version, test indices, and RNG remain unavailable.
+# Every accepted run must archive and validate its immutable split manifest.
+# No validation split or test-based selection is performed. The 100-round cap
+# must be non-binding.
+acceptance:
+  protocol_id: zhou-li-2005-vote-table3-j48-80pct-unlabeled
+  method_id: tri_training
+  repetitions: 3
+  fidelity_ceiling: paper_approx
+  conformity:
+    status: passed
+    basis: pinned_official_implementation
+    evidence:
+    - docs/replications/protocols/tri-training-zhou-li-2005.md
+    review:
+      reviewed_by: codex:article_protocol_source_review
+      reviewed_at: '2026-08-30T00:00:00+02:00'
+  target:
+    split: test
+    metric: accuracy
+    transform: one_minus
+    published_mean: 0.055
+    margin_absolute: 0.02
+  secondary_targets:
+  - id: round0-initial-ensemble-error
+    split: test_initial
+    metric: accuracy
+    transform: one_minus
+    published_mean: 0.076
+    margin_absolute: 0.02
+  required_diagnostics:
+  - path: artifacts.method.diagnostics.converged
+    op: eq
+    value: true
+  - path: artifacts.method.diagnostics.initial_ensemble_retained
+    op: eq
+    value: true
+  - path: artifacts.method.diagnostics.n_iter
+    op: lt
+    value: 100
+  - path: artifacts.method.diagnostics.rounds
+    op: present
+  deviations:
+  - Original test indices and exact RNG state were not published.
+  - The released code averages Weka probabilities although Table I prints a hard majority vote.
+  - The released demonstration uses unpruned J48, while the paper states only J4.8.
+  equivalences: []
+  unknowns: []
+run:
+  name: reproduction_tri_training_vote_table3_j48
+  seed: 1
+  seeds:
+  - 1
+  - 2
+  - 3
+  seeded_sections:
+  - sampling
+  - preprocess
+  output_dir: ${MODSSC_OUTPUT_DIR}/reproductions/tri_training/vote_table3_j48
+  log_level: detailed
+  fail_fast: true
+  benchmark_mode: true
+dataset:
+  id: vote
+  download: false
+  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
+  options: {}
+  integrity:
+    fingerprint: 98f2cf80ea8e8fb8f3f546dc87d3a231a0ec10fe6d26b5dfe490fc832079b0dd
+    content_sha256: 5b95c771651aa62b985332026f63b423d7fe7dff2f0bc90ef2c336d4d2b70130
+sampling:
+  seed: 1
+  plan:
+    component_seeds:
+      split: 2005
+    split:
+      kind: holdout
+      test_fraction: 0.25
+      val_fraction: 0.0
+      stratify: true
+      shuffle: true
+    labeling:
+      mode: fraction
+      value: 0.2
+      strategy: proportional
+      min_per_class: 1
+      per_class: false
+      fixed_indices: null
+    imbalance:
+      kind: none
+    policy:
+      respect_official_test: true
+      use_official_graph_masks: true
+      allow_override_official: false
+preprocess:
+  seed: 1
+  fit_on: train
+  cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
+  plan:
+    output_key: features.X
+    steps:
+    - id: labels.encode
+    - id: core.copy_raw
+    - id: core.to_numpy
+method:
+  kind: inductive
+  id: tri_training
+  profile: paper:zhou-li-2005-vote-table3-j48
+  device:
+    device: cpu
+    dtype: float32
+  params:
+    training_mode: error_bound_subsample
+    classifier_id: decision_tree
+    classifier_backend: numpy
+    classifier_params:
+      min_num_obj: 2
+      # TriTrain.java's executable demonstration explicitly calls
+      # J48.setUnpruned(true).
+      unpruned: true
+      binary_splits: false
+      feature_schema:
+      - {type: nominal, values: [n, y]}
+      - {type: nominal, values: [n, y]}
+      - {type: nominal, values: [n, y]}
+      - {type: nominal, values: [n, y]}
+      - {type: nominal, values: [n, y]}
+      - {type: nominal, values: [n, y]}
+      - {type: nominal, values: [n, y]}
+      - {type: nominal, values: [n, y]}
+      - {type: nominal, values: [n, y]}
+      - {type: nominal, values: [n, y]}
+      - {type: nominal, values: [n, y]}
+      - {type: nominal, values: [n, y]}
+      - {type: nominal, values: [n, y]}
+      - {type: nominal, values: [n, y]}
+      - {type: nominal, values: [n, y]}
+      - {type: nominal, values: [n, y]}
+      missing_values: ["?"]
+    max_iter: 100
+    require_convergence: true
+    confidence_threshold: null
+    max_new_labels: null
+    bootstrap_ratio: 1.0
+    retain_initial_ensemble: true
+    # The authors' released TriTrain.java sums the three class-probability
+    # distributions before argmax, despite Table I describing a hard vote.
+    # The internal classifiers preserve that strategy-level rule.
+    prediction_rule: soft_average
+evaluation:
+  split_for_model_selection: null
+  report_splits:
+  - test
+  metrics:
+  - accuracy
+  - macro_f1

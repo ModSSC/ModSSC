@@ -8,6 +8,8 @@ class DataAugmentationError(Exception):
 class DataAugmentationValidationError(DataAugmentationError, ValueError):
     """Raised when a plan/op configuration is invalid."""
 
+    code = "E_AUGMENTATION_VALIDATION"
+
 
 class OptionalDependencyError(DataAugmentationError, ImportError):
     """Raised when an optional dependency is required but not installed."""

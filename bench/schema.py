@@ -4,8 +4,20 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
-from modssc.evaluation import list_metrics
-from modssc.hpo import HpoError, Space
+from modssc.evaluation import (
+    AcceptanceSpec,
+    AcceptanceSpecError,
+    list_metrics,
+    parse_acceptance_spec,
+)
+from modssc.hpo import (
+    RUNTIME_CONTRACT_FIELDS,
+    HpoError,
+    Space,
+    validate_space_targets,
+)
+from modssc.runtime.artifacts import ArtifactContract, ArtifactContractError
+from modssc.runtime.software import SoftwareProvenanceError, normalize_distribution_name
 
 
 class BenchConfigError(ValueError):
@@ -48,6 +60,15 @@ def _optional_str(data: Mapping[str, Any], key: str) -> str | None:
     if not isinstance(val, str) or not val.strip():
         raise BenchConfigError(f"{key} must be a non-empty string when provided")
     return val
+
+
+def _optional_sha256(data: Mapping[str, Any], key: str, *, name: str) -> str | None:
+    value = _optional_str(data, key)
+    if value is None:
+        return None
+    if len(value) != 64 or any(character not in "0123456789abcdef" for character in value):
+        raise BenchConfigError(f"{name}.{key} must be a lowercase SHA-256 digest")
+    return value
 
 
 def _optional_int(data: Mapping[str, Any], key: str) -> int | None:
@@ -114,6 +135,52 @@ def _optional_list(data: Mapping[str, Any], key: str) -> list[Any]:
     return list(val)
 
 
+def _input_artifacts(data: Mapping[str, Any]) -> list[ArtifactContract]:
+    raw = data.get("input_artifacts", [])
+    if not isinstance(raw, list):
+        raise BenchConfigError("run.input_artifacts must be a list")
+    contracts: list[ArtifactContract] = []
+    paths: set[str] = set()
+    for index, value in enumerate(raw):
+        item = _as_mapping(value, name=f"run.input_artifacts[{index}]")
+        _check_unknown(
+            item,
+            {"path", "kind", "sha256"},
+            name=f"run.input_artifacts[{index}]",
+        )
+        missing = {"path", "kind", "sha256"} - set(item)
+        if missing:
+            raise BenchConfigError(f"run.input_artifacts[{index}] missing keys: {sorted(missing)}")
+        try:
+            contract = ArtifactContract(
+                path=item["path"],
+                kind=item["kind"],
+                sha256=item["sha256"],
+            )
+        except (ArtifactContractError, TypeError) as exc:
+            raise BenchConfigError(f"run.input_artifacts[{index}] is invalid: {exc}") from exc
+        if contract.path in paths:
+            raise BenchConfigError(f"run.input_artifacts contains duplicate path: {contract.path}")
+        paths.add(contract.path)
+        contracts.append(contract)
+    return contracts
+
+
+def _software_dependencies(data: Mapping[str, Any]) -> list[str]:
+    raw = _optional_list(data, "software_dependencies")
+    normalized: list[str] = []
+    for index, value in enumerate(raw):
+        if not isinstance(value, str):
+            raise BenchConfigError(f"run.software_dependencies[{index}] must be a string")
+        try:
+            normalized.append(normalize_distribution_name(value))
+        except SoftwareProvenanceError as exc:
+            raise BenchConfigError(f"run.software_dependencies[{index}] is invalid: {exc}") from exc
+    if len(set(normalized)) != len(normalized):
+        raise BenchConfigError("run.software_dependencies must not contain duplicates")
+    return sorted(normalized)
+
+
 @dataclass(frozen=True)
 class RunConfig:
     name: str
@@ -121,10 +188,16 @@ class RunConfig:
     output_dir: str
     seeds: list[int] | None = None
     seeded_sections: list[str] | None = None
+    model_seed: int | None = None
     fail_fast: bool = True
     log_level: str | None = None
     benchmark_mode: bool = False
     allow_custom_factories: bool = False
+    resume_policy: str = "never"
+    checkpoint_dir: str | None = None
+    artifact_root: str | None = None
+    input_artifacts: list[ArtifactContract] = field(default_factory=list)
+    software_dependencies: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -139,17 +212,26 @@ class LimitsConfig:
 
 
 @dataclass(frozen=True)
+class DatasetIntegrityConfig:
+    fingerprint: str | None = None
+    content_sha256: str | None = None
+    content_manifest_sha256: str | None = None
+
+
+@dataclass(frozen=True)
 class DatasetConfig:
     id: str
     options: dict[str, Any] = field(default_factory=dict)
     download: bool = True
     cache_dir: str | None = None
+    integrity: DatasetIntegrityConfig | None = None
 
 
 @dataclass(frozen=True)
 class SamplingConfig:
     seed: int | None
     plan: dict[str, Any]
+    inductive_graph_policy: str = "reject"
 
 
 @dataclass(frozen=True)
@@ -172,8 +254,11 @@ class GraphConfig:
     enabled: bool
     seed: int | None
     cache: bool
+    require_cache_hit: bool
     spec: dict[str, Any]
     cache_dir: str | None = None
+    expected_fingerprint: str | None = None
+    expected_preprocess_fingerprint: str | None = None
 
 
 @dataclass(frozen=True)
@@ -183,14 +268,17 @@ class AugmentationConfig:
     mode: str
     weak: dict[str, Any]
     strong: dict[str, Any]
+    strong_views: int = 1
     modality: str | None = None
+    online_augmenter_id: str | None = None
+    online_augmenter_params: dict[str, Any] = field(default_factory=dict)
+    online_augmenter_metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
 class DeviceConfig:
     device: str
     dtype: str
-    resolved_device: str | None = None
 
 
 @dataclass(frozen=True)
@@ -210,13 +298,16 @@ class MethodConfig:
     device: DeviceConfig
     params: dict[str, Any] = field(default_factory=dict)
     model: ModelConfig | None = None
+    profile: str = "standardized"
 
 
 @dataclass(frozen=True)
 class EvaluationConfig:
     report_splits: list[str]
     metrics: list[str]
+    during_fit_splits: list[str] = field(default_factory=list)
     split_for_model_selection: str | None = None
+    test_selection_policy: str = "forbid"
 
 
 @dataclass(frozen=True)
@@ -251,9 +342,15 @@ class ExperimentConfig:
     augmentation: AugmentationConfig | None = None
     search: SearchConfig | None = None
     limits: LimitsConfig | None = None
+    acceptance: AcceptanceSpec | None = None
 
     @classmethod
-    def from_dict(cls, raw: Mapping[str, Any]) -> ExperimentConfig:
+    def from_dict(
+        cls,
+        raw: Mapping[str, Any],
+        *,
+        allow_resolved_acceptance_seed: bool = False,
+    ) -> ExperimentConfig:
         data = _as_mapping(raw, name="config")
         _check_unknown(
             data,
@@ -269,6 +366,7 @@ class ExperimentConfig:
                 "method",
                 "evaluation",
                 "search",
+                "acceptance",
             },
             name="config",
         )
@@ -281,11 +379,17 @@ class ExperimentConfig:
                 "seed",
                 "seeds",
                 "seeded_sections",
+                "model_seed",
                 "output_dir",
                 "fail_fast",
                 "log_level",
                 "benchmark_mode",
                 "allow_custom_factories",
+                "resume_policy",
+                "checkpoint_dir",
+                "artifact_root",
+                "input_artifacts",
+                "software_dependencies",
             },
             name="run",
         )
@@ -299,6 +403,15 @@ class ExperimentConfig:
         seeded_sections = None
         if "seeded_sections" in run:
             seeded_sections = [str(item) for item in _optional_list(run, "seeded_sections")]
+        resume_policy = str(run.get("resume_policy", "never"))
+        if resume_policy not in {"never", "auto", "required"}:
+            raise BenchConfigError("run.resume_policy must be one of: auto, never, required")
+        input_artifacts = _input_artifacts(run)
+        artifact_root = _optional_str(run, "artifact_root")
+        if input_artifacts and artifact_root is None:
+            raise BenchConfigError(
+                "run.artifact_root is required when run.input_artifacts is not empty"
+            )
 
         run_cfg = RunConfig(
             name=_require_str(run, "name", name="run"),
@@ -306,10 +419,16 @@ class ExperimentConfig:
             output_dir=str(run.get("output_dir", "modssc_cache/output")),
             seeds=_optional_seed_list(run, "seeds", name="run"),
             seeded_sections=seeded_sections,
+            model_seed=_optional_int(run, "model_seed"),
             fail_fast=fail_fast,
             log_level=_optional_str(run, "log_level"),
             benchmark_mode=benchmark_mode,
             allow_custom_factories=_optional_bool(run, "allow_custom_factories", default=False),
+            resume_policy=resume_policy,
+            checkpoint_dir=_optional_str(run, "checkpoint_dir"),
+            artifact_root=artifact_root,
+            input_artifacts=input_artifacts,
+            software_dependencies=_software_dependencies(run),
         )
 
         limits_cfg = None
@@ -357,20 +476,58 @@ class ExperimentConfig:
             )
 
         dataset = _as_mapping(data.get("dataset", {}), name="dataset")
-        _check_unknown(dataset, {"id", "options", "download", "cache_dir"}, name="dataset")
+        _check_unknown(
+            dataset,
+            {"id", "options", "download", "cache_dir", "integrity"},
+            name="dataset",
+        )
+        integrity_cfg = None
+        if "integrity" in dataset:
+            integrity = _as_mapping(dataset.get("integrity"), name="dataset.integrity")
+            _check_unknown(
+                integrity,
+                {"fingerprint", "content_sha256", "content_manifest_sha256"},
+                name="dataset.integrity",
+            )
+            integrity_cfg = DatasetIntegrityConfig(
+                fingerprint=_optional_sha256(integrity, "fingerprint", name="dataset.integrity"),
+                content_sha256=_optional_sha256(
+                    integrity, "content_sha256", name="dataset.integrity"
+                ),
+                content_manifest_sha256=_optional_sha256(
+                    integrity, "content_manifest_sha256", name="dataset.integrity"
+                ),
+            )
+            if not any(
+                (
+                    integrity_cfg.fingerprint,
+                    integrity_cfg.content_sha256,
+                    integrity_cfg.content_manifest_sha256,
+                )
+            ):
+                raise BenchConfigError("dataset.integrity must pin at least one identity")
         ds_cfg = DatasetConfig(
             id=_require_str(dataset, "id", name="dataset"),
             options=_optional_mapping(dataset, "options"),
             download=_optional_bool(dataset, "download", default=True),
             cache_dir=_optional_str(dataset, "cache_dir"),
+            integrity=integrity_cfg,
         )
 
         sampling = _as_mapping(data.get("sampling", {}), name="sampling")
-        _check_unknown(sampling, {"seed", "plan"}, name="sampling")
+        _check_unknown(
+            sampling,
+            {"seed", "plan", "inductive_graph_policy"},
+            name="sampling",
+        )
         plan = _optional_mapping(sampling, "plan")
         if not plan:
             raise BenchConfigError("sampling.plan must be provided")
-        sampling_cfg = SamplingConfig(seed=_optional_int(sampling, "seed"), plan=plan)
+        sampling_cfg = SamplingConfig(
+            seed=_optional_int(sampling, "seed"),
+            plan=plan,
+            inductive_graph_policy=(_optional_str(sampling, "inductive_graph_policy") or "reject"),
+        )
 
         preprocess = _as_mapping(data.get("preprocess", {}), name="preprocess")
         _check_unknown(
@@ -399,12 +556,30 @@ class ExperimentConfig:
         graph_cfg = None
         if "graph" in data:
             graph = _as_mapping(data.get("graph", {}), name="graph")
-            _check_unknown(graph, {"enabled", "seed", "cache", "cache_dir", "spec"}, name="graph")
+            _check_unknown(
+                graph,
+                {
+                    "enabled",
+                    "seed",
+                    "cache",
+                    "require_cache_hit",
+                    "cache_dir",
+                    "expected_fingerprint",
+                    "expected_preprocess_fingerprint",
+                    "spec",
+                },
+                name="graph",
+            )
             graph_cfg = GraphConfig(
                 enabled=_optional_bool(graph, "enabled", default=False),
                 seed=_optional_int(graph, "seed"),
                 cache=_optional_bool(graph, "cache", default=True),
+                require_cache_hit=_optional_bool(graph, "require_cache_hit", default=False),
                 cache_dir=_optional_str(graph, "cache_dir"),
+                expected_fingerprint=_optional_str(graph, "expected_fingerprint"),
+                expected_preprocess_fingerprint=_optional_str(
+                    graph, "expected_preprocess_fingerprint"
+                ),
                 spec=_optional_mapping(graph, "spec"),
             )
 
@@ -412,28 +587,76 @@ class ExperimentConfig:
         if "augmentation" in data:
             aug = _as_mapping(data.get("augmentation", {}), name="augmentation")
             _check_unknown(
-                aug, {"enabled", "seed", "mode", "weak", "strong", "modality"}, name="augmentation"
+                aug,
+                {
+                    "enabled",
+                    "seed",
+                    "mode",
+                    "weak",
+                    "strong",
+                    "strong_views",
+                    "modality",
+                    "online_augmenter_id",
+                    "online_augmenter_params",
+                    "online_augmenter_metadata",
+                },
+                name="augmentation",
             )
+            strong_views = _optional_int(aug, "strong_views")
+            if strong_views is None:
+                strong_views = 1
+            if strong_views not in {1, 2}:
+                raise BenchConfigError("augmentation.strong_views must be 1 or 2")
             augmentation_cfg = AugmentationConfig(
                 enabled=_optional_bool(aug, "enabled", default=True),
                 seed=_optional_int(aug, "seed"),
                 mode=str(aug.get("mode", "fixed")),
                 weak=_optional_mapping(aug, "weak"),
                 strong=_optional_mapping(aug, "strong"),
+                strong_views=strong_views,
                 modality=_optional_str(aug, "modality"),
+                online_augmenter_id=_optional_str(aug, "online_augmenter_id"),
+                online_augmenter_params=_optional_mapping(aug, "online_augmenter_params"),
+                online_augmenter_metadata=_optional_mapping(aug, "online_augmenter_metadata"),
             )
+            if augmentation_cfg.online_augmenter_id is None and (
+                augmentation_cfg.online_augmenter_params
+                or augmentation_cfg.online_augmenter_metadata
+            ):
+                raise BenchConfigError(
+                    "augmentation online augmenter params/metadata require online_augmenter_id"
+                )
+            if "seed" in augmentation_cfg.online_augmenter_params:
+                raise BenchConfigError(
+                    "augmentation.online_augmenter_params must not redefine seed; "
+                    "use augmentation.seed or the run seed"
+                )
+            if (
+                augmentation_cfg.online_augmenter_id is not None
+                and augmentation_cfg.mode != "online"
+            ):
+                raise BenchConfigError(
+                    "augmentation.online_augmenter_id requires augmentation.mode='online'"
+                )
+            if augmentation_cfg.mode == "online" and augmentation_cfg.strong_views != 1:
+                raise BenchConfigError(
+                    "augmentation.mode='online' supports exactly one strong view"
+                )
 
         method = _as_mapping(data.get("method", {}), name="method")
-        _check_unknown(method, {"kind", "id", "device", "params", "model"}, name="method")
+        _check_unknown(
+            method,
+            {"kind", "id", "device", "profile", "params", "model"},
+            name="method",
+        )
         kind = _require_str(method, "kind", name="method")
         if kind not in {"inductive", "transductive"}:
             raise BenchConfigError("method.kind must be 'inductive' or 'transductive'")
         device_raw = _as_mapping(method.get("device", {}), name="method.device")
-        _check_unknown(device_raw, {"device", "dtype", "resolved_device"}, name="method.device")
+        _check_unknown(device_raw, {"device", "dtype"}, name="method.device")
         device = DeviceConfig(
             device=str(device_raw.get("device", "cpu")),
             dtype=str(device_raw.get("dtype", "float32")),
-            resolved_device=_optional_str(device_raw, "resolved_device"),
         )
         model_cfg = None
         model_raw = method.get("model")
@@ -487,24 +710,48 @@ class ExperimentConfig:
             kind=kind,
             method_id=_require_str(method, "id", name="method"),
             device=device,
+            profile=_optional_str(method, "profile") or "standardized",
             params=_optional_mapping(method, "params"),
             model=model_cfg,
         )
+        if "profile" in method_cfg.params:
+            raise BenchConfigError(
+                "declare the opaque execution profile only as method.profile; "
+                "method.params.profile is ambiguous"
+            )
 
         evaluation = _as_mapping(data.get("evaluation", {}), name="evaluation")
         _check_unknown(
-            evaluation, {"report_splits", "metrics", "split_for_model_selection"}, name="evaluation"
+            evaluation,
+            {
+                "report_splits",
+                "metrics",
+                "during_fit_splits",
+                "split_for_model_selection",
+                "test_selection_policy",
+            },
+            name="evaluation",
         )
         report_splits = [str(s) for s in _optional_list(evaluation, "report_splits")]
         metrics = [str(m) for m in _optional_list(evaluation, "metrics")]
+        during_fit_splits = [
+            str(split) for split in _optional_list(evaluation, "during_fit_splits")
+        ]
         if not report_splits:
             raise BenchConfigError("evaluation.report_splits must be provided")
         if not metrics:
             raise BenchConfigError("evaluation.metrics must be provided")
+        test_selection_policy = _optional_str(evaluation, "test_selection_policy") or "forbid"
+        if test_selection_policy not in {"forbid", "paper_protocol"}:
+            raise BenchConfigError(
+                "evaluation.test_selection_policy must be 'forbid' or 'paper_protocol'"
+            )
         evaluation_cfg = EvaluationConfig(
             report_splits=report_splits,
             metrics=metrics,
+            during_fit_splits=during_fit_splits,
             split_for_model_selection=_optional_str(evaluation, "split_for_model_selection"),
+            test_selection_policy=test_selection_policy,
         )
 
         search_cfg = None
@@ -561,7 +808,12 @@ class ExperimentConfig:
                 raise BenchConfigError("search.space must be provided")
             _validate_search_space(space)
             try:
-                Space.from_dict(space)
+                parsed_space = Space.from_dict(space)
+                if kind == "grid":
+                    # Grid iteration is lazy. Advancing once validates that every
+                    # leaf is a finite list or choice distribution without
+                    # materializing the Cartesian product.
+                    next(parsed_space.iter_grid())
             except HpoError as exc:
                 raise BenchConfigError(f"search.space invalid: {exc}") from exc
 
@@ -580,6 +832,37 @@ class ExperimentConfig:
                 space=space,
             )
 
+        acceptance_cfg = None
+        if "acceptance" in data:
+            acceptance_raw = _as_mapping(data.get("acceptance"), name="acceptance")
+            try:
+                acceptance_cfg = parse_acceptance_spec(acceptance_raw)
+            except AcceptanceSpecError as exc:
+                raise BenchConfigError(
+                    f"acceptance is invalid: {exc}",
+                    code="E_BENCH_ACCEPTANCE_SCHEMA",
+                ) from exc
+            if not run_cfg.benchmark_mode:
+                raise BenchConfigError(
+                    "acceptance requires run.benchmark_mode=true",
+                    code="E_BENCH_ACCEPTANCE_STRICT_REQUIRED",
+                )
+            if acceptance_cfg.method_id != method_cfg.method_id:
+                raise BenchConfigError(
+                    "acceptance.method_id must equal method.id",
+                    code="E_BENCH_ACCEPTANCE_METHOD_MISMATCH",
+                )
+            if run_cfg.seeds is None and not allow_resolved_acceptance_seed:
+                raise BenchConfigError(
+                    "acceptance requires run.seeds on an unresolved YAML card",
+                    code="E_BENCH_ACCEPTANCE_REPETITIONS_MISMATCH",
+                )
+            if run_cfg.seeds is not None and len(run_cfg.seeds) != acceptance_cfg.repetitions:
+                raise BenchConfigError(
+                    "run.seeds must contain exactly acceptance.repetitions values",
+                    code="E_BENCH_ACCEPTANCE_REPETITIONS_MISMATCH",
+                )
+
         return cls(
             run=run_cfg,
             limits=limits_cfg,
@@ -592,34 +875,16 @@ class ExperimentConfig:
             views=views_cfg,
             augmentation=augmentation_cfg,
             search=search_cfg,
+            acceptance=acceptance_cfg,
         )
 
 
 def _validate_search_space(space: Mapping[str, Any]) -> None:
-    def _check_leaf(path: tuple[str, ...]) -> None:
-        if len(path) < 3 or path[0] != "method" or path[1] != "params":
-            joined = ".".join(path) if path else "<root>"
-            raise BenchConfigError(
-                f"search.space is limited to method.params.* in v1 (got leaf at {joined!r})"
-            )
-
-    def _walk(node: Any, path: tuple[str, ...]) -> None:
-        if isinstance(node, list):
-            if not node:
-                raise BenchConfigError("search.space leaves must be non-empty lists")
-            _check_leaf(path)
-            return
-        if isinstance(node, Mapping):
-            if not node:
-                raise BenchConfigError("search.space cannot contain empty mappings")
-            if "dist" in node:
-                _check_leaf(path)
-                return
-            for key in sorted(node.keys()):
-                if not isinstance(key, str) or not key:
-                    raise BenchConfigError("search.space keys must be non-empty strings")
-                _walk(node[key], path + (key,))
-            return
-        raise BenchConfigError("search.space leaves must be lists or dist specs")
-
-    _walk(space, ())
+    try:
+        validate_space_targets(
+            space,
+            allowed_prefix=("method", "params"),
+            forbidden_leaf_names=RUNTIME_CONTRACT_FIELDS,
+        )
+    except HpoError as exc:
+        raise BenchConfigError(f"search.space invalid: {exc}") from exc

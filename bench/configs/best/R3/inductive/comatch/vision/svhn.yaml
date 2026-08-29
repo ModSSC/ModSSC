@@ -73,6 +73,7 @@ preprocess:
     - id: core.copy_raw
 augmentation:
   enabled: true
+  strong_views: 2
   seed: 3
   mode: fixed
   modality: vision

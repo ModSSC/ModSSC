@@ -4,6 +4,8 @@ import importlib
 
 import pytest
 
+from modssc.data_loader.catalog.graph import GRAPH_CATALOG
+
 
 def _assert_module_importable(module_name: str):
     try:
@@ -23,3 +25,15 @@ def _assert_module_importable(module_name: str):
 
 def test_module_importable() -> None:
     _assert_module_importable("modssc.data_loader.catalog.graph")
+
+
+def test_cora_catalog_pins_planetoid_public_split() -> None:
+    cora = GRAPH_CATALOG["cora"]
+
+    assert cora.uri == "pyg:Planetoid/Cora"
+    assert cora.source_kwargs == {"split": "public"}
+
+
+def test_other_planetoid_catalog_entries_keep_default_constructor_options() -> None:
+    assert GRAPH_CATALOG["citeseer"].source_kwargs == {}
+    assert GRAPH_CATALOG["pubmed"].source_kwargs == {}

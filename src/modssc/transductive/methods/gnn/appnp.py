@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 
+from modssc.capabilities import DENSE_TRANSDUCTIVE_CAPABILITIES
 from modssc.transductive.base import MethodInfo, TransductiveMethod
 from modssc.transductive.optional import optional_import
 
@@ -87,6 +88,7 @@ class APPNPMethod(TransductiveMethod):
         paper_title="Predict then Propagate: Graph Neural Networks meet Personalized PageRank",
         paper_pdf="https://arxiv.org/pdf/1810.05997",
         official_code="https://github.com/gasteigerjo/ppnp",
+        capabilities=DENSE_TRANSDUCTIVE_CAPABILITIES,
     )
 
     def __init__(self, spec: APPNPSpec | None = None) -> None:

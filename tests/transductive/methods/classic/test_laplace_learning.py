@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import importlib
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
+from scipy import sparse
 
 try:
     import torch
@@ -29,6 +31,230 @@ def _assert_module_importable(module_name: str):
 
 def test_module_importable() -> None:
     _assert_module_importable("modssc.transductive.methods.classic.laplace_learning")
+
+
+def test_laplace_solver_is_fail_closed() -> None:
+    mod = _assert_module_importable("modssc.transductive.methods.classic.laplace_learning")
+    mod._validate_solver(mod.LaplaceLearningSpec())
+    mod._validate_solver(mod.LaplaceLearningSpec(solver="calder2020_conjugate_gradient"))
+    with pytest.raises(ValueError, match="Unknown Laplace solver"):
+        mod._validate_solver(mod.LaplaceLearningSpec(solver="unknown"))
+
+
+def _archived_calder_conjugate_gradient(
+    matrix: sparse.spmatrix,
+    rhs: np.ndarray,
+    *,
+    tol: float,
+    max_iter: int,
+) -> tuple[np.ndarray, int, float]:
+    diagonal = np.asarray(matrix.diagonal(), dtype=np.float64)
+    scale = 1.0 / np.sqrt(diagonal + 1.0e-10)
+    preconditioned = sparse.diags(scale) @ matrix.astype(np.float64) @ sparse.diags(scale)
+    transformed_rhs = scale[:, None] * np.asarray(rhs, dtype=np.float64)
+    solution = np.zeros_like(transformed_rhs)
+    residual = transformed_rhs - preconditioned @ solution
+    direction = residual
+    squared = np.sum(residual**2, axis=0)
+    error = 1.0
+    iteration = 0
+    while error > tol and iteration < max_iter:
+        iteration += 1
+        product = preconditioned @ direction
+        alpha = squared / np.sum(direction * product, axis=0)
+        solution += alpha * direction
+        residual -= alpha * product
+        squared_new = np.sum(residual**2, axis=0)
+        error = float(np.sqrt(np.sum(squared_new)))
+        direction = residual + (squared_new / squared) * direction
+        squared = squared_new
+    return scale[:, None] * solution, iteration, error
+
+
+def test_calder2020_solver_matches_archived_alias_and_stopping_rule() -> None:
+    mod = _assert_module_importable("modssc.transductive.methods.classic.laplace_learning")
+    matrix = sparse.csr_matrix(
+        np.array(
+            [
+                [4.0, -1.0, 0.0],
+                [-1.0, 4.0, -1.0],
+                [0.0, -1.0, 3.0],
+            ],
+            dtype=np.float64,
+        )
+    )
+    rhs = np.array(
+        [
+            [1.0, 0.5],
+            [0.25, 1.0],
+            [0.5, 0.25],
+        ],
+        dtype=np.float64,
+    )
+    expected = _archived_calder_conjugate_gradient(
+        matrix,
+        rhs,
+        tol=1.0e-5,
+        max_iter=100,
+    )
+    actual = mod._calder2020_conjugate_gradient(
+        matrix,
+        rhs,
+        tol=1.0e-5,
+        max_iter=100,
+    )
+
+    np.testing.assert_array_equal(actual[0], expected[0])
+    assert actual[1:] == expected[1:]
+
+    stopped = mod._calder2020_conjugate_gradient(
+        matrix,
+        rhs,
+        tol=1.0,
+        max_iter=100,
+    )
+    np.testing.assert_array_equal(stopped[0], np.zeros_like(rhs))
+    assert stopped[1:] == (0, 1.0)
+
+
+def test_calder2020_solver_requires_matrix_rhs_for_every_class() -> None:
+    mod = _assert_module_importable("modssc.transductive.methods.classic.laplace_learning")
+    matrix = sparse.eye(2, format="csr")
+    with pytest.raises(ValueError, match="shape"):
+        mod._calder2020_conjugate_gradient(
+            matrix,
+            np.ones(2),
+            tol=1.0e-5,
+            max_iter=10,
+        )
+    with pytest.raises(ValueError, match="non-zero source for every class"):
+        mod._calder2020_conjugate_gradient(
+            matrix,
+            np.array([[1.0, 0.0], [0.0, 0.0]]),
+            tol=1.0e-5,
+            max_iter=10,
+        )
+
+
+def test_laplace_numpy_rejects_unknown_solver() -> None:
+    mod = _assert_module_importable("modssc.transductive.methods.classic.laplace_learning")
+    with pytest.raises(ValueError, match="Unknown Laplace solver"):
+        mod.laplace_learning_numpy(
+            n_nodes=2,
+            edge_index=np.array([[0, 1], [1, 0]], dtype=np.int64),
+            edge_weight=np.ones(2, dtype=np.float32),
+            y=np.array([0, 0], dtype=np.int64),
+            labeled_mask=np.array([True, False]),
+            spec=mod.LaplaceLearningSpec(solver="unknown"),  # type: ignore[arg-type]
+        )
+
+
+def test_laplace_numpy_solver_dispatch_is_fail_closed(monkeypatch) -> None:
+    mod = _assert_module_importable("modssc.transductive.methods.classic.laplace_learning")
+    # Exercise the solver dispatch's defensive guard independently from the
+    # public solver validation performed at the entry point.
+    monkeypatch.setattr(mod, "_validate_solver", lambda _spec: None)
+    with pytest.raises(ValueError, match="Unknown Laplace solver"):
+        mod.laplace_learning_numpy(
+            n_nodes=2,
+            edge_index=np.array([[0, 1], [1, 0]], dtype=np.int64),
+            edge_weight=np.ones(2, dtype=np.float32),
+            y=np.array([0, 0], dtype=np.int64),
+            labeled_mask=np.array([True, False]),
+            spec=mod.LaplaceLearningSpec(solver="unknown"),  # type: ignore[arg-type]
+        )
+
+
+def test_laplace_numpy_dispatches_calder_solver() -> None:
+    mod = _assert_module_importable("modssc.transductive.methods.classic.laplace_learning")
+    result = mod.laplace_learning_numpy(
+        n_nodes=2,
+        edge_index=np.array([[0, 1], [1, 0]], dtype=np.int64),
+        edge_weight=np.ones(2, dtype=np.float64),
+        y=np.array([0, 0], dtype=np.int64),
+        labeled_mask=np.array([True, False]),
+        spec=mod.LaplaceLearningSpec(
+            solver="calder2020_conjugate_gradient",
+        ),
+    )
+
+    np.testing.assert_array_equal(result.F, np.ones((2, 1), dtype=np.float64))
+    assert result.n_iter == 1
+    assert result.residual == pytest.approx(0.0)
+
+
+def test_laplace_shared_graph_self_loops_cancel_from_harmonic_system() -> None:
+    mod = _assert_module_importable("modssc.transductive.methods.classic.laplace_learning")
+    edge_index = np.array(
+        [[0, 1, 1, 2, 2, 3], [1, 0, 2, 1, 3, 2]],
+        dtype=np.int64,
+    )
+    edge_weight = np.ones(edge_index.shape[1], dtype=np.float64)
+    labels = np.array([0, 0, 1, 1], dtype=np.int64)
+    labeled_mask = np.array([True, False, False, True])
+    spec = mod.LaplaceLearningSpec(
+        solver="calder2020_conjugate_gradient",
+        cg_tol=1.0e-8,
+        cg_max_iter=100,
+    )
+
+    without_loops = mod.laplace_learning_numpy(
+        n_nodes=4,
+        edge_index=edge_index,
+        edge_weight=edge_weight,
+        y=labels,
+        labeled_mask=labeled_mask,
+        spec=spec,
+    )
+    nodes = np.arange(4, dtype=np.int64)
+    with_loops = mod.laplace_learning_numpy(
+        n_nodes=4,
+        edge_index=np.concatenate([edge_index, np.vstack([nodes, nodes])], axis=1),
+        edge_weight=np.concatenate([edge_weight, np.full(4, 23.0, dtype=np.float64)]),
+        y=labels,
+        labeled_mask=labeled_mask,
+        spec=spec,
+    )
+
+    np.testing.assert_array_equal(with_loops.F, without_loops.F)
+    assert with_loops.n_iter == without_loops.n_iter
+    assert with_loops.residual == without_loops.residual
+
+
+def test_laplace_method_auto_backend_records_device_dispatch(monkeypatch) -> None:
+    mod = _assert_module_importable("modssc.transductive.methods.classic.laplace_learning")
+    observed = {}
+
+    def fake_laplace_learning(**kwargs):
+        observed.update(kwargs)
+        return mod.DiffusionResult(
+            F=np.ones((1, 1), dtype=np.float32),
+            n_iter=0,
+            residual=0.0,
+        )
+
+    monkeypatch.setattr(mod, "validate_node_dataset", lambda _data: None)
+    monkeypatch.setattr(mod, "laplace_learning", fake_laplace_learning)
+    data = SimpleNamespace(
+        y=np.array([0], dtype=np.int64),
+        graph=SimpleNamespace(
+            edge_index=np.array([[0], [0]], dtype=np.int64),
+            edge_weight=np.ones(1, dtype=np.float32),
+        ),
+        masks={"train_mask": np.array([True])},
+    )
+
+    method = mod.LaplaceLearningMethod(mod.LaplaceLearningSpec(backend="auto"))
+    method.fit(data, device="cpu")
+
+    assert method.diagnostics_["backend"] == "torch"
+    assert observed["backend"] == "torch"
+    assert observed["device"] == "cpu"
+
+    explicit = mod.LaplaceLearningMethod(mod.LaplaceLearningSpec(backend="numpy"))
+    explicit.fit(data)
+    assert explicit.diagnostics_["backend"] == "numpy"
+    assert observed["backend"] == "numpy"
 
 
 @pytest.mark.skipif(torch is None, reason="torch not installed")
@@ -197,6 +423,17 @@ def test_laplace_learning_torch_edge_cases(monkeypatch) -> None:
 
     edge_index = torch.tensor([[0, 1], [1, 0]], dtype=torch.long)
     edge_weight = torch.ones(2, dtype=torch.float32)
+    with pytest.raises(ValueError, match="NumPy/CPU-only"):
+        mod.laplace_learning_torch(
+            n_nodes=2,
+            edge_index=edge_index,
+            edge_weight=edge_weight,
+            y=torch.tensor([0, 1]),
+            labeled_mask=torch.tensor([True, True]),
+            spec=mod.LaplaceLearningSpec(
+                solver="calder2020_conjugate_gradient",
+            ),
+        )
     with pytest.raises(ValueError, match="edge_index must have shape"):
         mod.laplace_learning_torch(
             n_nodes=2,

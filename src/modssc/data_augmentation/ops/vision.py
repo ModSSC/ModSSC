@@ -230,3 +230,97 @@ class RandomCropPad(AugmentationOp):
         top = int(rng.integers(0, 2 * pad + 1))
         left = int(rng.integers(0, 2 * pad + 1))
         return padded[:, top : top + H, left : left + W]
+
+
+@register_op("vision.randaugment")
+@dataclass
+class RandAugment(AugmentationOp):
+    """RandAugment strong policy used by the FixMatch paper ablation.
+
+    The paper setting is ``N=2, M=10``.  Torchvision supplies the canonical
+    geometric/photometric operation space; its RNG is seeded from ModSSC's
+    replayable augmentation context for deterministic task resumption.
+    """
+
+    op_id: str = "vision.randaugment"
+    modality: Modality = "vision"
+    num_ops: int = 2
+    magnitude: int = 10
+    num_magnitude_bins: int = 31
+    fill: float | tuple[float, ...] | None = None
+
+    def apply(self, x: Any, *, rng: np.random.Generator, ctx: AugmentationContext) -> Any:  # noqa: ARG002
+        if int(self.num_ops) <= 0:
+            raise ValueError("num_ops must be >= 1")
+        if int(self.num_magnitude_bins) <= 1:
+            raise ValueError("num_magnitude_bins must be >= 2")
+        if not (0 <= int(self.magnitude) < int(self.num_magnitude_bins)):
+            raise ValueError("magnitude must be in [0, num_magnitude_bins)")
+
+        import importlib
+
+        torch = importlib.import_module("torch")
+        torchvision = importlib.import_module("torchvision")
+
+        is_numpy = not is_torch_tensor(x)
+        tensor = torch.from_numpy(np.asarray(x)) if is_numpy else x
+        height, width, layout = _torch_hw_layout(tensor)
+        if height <= 0 or width <= 0:
+            raise ValueError("RandAugment requires non-empty spatial dimensions")
+        if layout == "hw":
+            policy_input = tensor.unsqueeze(0)
+        elif layout == "hwc":
+            policy_input = tensor.permute(2, 0, 1)
+        else:
+            policy_input = tensor
+        if int(policy_input.shape[0]) not in (1, 3):
+            raise ValueError("RandAugment requires one or three image channels")
+
+        floating_input = bool(policy_input.is_floating_point())
+        input_dtype = policy_input.dtype
+        if floating_input:
+            if not bool(torch.isfinite(policy_input).all().item()):
+                raise ValueError("RandAugment floating-point input must contain finite values")
+            min_value = float(policy_input.min().item())
+            max_value = float(policy_input.max().item())
+            if min_value < 0.0 or max_value > 1.0:
+                raise ValueError("RandAugment floating-point input must be in [0, 1]")
+            policy_input = policy_input.mul(255.0).round().clamp_(0.0, 255.0).to(torch.uint8)
+
+        fill: float | list[float] | None
+        if isinstance(self.fill, tuple):
+            fill = [float(value) for value in self.fill]
+        else:
+            fill = None if self.fill is None else float(self.fill)
+        if floating_input and fill is not None:
+            fill_values = fill if isinstance(fill, list) else [fill]
+            if any(not np.isfinite(value) or value < 0.0 or value > 1.0 for value in fill_values):
+                raise ValueError("RandAugment fill must be finite and in [0, 1] for float input")
+            scaled_fill = [int(round(value * 255.0)) for value in fill_values]
+            fill = scaled_fill if isinstance(fill, list) else scaled_fill[0]
+        transform = torchvision.transforms.RandAugment(
+            num_ops=int(self.num_ops),
+            magnitude=int(self.magnitude),
+            num_magnitude_bins=int(self.num_magnitude_bins),
+            interpolation=torchvision.transforms.InterpolationMode.NEAREST,
+            fill=fill,
+        )
+        policy_seed = int(rng.integers(0, (1 << 31) - 1))
+        devices = [policy_input.device] if policy_input.device.type == "cuda" else []
+        with torch.random.fork_rng(devices=devices):
+            torch.manual_seed(policy_seed)
+            if policy_input.device.type == "cuda":
+                torch.cuda.manual_seed_all(policy_seed)
+            augmented = transform(policy_input)
+        if tuple(augmented.shape) != tuple(policy_input.shape):
+            raise ValueError("RandAugment changed the image shape")
+        if floating_input:
+            augmented = augmented.to(dtype=input_dtype).div_(255.0)
+
+        if layout == "hw":
+            augmented = augmented.squeeze(0)
+        elif layout == "hwc":
+            augmented = augmented.permute(1, 2, 0)
+        if is_numpy:
+            return augmented.cpu().numpy()
+        return augmented

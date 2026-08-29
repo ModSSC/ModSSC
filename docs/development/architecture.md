@@ -51,7 +51,7 @@ src/modssc/
   supervised/       # baseline classifiers and backend registry
   inductive/        # inductive SSL methods, adapters, deep bundles
   transductive/     # graph-based SSL methods, operators, adapters, solvers
-  evaluation/       # metrics and reports
+  evaluation/       # metrics, reconciliation, and scientific acceptance
   hpo/              # search space and samplers
 ```
 
@@ -74,13 +74,106 @@ The API reference focuses on:
 The API reference does not try to document every internal support directory as public surface area. Internal folders such as `services/`, `helpers/`, `bundle_factories/`, `adapters/`, and backend-specific implementation packages are described here as architecture, not as stable user API.
 
 
-## Bench repository layout
-The `bench/` tree has three different roles:
-- `bench/configs/experiments/`: authored examples, tutorial configs, and smaller runnable templates.
-- `bench/configs/best/`: curated benchmark configuration sets and manifests used for larger runs.
-- `bench/slurm/jean_zay/`: cluster launchers and deployment-oriented job structure for Jean Zay runs.
+## Autonomous paper replication
+The scientific implementation belongs to `src/modssc`. A paper card composes
+the same sampling, preprocessing, views, augmentation, graph, method,
+evaluation, and runtime APIs as any other experiment. It may retain a
+`method.profile` as a human-readable citation, but that label never selects
+code. Executable differences are expressed by typed parameters and registered
+components.
 
-The docs reference each of these for different purposes and should not present them as one undifferentiated config directory.
+Each method declares its first-order modality, representation, graph/view,
+backend, device, target, and output requirements. The runner materializes
+upstream artifacts, then the native runtime routes the exact regime-specific
+input. The execution brick derives capabilities from the object the method will
+actually consume and rejects known incompatible compositions immediately before
+`fit`. Graph-mask conversion is rejected by default and must be declared by the
+YAML sampling policy. No method-name switch is permitted in `bench/`.
+
+This gate is deliberately not presented as a proof that every registered
+method can run on every raw modality. `modalities=None` means that a method is
+independent of the source modality *after* compatible preprocessing, graph
+construction, views, and model binding; it does not mean that arbitrary raw
+objects are accepted. The implemented promise is that every compatible
+declared composition is explicitly verified, while known incompatibilities and
+strict-mode missing proofs are rejected before `fit`. The current registry has
+51 methods, while the inventory of 5,305 statically audited benchmark and
+reproduction YAML cards covers 49 of them. This inventory is not a success
+count: all 111 SimCLRv2 cards that
+request contrastive pretraining are currently rejected because their native
+classifier bundles do not expose a model-owned projection head. Cardless
+methods and unavailable optional backends remain explicit coverage limits.
+
+Component registries also own their optional-dependency declarations. The
+runner passes dataset, step, method, classifier, and graph identifiers to the
+native resolver, then only expands the returned extras through package metadata.
+The exact selected distribution versions enter checkpoint identity; unrelated
+installed extras do not.
+
+Supported reproduction code is autonomous. It must not clone or execute an
+upstream research repository, import code from an evidence archive, require an
+external JAR, or depend on a manually seeded cache. Large datasets remain
+external, but their provider identity and expected fingerprint are part of the
+card and are verified after explicit preparation.
+
+Scientific acceptance is also a native evaluation concern. A reproduction card
+may contain a declarative top-level `acceptance` block beside the protocol it
+assesses. `modssc.evaluation.acceptance` parses that contract and evaluates a
+cohort of already authenticated seed reports without filesystem, scheduler,
+article, or method-specific dispatch. It returns a canonical report with a
+three-state assessment (`passed`, `failed`, or `not_evaluable`), a fidelity
+classification (`paper_matched`, `paper_approx`, or `not_claimable`), and its
+own SHA-256 digest. `bench` only passes inputs to this API and serializes the
+result under `aggregate.json.acceptance`.
+
+## Bench repository layout
+`bench/` contains only declarative benchmark concerns:
+
+- the end-to-end runner, schemas, and stage orchestrators;
+- `bench/configs/experiments/`: authored examples and small templates;
+- `bench/configs/best/`: the standardized benchmark matrix and manifests;
+- `bench/configs/reproductions/`: article protocol cards.
+
+The runtime has no campaign subsystem. Multi-seed execution is the generic
+runner applied to `run.seeds`; one task is addressed with `--seed-index`.
+Schedulers call that interface directly. Retry policy, array sizing, accounts,
+partitions, modules, physical paths, caches, checkpoints, logs, and result
+storage are deployment state outside the scientific contract. The rejected
+root `tools/` and `provenance/` trees and their legacy tests have been removed;
+no native execution or acceptance path may depend on them.
+
+Replication documentation keeps source-only article notes, not recovered run
+bundles. Package and benchmark code must not import audit material. When the
+construction rule is known, a native component recomputes splits, features, or
+graphs instead of loading a paper-specific artifact.
+
+The dependency direction is:
+
+```text
+YAML card ──> generic bench runner ──> native resolution and input routing
+                                           |
+                                           v
+                sampling / preprocess / graph / method execution
+                                           |
+                                           v
+                         consumed-input capability validation
+                                           |
+                                           v
+                                    per-seed run.json
+                                           |
+                                           v
+                  native reconciliation and optional acceptance
+                                           |
+                                           v
+                                      aggregate.json
+```
+
+Package code under `src/modssc` must never import `bench` or an audit bundle.
+`bench` may parse the YAML, orchestrate public `modssc` APIs, reconcile
+authenticated reports, and serialize their native results, but must never
+contain method-specific scientific logic or its own acceptance mathematics.
+Article and official-code evidence can inform a YAML card and its tests; it
+cannot be an executable dependency.
 
 
 ## Documentation policy
@@ -89,8 +182,9 @@ When a page needs to explain user code, it should point to package imports such 
 When a page needs to explain repository structure, it should explicitly say whether a path is:
 - public API,
 - internal implementation,
-- benchmark config,
-- or cluster/runtime tooling.
+- benchmark or replication config,
+- private deployment state,
+- or source evidence kept outside runtime.
 
 <details class="sources" markdown="1">
 <summary>Sources</summary>

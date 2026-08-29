@@ -61,6 +61,7 @@ preprocess:
         dtype: float32
 augmentation:
   enabled: true
+  strong_views: 2
   seed: 4
   mode: fixed
   modality: audio

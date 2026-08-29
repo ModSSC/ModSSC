@@ -8,6 +8,12 @@ Use this guide when you want runs that are easy to rerun, compare, and audit. In
 - Sampling outputs are driven by the sampling plan plus the split seed.
 - Preprocess cache entries depend on the dataset fingerprint, resolved preprocess plan, fit subset, and preprocess seed.
 - Graph cache entries depend on the dataset fingerprint, preprocess fingerprint, graph spec, and graph seed.
+- Reproduction cards can additionally pin the full cached dataset content; the
+  runner rehashes it before execution and again before publishing success.
+- Every run records effective-config, protocol, selected-software, and composed
+  method/input/model contract hashes.
+- A seed aggregate for a card with `acceptance` records the full canonical
+  native acceptance report and its `acceptance_sha256`.
 
 This means cache reuse is precise when the inputs match and intentionally broken when a meaningful upstream input changes.
 
@@ -30,7 +36,9 @@ For strict comparisons, prefer one committed config per experiment family and va
 ## Cache discipline
 - Reuse one shared `MODSSC_CACHE_ROOT` when you want fast reruns of the same experiment family.
 - Use a fresh `MODSSC_CACHE_ROOT` only when you explicitly want a clean-room comparison.
-- If you change code inside preprocess or graph implementations while keeping the same config, clear the impacted cache folders before comparing outputs.
+- Preprocess and graph cache identities include their relevant producer code
+  and selected dependency versions. A code change invalidates the affected
+  generation; manual deletion is not required for correctness.
 - Treat benchmark configs and caches as trusted local artifacts only.
 
 
@@ -41,6 +49,41 @@ For strict comparisons, prefer one committed config per experiment family and va
 4. Save sampling artifacts when you need to reuse the exact same split outside the bench runner.
 5. Prefer CPU or a fixed accelerator stack for exact comparisons.
 6. Start from a known-good config from the [Bench config cookbook](bench-cookbook.md).
+7. For a paper result, reconcile the complete declared seed set and inspect
+   `failed`, `not_evaluable`, and `missing` separately before interpreting the
+   aggregate.
+8. Verify that every strict run's execution contract is `compatible`; never
+   reinterpret `unverified` as evidence of compatibility.
+9. Read `aggregate.json.acceptance.assessment_status` separately from
+   `fidelity_status`. A numerical `passed` result can remain `paper_approx`, and
+   an incomplete cohort must remain `not_evaluable`/`not_claimable`.
+10. Verify `acceptance_sha256` before transferring or citing the assessment;
+    the digest identifies the canonical native report, not the historical
+    result bundle that motivated the card.
+11. Require each new `run.json` to carry a portable `execution_identity` and
+    matching digest. Legacy opt-in exists only to inspect historical reports;
+    removing both identity fields must never make a new cohort certifiable.
+    Confirm `aggregate.json.sweep.execution_identity_complete` before treating
+    the reconciliation as native evidence.
+
+
+## Acceptance and historical evidence
+
+For a supported numerical reproduction, the `acceptance` block is stored
+directly in its YAML card. This keeps the repetition count, conformity review,
+published targets, diagnostic predicates, deviations, equivalences, unknowns,
+and fidelity ceiling inside the protocol identity. `bench` parses that block,
+authenticates and reconciles seed reports, then delegates all acceptance
+mathematics to `modssc.evaluation.evaluate_acceptance`; it only serializes the
+returned report. <sup class="cite"><a href="#source-10">[10]</a><a href="#source-11">[11]</a></sup>
+
+Do not copy a verdict from an older campaign into a fresh aggregate. Historical
+reports remain evidence for the source, inputs, software, and hardware identity
+that produced them. Recomputed cards need a complete fresh cohort. Missing or
+non-successful repetitions and unresolved conformity yield `not_evaluable`;
+failed numerical/diagnostic gates yield `failed`; only an evaluable passing
+cohort yields `passed`. Fidelity is then classified independently as
+`paper_matched`, `paper_approx`, or `not_claimable`.
 
 
 ## Related links
@@ -64,5 +107,6 @@ For strict comparisons, prefer one committed config per experiment family and va
   <li id="source-8"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/transductive/methods/gnn/common.py"><code>src/modssc/transductive/methods/gnn/common.py</code></a></li>
   <li id="source-9"><a href="https://github.com/ModSSC/ModSSC/blob/main/bench/context.py"><code>bench/context.py</code></a></li>
   <li id="source-10"><a href="https://github.com/ModSSC/ModSSC/blob/main/bench/orchestrators/reporting.py"><code>bench/orchestrators/reporting.py</code></a></li>
+  <li id="source-11"><a href="https://github.com/ModSSC/ModSSC/blob/main/src/modssc/evaluation/acceptance.py"><code>src/modssc/evaluation/acceptance.py</code></a></li>
 </ol>
 </details>

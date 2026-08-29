@@ -169,17 +169,29 @@ class TwoLayerMLP(torch.nn.Module):
         out_channels: int,
         *,
         dropout: float,
+        input_dropout: float | None = None,
+        hidden_dropout: float | None = None,
+        batch_norm: bool = False,
         bias: bool = True,
     ) -> None:
         super().__init__()
         self.dropout = float(dropout)
+        self.input_dropout = float(dropout if input_dropout is None else input_dropout)
+        self.hidden_dropout = float(dropout if hidden_dropout is None else hidden_dropout)
+        self.batch_norm = bool(batch_norm)
+        self.bn_input = torch.nn.BatchNorm1d(in_channels) if self.batch_norm else None
+        self.bn_hidden = torch.nn.BatchNorm1d(hidden_dim) if self.batch_norm else None
         self.lin1 = torch.nn.Linear(in_channels, hidden_dim, bias=bool(bias))
         self.lin2 = torch.nn.Linear(hidden_dim, out_channels, bias=bool(bias))
 
     def forward(self, x: Any) -> Any:
-        x = torch.nn.functional.dropout(x, p=self.dropout, training=self.training)
+        if self.bn_input is not None:
+            x = self.bn_input(x)
+        x = torch.nn.functional.dropout(x, p=self.input_dropout, training=self.training)
         x = torch.relu(self.lin1(x))
-        x = torch.nn.functional.dropout(x, p=self.dropout, training=self.training)
+        if self.bn_hidden is not None:
+            x = self.bn_hidden(x)
+        x = torch.nn.functional.dropout(x, p=self.hidden_dropout, training=self.training)
         x = self.lin2(x)
         return x
 

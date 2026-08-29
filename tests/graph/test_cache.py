@@ -1,17 +1,25 @@
 import contextlib
 import json
+import multiprocessing
+import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
 
+import modssc.graph.cache as cache_module
+from modssc.graph import GraphBuilderSpec, GraphWeightsSpec, build_graph
 from modssc.graph.artifacts import DatasetViews, GraphArtifact
 from modssc.graph.cache import (
+    CACHE_MANIFEST_SCHEMA_VERSION,
     GraphCache,
     GraphCacheError,
     ViewsCache,
+    _ensure_windows_lock_byte,
+    _entry_lock,
     _safe_write_json,
+    _staging_dir,
     default_cache_dir,
     default_views_cache_dir,
 )
@@ -19,6 +27,51 @@ from modssc.graph.construction.backends.sklearn_backend import (
     epsilon_edges_sklearn,
     knn_edges_sklearn,
 )
+
+
+def _concurrent_graph_save_worker(root, ready, start, result) -> None:
+    graph = GraphArtifact(
+        n_nodes=3,
+        edge_index=np.array([[0, 1], [1, 2]], dtype=np.int64),
+    )
+    cache = GraphCache(root=Path(root))
+    ready.put(True)
+    start.wait(timeout=10)
+    try:
+        cache.save(fingerprint="concurrent", graph=graph, manifest={})
+    except Exception as exc:  # pragma: no cover - reported in the parent process
+        result.put(f"{type(exc).__name__}: {exc}")
+    else:
+        result.put(None)
+
+
+def _concurrent_graph_build_worker(root, ready, start, result) -> None:
+    features = np.arange(80, dtype=np.float32).reshape(40, 2)
+    spec = GraphBuilderSpec(
+        scheme="knn",
+        metric="euclidean",
+        k=3,
+        symmetrize="none",
+        self_loops=False,
+        normalize="none",
+        weights=GraphWeightsSpec(kind="binary"),
+        backend="numpy",
+        chunk_size=4,
+    )
+    ready.put(True)
+    start.wait(timeout=10)
+    try:
+        graph = build_graph(
+            features,
+            spec=spec,
+            cache=True,
+            cache_dir=Path(root),
+            resume=True,
+        )
+    except Exception as exc:  # pragma: no cover - reported in the parent process
+        result.put(f"{type(exc).__name__}: {exc}")
+    else:
+        result.put(graph.meta["fingerprint"])
 
 
 def test_graph_cache_sharded(tmp_path):
@@ -44,6 +97,24 @@ def test_graph_cache_sharded(tmp_path):
     assert np.array_equal(loaded.edge_weight, edge_weight)
 
 
+@pytest.mark.parametrize("edge_shard_size", [None, 2])
+def test_graph_cache_preserves_frozen_float64_weights(tmp_path, edge_shard_size):
+    cache = GraphCache(root=tmp_path, edge_shard_size=edge_shard_size)
+    edge_index = np.array([[0, 0, 1], [0, 1, 0]], dtype=np.int64)
+    edge_weight = np.array([1.0, np.nextafter(0.5, 1.0), 0.5], dtype=np.float64)
+    graph = GraphArtifact(
+        n_nodes=2,
+        edge_index=edge_index,
+        edge_weight=edge_weight,
+        meta={"edge_weight_dtype": "float64"},
+    )
+    cache.save(fingerprint="float64", graph=graph, manifest={"n_nodes": 2})
+    loaded, _ = cache.load("float64")
+
+    assert loaded.edge_weight.dtype == np.float64
+    np.testing.assert_array_equal(loaded.edge_weight, edge_weight)
+
+
 def test_graph_cache_save_no_overwrite(tmp_path):
     cache = GraphCache(root=tmp_path)
     graph = GraphArtifact(
@@ -63,7 +134,9 @@ def test_graph_cache_save_no_overwrite(tmp_path):
         mock_clear.assert_not_called()
 
         cache.save(fingerprint="fp1", graph=graph, manifest=manifest, overwrite=True)
-        mock_clear.assert_called()
+        # A valid entry is immutable: identical content is reused even when
+        # overwrite=True, never cleared in place.
+        mock_clear.assert_not_called()
 
 
 def test_graph_cache_missing_root_methods(tmp_path):
@@ -72,6 +145,49 @@ def test_graph_cache_missing_root_methods(tmp_path):
 
     assert cache.list() == []
     assert cache.purge() == 0
+
+
+def test_cache_uses_portable_paths_for_unsafe_fingerprints(tmp_path):
+    fingerprint = "graph:dataset/views"
+    cache = GraphCache(root=tmp_path / "cache")
+    graph = GraphArtifact(
+        n_nodes=2,
+        edge_index=np.array([[0], [1]], dtype=np.int64),
+    )
+    entry = cache.save(fingerprint=fingerprint, graph=graph, manifest={})
+
+    assert ":" not in entry.name
+    assert "/" not in entry.name
+    assert entry.name.startswith("sha256-")
+    _, manifest = cache.load(fingerprint)
+    assert manifest["fingerprint"] == fingerprint
+    assert manifest["_cache"]["schema_version"] == CACHE_MANIFEST_SCHEMA_VERSION == 2
+    assert cache.list() == [fingerprint]
+
+    staging = _staging_dir(tmp_path / "staging", "views:unsafe")
+    assert ":" not in staging.name
+    assert "views:unsafe" not in staging.name
+    staging.rmdir()
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Windows fallback uses an exclusive byte lock")
+def test_entry_lock_allows_parallel_posix_readers(tmp_path, monkeypatch):
+    import fcntl
+
+    modes = []
+    monkeypatch.setattr(fcntl, "flock", lambda _fd, mode: modes.append(mode))
+    with _entry_lock(tmp_path, "reader", shared=True):
+        pass
+
+    assert modes == [fcntl.LOCK_SH, fcntl.LOCK_UN]
+
+
+def test_windows_lock_sentinel_is_written_once(tmp_path):
+    path = tmp_path / "windows.lock"
+    with path.open("a+b") as stream:
+        _ensure_windows_lock_byte(stream)
+        _ensure_windows_lock_byte(stream)
+    assert path.read_bytes() == b"\0"
 
 
 def test_graph_cache_errors(tmp_path):
@@ -89,15 +205,16 @@ def test_graph_cache_errors(tmp_path):
     d = cache.entry_dir("missing_edges")
     d.mkdir(parents=True)
     _safe_write_json(d / "manifest.json", {"n_nodes": 10})
-    with pytest.raises(GraphCacheError, match="Missing cached edge_index.npy"):
+    with pytest.raises(GraphCacheError, match="unauthenticated"):
         cache.load("missing_edges")
+    assert not cache.exists("missing_edges")
 
     d = cache.entry_dir("corrupt_weight")
     d.mkdir(parents=True)
     _safe_write_json(d / "manifest.json", {"n_nodes": 10})
     np.save(d / "edge_index.npy", np.zeros((2, 5)))
     (d / "edge_weight.npy").write_text("bad")
-    with pytest.raises(GraphCacheError, match="Corrupted cached edge_weight.npy"):
+    with pytest.raises(GraphCacheError, match="unauthenticated"):
         cache.load("corrupt_weight")
 
 
@@ -110,11 +227,11 @@ def test_graph_cache_sharded_errors(tmp_path):
     _safe_write_json(d / "manifest.json", manifest)
 
     with pytest.raises(GraphCacheError, match="Missing edge shard"):
-        cache.load("sharded_err")
+        cache._load_edges_sharded(d, num_shards=2)
 
     np.savez_compressed(d / "edges_0000.npz", other="data")
     with pytest.raises(GraphCacheError, match="Shard missing edge_index"):
-        cache.load("sharded_err")
+        cache._load_edges_sharded(d, num_shards=2)
 
 
 def test_graph_cache_sharded_inconsistent_edge_weight(tmp_path):
@@ -129,7 +246,7 @@ def test_graph_cache_sharded_inconsistent_edge_weight(tmp_path):
     np.savez_compressed(d / "edges_0001.npz", edge_index=np.zeros((2, 1)))
 
     with pytest.raises(GraphCacheError, match="Inconsistent edge_weight"):
-        cache.load("sharded_inconsistent")
+        cache._load_edges_sharded(d, num_shards=2)
 
 
 def test_graph_cache_sharded_total_zero(tmp_path):
@@ -168,12 +285,7 @@ def test_graph_cache_sharded_missing_edge_index_second_pass(tmp_path, monkeypatc
         def __exit__(self, exc_type, exc, tb):
             return None
 
-    calls = {"n": 0}
-
     def fake_load(*args, **kwargs):
-        calls["n"] += 1
-        if calls["n"] == 1:
-            return DummyNPZ({"edge_index": np.zeros((2, 1)), "edge_weight": np.zeros(1)})
         return DummyNPZ({})
 
     monkeypatch.setattr("modssc.graph.cache.np.load", fake_load)
@@ -186,6 +298,7 @@ def test_graph_cache_sharded_missing_edge_weight_second_pass(tmp_path, monkeypat
     d = cache.entry_dir("sharded_missing_weight_second")
     d.mkdir(parents=True)
     (d / "edges_0000.npz").touch()
+    (d / "edges_0001.npz").touch()
 
     class DummyNPZ(dict):
         def __enter__(self):
@@ -203,8 +316,8 @@ def test_graph_cache_sharded_missing_edge_weight_second_pass(tmp_path, monkeypat
         return DummyNPZ({"edge_index": np.zeros((2, 1))})
 
     monkeypatch.setattr("modssc.graph.cache.np.load", fake_load)
-    with pytest.raises(GraphCacheError, match="Shard missing edge_weight"):
-        cache._load_edges_sharded(d, num_shards=1)
+    with pytest.raises(GraphCacheError, match="Inconsistent edge_weight"):
+        cache._load_edges_sharded(d, num_shards=2)
 
 
 def test_views_cache_missing_root_methods(tmp_path):
@@ -245,14 +358,15 @@ def test_views_cache_errors(tmp_path):
     d = cache.entry_dir("missing_npz")
     d.mkdir(parents=True)
     _safe_write_json(d / "manifest.json", {})
-    with pytest.raises(GraphCacheError, match="Missing cached views.npz"):
+    with pytest.raises(GraphCacheError, match="unauthenticated"):
         cache.load("missing_npz", y=np.array([]), masks={})
+    assert not cache.exists("missing_npz")
 
 
 def test_safe_write_json_cleanup(tmp_path):
     p = tmp_path / "test.json"
 
-    with patch("builtins.open", side_effect=OSError("fail")), contextlib.suppress(OSError):
+    with patch("os.fdopen", side_effect=OSError("fail")), contextlib.suppress(OSError):
         _safe_write_json(p, {})
 
     assert len(list(tmp_path.glob("*.tmp"))) == 0
@@ -274,7 +388,7 @@ def test_graph_cache_internals(tmp_path):
     cache = GraphCache(root=tmp_path)
 
     with (
-        patch("builtins.open", side_effect=OSError("Disk full")),
+        patch("os.fdopen", side_effect=OSError("Disk full")),
         pytest.raises(OSError),
     ):
         from modssc.graph.cache import _safe_write_json
@@ -343,9 +457,9 @@ def test_cache_defaults_with_global_root(monkeypatch: pytest.MonkeyPatch, tmp_pa
     monkeypatch.delenv("MODSSC_GRAPH_CACHE_DIR", raising=False)
     monkeypatch.delenv("MODSSC_GRAPH_VIEWS_CACHE_DIR", raising=False)
 
-    assert default_cache_dir() == (root / "graphs").resolve()
+    assert default_cache_dir() == (root / "graph").resolve()
     assert default_views_cache_dir() == (root / "graph_views").resolve()
-    assert GraphCache.default().root == (root / "graphs").resolve()
+    assert GraphCache.default().root == (root / "graph").resolve()
     assert ViewsCache.default().root == (root / "graph_views").resolve()
 
 
@@ -379,6 +493,21 @@ def test_cache_defaults_graph_override_sets_implicit_views_path(
     assert ViewsCache.default().root == (graph.resolve().parent / "graph_views")
 
 
+def test_cache_defaults_use_repository_local_cache_subdirectories(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.delenv("MODSSC_GRAPH_CACHE_DIR", raising=False)
+    monkeypatch.delenv("MODSSC_GRAPH_VIEWS_CACHE_DIR", raising=False)
+    monkeypatch.delenv("MODSSC_CACHE_ROOT", raising=False)
+    monkeypatch.setattr(
+        "modssc.graph.cache.default_local_cache_subdir",
+        lambda name: tmp_path / name,
+    )
+
+    assert default_cache_dir() == tmp_path / "graph"
+    assert default_views_cache_dir() == tmp_path / "graph_views"
+
+
 def test_cache_defaults_user_cache_fallback(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -389,9 +518,9 @@ def test_cache_defaults_user_cache_fallback(
     monkeypatch.setattr("modssc.graph.cache.default_local_cache_subdir", lambda _name: None)
     monkeypatch.setattr("modssc.graph.cache.user_cache_dir", lambda _app: str(user_cache))
 
-    assert default_cache_dir() == user_cache / "graphs"
+    assert default_cache_dir() == user_cache / "graph"
     assert default_views_cache_dir() == user_cache / "graph_views"
-    assert GraphCache.default().root == user_cache / "graphs"
+    assert GraphCache.default().root == user_cache / "graph"
     assert ViewsCache.default().root == user_cache / "graph_views"
 
 
@@ -419,8 +548,7 @@ def test_graph_cache_more_internals(tmp_path):
     cache = GraphCache(root=tmp_path)
 
     with (
-        patch("builtins.open", side_effect=OSError("Disk full")),
-        patch("os.remove", side_effect=OSError("Cannot remove")),
+        patch("os.fdopen", side_effect=OSError("Disk full")),
         pytest.raises(OSError),
     ):
         from modssc.graph.cache import _safe_write_json
@@ -431,7 +559,7 @@ def test_graph_cache_more_internals(tmp_path):
     d = cache.entry_dir("exists")
     d.mkdir()
     (d / "manifest.json").touch()
-    assert cache.exists("exists")
+    assert not cache.exists("exists")
 
     cache._clear_entry_dir(tmp_path / "non_existent")
 
@@ -460,8 +588,9 @@ def test_graph_cache_more_internals(tmp_path):
     np.save(d_legacy / "edge_index.npy", np.zeros((2, 10)))
     (d_legacy / "manifest.json").write_text(json.dumps({"n_nodes": 10}))
 
-    g_legacy, _ = cache.load("legacy")
-    assert g_legacy.n_nodes == 10
+    with pytest.raises(GraphCacheError, match="unauthenticated"):
+        cache.load("legacy")
+    assert not cache.exists("legacy")
 
 
 def test_views_cache_more(tmp_path):
@@ -483,7 +612,7 @@ def test_views_cache_more(tmp_path):
     d_broken.mkdir()
     (d_broken / "manifest.json").write_text("{}")
 
-    with pytest.raises(GraphCacheError, match="Missing cached views.npz"):
+    with pytest.raises(GraphCacheError, match="unauthenticated"):
         vc.load("broken", y=np.zeros(5), masks={})
 
 
@@ -511,13 +640,14 @@ def test_views_cache_overwrite_logic(tmp_path):
 
     views = DatasetViews(views={"v": np.zeros((5, 2))}, y=np.zeros(5))
 
-    vc.save(fingerprint="overwrite_logic", views=views, manifest={}, overwrite=False)
+    with pytest.raises(GraphCacheError, match="already exists and is invalid"):
+        vc.save(fingerprint="overwrite_logic", views=views, manifest={}, overwrite=False)
     assert (d / "keep_me.txt").exists()
     assert (d / "subdir").exists()
 
     vc.save(fingerprint="overwrite_logic", views=views, manifest={}, overwrite=True)
     assert not (d / "keep_me.txt").exists()
-    assert (d / "subdir").exists()
+    assert not (d / "subdir").exists()
 
 
 def test_graph_cache_small_shard_fallback(tmp_path):
@@ -545,7 +675,7 @@ def test_graph_cache_corrupted_shards_missing_file(tmp_path):
 
     (cache.entry_dir("corrupt_fp") / "edges_0001.npz").unlink()
 
-    with pytest.raises(GraphCacheError, match="Missing edge shard"):
+    with pytest.raises(GraphCacheError, match="Cache file set differs"):
         cache.load("corrupt_fp")
 
 
@@ -559,7 +689,7 @@ def test_graph_cache_corrupted_shards_missing_key(tmp_path):
     shard_path = cache.entry_dir("corrupt_key") / "edges_0000.npz"
     np.savez_compressed(shard_path, wrong_key=np.zeros(1))
 
-    with pytest.raises(GraphCacheError, match="Shard missing edge_index"):
+    with pytest.raises(GraphCacheError, match="Cached file"):
         cache.load("corrupt_key")
 
 
@@ -596,9 +726,180 @@ def test_views_cache_no_overwrite(tmp_path):
     (d / "old_file.txt").touch()
 
     views = DatasetViews(views={"v": np.zeros((5, 2))}, y=np.zeros(5))
-    vc.save(fingerprint="no_overwrite", views=views, manifest={}, overwrite=False)
+    with pytest.raises(GraphCacheError, match="already exists and is invalid"):
+        vc.save(fingerprint="no_overwrite", views=views, manifest={}, overwrite=False)
 
     assert (d / "old_file.txt").exists()
+
+
+def test_graph_cache_authenticates_manifest_and_spec(tmp_path):
+    cache = GraphCache(root=tmp_path)
+    graph = GraphArtifact(
+        n_nodes=3,
+        edge_index=np.array([[0, 1], [1, 2]], dtype=np.int64),
+        directed=True,
+    )
+    cache.save(
+        fingerprint="authenticated",
+        graph=graph,
+        manifest={"spec_fingerprint": "spec-a"},
+    )
+
+    with pytest.raises(GraphCacheError, match="requested specification"):
+        cache.load(
+            "authenticated",
+            expected_manifest={"spec_fingerprint": "spec-b"},
+        )
+
+    manifest_path = cache.entry_dir("authenticated") / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["spec_fingerprint"] = "tampered"
+    manifest_path.write_text(json.dumps(manifest))
+    with pytest.raises(GraphCacheError, match="manifest authentication failed"):
+        cache.load("authenticated")
+
+
+def test_graph_cache_rejects_same_size_array_tampering(tmp_path):
+    cache = GraphCache(root=tmp_path)
+    graph = GraphArtifact(
+        n_nodes=3,
+        edge_index=np.array([[0, 1], [1, 2]], dtype=np.int64),
+        directed=True,
+    )
+    cache.save(fingerprint="tamper", graph=graph, manifest={})
+
+    edge_path = cache.entry_dir("tamper") / "edge_index.npy"
+    np.save(edge_path, np.array([[0, 2], [2, 1]], dtype=np.int64), allow_pickle=False)
+    with pytest.raises(GraphCacheError, match="SHA-256 mismatch"):
+        cache.load("tamper")
+
+
+def test_graph_cache_valid_entry_is_immutable_and_collision_fails(tmp_path):
+    cache = GraphCache(root=tmp_path)
+    original = GraphArtifact(
+        n_nodes=3,
+        edge_index=np.array([[0], [1]], dtype=np.int64),
+    )
+    different = GraphArtifact(
+        n_nodes=3,
+        edge_index=np.array([[1], [2]], dtype=np.int64),
+    )
+    cache.save(fingerprint="same-key", graph=original, manifest={})
+    before = (cache.entry_dir("same-key") / "manifest.json").read_bytes()
+
+    cache.save(fingerprint="same-key", graph=original, manifest={}, overwrite=True)
+    assert (cache.entry_dir("same-key") / "manifest.json").read_bytes() == before
+
+    with pytest.raises(GraphCacheError, match="collision or non-deterministic"):
+        cache.save(fingerprint="same-key", graph=different, manifest={}, overwrite=True)
+    loaded, _ = cache.load("same-key")
+    np.testing.assert_array_equal(loaded.edge_index, original.edge_index)
+
+
+def test_graph_cache_serializes_concurrent_publishers(tmp_path):
+    context = multiprocessing.get_context("spawn")
+    ready = context.Queue()
+    start = context.Event()
+    result = context.Queue()
+    processes = [
+        context.Process(
+            target=_concurrent_graph_save_worker,
+            args=(str(tmp_path), ready, start, result),
+        )
+        for _ in range(2)
+    ]
+    for process in processes:
+        process.start()
+    for _ in processes:
+        assert ready.get(timeout=10) is True
+    start.set()
+    for process in processes:
+        process.join(timeout=15)
+        assert process.exitcode == 0
+    assert [result.get(timeout=5) for _ in processes] == [None, None]
+
+    cache = GraphCache(root=tmp_path)
+    loaded, _ = cache.load("concurrent")
+    np.testing.assert_array_equal(
+        loaded.edge_index,
+        np.array([[0, 1], [1, 2]], dtype=np.int64),
+    )
+    assert not list(tmp_path.glob(".concurrent.staging-*"))
+
+
+def test_concurrent_graph_build_keeps_work_outside_published_entry(tmp_path):
+    context = multiprocessing.get_context("spawn")
+    ready = context.Queue()
+    start = context.Event()
+    result = context.Queue()
+    processes = [
+        context.Process(
+            target=_concurrent_graph_build_worker,
+            args=(str(tmp_path), ready, start, result),
+        )
+        for _ in range(2)
+    ]
+    for process in processes:
+        process.start()
+    for _ in processes:
+        assert ready.get(timeout=10) is True
+    start.set()
+    for process in processes:
+        process.join(timeout=20)
+        assert process.exitcode == 0
+
+    fingerprints = [result.get(timeout=5) for _ in processes]
+    assert fingerprints[0] == fingerprints[1]
+    cache = GraphCache(root=tmp_path)
+    assert cache.exists(fingerprints[0])
+    entry = cache.entry_dir(fingerprints[0])
+    assert "_work" not in {path.name for path in entry.iterdir()}
+    assert cache.work_dir(fingerprints[0]).parent == tmp_path / ".work"
+
+
+def test_views_cache_authenticates_file_content(tmp_path):
+    cache = ViewsCache(root=tmp_path)
+    views = DatasetViews(
+        views={"attr": np.arange(6, dtype=np.float32).reshape(3, 2)},
+        y=np.zeros(3, dtype=np.int64),
+    )
+    cache.save(fingerprint="views-auth", views=views, manifest={})
+
+    path = cache.entry_dir("views-auth") / "views.npz"
+    np.savez_compressed(path, attr=np.zeros((3, 2), dtype=np.float32))
+    with pytest.raises(GraphCacheError, match="Cached file"):
+        cache.load("views-auth", y=views.y, masks={})
+
+
+def test_load_reauthenticates_files_after_deserialization(tmp_path, monkeypatch):
+    graph_cache = GraphCache(root=tmp_path / "graph")
+    graph = GraphArtifact(
+        n_nodes=3,
+        edge_index=np.array([[0, 1], [1, 2]], dtype=np.int64),
+    )
+    graph_cache.save(fingerprint="graph", graph=graph, manifest={})
+    views_cache = ViewsCache(root=tmp_path / "views")
+    views = DatasetViews(
+        views={"attr": np.ones((3, 2), dtype=np.float32)},
+        y=np.zeros(3, dtype=np.int64),
+    )
+    views_cache.save(fingerprint="views", views=views, manifest={})
+
+    original = cache_module._file_descriptor
+    calls = []
+
+    def recording_descriptor(path):
+        calls.append(path)
+        return original(path)
+
+    monkeypatch.setattr(cache_module, "_file_descriptor", recording_descriptor)
+    graph_cache.load("graph")
+    views_cache.load("views", y=views.y, masks={})
+
+    graph_path = graph_cache.entry_dir("graph") / "edge_index.npy"
+    views_path = views_cache.entry_dir("views") / "views.npz"
+    assert calls.count(graph_path) == 2
+    assert calls.count(views_path) == 2
 
 
 def _require_sklearn() -> None:

@@ -1,15 +1,35 @@
 from __future__ import annotations
 
 import copy
+import math
 from collections.abc import Mapping, Sequence
 from typing import Any
 
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.optional import import_torch
+from modssc.runtime.contracts import ModelContract
 
 from ..types import TorchModelBundle
 
 _torch = import_torch
+
+
+def _native_model_contract(
+    classifier_id: str,
+    *,
+    outputs: frozenset[str],
+    representations: frozenset[str] = frozenset({"dense"}),
+    dtype_kinds: frozenset[str] = frozenset({"float"}),
+    ranks: frozenset[int] | None,
+) -> ModelContract:
+    return ModelContract(
+        outputs=outputs,
+        input_representations=representations,
+        input_dtype_kinds=dtype_kinds,
+        input_ranks=ranks,
+        verification="declared",
+        source=f"native.classifier:{classifier_id}",
+    )
 
 
 def _normalize_hidden_sizes(
@@ -57,10 +77,215 @@ def _take_sample(x: Any) -> Any:
 def _maybe_ema(model: Any, *, enabled: bool) -> Any | None:
     if not enabled:
         return None
-    ema_model = copy.deepcopy(model)
+    torch = _torch()
+    # Some native backend modules retain the imported torch module for their
+    # forward path.  Python modules are immutable runtime singletons but are not
+    # pickleable, so preserve that singleton explicitly while copying all model
+    # state and parameters.
+    ema_model = copy.deepcopy(model, memo={id(torch): torch})
     for p in ema_model.parameters():
         p.requires_grad_(False)
     return ema_model
+
+
+def _weight_decay_parameters(
+    model: Any,
+    *,
+    weight_decay: float,
+    decay_bias_and_norm: bool,
+) -> tuple[Any, float]:
+    trainable = [parameter for parameter in model.parameters() if parameter.requires_grad]
+    if float(weight_decay) == 0.0 or bool(decay_bias_and_norm):
+        return trainable, float(weight_decay)
+
+    decay = [parameter for parameter in trainable if int(parameter.ndim) > 1]
+    no_decay = [parameter for parameter in trainable if int(parameter.ndim) <= 1]
+    groups = [
+        {"params": decay, "weight_decay": float(weight_decay)},
+        {"params": no_decay, "weight_decay": 0.0},
+    ]
+    return groups, 0.0
+
+
+def _cosine_lr_factor(step: int, *, max_steps: int, cycles: float) -> float:
+    progress = min(max(float(step), 0.0), float(max_steps)) / float(max_steps)
+    return float(math.cos(math.pi * float(cycles) * progress))
+
+
+def _build_wide_resnet_bundle(
+    sample: Any,
+    *,
+    num_classes: int,
+    params: Mapping[str, Any],
+    seed: int,
+    ema: bool,
+) -> TorchModelBundle:
+    from modssc.inductive.deep.wide_resnet import (
+        WideResNetCifar,
+        resolve_wide_resnet_reference,
+    )
+
+    torch = _torch()
+    if not isinstance(sample, torch.Tensor) or int(sample.ndim) != 4:
+        raise InductiveValidationError(
+            "wide_resnet_cifar requires 4D torch.Tensor features (N, C, H, W)."
+        )
+    input_layout = str(params.get("input_layout", "channels_first"))
+    if input_layout != "channels_first":
+        raise InductiveValidationError("wide_resnet_cifar requires input_layout='channels_first'.")
+
+    lr = float(params.get("lr", 0.03))
+    weight_decay = float(params.get("weight_decay", 5e-4))
+    momentum = float(params.get("momentum", 0.9))
+    nesterov = bool(params.get("nesterov", True))
+    optimizer_name = str(params.get("optimizer", "sgd")).lower()
+    decay_bias_and_norm = bool(params.get("decay_bias_and_norm", False))
+    if lr <= 0.0:
+        raise InductiveValidationError("lr must be > 0.")
+    if weight_decay < 0.0:
+        raise InductiveValidationError("weight_decay must be >= 0.")
+    if not (0.0 <= momentum < 1.0):
+        raise InductiveValidationError("momentum must be in [0, 1).")
+    if nesterov and momentum <= 0.0:
+        raise InductiveValidationError("nesterov requires momentum > 0.")
+
+    torch.manual_seed(int(seed))
+    reference_raw = params.get("reference_implementation")
+    reference_implementation = None if reference_raw is None else str(reference_raw)
+    reference = resolve_wide_resnet_reference(reference_implementation)
+    model = WideResNetCifar(
+        in_channels=int(sample.shape[1]),
+        num_classes=int(num_classes),
+        depth=int(params.get("depth", 28)),
+        widen_factor=int(params.get("widen_factor", 2)),
+        bn_momentum=float(params.get("bn_momentum", 0.001)),
+        bn_eps=float(params.get("bn_eps", 1e-3)),
+        input_mean=params.get("input_mean"),
+        input_std=params.get("input_std"),
+        reference_implementation=reference,
+    ).to(sample.device)
+
+    optimizer_params, optimizer_weight_decay = _weight_decay_parameters(
+        model,
+        weight_decay=weight_decay,
+        decay_bias_and_norm=decay_bias_and_norm,
+    )
+    if optimizer_name == "sgd":
+        optimizer = torch.optim.SGD(
+            optimizer_params,
+            lr=lr,
+            momentum=momentum,
+            nesterov=nesterov,
+            weight_decay=optimizer_weight_decay,
+        )
+    elif optimizer_name == "adamw":
+        optimizer = torch.optim.AdamW(
+            optimizer_params,
+            lr=lr,
+            weight_decay=optimizer_weight_decay,
+        )
+    else:
+        raise InductiveValidationError("optimizer must be 'sgd' or 'adamw'.")
+
+    scheduler_name_raw = params.get("scheduler", "cosine")
+    scheduler_name = "none" if scheduler_name_raw is None else str(scheduler_name_raw).lower()
+    max_steps: int | None = None
+    cosine_cycles: float | None = None
+    scheduler = None
+    if scheduler_name == "cosine":
+        max_steps = int(params.get("max_steps", 1 << 20))
+        cosine_cycles = float(params.get("cosine_cycles", 7.0 / 16.0))
+        if max_steps <= 0:
+            raise InductiveValidationError("max_steps must be > 0 for cosine scheduling.")
+        if not (0.0 < cosine_cycles <= 0.5):
+            raise InductiveValidationError("cosine_cycles must be in (0, 0.5].")
+        scheduler = torch.optim.lr_scheduler.LambdaLR(
+            optimizer,
+            lr_lambda=lambda step: _cosine_lr_factor(
+                step,
+                max_steps=max_steps,
+                cycles=cosine_cycles,
+            ),
+        )
+    elif scheduler_name != "none":
+        raise InductiveValidationError("scheduler must be 'cosine', 'none', or null.")
+
+    ema_decay = float(params.get("ema_decay", 0.999))
+    if not (0.0 <= ema_decay < 1.0):
+        raise InductiveValidationError("ema_decay must be in [0, 1).")
+    ema_model = _maybe_ema(model, enabled=ema)
+    predict_with_ema = bool(params.get("predict_with_ema", ema_model is not None))
+    if predict_with_ema and ema_model is None:
+        raise InductiveValidationError("predict_with_ema=true requires ema=true.")
+
+    meta = {
+        "contract_schema_version": 1,
+        "classifier_id": "wide_resnet_cifar",
+        "depth": int(params.get("depth", 28)),
+        "widen_factor": int(params.get("widen_factor", 2)),
+        "in_channels": int(sample.shape[1]),
+        "num_classes": int(num_classes),
+        "bn_momentum": float(params.get("bn_momentum", 0.001)),
+        "bn_eps": float(params.get("bn_eps", 1e-3)),
+        "input_mean": params.get("input_mean"),
+        "input_std": params.get("input_std"),
+        "initialization": (
+            "torchssl_kaiming_normal"
+            if reference == "torchssl"
+            else (
+                "google_fixmatch_variance_scaling"
+                if reference == "google_fixmatch"
+                else "modssc_standardized"
+            )
+        ),
+        "optimizer": optimizer_name,
+        "lr": lr,
+        "momentum": momentum,
+        "nesterov": nesterov,
+        "weight_decay": weight_decay,
+        "scheduler": scheduler_name,
+        "scheduler_step_unit": "optimizer_step",
+        "max_steps": max_steps,
+        "cosine_cycles": cosine_cycles,
+        "ema_decay": ema_decay,
+        "predict_with_ema": predict_with_ema,
+        "decay_bias_and_norm": decay_bias_and_norm,
+        "reference_implementation": reference,
+        # Preserve the historical ModSSC EMA for standardized runs.  Both
+        # paper implementations average trainable parameters and use current
+        # model buffers instead of exponentially averaging BN state.
+        "ema_strategy": (
+            "all_floating_state" if reference == "standardized" else "parameters_only_copy_buffers"
+        ),
+        "ema_reference": (
+            "modssc_standardized"
+            if reference == "standardized"
+            else (
+                "torchssl_named_parameters"
+                if reference == "torchssl"
+                else "google_trainable_variables"
+            )
+        ),
+        "forward_features": model.forward_features,
+        "forward_head": model.forward_head,
+    }
+    contract_outputs = {"forward_features", "forward_head", "logits"}
+    if ema_model is not None:
+        meta["forward_features_ema"] = ema_model.forward_features
+        meta["forward_head_ema"] = ema_model.forward_head
+        contract_outputs.update({"forward_features_ema", "forward_head_ema"})
+    return TorchModelBundle(
+        model=model,
+        optimizer=optimizer,
+        ema_model=ema_model,
+        scheduler=scheduler,
+        meta=meta,
+        contract=_native_model_contract(
+            "wide_resnet_cifar",
+            outputs=frozenset(contract_outputs),
+            ranks=frozenset({4}),
+        ),
+    )
 
 
 def _build_mlp_bundle(
@@ -73,6 +298,8 @@ def _build_mlp_bundle(
     force_hidden_sizes: tuple[int, ...] | None = None,
 ) -> TorchModelBundle:
     torch = _torch()
+    if not isinstance(sample, torch.Tensor) or int(sample.ndim) != 2:
+        raise InductiveValidationError("mlp/logreg requires rank-2 torch.Tensor features.")
     input_dim = _infer_input_dim(sample)
     if force_hidden_sizes is None:
         hidden_sizes = _normalize_hidden_sizes(
@@ -87,25 +314,59 @@ def _build_mlp_bundle(
     lr = float(params.get("lr", 1e-3))
     weight_decay = float(params.get("weight_decay", 0.0))
 
-    torch.manual_seed(int(seed))
-    layers: list[Any] = []
-    in_features = int(input_dim)
-    for h in hidden_sizes:
-        if int(h) <= 0:
-            raise InductiveValidationError("hidden_sizes must be positive.")
-        layers.append(torch.nn.Linear(in_features, int(h)))
-        layers.append(_make_activation(activation, torch))
-        if float(dropout) > 0.0:
-            layers.append(torch.nn.Dropout(p=float(dropout)))
-        in_features = int(h)
-    layers.append(torch.nn.Linear(in_features, int(num_classes)))
+    class _MLPClassifier(torch.nn.Sequential):
+        def __init__(self) -> None:
+            layers: list[Any] = []
+            in_features = int(input_dim)
+            for h in hidden_sizes:
+                if int(h) <= 0:
+                    raise InductiveValidationError("hidden_sizes must be positive.")
+                layers.append(torch.nn.Linear(in_features, int(h)))
+                layers.append(_make_activation(activation, torch))
+                if float(dropout) > 0.0:
+                    layers.append(torch.nn.Dropout(p=float(dropout)))
+                in_features = int(h)
+            layers.append(torch.nn.Linear(in_features, int(num_classes)))
+            super().__init__(*layers)
 
-    model = torch.nn.Sequential(*layers).to(sample.device)
+        def forward_features(self, x: Any) -> Any:
+            for layer in tuple(self.children())[:-1]:
+                x = layer(x)
+            return x
+
+        def forward_head(self, features: Any) -> Any:
+            return self[-1](features)
+
+        def forward(self, x: Any) -> Any:
+            return self.forward_head(self.forward_features(x))
+
+    torch.manual_seed(int(seed))
+    model = _MLPClassifier().to(sample.device)
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=float(lr), weight_decay=float(weight_decay)
     )
     ema_model = _maybe_ema(model, enabled=ema)
-    return TorchModelBundle(model=model, optimizer=optimizer, ema_model=ema_model)
+    contract_classifier_id = "logreg" if force_hidden_sizes == () else "mlp"
+    meta = {
+        "forward_features": model.forward_features,
+        "forward_head": model.forward_head,
+    }
+    contract_outputs = {"forward_features", "forward_head", "logits"}
+    if ema_model is not None:
+        meta["forward_features_ema"] = ema_model.forward_features
+        meta["forward_head_ema"] = ema_model.forward_head
+        contract_outputs.update({"forward_features_ema", "forward_head_ema"})
+    return TorchModelBundle(
+        model=model,
+        optimizer=optimizer,
+        ema_model=ema_model,
+        meta=meta,
+        contract=_native_model_contract(
+            contract_classifier_id,
+            outputs=frozenset(contract_outputs),
+            ranks=frozenset({2}),
+        ),
+    )
 
 
 def _build_mlp_feature_bundle(
@@ -118,6 +379,8 @@ def _build_mlp_feature_bundle(
     force_hidden_sizes: tuple[int, ...] | None = None,
 ) -> TorchModelBundle:
     torch = _torch()
+    if not isinstance(sample, torch.Tensor) or int(sample.ndim) != 2:
+        raise InductiveValidationError("mlp/logreg requires rank-2 torch.Tensor features.")
     input_dim = _infer_input_dim(sample)
     if force_hidden_sizes is None:
         hidden_sizes = _normalize_hidden_sizes(
@@ -145,12 +408,18 @@ def _build_mlp_feature_bundle(
                 if float(dropout) > 0.0:
                     layers.append(torch.nn.Dropout(p=float(dropout)))
                 in_features = int(h)
-            self.backbone = torch.nn.Sequential(*layers) if layers else None
+            self.backbone = torch.nn.Sequential(*layers) if layers else torch.nn.Identity()
             self.head = torch.nn.Linear(in_features, int(num_classes))
 
+        def forward_features(self, x: Any) -> Any:
+            return self.backbone(x)
+
+        def forward_head(self, features: Any) -> Any:
+            return self.head(features)
+
         def forward(self, x: Any) -> Any:
-            feats = self.backbone(x) if self.backbone is not None else x
-            logits = self.head(feats)
+            feats = self.forward_features(x)
+            logits = self.forward_head(feats)
             return {"logits": logits, "feat": feats}
 
     torch.manual_seed(int(seed))
@@ -159,7 +428,27 @@ def _build_mlp_feature_bundle(
         model.parameters(), lr=float(lr), weight_decay=float(weight_decay)
     )
     ema_model = _maybe_ema(model, enabled=ema)
-    return TorchModelBundle(model=model, optimizer=optimizer, ema_model=ema_model)
+    contract_classifier_id = "logreg" if force_hidden_sizes == () else "mlp"
+    meta = {
+        "forward_features": model.forward_features,
+        "forward_head": model.forward_head,
+    }
+    contract_outputs = {"feat", "forward_features", "forward_head", "logits"}
+    if ema_model is not None:
+        meta["forward_features_ema"] = ema_model.forward_features
+        meta["forward_head_ema"] = ema_model.forward_head
+        contract_outputs.update({"forward_features_ema", "forward_head_ema"})
+    return TorchModelBundle(
+        model=model,
+        optimizer=optimizer,
+        ema_model=ema_model,
+        meta=meta,
+        contract=_native_model_contract(
+            contract_classifier_id,
+            outputs=frozenset(contract_outputs),
+            ranks=frozenset({2}),
+        ),
+    )
 
 
 def _infer_image_shape(sample: Any, *, input_shape: Any | None) -> tuple[int, int, int]:
@@ -203,14 +492,42 @@ def _build_image_cnn_bundle(
     input_shape = params.get("input_shape")
 
     torch.manual_seed(int(seed))
-    in_channels, _h, _w = _infer_image_shape(sample, input_shape=input_shape)
+    in_channels, image_height, image_width = _infer_image_shape(sample, input_shape=input_shape)
+    input_rank = int(sample.ndim)
 
     class _InductiveImageCNN(image_cnn_backend._ImageCNN):
-        def forward(self, x: Any):
+        def _prepare(self, x: Any) -> Any:
+            if not isinstance(x, torch.Tensor):
+                raise InductiveValidationError("image_cnn requires torch.Tensor features.")
+            if int(x.ndim) != input_rank:
+                raise InductiveValidationError(
+                    f"image_cnn bundle was built for rank-{input_rank} inputs, "
+                    f"got rank {int(x.ndim)}."
+                )
+            if input_rank == 4:
+                return x
+            if input_rank == 3:
+                return x.unsqueeze(1)
+            expected = int(in_channels * image_height * image_width)
+            if int(x.shape[1]) != expected:
+                raise InductiveValidationError(
+                    f"image_cnn input_shape requires {expected} flattened features, "
+                    f"got {int(x.shape[1])}."
+                )
+            return x.reshape(int(x.shape[0]), int(in_channels), int(image_height), int(image_width))
+
+        def forward_features(self, x: Any) -> Any:
+            x = self._prepare(x)
             x = self.conv(x)
             x = self.pool(x)
-            x = torch.flatten(x, 1)
-            return self.head(x), x
+            return torch.flatten(x, 1)
+
+        def forward_head(self, features: Any) -> Any:
+            return self.head(features)
+
+        def forward(self, x: Any):
+            features = self.forward_features(x)
+            return self.forward_head(features), features
 
     model = _InductiveImageCNN(
         in_channels=in_channels,
@@ -225,7 +542,26 @@ def _build_image_cnn_bundle(
         model.parameters(), lr=float(lr), weight_decay=float(weight_decay)
     )
     ema_model = _maybe_ema(model, enabled=ema)
-    return TorchModelBundle(model=model, optimizer=optimizer, ema_model=ema_model)
+    meta = {
+        "forward_features": model.forward_features,
+        "forward_head": model.forward_head,
+    }
+    contract_outputs = {"feat", "forward_features", "forward_head", "logits"}
+    if ema_model is not None:
+        meta["forward_features_ema"] = ema_model.forward_features
+        meta["forward_head_ema"] = ema_model.forward_head
+        contract_outputs.update({"forward_features_ema", "forward_head_ema"})
+    return TorchModelBundle(
+        model=model,
+        optimizer=optimizer,
+        ema_model=ema_model,
+        meta=meta,
+        contract=_native_model_contract(
+            "image_cnn",
+            outputs=frozenset(contract_outputs),
+            ranks=frozenset({input_rank}),
+        ),
+    )
 
 
 def _infer_audio_channels(sample: Any, *, input_shape: Any | None) -> int:
@@ -267,7 +603,50 @@ def _build_audio_cnn_bundle(
 
     torch.manual_seed(int(seed))
     in_channels = _infer_audio_channels(sample, input_shape=input_shape)
-    model = audio_cnn_backend._AudioCNN(
+    input_rank = int(sample.ndim)
+    configured_shape = None
+    if input_shape is not None:
+        if not isinstance(input_shape, (list, tuple)) or len(input_shape) != 2:
+            raise InductiveValidationError("audio_cnn input_shape must be (C, L).")
+        configured_shape = tuple(int(value) for value in input_shape)
+
+    class _InductiveAudioCNN(audio_cnn_backend._AudioCNN):
+        def _prepare(self, x: Any) -> Any:
+            if not isinstance(x, torch.Tensor):
+                raise InductiveValidationError("audio_cnn requires torch.Tensor features.")
+            if int(x.ndim) != input_rank:
+                raise InductiveValidationError(
+                    f"audio_cnn bundle was built for rank-{input_rank} inputs, "
+                    f"got rank {int(x.ndim)}."
+                )
+            if input_rank == 3:
+                return x
+            if input_rank == 1:
+                return x.reshape(1, 1, int(x.shape[0]))
+            if configured_shape is None:
+                return x.unsqueeze(1)
+            channels, length = configured_shape
+            expected = int(channels * length)
+            if int(x.shape[1]) != expected:
+                raise InductiveValidationError(
+                    f"audio_cnn input_shape requires {expected} flattened features, "
+                    f"got {int(x.shape[1])}."
+                )
+            return x.reshape(int(x.shape[0]), int(channels), int(length))
+
+        def forward_features(self, x: Any) -> Any:
+            x = self._prepare(x)
+            x = self.conv(x)
+            x = self.pool(x)
+            return torch.flatten(x, 1)
+
+        def forward_head(self, features: Any) -> Any:
+            return self.head(features)
+
+        def forward(self, x: Any):
+            return self.forward_head(self.forward_features(x))
+
+    model = _InductiveAudioCNN(
         in_channels=in_channels,
         conv_channels=conv_channels,
         kernel_size=kernel_size,
@@ -280,7 +659,26 @@ def _build_audio_cnn_bundle(
         model.parameters(), lr=float(lr), weight_decay=float(weight_decay)
     )
     ema_model = _maybe_ema(model, enabled=ema)
-    return TorchModelBundle(model=model, optimizer=optimizer, ema_model=ema_model)
+    meta = {
+        "forward_features": model.forward_features,
+        "forward_head": model.forward_head,
+    }
+    contract_outputs = {"forward_features", "forward_head", "logits"}
+    if ema_model is not None:
+        meta["forward_features_ema"] = ema_model.forward_features
+        meta["forward_head_ema"] = ema_model.forward_head
+        contract_outputs.update({"forward_features_ema", "forward_head_ema"})
+    return TorchModelBundle(
+        model=model,
+        optimizer=optimizer,
+        ema_model=ema_model,
+        meta=meta,
+        contract=_native_model_contract(
+            "audio_cnn",
+            outputs=frozenset(contract_outputs),
+            ranks=frozenset({input_rank}),
+        ),
+    )
 
 
 def _infer_text_shape(sample: Any, *, input_layout: str) -> tuple[int, int]:
@@ -319,10 +717,41 @@ def _build_text_cnn_bundle(
 
     torch.manual_seed(int(seed))
     in_channels, seq_len = _infer_text_shape(sample, input_layout=input_layout)
+    input_rank = int(sample.ndim)
     usable = tuple(k for k in kernel_sizes if int(k) <= int(seq_len))
     if not usable:
         raise InductiveValidationError("text_cnn kernel_sizes are larger than sequence length.")
-    model = text_cnn_backend._TextCNN(
+
+    class _InductiveTextCNN(text_cnn_backend._TextCNN):
+        def _prepare(self, x: Any) -> Any:
+            if not isinstance(x, torch.Tensor):
+                raise InductiveValidationError("text_cnn requires torch.Tensor features.")
+            if int(x.ndim) != input_rank:
+                raise InductiveValidationError(
+                    f"text_cnn bundle was built for rank-{input_rank} inputs, "
+                    f"got rank {int(x.ndim)}."
+                )
+            if input_rank == 2:
+                return x.unsqueeze(1)
+            if input_layout == "channels_last":
+                return x.transpose(1, 2)
+            return x
+
+        def forward_features(self, x: Any) -> Any:
+            x = self._prepare(x)
+            features = []
+            for conv in self.convs:
+                out = self.act(conv(x))
+                features.append(torch.max(out, dim=2).values)
+            return self.dropout(torch.cat(features, dim=1))
+
+        def forward_head(self, features: Any) -> Any:
+            return self.fc(features)
+
+        def forward(self, x: Any):
+            return self.forward_head(self.forward_features(x))
+
+    model = _InductiveTextCNN(
         in_channels=in_channels,
         kernel_sizes=usable,
         num_filters=num_filters,
@@ -334,7 +763,26 @@ def _build_text_cnn_bundle(
         model.parameters(), lr=float(lr), weight_decay=float(weight_decay)
     )
     ema_model = _maybe_ema(model, enabled=ema)
-    return TorchModelBundle(model=model, optimizer=optimizer, ema_model=ema_model)
+    meta = {
+        "forward_features": model.forward_features,
+        "forward_head": model.forward_head,
+    }
+    contract_outputs = {"forward_features", "forward_head", "logits"}
+    if ema_model is not None:
+        meta["forward_features_ema"] = ema_model.forward_features
+        meta["forward_head_ema"] = ema_model.forward_head
+        contract_outputs.update({"forward_features_ema", "forward_head_ema"})
+    return TorchModelBundle(
+        model=model,
+        optimizer=optimizer,
+        ema_model=ema_model,
+        meta=meta,
+        contract=_native_model_contract(
+            "text_cnn",
+            outputs=frozenset(contract_outputs),
+            ranks=frozenset({input_rank}),
+        ),
+    )
 
 
 def _parse_image_input_shape(input_shape: Any | None) -> tuple[int, int, int] | None:
@@ -428,10 +876,8 @@ def _build_image_pretrained_bundle(
                 self.head.train(mode)
             return self
 
-        def forward(self, X: Any):
+        def _forward_with_features(self, X: Any) -> tuple[Any, Any]:
             X4 = self._prepare(X)
-            if not return_features:
-                return self.model(X4)
             captured: dict[str, Any] = {}
 
             def _capture(_module, inputs, _output):
@@ -445,13 +891,23 @@ def _build_image_pretrained_bundle(
                 hook.remove()
             feat = captured.get("feat")
             if feat is None:
-                if isinstance(logits, torch.Tensor):
-                    feat = logits
-                else:
-                    raise InductiveValidationError(
-                        "image_pretrained return_features failed to capture features."
-                    )
-            return {"logits": logits, "feat": feat}
+                raise InductiveValidationError(
+                    "image_pretrained return_features failed to capture features."
+                )
+            return logits, feat
+
+        def forward_features(self, X: Any) -> Any:
+            _logits, features = self._forward_with_features(X)
+            return features
+
+        def forward_head(self, features: Any) -> Any:
+            return self.head(features)
+
+        def forward(self, X: Any):
+            if not return_features:
+                return self.model(self._prepare(X))
+            logits, features = self._forward_with_features(X)
+            return {"logits": logits, "feat": features}
 
     model_name = str(params.get("model_name", "resnet18"))
     weights = params.get("weights", "DEFAULT")
@@ -490,7 +946,31 @@ def _build_image_pretrained_bundle(
 
     optimizer = torch.optim.AdamW(params_to_opt, lr=float(lr), weight_decay=float(weight_decay))
     ema_model = _maybe_ema(wrapper, enabled=ema)
-    return TorchModelBundle(model=wrapper, optimizer=optimizer, ema_model=ema_model)
+    meta = {
+        "forward_features": wrapper.forward_features,
+        "forward_head": wrapper.forward_head,
+    }
+    contract_outputs = {"forward_features", "forward_head", "logits"}
+    if return_features:
+        contract_outputs.add("feat")
+    if ema_model is not None:
+        meta["forward_features_ema"] = ema_model.forward_features
+        meta["forward_head_ema"] = ema_model.forward_head
+        contract_outputs.update({"forward_features_ema", "forward_head_ema"})
+    accepted_ranks = {3, 4}
+    if input_shape is not None:
+        accepted_ranks.add(2)
+    return TorchModelBundle(
+        model=wrapper,
+        optimizer=optimizer,
+        ema_model=ema_model,
+        meta=meta,
+        contract=_native_model_contract(
+            "image_pretrained",
+            outputs=frozenset(contract_outputs),
+            ranks=frozenset(accepted_ranks),
+        ),
+    )
 
 
 def _prepare_audio_input(x: Any, torch):
@@ -537,13 +1017,19 @@ def _build_audio_pretrained_bundle(
                 self.head.train(mode)
             return self
 
-        def forward(self, X: Any):
+        def forward_features(self, X: Any) -> Any:
             X2 = _prepare_audio_input(X, torch).to(dtype=torch.float32)
             # We must NOT use torch.no_grad() even if backbone is frozen, purely to allow
             # input gradients (e.g. for VAT) to flow through the backbone.
             # Freezing is handled by requires_grad=False on parameters.
-            feats = audio_pretrained_backend._extract_features(self.backbone, X2, torch)
-            logits = self.head(feats)
+            return audio_pretrained_backend._extract_features(self.backbone, X2, torch)
+
+        def forward_head(self, features: Any) -> Any:
+            return self.head(features)
+
+        def forward(self, X: Any):
+            feats = self.forward_features(X)
+            logits = self.forward_head(feats)
             if return_features:
                 return {"logits": logits, "feat": feats}
             return logits
@@ -580,7 +1066,28 @@ def _build_audio_pretrained_bundle(
 
     optimizer = torch.optim.AdamW(params_to_opt, lr=float(lr), weight_decay=float(weight_decay))
     ema_model = _maybe_ema(wrapper, enabled=ema)
-    return TorchModelBundle(model=wrapper, optimizer=optimizer, ema_model=ema_model)
+    meta = {
+        "forward_features": wrapper.forward_features,
+        "forward_head": wrapper.forward_head,
+    }
+    contract_outputs = {"forward_features", "forward_head", "logits"}
+    if return_features:
+        contract_outputs.add("feat")
+    if ema_model is not None:
+        meta["forward_features_ema"] = ema_model.forward_features
+        meta["forward_head_ema"] = ema_model.forward_head
+        contract_outputs.update({"forward_features_ema", "forward_head_ema"})
+    return TorchModelBundle(
+        model=wrapper,
+        optimizer=optimizer,
+        ema_model=ema_model,
+        meta=meta,
+        contract=_native_model_contract(
+            "audio_pretrained",
+            outputs=frozenset(contract_outputs),
+            ranks=frozenset({1, 2, 3, 4}),
+        ),
+    )
 
 
 def _build_lstm_bundle(
@@ -637,7 +1144,7 @@ def _build_lstm_bundle(
             x = x.to(dtype=torch.long)
             return self.embedding(x)
 
-        def forward(self, x):
+        def forward_features(self, x):
             # Support inputs_embeds for VAT/Adversarial training
             if x.ndim == 3 and x.shape[-1] == embed_dim:
                 emb = x
@@ -657,22 +1164,17 @@ def _build_lstm_bundle(
                 h = torch.cat([h_n[idx_fwd], h_n[idx_bwd]], dim=1)
             else:
                 h = h_n[-1]
+            return h
 
-            logits = self.fc(h)
+        def forward_head(self, features):
+            return self.fc(self.dropout(features))
+
+        def forward(self, x):
+            h = self.forward_features(x)
+            logits = self.forward_head(h)
             if return_features:
                 return logits, h
             return logits
-
-    def _forward_features(model: Any, x: Any):
-        emb = model.get_input_embeddings(x) if not (x.ndim == 3 and x.shape[-1] == embed_dim) else x
-        model.lstm.flatten_parameters()
-        _, (h_n, _) = model.lstm(emb)
-        if bidirectional:
-            return torch.cat([h_n[-2], h_n[-1]], dim=1)
-        return h_n[-1]
-
-    def _forward_head(model: Any, features: Any):
-        return model.fc(model.dropout(features))
 
     torch.manual_seed(int(seed))
     model = _LSTMClassifier().to(sample.device)
@@ -681,13 +1183,29 @@ def _build_lstm_bundle(
     meta = {
         "input_space": "token_ids",
         "prefer_manifold_mixup": True,
-        "forward_features": lambda x, model=model: _forward_features(model, x),
-        "forward_head": lambda features, model=model: _forward_head(model, features),
+        "forward_features": model.forward_features,
+        "forward_head": model.forward_head,
     }
     if ema_model is not None:
-        meta["forward_features_ema"] = lambda x, model=ema_model: _forward_features(model, x)
-        meta["forward_head_ema"] = lambda features, model=ema_model: _forward_head(model, features)
-    return TorchModelBundle(model=model, optimizer=optimizer, ema_model=ema_model, meta=meta)
+        meta["forward_features_ema"] = ema_model.forward_features
+        meta["forward_head_ema"] = ema_model.forward_head
+    contract_outputs = {"forward_features", "forward_head", "logits"}
+    if return_features:
+        contract_outputs.add("feat")
+    if ema_model is not None:
+        contract_outputs.update({"forward_features_ema", "forward_head_ema"})
+    return TorchModelBundle(
+        model=model,
+        optimizer=optimizer,
+        ema_model=ema_model,
+        meta=meta,
+        contract=_native_model_contract(
+            "lstm_scratch",
+            outputs=frozenset(contract_outputs),
+            dtype_kinds=frozenset({"float", "integer"}),
+            ranks=frozenset({2, 3}),
+        ),
+    )
 
 
 def _build_graphsage_bundle(
@@ -783,7 +1301,17 @@ def _build_graphsage_bundle(
         model.parameters(), lr=float(lr), weight_decay=float(weight_decay)
     )
     ema_model = _maybe_ema(model, enabled=ema)
-    return TorchModelBundle(model=model, optimizer=optimizer, ema_model=ema_model)
+    return TorchModelBundle(
+        model=model,
+        optimizer=optimizer,
+        ema_model=ema_model,
+        contract=_native_model_contract(
+            "graphsage_inductive",
+            outputs=frozenset({"feat", "logits"}),
+            representations=frozenset({"graph"}),
+            ranks=frozenset({2}),
+        ),
+    )
 
 
 def build_torch_bundle_from_classifier(
@@ -856,6 +1384,14 @@ def build_torch_bundle_from_classifier(
         )
     if key == "image_cnn":
         return _build_image_cnn_bundle(
+            sample,
+            num_classes=num_classes,
+            params=params,
+            seed=seed,
+            ema=ema,
+        )
+    if key == "wide_resnet_cifar":
+        return _build_wide_resnet_bundle(
             sample,
             num_classes=num_classes,
             params=params,

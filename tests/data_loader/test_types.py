@@ -2,9 +2,34 @@ from __future__ import annotations
 
 import json
 
+import numpy as np
 import pytest
 
-from modssc.data_loader.types import DatasetIdentity, DatasetSpec, DownloadReport
+from modssc.data_loader.types import (
+    DatasetIdentity,
+    DatasetSpec,
+    DownloadReport,
+    LoadedDataset,
+    Split,
+)
+
+
+def test_loaded_dataset_declares_graph_structure_natively() -> None:
+    plain = LoadedDataset(
+        train=Split(X=np.zeros((2, 1)), y=np.array([0, 1])),
+    )
+    graph = LoadedDataset(
+        train=Split(
+            X=np.zeros((2, 1)),
+            y=np.array([0, 1]),
+            edges=np.array([[0, 1], [1, 0]]),
+        ),
+    )
+
+    assert not plain.train.has_graph
+    assert not plain.has_graph
+    assert graph.train.has_graph
+    assert graph.has_graph
 
 
 def test_dataset_identity_fingerprint_is_hex() -> None:

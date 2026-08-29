@@ -16,6 +16,7 @@ dataset:
   download: false
   cache_dir: ${MODSSC_DATASET_CACHE_DIR}
 sampling:
+  inductive_graph_policy: masks_to_indices
   seed: 5
   plan:
     split:
@@ -64,6 +65,7 @@ preprocess:
         dtype: float32
 augmentation:
   enabled: true
+  strong_views: 2
   seed: 5
   mode: fixed
   modality: graph

@@ -11,6 +11,10 @@ ModSSC exposes a root CLI plus brick-specific entry points for datasets, samplin
 - Use `modssc` when you want one entry point with shared logging, `doctor`, and access to every brick.
 - Use the direct entry points when you want shorter commands in shell scripts or when a workflow only touches one subsystem.
 - Use the Python API instead when you need in-process objects, custom control flow, or notebook-friendly inspection.
+- Use `modssc-bench` (or `python -m bench.main`) for every benchmark YAML,
+  including frozen article cards. Prepare datasets separately with the dataset
+  CLI; the runner then verifies their declared identity. A scheduler invokes
+  the same command and selects one declared seed with `--seed-index`.
 
 
 ## Minimal examples
@@ -266,8 +270,40 @@ modssc supervised info logreg
 ```
 
 
+### modssc-bench reconcile
+
+- Purpose: Join `run.json` reports produced separately for the seeds declared in
+  one benchmark card.
+- Syntax: `modssc-bench reconcile --config <card> --runs-root <root> [--output-dir <dir>] [--allow-legacy-run-identity]`
+- Contract: the command searches `<root>` recursively, rejects duplicate or
+  undeclared seeds, incomplete run schemas, seed-specific requested-config
+  mismatches, mixed software identities, and any digest that cannot be
+  reproduced from the report itself. `effective_config_hash` and
+  `protocol_sha256` are recalculated from the exact `config` payload;
+  `software_sha256` is recalculated from `versions`. It then writes one
+  `aggregate.json`. Missing seeds remain distinct from failed runs. Portable
+  execution identity is mandatory by default. The legacy option is an explicit
+  migration aid for historical reports and must not be used for a new
+  scientific campaign; legacy reports remain non-certifiable even when their
+  numerical runs all succeeded.
+
+```bash
+modssc-bench reconcile \
+  --config bench/configs/reproductions/laplace_learning/mnist-table1-1-label-per-class.yaml \
+  --runs-root /results/laplace-learning
+```
+
+
 ## Common mistakes
-- Running `python -m bench.main ...` after a PyPI-only install and expecting `bench/` assets to exist locally. Use a source checkout for repository assets.
+- Enabling downloads during a frozen article task instead of preparing the
+  dataset first and letting the runner authenticate it.
+- Looking for a separate `modssc replicate` runner. Paper protocols remain in
+  `bench/configs/reproductions/` and use the same `modssc-bench` entry point as
+  all other YAML experiments.
+- Treating an external paper repository or Weka JAR as part of the CLI setup.
+  Supported protocols use ModSSC implementations and declared dataset providers;
+  private scheduler wrappers call `modssc-bench --config ... --seed-index ...`
+  directly.
 - Expecting `modssc datasets download --dataset <id>` to ignore missing extras automatically. The ignore flag exists, but you should still treat a missing extra as a dependency problem to resolve intentionally.
 - Looking for dataset IDs, step IDs, or method IDs in this page alone. Use [Catalogs and registries](catalogs.md) for the full lists.
 - Treating `modssc doctor` as a full environment validator. It reports available bricks and missing extras, but it does not validate your benchmark config semantics.

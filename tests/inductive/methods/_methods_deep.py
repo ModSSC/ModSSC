@@ -2509,7 +2509,10 @@ def test_fixmatch_empty_unlabeled_batch(monkeypatch):
 
     def fake_cycle_batch_indices(n, *, batch_size, generator, device, steps):
         for _ in range(int(steps)):
-            yield torch.tensor([], dtype=torch.long, device=device)
+            if int(batch_size) == int(spec.batch_size):
+                yield torch.arange(min(int(n), int(batch_size)), dtype=torch.long, device=device)
+            else:
+                yield torch.tensor([], dtype=torch.long, device=device)
 
     monkeypatch.setattr(
         "modssc.inductive.methods.fixmatch.cycle_batch_indices", fake_cycle_batch_indices

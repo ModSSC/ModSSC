@@ -41,6 +41,72 @@ class SamplingResult:
     def is_graph(self) -> bool:
         return bool(self.masks)
 
+    def uses_test_split(self) -> bool:
+        """Return whether sampled test indices address the provider test split."""
+
+        return not self.is_graph() and self.refs.get("test", "train") == "test"
+
+    def as_inductive_indices(self) -> SamplingResult:
+        """Convert graph masks to the native inductive index representation.
+
+        Graph nodes share the dataset train index space.  Non-graph results are
+        already in the desired representation and are returned unchanged.
+        """
+
+        if not self.is_graph():
+            return self
+        indices = {
+            "train": self.train_idx.astype(np.int64, copy=False),
+            "val": self.val_idx.astype(np.int64, copy=False),
+            "test": self.test_idx.astype(np.int64, copy=False),
+            "train_labeled": self.labeled_idx.astype(np.int64, copy=False),
+            "train_unlabeled": self.unlabeled_idx.astype(np.int64, copy=False),
+        }
+        return SamplingResult(
+            schema_version=self.schema_version,
+            created_at=self.created_at,
+            dataset_fingerprint=self.dataset_fingerprint,
+            split_fingerprint=self.split_fingerprint,
+            plan=self.plan,
+            indices=indices,
+            refs={name: "train" for name in indices},
+            masks={},
+            stats=self.stats,
+        )
+
+    def expected_labeled_count(self) -> int | None:
+        """Read the sampling-owned labeled-count assertion, when recorded."""
+
+        train_labeled = self.stats.get("train_labeled")
+        if isinstance(train_labeled, Mapping):
+            count = train_labeled.get("n")
+            if isinstance(count, (int, np.integer)) and not isinstance(count, bool):
+                return int(count)
+        labeled = self.stats.get("labeled")
+        if isinstance(labeled, (int, np.integer)) and not isinstance(labeled, bool):
+            return int(labeled)
+        distribution = self.stats.get("labeled_class_dist")
+        if isinstance(distribution, Mapping):
+            count = distribution.get("n")
+            if isinstance(count, (int, np.integer)) and not isinstance(count, bool):
+                return int(count)
+        return None
+
+    def _unlabeled_pool_semantics(self) -> str:
+        labeling = self.plan.get("labeling")
+        if isinstance(labeling, Mapping):
+            semantics = labeling.get("unlabeled_pool")
+            if semantics is not None:
+                return str(semantics)
+        partition = self.plan.get("partition")
+        if not isinstance(partition, Mapping):
+            return "complement"
+        artifact = partition.get("ordered_indices_artifact")
+        if not isinstance(artifact, Mapping):
+            return "complement"
+        semantics = artifact.get("unlabeled_pool", "complement")
+        return str(semantics)
+
     def validate(self, *, n_train: int, n_test: int | None, n_nodes: int | None) -> None:
         if self.is_graph():
             self._validate_graph(n_nodes=n_nodes)
@@ -93,10 +159,21 @@ class SamplingResult:
         unlabeled = self.indices.get("train_unlabeled")
         if labeled is None or unlabeled is None:
             raise SamplingValidationError("Missing labeled/unlabeled indices")
-        if np.intersect1d(labeled, unlabeled).size:
-            raise SamplingValidationError("labeled and unlabeled overlap")
-        if not np.array_equal(np.sort(np.concatenate([labeled, unlabeled])), np.sort(train)):
-            raise SamplingValidationError("labeled + unlabeled must cover train exactly")
+        if self._unlabeled_pool_semantics() == "includes_labeled":
+            if np.setdiff1d(labeled, unlabeled).size:
+                raise SamplingValidationError(
+                    "labeled indices must be a subset of the inclusive unlabeled pool"
+                )
+            if not np.array_equal(np.sort(unlabeled), np.sort(train)):
+                raise SamplingValidationError("inclusive unlabeled pool must cover train exactly")
+        else:
+            if np.intersect1d(labeled, unlabeled).size:
+                raise SamplingValidationError("labeled and unlabeled overlap")
+            if not np.array_equal(
+                np.sort(np.concatenate([labeled, unlabeled])),
+                np.sort(train),
+            ):
+                raise SamplingValidationError("labeled + unlabeled must cover train exactly")
 
     def _validate_graph(self, *, n_nodes: int | None) -> None:
         if n_nodes is None:
@@ -121,7 +198,10 @@ class SamplingResult:
 
         if (labeled & ~train).any():
             raise SamplingValidationError("labeled_mask must be subset of train_mask")
-        if not np.array_equal(unlabeled, train & ~labeled):
+        if self._unlabeled_pool_semantics() == "includes_labeled":
+            if not np.array_equal(unlabeled, train):
+                raise SamplingValidationError("inclusive unlabeled_mask must equal train_mask")
+        elif not np.array_equal(unlabeled, train & ~labeled):
             raise SamplingValidationError("unlabeled_mask must equal train_mask & ~labeled_mask")
 
         # train/val/test should be disjoint

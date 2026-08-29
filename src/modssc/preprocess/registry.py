@@ -53,5 +53,6 @@ def step_info(step_id: str) -> dict[str, Any]:
         "modalities": list(spec.modalities),
         "consumes": list(spec.consumes),
         "produces": list(spec.produces),
+        "runtime_roles": list(spec.runtime_roles),
         "description": spec.description,
     }

@@ -1,7 +1,13 @@
 import pytest
 import yaml
 
-from modssc.preprocess.plan import PreprocessPlan, StepConfig, dump_plan, load_plan
+from modssc.preprocess.plan import (
+    PreprocessPlan,
+    StepConfig,
+    dump_plan,
+    load_plan,
+    steps_with_runtime_role,
+)
 
 
 def test_load_plan_valid(tmp_path):
@@ -91,3 +97,23 @@ def test_dump_plan(tmp_path):
     assert len(loaded["steps"]) == 1
     assert loaded["steps"][0]["id"] == "s1"
     assert loaded["steps"][0]["params"] == {"k": "v"}
+
+
+def test_runtime_roles_are_declared_by_native_steps() -> None:
+    step_ids = (
+        "core.to_numpy",
+        "core.row_normalize",
+        "tabular.standard_scaler",
+        "vision.normalize",
+    )
+
+    assert steps_with_runtime_role(step_ids, role="normalization") == (
+        "core.row_normalize",
+        "tabular.standard_scaler",
+        "vision.normalize",
+    )
+
+
+def test_runtime_role_requires_a_non_empty_name() -> None:
+    with pytest.raises(ValueError, match="role must be a non-empty string"):
+        steps_with_runtime_role(("core.to_numpy",), role="")

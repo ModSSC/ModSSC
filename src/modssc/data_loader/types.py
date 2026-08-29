@@ -20,6 +20,12 @@ class Split:
     edges: Any | None = None
     masks: Mapping[str, Any] | None = None
 
+    @property
+    def has_graph(self) -> bool:
+        """Return whether this split carries graph topology or graph masks."""
+
+        return self.edges is not None or self.masks is not None
+
 
 @dataclass(frozen=True)
 class LoadedDataset:
@@ -34,6 +40,12 @@ class LoadedDataset:
     train: Split
     test: Split | None = None
     meta: Mapping[str, Any] = field(default_factory=dict)
+
+    @property
+    def has_graph(self) -> bool:
+        """Return whether the canonical training population is graph-backed."""
+
+        return self.train.has_graph
 
 
 @dataclass(frozen=True)

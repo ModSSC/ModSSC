@@ -4,6 +4,83 @@ All notable changes to this project will be documented in this file.
 
 The format is based on "Keep a Changelog", and this project adheres to Semantic Versioning.
 
+## Unreleased
+
+### Added
+- Added native method capability contracts covering data modality,
+  representation, graph/view/augmentation inputs, classifier outputs, backend,
+  device, dtype, and checkpoint support.
+- Added explicit native execution contexts, content-addressed atomic
+  checkpoints, seed-index execution, and honest multi-seed aggregation.
+- Added native sampling controls required by the published protocols, including
+  exact holdout sizes, class-balanced streams, legacy RNG compatibility, and
+  inclusive unlabeled pools.
+- Added paper-faithful method parameters and declarative reproduction cards for
+  classic, Match-family, Calder graph-learning, and GRAND methods.
+- Added a composed pre-fit execution contract that verifies exact input roles,
+  model outputs, optimizers, EMA objects, schedulers, and component relations,
+  with a canonical report and SHA-256 in every benchmark result.
+- Added method-agnostic scientific acceptance in `modssc.evaluation`, with
+  declarative targets and diagnostics, three-state assessment, independent
+  fidelity classification, and a canonical SHA-256 report.
+
+### Changed
+- Reduced `bench` to one responsibility: validate a YAML experiment, orchestrate
+  registered ModSSC bricks, and report results. Method protocols and article
+  identities no longer select hidden runner branches.
+- Calder cards now recompute their VAE representation and exact FAISS kNN graph
+  through native preprocessing and graph-construction bricks.
+- Match-family and Democratic Co-Learning cards now construct their partitions
+  from native sampling declarations instead of bundled replay files.
+- Reproduction claims distinguish historical frozen evidence from new
+  statistical replications when a bit-identical source sequence is unavailable.
+- Moved each numerical acceptance specification into the reproduction YAML card
+  it assesses. `bench` parses, orchestrates, and serializes the native result;
+  it contains no article-specific acceptance mathematics.
+
+### Removed
+- Removed the rejected benchmark and root campaign frameworks and bundled
+  runtime paper artefacts; scientific behaviour now uses native registered
+  components. The residual root `tools/`, `provenance/`, `tests/tools/`, and
+  legacy HPC/continuation tests were removed after their recovery archive was
+  checksummed and verified.
+- Removed the separate `modssc-reproduce` execution path; reproduction cards use
+  the same `modssc-bench` runner as every other experiment.
+
+### Fixed
+- Made offline dataset loads and content verification inspect existing cache
+  layouts without creating administrative entries, purging corrupt cache data,
+  or backfilling missing content manifests.
+- Make cache promotion portable and resumable on filesystems that do not
+  support `RENAME_NOREPLACE`, while preserving exclusive publication and
+  fail-closed recovery semantics.
+- Removed the Weka/Java runtime and all vendored GraphLearning, FixMatch,
+  TorchSSL, and USB source dependencies; ModSSC executes its own scientific
+  implementations.
+- Preserved historical public constructor signatures, standardized-method
+  numerics and index spaces, cache read-only behavior, and graph precision while
+  adding native replication contracts.
+- Removed hidden campaign/environment identity from Match checkpoints; resume
+  behavior is now explicit in the run YAML and verified against run identity and
+  payload integrity.
+- Re-hash declared dataset content both immediately after loading and immediately
+  before writing a result, so same-size mutations and mid-run input changes fail
+  with a typed integrity error.
+- Require SciPy for exact Student-t confidence intervals instead of silently
+  substituting a normal approximation when the dependency is unavailable.
+- Exclude local cache contents and developer lock files from source
+  distributions, with release-audit checks preventing either from being shipped.
+- Classify a declared non-convergence or insufficient pseudo-label outcome as
+  `not_evaluable`, preserving native diagnostics instead of publishing a
+  successful replication result.
+- Require DASO and TriNet to consume declared encoder/shared features, and
+  require SimCLRv2 contrastive pretraining to consume a model-owned, optimized
+  projection head. Classifier logits and undeclared feature aliases now fail
+  closed instead of passing by shape.
+- Bind preprocess, graph, graph-view, and VAE cache keys to exact input content,
+  implementation and software identity; publish authenticated entries
+  atomically and reject legacy, partial, or modified cache data before reuse.
+
 ## 1.2.2
 ### Fixed
 - Stabilized Dynamic Label Propagation by renormalizing dynamic transition matrices after each update and failing explicitly on invalid transition weights instead of returning non-finite scores.

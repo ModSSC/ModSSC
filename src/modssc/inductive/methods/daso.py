@@ -4,10 +4,14 @@ import copy
 import inspect
 import logging
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from time import perf_counter
 from typing import Any
 
+from modssc.capabilities import (
+    WEAK_STRONG_TORCH_INDUCTIVE_CAPABILITIES,
+    MethodCapabilities,
+)
 from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
@@ -31,8 +35,14 @@ from modssc.inductive.methods.utils import (
     ensure_1d_labels_torch,
     ensure_torch_data,
 )
+from modssc.inductive.model_binding import ModelBindingSpec
 from modssc.inductive.optional import optional_import
 from modssc.inductive.types import DeviceSpec
+from modssc.runtime.contracts import MethodExecutionContract
+from modssc.runtime.method_contracts import (
+    fallback_method_execution_contract,
+    with_inductive_input_roles,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +50,12 @@ logger = logging.getLogger(__name__)
 def _call_feature_extractor(forward: Any, X: Any, *, model_override: Any | None = None) -> Any:
     if model_override is None:
         return forward(X)
+    bound_model = getattr(forward, "__self__", None)
+    method_name = getattr(forward, "__name__", None)
+    if bound_model is not None and isinstance(method_name, str):
+        rebound = getattr(model_override, method_name, None)
+        if callable(rebound):
+            return rebound(X)
     try:
         signature = inspect.signature(forward)
     except (TypeError, ValueError):
@@ -119,7 +135,10 @@ def _forward_logits_features(bundle: TorchModelBundle, X: Any) -> tuple[Any, Any
             )
 
     if feats is None:
-        feats = logits
+        raise InductiveValidationError(
+            "DASO requires encoder features distinct from classifier logits via "
+            "output['feat'], a (logits, feat) tuple, or meta['forward_features']."
+        )
     return logits, feats
 
 
@@ -156,13 +175,10 @@ def _forward_features(
         return extract_features(out)
     if isinstance(out, tuple) and len(out) > 1 and isinstance(out[1], torch.Tensor):
         return out[1]
-    try:
-        return extract_logits(out)
-    except InductiveValidationError as exc:
-        raise InductiveValidationError(
-            "DASO requires feature representations via output['feat'], a (logits, feat) "
-            "tuple, or meta['forward_features']."
-        ) from exc
+    raise InductiveValidationError(
+        "DASO requires encoder features distinct from classifier logits via "
+        "output['feat'], a (logits, feat) tuple, or meta['forward_features']."
+    )
 
 
 def _check_ema(student: Any, teacher: Any) -> None:
@@ -230,7 +246,43 @@ class DASOMethod(TorchBundlePredictMixin, InductiveMethod):
         paper_title="DASO: Distribution-Aware Semantics-Oriented Pseudo-Label for Imbalanced Semi-Supervised Learning",
         paper_pdf="https://openaccess.thecvf.com/content/CVPR2022/papers/Oh_DASO_Distribution-Aware_Semantics-Oriented_Pseudo-Label_for_Imbalanced_Semi-Supervised_Learning_CVPR_2022_paper.pdf",
         official_code="https://github.com/ytaek-oh/daso",
+        capabilities=WEAK_STRONG_TORCH_INDUCTIVE_CAPABILITIES,
+        model_binding=ModelBindingSpec.single(),
     )
+
+    @classmethod
+    def execution_contract(
+        cls,
+        spec: DASOSpec,
+        capabilities: MethodCapabilities,
+        model_binding: Any | None = None,
+    ) -> MethodExecutionContract:
+        del spec
+        feature_roles = ("fit.X_l", "fit.X_u_w", "fit.X_u_s.0")
+        contract = with_inductive_input_roles(
+            fallback_method_execution_contract(cls, capabilities, model_binding),
+            feature_roles=feature_roles,
+            row_groups=(
+                ("fit.X_l", "fit.y_l"),
+                ("fit.X_u_w", "fit.X_u_s.0"),
+            ),
+        )
+        return replace(
+            contract,
+            components=tuple(
+                replace(
+                    requirement,
+                    outputs=frozenset({"logits"}),
+                    output_alternatives=(
+                        frozenset({"feat"}),
+                        frozenset({"forward_features"}),
+                        frozenset({"feature_extractor"}),
+                    ),
+                    input_roles=feature_roles,
+                )
+                for requirement in contract.components
+            ),
+        )
 
     def __init__(self, spec: DASOSpec | None = None) -> None:
         self.spec = spec or DASOSpec()

@@ -12,10 +12,6 @@ def _as_int64(a: Any) -> np.ndarray:
     return np.asarray(a, dtype=np.int64)
 
 
-def _as_float32(a: Any) -> np.ndarray:
-    return np.asarray(a, dtype=np.float32)
-
-
 @dataclass(frozen=True)
 class GraphArtifact:
     """Canonical graph representation.
@@ -42,7 +38,10 @@ class GraphArtifact:
         object.__setattr__(self, "edge_index", ei)
 
         if self.edge_weight is not None:
-            ew = _as_float32(self.edge_weight)
+            weight_dtype = (
+                np.float64 if self.meta.get("edge_weight_dtype") == "float64" else np.float32
+            )
+            ew = np.asarray(self.edge_weight, dtype=weight_dtype)
             if ew.ndim != 1 or ew.shape[0] != ei.shape[1]:
                 raise GraphValidationError("edge_weight must have shape (E,)")
             object.__setattr__(self, "edge_weight", ew)
@@ -67,7 +66,7 @@ class NodeDataset:
 
     X: Any
     y: np.ndarray
-    graph: GraphArtifact
+    graph: GraphArtifact | None
     masks: dict[str, np.ndarray] = field(default_factory=dict)
     meta: dict[str, Any] = field(default_factory=dict)
 
@@ -75,20 +74,22 @@ class NodeDataset:
         # Validate X first dimension (works for numpy and scipy sparse)
         if not hasattr(self.X, "shape"):
             raise GraphValidationError("X must expose a shape attribute")
-        if int(self.X.shape[0]) != int(self.graph.n_nodes):
+        n_nodes = int(self.X.shape[0])
+        if self.graph is not None and n_nodes != int(self.graph.n_nodes):
             raise GraphValidationError("X must have shape (n_nodes, d)")
 
         y = _as_int64(self.y)
         if y.ndim not in (1, 2):
             raise GraphValidationError("y must have shape (n,) or (n, C)")
-        if y.shape[0] != self.graph.n_nodes:
-            raise GraphValidationError("y must have the same first dimension as graph.n_nodes")
+        if y.shape[0] != n_nodes:
+            suffix = "graph.n_nodes" if self.graph is not None else "X"
+            raise GraphValidationError(f"y must have the same first dimension as {suffix}")
         object.__setattr__(self, "y", y)
 
         new_masks: dict[str, np.ndarray] = {}
         for k, v in self.masks.items():
             m = np.asarray(v, dtype=bool)
-            if m.ndim != 1 or m.shape[0] != self.graph.n_nodes:
+            if m.ndim != 1 or m.shape[0] != n_nodes:
                 raise GraphValidationError(f"Mask {k!r} must have shape (n_nodes,)")
             new_masks[str(k)] = m
         object.__setattr__(self, "masks", new_masks)

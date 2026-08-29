@@ -13,7 +13,7 @@ GRAPH_CATALOG: dict[str, DatasetSpec] = {
         task="node_classification",
         description="Cora Planetoid citation graph (torch_geometric). Includes official masks.",
         required_extra="graph",
-        source_kwargs={},
+        source_kwargs={"split": "public"},
     ),
     "citeseer": DatasetSpec(
         key="citeseer",

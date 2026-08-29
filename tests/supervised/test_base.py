@@ -3,8 +3,10 @@ import pytest
 
 from modssc.supervised.base import (
     BaseSupervisedClassifier,
+    ClassifierCapabilities,
     PredictScoresFromProbaMixin,
     SupportsProbaMixin,
+    classifier_capabilities,
 )
 from modssc.supervised.errors import NotSupportedError
 
@@ -157,3 +159,59 @@ def test_base_classes_t_property():
     assert clf.classes_t_ is None
     clf._classes_t = "sentinel"
     assert clf.classes_t_ == "sentinel"
+
+
+def test_classifier_capability_contract_is_explicit_and_legacy_compatible() -> None:
+    base = ConcreteClassifier()
+    assert base.capabilities == ClassifierCapabilities(
+        predict=True,
+        scores=True,
+        probabilities=False,
+        classes=True,
+    )
+    assert base.capabilities.supports_proba is False
+
+    class ExternalProbabilityClassifier:
+        classes_ = np.array([0, 1])
+
+        def predict(self, X):  # noqa: ARG002
+            return np.array([0])
+
+        def predict_proba(self, X):  # noqa: ARG002
+            return np.array([[0.6, 0.4]])
+
+    assert classifier_capabilities(ExternalProbabilityClassifier()) == ClassifierCapabilities(
+        predict=True,
+        scores=True,
+        probabilities=True,
+        classes=True,
+    )
+
+
+def test_classifier_capability_contract_respects_explicit_declaration() -> None:
+    declared = ClassifierCapabilities(
+        predict=True,
+        scores=False,
+        probabilities=False,
+        classes=False,
+    )
+
+    class ExternalClassifier:
+        capabilities = declared
+
+        def predict_proba(self, X):  # noqa: ARG002
+            raise AssertionError
+
+    assert classifier_capabilities(ExternalClassifier()) is declared
+
+
+@pytest.mark.parametrize("supports_proba", [True, False, np.bool_(True), np.bool_(False)])
+def test_classifier_capability_contract_accepts_explicit_boolean_probability_flag(
+    supports_proba: bool | np.bool_,
+) -> None:
+    classifier = type("ExternalClassifier", (), {"supports_proba": supports_proba})()
+
+    capabilities = classifier_capabilities(classifier)
+
+    assert capabilities.probabilities is bool(supports_proba)
+    assert capabilities.scores is bool(supports_proba)

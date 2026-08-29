@@ -4,6 +4,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from modssc.runtime.contracts import ModelContract
+
 
 @dataclass(frozen=True)
 class TorchModelBundle:
@@ -15,3 +17,4 @@ class TorchModelBundle:
     scheduler: Any | None = None
     scaler: Any | None = None
     meta: Mapping[str, Any] | None = None
+    contract: ModelContract | None = None

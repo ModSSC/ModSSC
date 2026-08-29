@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from time import perf_counter
 from typing import Any
 
+from modssc.capabilities import WEAK_STRONG_TORCH_INDUCTIVE_CAPABILITIES, MethodCapabilities
 from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
@@ -28,8 +29,14 @@ from modssc.inductive.methods.utils import (
     ensure_1d_labels_torch,
     ensure_torch_data,
 )
+from modssc.inductive.model_binding import ModelBindingSpec
 from modssc.inductive.optional import optional_import
 from modssc.inductive.types import DeviceSpec
+from modssc.runtime.contracts import MethodExecutionContract
+from modssc.runtime.method_contracts import (
+    fallback_method_execution_contract,
+    with_inductive_input_roles,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +67,40 @@ class MeanTeacherMethod(TorchBundlePredictMixin, InductiveMethod):
         paper_title="Mean teachers are better role models: Weight-averaged consistency targets improve semi-supervised deep learning results",
         paper_pdf="https://arxiv.org/pdf/1703.01780",
         official_code="https://github.com/CuriousAI/mean-teacher",
+        default_model_ema=True,
+        capabilities=WEAK_STRONG_TORCH_INDUCTIVE_CAPABILITIES,
+        model_binding=ModelBindingSpec.single(),
     )
+
+    @classmethod
+    def execution_contract(
+        cls,
+        spec: MeanTeacherSpec,
+        capabilities: MethodCapabilities,
+        model_binding: Any | None = None,
+    ) -> MethodExecutionContract:
+        del spec
+        feature_roles = ("fit.X_l", "fit.X_u_w", "fit.X_u_s.0")
+        contract = with_inductive_input_roles(
+            fallback_method_execution_contract(cls, capabilities, model_binding),
+            feature_roles=feature_roles,
+            row_groups=(
+                ("fit.X_l", "fit.y_l"),
+                ("fit.X_u_w", "fit.X_u_s.0"),
+            ),
+        )
+        return replace(
+            contract,
+            components=tuple(
+                replace(
+                    requirement,
+                    outputs=frozenset({"logits"}),
+                    input_roles=feature_roles,
+                    requires_ema=True,
+                )
+                for requirement in contract.components
+            ),
+        )
 
     def __init__(self, spec: MeanTeacherSpec | None = None) -> None:
         self.spec = spec or MeanTeacherSpec()

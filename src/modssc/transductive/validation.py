@@ -11,7 +11,7 @@ from .base import NodeDatasetLike
 from .errors import TransductiveValidationError
 
 
-def validate_node_dataset(data: NodeDatasetLike) -> None:
+def validate_node_dataset(data: NodeDatasetLike, *, require_graph: bool = True) -> None:
     """Validate the minimal invariants needed by transductive algorithms."""
     if data is None:
         raise TransductiveValidationError("data must not be None")
@@ -52,22 +52,23 @@ def validate_node_dataset(data: NodeDatasetLike) -> None:
                 "y must contain contiguous class ids starting at 0; run preprocess step 'labels.encode'"
             )
 
-    if data.graph is None:
-        raise TransductiveValidationError("data.graph must not be None")
-
-    raw_edge_index = getattr(data.graph, "edge_index", None)
-    if raw_edge_index is None:
-        raise TransductiveValidationError("graph.edge_index is required")
-    edge_index = _as_numpy(raw_edge_index)
-
-    if edge_index.ndim != 2 or edge_index.shape[0] != 2:
-        raise TransductiveValidationError(
-            f"edge_index must have shape (2, E), got {edge_index.shape}"
-        )
-
     n = int(X.shape[0])
-    if edge_index.size > 0 and (edge_index.min() < 0 or edge_index.max() >= n):
-        raise TransductiveValidationError("edge_index has out of range node indices")
+    if data.graph is None:
+        if require_graph:
+            raise TransductiveValidationError("data.graph must not be None")
+    else:
+        raw_edge_index = getattr(data.graph, "edge_index", None)
+        if raw_edge_index is None:
+            raise TransductiveValidationError("graph.edge_index is required")
+        edge_index = _as_numpy(raw_edge_index)
+
+        if edge_index.ndim != 2 or edge_index.shape[0] != 2:
+            raise TransductiveValidationError(
+                f"edge_index must have shape (2, E), got {edge_index.shape}"
+            )
+
+        if edge_index.size > 0 and (edge_index.min() < 0 or edge_index.max() >= n):
+            raise TransductiveValidationError("edge_index has out of range node indices")
 
     masks: Mapping[str, Any] = data.masks or {}
     for key in ("train_mask", "val_mask", "test_mask", "unlabeled_mask"):

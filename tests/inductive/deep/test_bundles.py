@@ -48,8 +48,10 @@ def test_infer_input_dim_and_take_sample() -> None:
 
 def test_maybe_ema() -> None:
     model = torch.nn.Linear(2, 2)
+    model._runtime_module = torch
     ema = bundles._maybe_ema(model, enabled=True)
     assert ema is not None
+    assert ema._runtime_module is torch
     assert all(not p.requires_grad for p in ema.parameters())
     assert bundles._maybe_ema(model, enabled=False) is None
 
@@ -95,6 +97,15 @@ def test_build_mlp_and_logreg_bundles() -> None:
     assert len(list(logreg.model)) == 1
     assert isinstance(logreg.model[0], torch.nn.Linear)
 
+    with pytest.raises(InductiveValidationError, match="rank-2"):
+        bundles._build_mlp_bundle(
+            torch.randn(2, 3, 4),
+            num_classes=2,
+            params={},
+            seed=0,
+            ema=False,
+        )
+
 
 def test_build_mlp_feature_bundle() -> None:
     sample = torch.randn(2, 3)
@@ -107,6 +118,9 @@ def test_build_mlp_feature_bundle() -> None:
     )
     out = bundle.model(sample)
     assert set(out.keys()) == {"logits", "feat"}
+    features = bundle.meta["forward_features"](sample)
+    assert torch.equal(features, out["feat"])
+    assert bundle.meta["forward_head"](features).shape == out["logits"].shape
     assert out["logits"].shape[0] == int(sample.shape[0])
     assert out["feat"].shape[0] == int(sample.shape[0])
 
@@ -124,6 +138,15 @@ def test_build_mlp_feature_bundle() -> None:
             sample,
             num_classes=2,
             params={"hidden_sizes": (-1,)},
+            seed=0,
+            ema=False,
+        )
+
+    with pytest.raises(InductiveValidationError, match="rank-2"):
+        bundles._build_mlp_feature_bundle(
+            torch.randn(2, 3, 4),
+            num_classes=2,
+            params={},
             seed=0,
             ema=False,
         )
@@ -155,6 +178,38 @@ def test_image_audio_text_helpers_and_bundles() -> None:
     logits_img, feat_img = img_bundle.model(sample4)
     assert logits_img.shape[0] == 2
     assert feat_img.ndim == 2
+    assert img_bundle.contract is not None
+    assert img_bundle.contract.input_ranks == frozenset({4})
+    assert {
+        "feat",
+        "forward_features",
+        "forward_head",
+        "logits",
+    } <= img_bundle.contract.outputs
+    hook_features = img_bundle.meta["forward_features"](sample4)
+    assert hook_features.shape == feat_img.shape
+    assert img_bundle.meta["forward_head"](hook_features).shape == logits_img.shape
+
+    image3_bundle = bundles._build_image_cnn_bundle(
+        sample3,
+        num_classes=2,
+        params={"conv_channels": (4,), "dropout": 0.0},
+        seed=0,
+        ema=False,
+    )
+    assert image3_bundle.model(sample3)[0].shape == (2, 2)
+    assert image3_bundle.contract.input_ranks == frozenset({3})
+
+    image2 = torch.randn(2, 12)
+    image2_bundle = bundles._build_image_cnn_bundle(
+        image2,
+        num_classes=2,
+        params={"input_shape": (3, 4), "conv_channels": (4,), "dropout": 0.0},
+        seed=0,
+        ema=False,
+    )
+    assert image2_bundle.model(image2)[0].shape == (2, 2)
+    assert image2_bundle.contract.input_ranks == frozenset({2})
 
     audio3 = torch.randn(2, 1, 8)
     assert bundles._infer_audio_channels(audio3, input_shape=None) == 1
@@ -174,6 +229,18 @@ def test_image_audio_text_helpers_and_bundles() -> None:
         ema=False,
     )
     assert isinstance(audio_bundle, TorchModelBundle)
+    assert audio_bundle.model(audio3).shape == (2, 2)
+    assert audio_bundle.contract.input_ranks == frozenset({3})
+
+    audio2_bundle = bundles._build_audio_cnn_bundle(
+        audio2,
+        num_classes=2,
+        params={"conv_channels": (4,), "dropout": 0.0},
+        seed=0,
+        ema=False,
+    )
+    assert audio2_bundle.model(audio2).shape == (2, 2)
+    assert audio2_bundle.contract.input_ranks == frozenset({2})
 
     text3 = torch.randn(2, 5, 4)
     assert bundles._infer_text_shape(text3, input_layout="channels_last") == (4, 5)
@@ -194,6 +261,19 @@ def test_image_audio_text_helpers_and_bundles() -> None:
         ema=False,
     )
     assert isinstance(text_bundle, TorchModelBundle)
+    assert text_bundle.model(text3).shape == (2, 2)
+    assert text_bundle.contract.input_ranks == frozenset({3})
+
+    text2 = torch.randn(2, 6)
+    text2_bundle = bundles._build_text_cnn_bundle(
+        text2,
+        num_classes=2,
+        params={"kernel_sizes": (2,), "dropout": 0.0},
+        seed=0,
+        ema=False,
+    )
+    assert text2_bundle.model(text2).shape == (2, 2)
+    assert text2_bundle.contract.input_ranks == frozenset({2})
 
     with pytest.raises(InductiveValidationError, match="kernel_sizes are larger"):
         bundles._build_text_cnn_bundle(
@@ -203,6 +283,92 @@ def test_image_audio_text_helpers_and_bundles() -> None:
             seed=0,
             ema=False,
         )
+
+
+def test_native_feature_wrappers_reject_mismatched_inputs_and_bind_ema_hooks() -> None:
+    image = bundles._build_image_cnn_bundle(
+        torch.randn(2, 3, 4, 4),
+        num_classes=2,
+        params={"conv_channels": (4,), "dropout": 0.0},
+        seed=0,
+        ema=True,
+    )
+    assert image.ema_model is not None
+    assert {"forward_features_ema", "forward_head_ema"} <= set(image.meta)
+    assert {"forward_features_ema", "forward_head_ema"} <= image.contract.outputs
+    with pytest.raises(InductiveValidationError, match="torch.Tensor"):
+        image.model([1, 2, 3])
+    with pytest.raises(InductiveValidationError, match="built for rank-4"):
+        image.model(torch.randn(2, 3, 16))
+
+    flattened_image = bundles._build_image_cnn_bundle(
+        torch.randn(2, 12),
+        num_classes=2,
+        params={"input_shape": (3, 4), "conv_channels": (4,), "dropout": 0.0},
+        seed=0,
+        ema=False,
+    )
+    with pytest.raises(InductiveValidationError, match="requires 12 flattened"):
+        flattened_image.model(torch.randn(2, 11))
+
+    with pytest.raises(InductiveValidationError, match="input_shape must be"):
+        bundles._build_audio_cnn_bundle(
+            torch.randn(2, 8),
+            num_classes=2,
+            params={"input_shape": (1, 2, 3)},
+            seed=0,
+            ema=False,
+        )
+
+    audio = bundles._build_audio_cnn_bundle(
+        torch.randn(2, 8),
+        num_classes=2,
+        params={
+            "input_shape": (2, 4),
+            "kernel_size": 3,
+            "conv_channels": (4,),
+            "dropout": 0.0,
+        },
+        seed=0,
+        ema=True,
+    )
+    assert audio.model(torch.randn(2, 8)).shape == (2, 2)
+    assert audio.ema_model is not None
+    assert {"forward_features_ema", "forward_head_ema"} <= set(audio.meta)
+    with pytest.raises(InductiveValidationError, match="torch.Tensor"):
+        audio.model([1, 2, 3])
+    with pytest.raises(InductiveValidationError, match="built for rank-2"):
+        audio.model(torch.randn(2, 1, 8))
+    with pytest.raises(InductiveValidationError, match="requires 8 flattened"):
+        audio.model(torch.randn(2, 7))
+
+    rank_one_audio = bundles._build_audio_cnn_bundle(
+        torch.randn(8),
+        num_classes=2,
+        params={"kernel_size": 3, "conv_channels": (4,), "dropout": 0.0},
+        seed=0,
+        ema=False,
+    )
+    assert rank_one_audio.model(torch.randn(8)).shape == (1, 2)
+
+    text = bundles._build_text_cnn_bundle(
+        torch.randn(2, 4, 6),
+        num_classes=2,
+        params={
+            "input_layout": "channels_first",
+            "kernel_sizes": (2,),
+            "dropout": 0.0,
+        },
+        seed=0,
+        ema=True,
+    )
+    assert text.model(torch.randn(2, 4, 6)).shape == (2, 2)
+    assert text.ema_model is not None
+    assert {"forward_features_ema", "forward_head_ema"} <= set(text.meta)
+    with pytest.raises(InductiveValidationError, match="torch.Tensor"):
+        text.model([1, 2, 3])
+    with pytest.raises(InductiveValidationError, match="built for rank-3"):
+        text.model(torch.randn(2, 6))
 
 
 def test_parse_image_input_shape_and_prepare_audio_input() -> None:
@@ -377,6 +543,9 @@ def test_image_pretrained_wrapper_return_features(monkeypatch) -> None:
     )
     out = bundle.model(sample)
     assert set(out.keys()) == {"logits", "feat"}
+    extracted = bundle.meta["forward_features"](sample)
+    assert torch.equal(extracted, out["feat"])
+    assert bundle.meta["forward_head"](extracted).shape == out["logits"].shape
 
     class DummyNoHead(DummyModel):
         def forward(self, x):
@@ -391,8 +560,8 @@ def test_image_pretrained_wrapper_return_features(monkeypatch) -> None:
         seed=0,
         ema=False,
     )
-    out_no_head = bundle_no_head.model(sample)
-    assert torch.allclose(out_no_head["feat"], out_no_head["logits"])
+    with pytest.raises(InductiveValidationError, match="return_features failed"):
+        bundle_no_head.model(sample)
 
     class DummyBad(DummyModel):
         def forward(self, x):
@@ -439,8 +608,8 @@ def test_image_pretrained_wrapper_return_features(monkeypatch) -> None:
         seed=0,
         ema=False,
     )
-    out_empty = bundle_empty.model(sample)
-    assert set(out_empty.keys()) == {"logits", "feat"}
+    with pytest.raises(InductiveValidationError, match="return_features failed"):
+        bundle_empty.model(sample)
 
 
 def test_build_audio_pretrained_bundle_wrapper(monkeypatch) -> None:
@@ -800,6 +969,13 @@ def test_build_lstm_bundle_meta_feature_and_head_paths() -> None:
     assert bidir_feats_emb.shape == (2, 8)
     bidir_logits = bidirectional.meta["forward_head"](bidir_feats_ids)
     assert bidir_logits.shape == (2, 2)
+    bidirectional.model.eval()
+    with torch.no_grad():
+        direct_logits = bidirectional.model(sample)
+        composed_logits = bidirectional.meta["forward_head"](
+            bidirectional.meta["forward_features"](sample)
+        )
+    assert torch.allclose(direct_logits, composed_logits)
 
     unidirectional = bundles._build_lstm_bundle(
         sample,
