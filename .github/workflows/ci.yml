@@ -105,3 +105,34 @@ jobs:
           python -m pip install --upgrade pip wheel
           pip install build
           python -m build
+
+      - name: Audit packaged benchmark runner and reproduction cards
+        shell: bash
+        run: |
+          set -euo pipefail
+          WHEEL="$(realpath "$(find dist -maxdepth 1 -name '*.whl' -print -quit)")"
+          SDIST="$(realpath "$(find dist -maxdepth 1 -name '*.tar.gz' -print -quit)")"
+          export WHEEL
+          python .github/scripts/audit_distribution.py --wheel "$WHEEL" --sdist "$SDIST"
+
+          AUDIT_DIR="$(mktemp -d)"
+          python -m venv "$AUDIT_DIR/venv"
+          "$AUDIT_DIR/venv/bin/python" -m pip install "$WHEEL"
+          mkdir "$AUDIT_DIR/empty"
+          cd "$AUDIT_DIR/empty"
+          env -u PYTHONPATH "$AUDIT_DIR/venv/bin/modssc-bench" --help
+          env -u PYTHONPATH "$AUDIT_DIR/venv/bin/python" - <<'PY'
+          from pathlib import Path
+
+          import bench
+          import yaml
+          from bench.schema import ExperimentConfig
+
+          cards_root = Path(bench.__file__).resolve().parent / "configs" / "reproductions"
+          cards = sorted(cards_root.glob("*/*.yaml"))
+          assert len(cards) == 20
+          for card in cards:
+              raw = yaml.safe_load(card.read_text(encoding="utf-8"))
+              config = ExperimentConfig.from_dict(raw)
+              assert config.dataset.integrity is not None
+          PY

@@ -7,6 +7,7 @@ from typing import Any, Literal
 
 import numpy as np
 
+from modssc.capabilities import DENSE_TRANSDUCTIVE_CAPABILITIES
 from modssc.transductive.base import MethodInfo, TransductiveMethod
 from modssc.transductive.optional import optional_import
 
@@ -186,6 +187,7 @@ class NGCNMethod(TransductiveMethod):
         paper_title="N-GCN: Multi-scale Graph Convolution for Semi-supervised Node Classification",
         paper_pdf="https://proceedings.mlr.press/v115/abu-el-haija20a/abu-el-haija20a.pdf",
         official_code="https://github.com/samihaija/mixhop",
+        capabilities=DENSE_TRANSDUCTIVE_CAPABILITIES,
     )
 
     def __init__(self, spec: NGCNSpec | None = None) -> None:

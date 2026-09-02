@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import numpy as np
 
-from bench.orchestrators import augmentation as bench_augmentation
 from modssc.data_augmentation import (
     AugmentationContext,
     AugmentationPlan,
     StepConfig,
     build_pipeline,
+    materialize_views,
 )
+from modssc.data_augmentation.types import GraphSample
 from modssc.data_augmentation.utils import seed_to_rng_seed
 
 
@@ -47,13 +48,13 @@ def test_pipeline_changes_with_different_sample_id() -> None:
     assert not np.allclose(y1, y2)
 
 
-def test_bench_augmentation_runs_graph_as_whole_sample() -> None:
+def test_native_augmentation_runs_graph_as_whole_sample() -> None:
     graph = {
         "x": np.ones((4, 2), dtype=np.float32),
         "edge_index": np.array([[0, 1, 2], [1, 2, 3]], dtype=np.int64),
     }
 
-    weak, strong, strong_1 = bench_augmentation.run(
+    weak, strong, strong_1 = materialize_views(
         graph,
         weak_plan={"steps": [{"id": "graph.feature_mask", "params": {"p": 1.0}}]},
         strong_plan={"steps": [{"id": "graph.edge_dropout", "params": {"p": 1.0}}]},
@@ -70,3 +71,22 @@ def test_bench_augmentation_runs_graph_as_whole_sample() -> None:
     assert np.allclose(np.asarray(weak["x"]), 0.0)
     assert tuple(np.asarray(strong["edge_index"]).shape) == (2, 0)
     assert tuple(np.asarray(strong_1["edge_index"]).shape) == (2, 0)
+
+
+def test_native_augmentation_recognizes_graph_objects_without_sample_ids() -> None:
+    graph = GraphSample(
+        x=np.ones((3, 2), dtype=np.float32),
+        edge_index=np.array([[0, 1], [1, 2]], dtype=np.int64),
+    )
+    identity = {"steps": [{"id": "core.identity"}]}
+
+    weak, strong, second = materialize_views(
+        graph,
+        weak_plan=identity,
+        strong_plan=identity,
+        seed=0,
+        modality="graph",
+    )
+
+    assert weak is strong is graph
+    assert second is None

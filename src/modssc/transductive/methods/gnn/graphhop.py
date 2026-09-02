@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 
+from modssc.capabilities import DENSE_TRANSDUCTIVE_CAPABILITIES
 from modssc.transductive.base import MethodInfo, TransductiveMethod
 from modssc.transductive.optional import optional_import
 
@@ -196,6 +197,7 @@ class GraphHopMethod(TransductiveMethod):
         paper_title="GraphHop: An Enhanced Label Propagation Method for Node Classification",
         paper_pdf="https://arxiv.org/pdf/2101.02326",
         official_code="https://github.com/TianXieUSC/GraphHop",
+        capabilities=DENSE_TRANSDUCTIVE_CAPABILITIES,
     )
 
     def __init__(self, spec: GraphHopSpec | None = None) -> None:

@@ -4,6 +4,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Literal
 
+from modssc.runtime.execution import ExecutionContext
+
 DeviceName = Literal["cpu", "cuda", "mps", "auto"]
 DTypeName = Literal["float32", "float64"]
 
@@ -38,5 +40,8 @@ class InductiveDataset:
     X_u: Any | None = None
     X_u_w: Any | None = None
     X_u_s: Any | None = None
+    X_u_s_1: Any | None = None
     views: Mapping[str, Any] | None = None
+    graph: Any | None = None
     meta: Mapping[str, Any] | None = None
+    execution_context: ExecutionContext | None = None

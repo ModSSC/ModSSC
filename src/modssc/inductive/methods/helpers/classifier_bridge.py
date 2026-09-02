@@ -13,6 +13,8 @@ from modssc.inductive.types import DeviceSpec
 from modssc.supervised.api import create_classifier
 from modssc.supervised.types import ClassifierRuntime
 
+MAX_PREDICTION_BATCH_SIZE = 1024
+
 
 @dataclass(frozen=True)
 class BaseClassifierSpec:
@@ -187,6 +189,76 @@ def predict_scores(model: Any, X: Any, *, backend: str):
     if backend == "torch":
         return _predict_scores_torch(model, X)
     raise InductiveValidationError(f"Unknown backend: {backend!r}")
+
+
+def prediction_batch_size(model: Any) -> int:
+    """Resolve a memory-bounded inference batch size for any classifier."""
+    configured = getattr(model, "batch_size", MAX_PREDICTION_BATCH_SIZE)
+    if isinstance(configured, bool) or not isinstance(configured, int) or configured <= 0:
+        return MAX_PREDICTION_BATCH_SIZE
+    return min(int(configured), MAX_PREDICTION_BATCH_SIZE)
+
+
+def _predict_in_batches(model: Any, X: Any, *, backend: str, scores: bool) -> Any:
+    """Run classifier inference in order without materialising full-pool activations."""
+    if backend == "numpy":
+        if not isinstance(X, np.ndarray):
+            raise InductiveValidationError(
+                "Numpy backend requires numpy.ndarray inputs. Use preprocess core.to_numpy."
+            )
+        n_samples = int(X.shape[0])
+    elif backend == "torch":
+        torch = _torch()
+        is_graph = isinstance(X, dict) and "x" in X and "edge_index" in X
+        if not isinstance(X, torch.Tensor) and not (isinstance(X, dict) and "x" in X):
+            raise InductiveValidationError(
+                "Torch backend requires torch.Tensor inputs. Use preprocess core.to_torch."
+            )
+        if is_graph:
+            return predict_scores(model, X, backend=backend) if scores else model.predict(X)
+        n_samples = int(X["x"].shape[0]) if isinstance(X, dict) else int(X.shape[0])
+    else:
+        raise InductiveValidationError(f"Unknown backend: {backend!r}")
+
+    predict_batch = (
+        (lambda batch: predict_scores(model, batch, backend=backend)) if scores else model.predict
+    )
+    if n_samples == 0:
+        return predict_batch(X)
+
+    batch_size = prediction_batch_size(model)
+    chunks = []
+    for start in range(0, n_samples, batch_size):
+        stop = min(start + batch_size, n_samples)
+        if backend == "numpy" or not isinstance(X, dict):
+            batch = X[start:stop]
+        else:
+            from modssc.inductive.methods.helpers.torch_support import slice_data
+
+            batch = slice_data(X, slice(start, stop))
+        prediction = predict_batch(batch)
+        if int(prediction.shape[0]) != stop - start:
+            raise InductiveValidationError(
+                "Classifier prediction must preserve the inference batch size."
+            )
+        chunks.append(prediction)
+
+    if backend == "numpy":
+        return np.concatenate([np.asarray(chunk) for chunk in chunks], axis=0)
+    torch = _torch()
+    if any(not isinstance(chunk, torch.Tensor) for chunk in chunks):
+        raise InductiveValidationError("Torch classifier must return torch.Tensor predictions.")
+    return torch.cat(chunks, dim=0)
+
+
+def predict_in_batches(model: Any, X: Any, *, backend: str) -> Any:
+    """Memory-bounded equivalent of ``model.predict(X)``."""
+    return _predict_in_batches(model, X, backend=backend, scores=False)
+
+
+def predict_scores_in_batches(model: Any, X: Any, *, backend: str) -> Any:
+    """Memory-bounded equivalent of :func:`predict_scores`."""
+    return _predict_in_batches(model, X, backend=backend, scores=True)
 
 
 def select_confident(

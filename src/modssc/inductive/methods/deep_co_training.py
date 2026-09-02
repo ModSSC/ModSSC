@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from time import perf_counter
 from typing import Any
 
+from modssc.capabilities import TORCH_INDUCTIVE_CAPABILITIES, MethodCapabilities
 from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
@@ -27,8 +28,14 @@ from modssc.inductive.methods.utils import (
     ensure_1d_labels_torch,
     ensure_torch_data,
 )
+from modssc.inductive.model_binding import ModelBindingSpec
 from modssc.inductive.optional import optional_import
 from modssc.inductive.types import DeviceSpec
+from modssc.runtime.contracts import MethodExecutionContract
+from modssc.runtime.method_contracts import (
+    fallback_method_execution_contract,
+    with_inductive_input_roles,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -183,7 +190,36 @@ class DeepCoTrainingMethod(ArgmaxPredictMixin, InductiveMethod):
         paper_title="Deep Co-Training for Semi-Supervised Image Recognition",
         paper_pdf="https://arxiv.org/pdf/1803.05984",
         official_code=None,
+        capabilities=TORCH_INDUCTIVE_CAPABILITIES,
+        model_binding=ModelBindingSpec.pair(),
     )
+
+    @classmethod
+    def execution_contract(
+        cls,
+        spec: DeepCoTrainingSpec,
+        capabilities: MethodCapabilities,
+        model_binding: Any | None = None,
+    ) -> MethodExecutionContract:
+        del spec
+        feature_roles = ("fit.X_l", "fit.X_u", "fit.X_u_w")
+        contract = with_inductive_input_roles(
+            fallback_method_execution_contract(cls, capabilities, model_binding),
+            feature_roles=feature_roles,
+            optional_feature_roles=("fit.X_u", "fit.X_u_w"),
+            row_groups=(("fit.X_l", "fit.y_l"),),
+        )
+        return replace(
+            contract,
+            components=tuple(
+                replace(
+                    requirement,
+                    outputs=frozenset({"logits"}),
+                    input_roles=feature_roles,
+                )
+                for requirement in contract.components
+            ),
+        )
 
     def __init__(self, spec: DeepCoTrainingSpec | None = None) -> None:
         self.spec = spec or DeepCoTrainingSpec()

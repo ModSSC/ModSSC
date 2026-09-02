@@ -1,0 +1,164 @@
+# Reproduction card: Calder et al. (ICML 2020), Table 1, MNIST.
+#
+# Method/profile: laplace_learning, paper:calder2020-mnist-table1-laplace-4-label-per-class.
+# Published Table 1 target: 57.8 +/- 12.3% unlabeled accuracy
+# (mean +/- standard deviation over 100 trials) with 4 labels per class.
+#
+# Protocol: merge the official 60,000/10,000 MNIST splits into one 70,000-node
+# pool, retrain the native seeded GraphLearning VAE2 recipe on all nodes, query
+# 30 Annoy neighbors and retain k=10 including self, symmetrize as (W + W.T)/2,
+# and run the harmonic solver.
+#
+# This card recomputes the VAE/kNN graph and draws balanced labels from each run
+# seed because the article does not publish generated arrays or label draws.
+acceptance:
+  protocol_id: calder-2020-mnist-table1-laplace-4-label-per-class
+  method_id: laplace_learning
+  repetitions: 100
+  fidelity_ceiling: paper_approx
+  conformity:
+    status: passed
+    basis: independent_equation_oracle
+    evidence:
+    - docs/replications/protocols/laplace-learning-calder-2020.md
+    review:
+      reviewed_by: codex:article_protocol_source_review
+      reviewed_at: '2026-08-30T00:00:00+02:00'
+  target:
+    split: unlabeled
+    metric: accuracy
+    transform: identity
+    published_mean: 0.578
+    published_std: 0.123
+    published_std_ddof: 0
+    margin_absolute: 0.01
+  required_diagnostics:
+  - path: artifacts.method.diagnostics.solver
+    op: eq
+    value: calder2020_conjugate_gradient
+  - path: artifacts.method.diagnostics.converged
+    op: eq
+    value: true
+  - path: artifacts.method.diagnostics.iterations
+    op: gt
+    value: 0
+  - path: artifacts.method.diagnostics.absolute_residual
+    op: between
+    value:
+    - 0.0
+    - 1.0e-05
+  deviations:
+  - VAE2 was introduced after the 2020 article; this card retrains its published recipe from canonical MNIST with ModSSC model seed 1 instead of loading author embeddings.
+  - The author Annoy version and seed are unpublished; ModSSC fixes graph seed 1 and fingerprints the installed Annoy runtime.
+  - The article's exact label draws are unavailable; each balanced draw is regenerated deterministically from the declared run seed.
+  equivalences: []
+  unknowns: []
+run:
+  name: reproduction_laplace_learning_mnist_table1_4_label_per_class
+  seed: 0
+  seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+  seeded_sections:
+  - sampling
+  output_dir: ${MODSSC_OUTPUT_DIR}/reproductions/laplace_learning/mnist-table1-4-label-per-class
+  log_level: detailed
+  fail_fast: true
+  benchmark_mode: true
+dataset:
+  id: mnist
+  download: false
+  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
+  integrity:
+    fingerprint: a509362fa8ce20622694ff1f4d85b7a5a2009a412d9e6ab54d1c35a2f8a6ab01
+    content_sha256: a918159751de8d67828d471643f73e70781ae5986e63d7d544be33e04139a89d
+sampling:
+  seed: 0
+  plan:
+    split:
+      kind: holdout
+      test_fraction: 0.0
+      val_fraction: 0.0
+      stratify: true
+      shuffle: true
+    labeling:
+      mode: per_class
+      value: 4
+      strategy: balanced
+      min_per_class: 4
+      per_class: true
+      fixed_indices: null
+      selection_order: choice
+    imbalance:
+      kind: none
+    policy:
+      respect_official_test: false
+      use_official_graph_masks: true
+      allow_override_official: false
+      merge_official_splits: true
+preprocess:
+  seed: 1
+  fit_on: train
+  cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}/calder2020-mnist-table1
+  plan:
+    output_key: features.vae
+    steps:
+    - id: labels.encode
+    - id: vision.ensure_num_channels
+      params:
+        num_channels: 1
+    - id: vision.resize
+      params:
+        height: 28
+        width: 28
+    - id: core.ensure_2d
+    - id: core.vae
+      params:
+        preset: graphlearning_mnist_vae2
+        cache_key: calder2020-mnist-vae2-seed1
+        model_seed: 1
+        device: cuda
+        fit_scope: all
+method:
+  kind: transductive
+  id: laplace_learning
+  profile: paper:calder2020-mnist-table1-laplace-4-label-per-class
+  device:
+    device: cpu
+    dtype: float32
+  params:
+    backend: numpy
+    solver: calder2020_conjugate_gradient
+    cg_tol: 1.0e-5
+    cg_max_iter: 100000
+    require_convergence: true
+evaluation:
+  split_for_model_selection: null
+  report_splits:
+  - unlabeled
+  metrics:
+  - accuracy
+graph:
+  enabled: true
+  seed: 1
+  cache: true
+  require_cache_hit: false
+  cache_dir: ${MODSSC_GRAPH_CACHE_DIR}/calder2020-mnist-table1
+  spec:
+    scheme: knn
+    metric: euclidean
+    k: 10
+    symmetrize: mean
+    weights:
+      kind: knn_gaussian
+    normalize: none
+    self_loops: true
+    diagonal_policy: preserve
+    include_self_in_knn: true
+    edge_weight_dtype: float64
+    backend: annoy
+    annoy_n_trees: 10
+    annoy_query_k: 30
+    annoy_search_k: -1
+    annoy_rerank: false
+    chunk_size: 1024
+    feature_field: features.vae

@@ -5,7 +5,7 @@ from typing import Any
 from modssc.supervised.errors import OptionalDependencyError, UnknownBackendError
 from modssc.supervised.optional import has_module, module_for_extra
 from modssc.supervised.registry import get_backend_spec, get_spec, iter_specs
-from modssc.supervised.types import ClassifierRuntime
+from modssc.supervised.types import BackendSpec, ClassifierRuntime
 from modssc.utils.imports import load_object as _load_object
 
 
@@ -58,6 +58,41 @@ def classifier_info(classifier_id: str) -> dict[str, Any]:
     return spec.to_dict()
 
 
+def resolve_classifier_backend_spec(
+    classifier_id: str,
+    *,
+    backend: str = "auto",
+) -> BackendSpec:
+    """Resolve a classifier backend with the policy used by construction.
+
+    Keeping availability-aware ``auto`` selection in one public native helper
+    ensures dependency discovery and classifier construction select the same
+    backend on a given host.
+    """
+
+    spec = get_spec(classifier_id)
+    if backend != "auto":
+        return get_backend_spec(classifier_id, backend)
+
+    for preferred_backend in spec.preferred_backends:
+        if preferred_backend not in spec.backends:
+            continue
+        backend_spec = spec.backends[preferred_backend]
+        if backend_spec.required_extra is None:
+            return get_backend_spec(classifier_id, preferred_backend)
+        module = module_for_extra(str(backend_spec.required_extra))
+        if has_module(module):
+            return get_backend_spec(classifier_id, preferred_backend)
+
+    first = spec.preferred_backends[0] if spec.preferred_backends else "unknown"
+    if first in spec.backends and spec.backends[first].required_extra:
+        raise OptionalDependencyError(
+            extra=str(spec.backends[first].required_extra),
+            feature=f"supervised:{classifier_id}",
+        )
+    raise UnknownBackendError(classifier_id, "auto")
+
+
 def create_classifier(
     classifier_id: str,
     *,
@@ -72,37 +107,9 @@ def create_classifier(
     - backend="auto" selects the first available backend from preferred_backends.
     - params are passed to the backend constructor (after runtime injection).
     """
-    spec = get_spec(classifier_id)
     params = _normalize_classifier_params(classifier_id, dict(params or {}))
     runtime = runtime or ClassifierRuntime()
-
-    chosen_backend: str
-    if backend == "auto":
-        chosen_backend = ""
-        for b in spec.preferred_backends:
-            if b not in spec.backends:
-                continue
-            bs = spec.backends[b]
-            if bs.required_extra is None:
-                chosen_backend = b
-                break
-            module = module_for_extra(str(bs.required_extra))
-            if has_module(module):
-                chosen_backend = b
-                break
-        if not chosen_backend:
-            # no backend available, raise based on first preferred backend
-            first = spec.preferred_backends[0] if spec.preferred_backends else "unknown"
-            if first in spec.backends and spec.backends[first].required_extra:
-                raise OptionalDependencyError(
-                    extra=str(spec.backends[first].required_extra),
-                    feature=f"supervised:{classifier_id}",
-                )
-            raise UnknownBackendError(classifier_id, "auto")
-    else:
-        chosen_backend = backend
-
-    bs = get_backend_spec(classifier_id, chosen_backend)
+    bs = resolve_classifier_backend_spec(classifier_id, backend=backend)
 
     # runtime injection (do not override explicit params)
     if "seed" not in params and runtime.seed is not None:

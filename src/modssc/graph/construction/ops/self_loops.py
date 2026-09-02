@@ -27,6 +27,7 @@ def add_self_loops(
 
     if edge_weight is None:
         return ei, None
-    ew = np.asarray(edge_weight, dtype=np.float32)
-    ew_loops = np.full(missing.shape[0], float(weight), dtype=np.float32)
+    weight_dtype = np.float64 if np.asarray(edge_weight).dtype == np.float64 else np.float32
+    ew = np.asarray(edge_weight, dtype=weight_dtype)
+    ew_loops = np.full(missing.shape[0], float(weight), dtype=weight_dtype)
     return ei, np.concatenate([ew, ew_loops], axis=0)

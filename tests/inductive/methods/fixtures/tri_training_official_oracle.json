@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "kind": "modssc.tri-training-official-miniature-oracle",
+  "provenance": {
+    "repository_page": "https://www.lamda.nju.edu.cn/code_TriTrain.ashx",
+    "archive_url": "https://www.lamda.nju.edu.cn/files/TriTrain.rar",
+    "archive_sha256": "f23cda982f521cca607e3fdc50a9f2bc4b0fe5352e7d856083c7c564af66f9e8",
+    "tri_train_java_sha256": "0f3497f93190138e9ea93061dd72502f4134b977c4d7670b0898b94613433286",
+    "readme_sha256": "290711330eda5e96e6cbabb3b7523afba733777f5551a6cab358224e9019cb07"
+  },
+  "error_estimate": {
+    "pred_j": [0, 1, 1, 0],
+    "pred_k": [0, 1, 0, 0],
+    "y_true": [0, 0, 1, 1],
+    "agreements": 3,
+    "wrong_agreements": 2,
+    "rate": 0.6666666666666666
+  },
+  "update_cases": [
+    {
+      "id": "official_floor_initial_size",
+      "error": 0.2,
+      "previous_error": 0.5,
+      "previous_size": 0,
+      "candidate_size": 5,
+      "effective_previous_size": 1,
+      "selected_size": 2,
+      "accepted": true,
+      "subsample": true
+    },
+    {
+      "id": "accepted_full",
+      "error": 0.1,
+      "previous_error": 0.3,
+      "previous_size": 4,
+      "candidate_size": 8,
+      "effective_previous_size": 4,
+      "selected_size": 8,
+      "accepted": true,
+      "subsample": false
+    },
+    {
+      "id": "official_ceil_subsample",
+      "error": 0.4,
+      "previous_error": 0.5,
+      "previous_size": 5,
+      "candidate_size": 10,
+      "effective_previous_size": 5,
+      "selected_size": 6,
+      "accepted": true,
+      "subsample": true
+    }
+  ],
+  "prediction": {
+    "classifier_probabilities": [
+      [[0.9, 0.1]],
+      [[0.4, 0.6]],
+      [[0.49, 0.51]]
+    ],
+    "official_probability_average": [[0.5966666666666667, 0.4033333333333333]],
+    "official_class": [0],
+    "paper_hard_vote_class": [1]
+  }
+}

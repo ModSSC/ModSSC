@@ -1,9 +1,11 @@
 from unittest.mock import MagicMock, patch
 
 import numpy as np
+import pytest
 
 from modssc.graph.adapters.pyg import to_pyg_data
 from modssc.graph.artifacts import GraphArtifact, NodeDataset
+from modssc.graph.errors import GraphValidationError
 
 
 def test_to_pyg_data():
@@ -97,3 +99,10 @@ def test_to_pyg_data_no_weights():
 
         assert data.edge_weight is None
         assert hasattr(data, "train_mask")
+
+
+def test_to_pyg_data_rejects_graphless_node_dataset_before_imports():
+    dataset = NodeDataset(X=np.zeros((2, 1)), y=np.array([0, 1]), graph=None)
+
+    with pytest.raises(GraphValidationError, match="requires dataset.graph"):
+        to_pyg_data(dataset)

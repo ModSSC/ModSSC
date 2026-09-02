@@ -1,21 +1,33 @@
 from modssc.data_loader.services.service import (
+    CacheEntryExpectation,
+    CachePromotionItem,
+    CachePromotionReport,
     available_datasets,
     available_providers,
     cache_dir,
+    dataset_fingerprint,
     dataset_info,
     download_all_datasets,
     download_dataset,
     load_dataset,
+    promote_cache_entries,
     provider_names,
+    resolve_dataset_identity,
 )
 
 __all__ = [
+    "CacheEntryExpectation",
+    "CachePromotionItem",
+    "CachePromotionReport",
     "available_datasets",
     "available_providers",
     "cache_dir",
+    "dataset_fingerprint",
     "dataset_info",
     "download_all_datasets",
     "download_dataset",
     "load_dataset",
     "provider_names",
+    "promote_cache_entries",
+    "resolve_dataset_identity",
 ]

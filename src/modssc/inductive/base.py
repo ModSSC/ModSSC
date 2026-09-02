@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Literal, Protocol, runtime_checkable
 
+from modssc.capabilities import DEFAULT_INDUCTIVE_CAPABILITIES, MethodCapabilities
+from modssc.runtime.execution import ExecutionContext
+
+from .model_binding import NO_MODEL_BINDING, ModelBindingSpec
 from .types import DeviceSpec
 
 
@@ -19,8 +23,11 @@ class InductiveDatasetLike(Protocol):
     X_u: Any | None
     X_u_w: Any | None
     X_u_s: Any | None
+    X_u_s_1: Any | None
     views: Mapping[str, Any] | None
+    graph: Any | None
     meta: Mapping[str, Any] | None
+    execution_context: ExecutionContext | None
 
 
 @dataclass(frozen=True)
@@ -36,6 +43,13 @@ class MethodInfo:
     paper_title: str | None = None
     paper_pdf: str | None = None
     official_code: str | None = None
+    requires_views: bool = False
+    prediction_input: Literal["features", "dataset"] = "features"
+    evaluation_reference_splits: tuple[str, ...] = ()
+    unlabeled_index_space: Literal["source", "local"] = "source"
+    default_model_ema: bool = False
+    capabilities: MethodCapabilities = DEFAULT_INDUCTIVE_CAPABILITIES
+    model_binding: ModelBindingSpec = NO_MODEL_BINDING
 
 
 class InductiveMethod(Protocol):

@@ -3,10 +3,11 @@ from __future__ import annotations
 import logging
 import math
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from time import perf_counter
 from typing import Any
 
+from modssc.capabilities import TORCH_INDUCTIVE_CAPABILITIES, MethodCapabilities
 from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
@@ -31,8 +32,14 @@ from modssc.inductive.methods.utils import (
     ensure_1d_labels_torch,
     ensure_torch_data,
 )
+from modssc.inductive.model_binding import ModelBindingSpec
 from modssc.inductive.optional import optional_import
 from modssc.inductive.types import DeviceSpec
+from modssc.runtime.contracts import MethodExecutionContract
+from modssc.runtime.method_contracts import (
+    fallback_method_execution_contract,
+    with_inductive_input_roles,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +53,14 @@ def _forward_shared(bundle: TorchModelBundle, X: Any) -> Any:
     out = bundle.model(X)
     torch = optional_import("torch", extra="inductive-torch")
     if isinstance(out, torch.Tensor):
+        contract = bundle.contract
+        if contract is not None:
+            semantic_outputs = contract.outputs & {"feat", "features", "embedding"}
+            if not semantic_outputs or "logits" in contract.outputs:
+                raise InductiveValidationError(
+                    "Tri-net shared_bundle requires a declared shared feature output; "
+                    "classifier logits cannot serve as the shared embedding."
+                )
         return out
     if isinstance(out, Mapping) and "feat" in out:
         return extract_features(out)
@@ -383,7 +398,55 @@ class TriNetMethod(ArgmaxPredictMixin, InductiveMethod):
         paper_title="Tri-net for Semi-Supervised Deep Learning",
         paper_pdf="https://www.lamda.nju.edu.cn/publication/ijcai18trinet.pdf",
         official_code="https://www.lamda.nju.edu.cn/code_Tri-net.ashx",
+        capabilities=TORCH_INDUCTIVE_CAPABILITIES,
+        model_binding=ModelBindingSpec.shared_heads(
+            head_count=3,
+            head_classifier_ids=("mlp", "logreg"),
+            head_classifier_fallback="logreg",
+        ),
     )
+
+    @classmethod
+    def execution_contract(
+        cls,
+        spec: TriNetSpec,
+        capabilities: MethodCapabilities,
+        model_binding: Any | None = None,
+    ) -> MethodExecutionContract:
+        del spec
+        feature_roles = ("fit.X_l", "fit.X_u")
+        contract = with_inductive_input_roles(
+            fallback_method_execution_contract(cls, capabilities, model_binding),
+            feature_roles=feature_roles,
+            row_groups=(("fit.X_l", "fit.y_l"),),
+        )
+        components = []
+        for index, requirement in enumerate(contract.components):
+            if index == 0:
+                components.append(
+                    replace(
+                        requirement,
+                        outputs=frozenset(),
+                        output_alternatives=(
+                            frozenset({"feat"}),
+                            frozenset({"features"}),
+                            frozenset({"embedding"}),
+                            frozenset({"forward_features"}),
+                            frozenset({"feature_extractor"}),
+                        ),
+                        input_roles=feature_roles,
+                    )
+                )
+            else:
+                components.append(
+                    replace(
+                        requirement,
+                        outputs=frozenset({"logits"}),
+                        output_alternatives=(),
+                        input_roles=(),
+                    )
+                )
+        return replace(contract, components=tuple(components))
 
     def __init__(self, spec: TriNetSpec | None = None) -> None:
         self.spec = spec or TriNetSpec()

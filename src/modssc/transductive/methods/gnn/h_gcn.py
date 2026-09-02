@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 
+from modssc.capabilities import DENSE_TRANSDUCTIVE_CAPABILITIES
 from modssc.transductive.base import MethodInfo, TransductiveMethod
 from modssc.transductive.optional import optional_import
 
@@ -266,6 +267,7 @@ class HGCNMethod(TransductiveMethod):
         paper_title="Hierarchical Graph Convolutional Networks for Semi-supervised Node Classification",
         paper_pdf="https://arxiv.org/pdf/1902.06667",
         official_code="https://github.com/CRIPAC-DIG/H-GCN",
+        capabilities=DENSE_TRANSDUCTIVE_CAPABILITIES,
     )
 
     def __init__(self, spec: HGCNSpec | None = None) -> None:

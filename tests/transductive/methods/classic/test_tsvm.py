@@ -145,7 +145,7 @@ def test_tsvm_mask_shape_mismatch(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
     with pytest.raises(ValueError, match="must match number of nodes"):
-        monkeypatch.setattr(tsvm_mod, "validate_node_dataset", lambda *_: None)
+        monkeypatch.setattr(tsvm_mod, "validate_node_dataset", lambda *_, **__: None)
         TSVMMethod().fit(data)
 
 
@@ -169,7 +169,7 @@ def test_tsvm_balance_relabels_single_class(monkeypatch: pytest.MonkeyPatch) -> 
     X = rng.normal(size=(8, 3)).astype(np.float32)
     y = (X[:, 0] > 0).astype(np.int64)
     train_mask = np.zeros(len(y), dtype=bool)
-    train_mask[:2] = True
+    train_mask[[0, 3]] = True
 
     edge_index = np.asarray([[0, 1], [1, 0]], dtype=np.int64)
     data = DummyNodeDataset(
@@ -194,7 +194,7 @@ def test_tsvm_no_balance_and_no_rep() -> None:
     X = rng.normal(size=(8, 3)).astype(np.float32)
     y = (X[:, 0] > 0).astype(np.int64)
     train_mask = np.zeros(len(y), dtype=bool)
-    train_mask[:2] = True
+    train_mask[[0, 3]] = True
 
     edge_index = np.asarray([[0, 1], [1, 0]], dtype=np.int64)
     data = DummyNodeDataset(
@@ -230,21 +230,24 @@ def test_tsvm_predict_proba_requires_fit() -> None:
         TSVMMethod().predict_proba(data)
 
 
-def test_tsvm_meta_y_true_branch() -> None:
+def test_tsvm_does_not_use_meta_y_true_to_infer_unobserved_classes() -> None:
     rng = np.random.default_rng(0)
     X = rng.normal(size=(12, 3)).astype(np.float32)
-    y = (X[:, 0] > 0).astype(np.int64)
-    train_mask = np.zeros(len(y), dtype=bool)
+    y_true = np.array([0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1], dtype=np.int64)
+    y_observed = np.full_like(y_true, -1)
+    y_observed[:4] = y_true[:4]
+    train_mask = np.zeros(len(y_true), dtype=bool)
     train_mask[:4] = True
 
     edge_index = np.asarray([[0, 1], [1, 0]], dtype=np.int64)
     data = DummyNodeDataset(
         X=X,
-        y=y,
+        y=y_observed,
         graph=DummyGraph(edge_index=edge_index),
         masks={"train_mask": train_mask},
-        meta={"y_true": y.copy()},
+        meta={"y_true": y_true.copy()},
     )
 
     spec = TSVMTransductiveSpec(max_iter=1, epochs_per_iter=1, batch_size=4)
-    TSVMMethod(spec).fit(data, seed=0)
+    with pytest.raises(ValueError, match="got 1 classes"):
+        TSVMMethod(spec).fit(data, seed=0)

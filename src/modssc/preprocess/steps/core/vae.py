@@ -1,15 +1,27 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
+import os
+import platform
+import shutil
+import uuid
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
-from modssc.preprocess.cache import default_cache_dir
+from modssc.preprocess.cache import (
+    _exclusive_cache_lock,
+    _fsync_directory,
+    _fsync_file,
+    default_cache_dir,
+)
 from modssc.preprocess.errors import PreprocessValidationError
 from modssc.preprocess.fingerprint import fingerprint, stable_json_dumps
 from modssc.preprocess.numpy_adapter import to_numpy
@@ -20,6 +32,13 @@ from modssc.runtime.device import resolve_device_name
 from modssc.utils.io import atomic_write_text
 
 logger = logging.getLogger(__name__)
+
+VAE_INFO_SCHEMA_VERSION = 3
+VAE_OUTPUT_IDENTITY_SCHEMA_VERSION = 1
+VAE_MODEL_CACHE_SCHEMA_VERSION = 1
+VAE_MODEL_CACHE_KIND = "modssc.preprocess.vae-model"
+VAE_MODEL_CACHE_POINTER = "CURRENT.json"
+VAE_MODEL_CACHE_MANIFEST = "manifest.json"
 
 
 def _as_dense_2d(X: Any, *, name: str) -> np.ndarray:
@@ -60,17 +79,120 @@ def _array_sha256(X: np.ndarray) -> str:
     return h.hexdigest()
 
 
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _is_sha256(value: Any) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
+def _signed_cache_manifest(payload: Mapping[str, Any]) -> dict[str, Any]:
+    unsigned = {str(key): value for key, value in payload.items() if key != "manifest_sha256"}
+    digest = hashlib.sha256(stable_json_dumps(unsigned).encode("utf-8")).hexdigest()
+    return {**unsigned, "manifest_sha256": digest}
+
+
+def _verify_cache_manifest(payload: Mapping[str, Any], *, label: str) -> dict[str, Any]:
+    if payload.get("schema_version") != VAE_MODEL_CACHE_SCHEMA_VERSION:
+        raise ValueError(f"unsupported {label} schema version")
+    if payload.get("cache_kind") != VAE_MODEL_CACHE_KIND:
+        raise ValueError(f"invalid {label} cache kind")
+    expected = payload.get("manifest_sha256")
+    if not _is_sha256(expected):
+        raise ValueError(f"invalid {label} manifest digest")
+    unsigned = {str(key): value for key, value in payload.items() if key != "manifest_sha256"}
+    observed = hashlib.sha256(stable_json_dumps(unsigned).encode("utf-8")).hexdigest()
+    if observed != expected:
+        raise ValueError(f"{label} manifest digest differs")
+    return dict(payload)
+
+
+def _read_json_bytes(path: Path, *, label: str) -> tuple[bytes, dict[str, Any]]:
+    if not path.is_file() or path.is_symlink():
+        raise ValueError(f"{label} is missing or is not a regular file")
+    raw = path.read_bytes()
+    try:
+        value = json.loads(raw.decode("utf-8"))
+    except (UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"{label} is invalid JSON") from exc
+    if not isinstance(value, dict):
+        raise ValueError(f"{label} root must be a mapping")
+    return raw, value
+
+
+def _verified_file(path: Path, record: Mapping[str, Any], *, label: str) -> None:
+    if not path.is_file() or path.is_symlink():
+        raise ValueError(f"cached VAE {label} is missing or is not a regular file")
+    expected_sha256 = record.get("sha256")
+    expected_size = record.get("size_bytes")
+    if not _is_sha256(expected_sha256):
+        raise ValueError(f"cached VAE {label} has invalid SHA-256 metadata")
+    if isinstance(expected_size, bool) or not isinstance(expected_size, int) or expected_size < 0:
+        raise ValueError(f"cached VAE {label} has invalid size metadata")
+    before = path.stat()
+    if int(before.st_size) != expected_size or _file_sha256(path) != expected_sha256:
+        raise ValueError(f"cached VAE file hash mismatch: {label}")
+    after = path.stat()
+    if (
+        before.st_dev,
+        before.st_ino,
+        before.st_size,
+        before.st_mtime_ns,
+    ) != (
+        after.st_dev,
+        after.st_ino,
+        after.st_size,
+        after.st_mtime_ns,
+    ):
+        raise ValueError(f"cached VAE {label} changed while hashing")
+
+
+@lru_cache(maxsize=1)
+def _vae_implementation_sha256() -> str:
+    source = Path(__file__).resolve()
+    return _file_sha256(source)
+
+
 def _default_vae_cache_dir() -> Path:
     return default_cache_dir() / "vae_models"
 
 
-POISSON_VAE_PRESETS: dict[str, dict[str, Any]] = {
-    "poisson_mnist": {
+def _runtime_dependencies(torch: Any, *, device: str) -> dict[str, str]:
+    """Return the small runtime surface that can affect learned VAE features."""
+
+    return {
+        "python_version": platform.python_version(),
+        "numpy_version": str(np.__version__),
+        "torch_version": str(getattr(torch, "__version__", "unknown")),
+        "device": str(device),
+    }
+
+
+def _vae_cache_identity(torch: Any, *, device: str) -> dict[str, Any]:
+    return {
+        "schema_version": VAE_INFO_SCHEMA_VERSION,
+        "implementation_sha256": _vae_implementation_sha256(),
+        "runtime": _runtime_dependencies(torch, device=device),
+    }
+
+
+VAE_PRESETS: dict[str, dict[str, Any]] = {
+    "graphlearning_mnist_vae2": {
         "latent_dim": 20,
         "hidden_dims": (400,),
         "epochs": 100,
         "batch_size": 128,
         "lr": 1.0e-3,
+        "weight_decay": 0.0,
         "beta": 1.0,
         "dropout": 0.0,
         "input_scaling": "global_minmax",
@@ -136,6 +258,8 @@ class VaeStep:
     cache_key: str | None = None
     model_seed: int | None = None
     fit_scope: str = "selected"
+    require_cache_hit: bool = field(default=False, kw_only=True)
+    expected_model_fingerprint: str | None = field(default=None, kw_only=True)
 
     mean_: np.ndarray | None = None
     scale_: np.ndarray | None = None
@@ -147,23 +271,28 @@ class VaeStep:
     model_cache_hit_: bool = field(default=False, init=False, repr=False)
     model_cache_dir_: Path | None = field(default=None, init=False, repr=False)
     model_fingerprint_: str | None = field(default=None, init=False, repr=False)
+    model_training_runtime_: dict[str, str] | None = field(default=None, init=False, repr=False)
 
     def _apply_preset(self) -> None:
         if self.preset is None:
             return
         key = str(self.preset).strip().lower().replace("-", "_")
         aliases = {
+            # Backward-compatible name used by the original Poisson cards.  It
+            # resolves to the method-independent GraphLearning VAE2 recipe so
+            # every graph method shares the same canonical cache identity.
+            "poisson_mnist": "graphlearning_mnist_vae2",
             "poisson_fashion_mnist": "poisson_fashionmnist",
             "poisson_fmnist": "poisson_fashionmnist",
         }
         key = aliases.get(key, key)
-        if key not in POISSON_VAE_PRESETS:
-            known = ", ".join(sorted(POISSON_VAE_PRESETS))
+        if key not in VAE_PRESETS:
+            known = ", ".join(sorted(VAE_PRESETS))
             raise PreprocessValidationError(
                 f"Unknown VAE preset {self.preset!r}; known presets: {known}"
             )
         self.preset = key
-        for name, value in POISSON_VAE_PRESETS[key].items():
+        for name, value in VAE_PRESETS[key].items():
             setattr(self, name, value)
 
     def _validate_params(self) -> None:
@@ -201,6 +330,13 @@ class VaeStep:
             )
         if self.model_seed is not None and int(self.model_seed) < 0:
             raise PreprocessValidationError("model_seed must be >= 0 when provided")
+        if bool(self.require_cache_hit) and not bool(self.model_cache):
+            raise PreprocessValidationError("require_cache_hit=true requires model_cache=true")
+        if (
+            self.expected_model_fingerprint is not None
+            and not str(self.expected_model_fingerprint).strip()
+        ):
+            raise PreprocessValidationError("expected_model_fingerprint must not be empty")
         if str(self.fit_scope) not in {"selected", "all"}:
             raise PreprocessValidationError("fit_scope must be one of: selected, all")
 
@@ -255,16 +391,25 @@ class VaeStep:
         fit_data_hash: str,
         fit_indices_hash: str,
         seed: int,
+        cache_identity: Mapping[str, Any] | None = None,
     ) -> str:
         return fingerprint(
             {
                 "kind": "dense_vae",
-                "version": 1,
+                "version": 2,
                 "fit_shape": [int(fit_shape[0]), int(fit_shape[1])],
                 "fit_data_sha256": fit_data_hash,
                 "fit_indices_sha256": fit_indices_hash,
                 "seed": int(seed),
                 "params": self._params_for_fingerprint(),
+                "cache_identity": (
+                    dict(cache_identity)
+                    if cache_identity is not None
+                    else {
+                        "schema_version": VAE_INFO_SCHEMA_VERSION,
+                        "implementation_sha256": _vae_implementation_sha256(),
+                    }
+                ),
             },
             prefix="vae_",
         )
@@ -278,13 +423,17 @@ class VaeStep:
         fit_indices_hash: str,
         seed: int,
         device: str,
+        torch: Any,
         cache_dir: Path | None,
         cache_hit: bool,
     ) -> dict[str, Any]:
+        runtime = _runtime_dependencies(torch, device=device)
+        training_runtime = dict(self.model_training_runtime_ or runtime)
         return {
             "kind": "dense_vae",
-            "schema_version": 1,
+            "schema_version": VAE_INFO_SCHEMA_VERSION,
             "fingerprint": model_fingerprint,
+            "expected_fingerprint": self.expected_model_fingerprint,
             "params": self._params_for_fingerprint(),
             "training": {
                 "n_fit_samples": int(fit_shape[0]),
@@ -302,6 +451,8 @@ class VaeStep:
                 "dir": None if cache_dir is None else str(cache_dir),
                 "cache_key": None if self.cache_key is None else str(self.cache_key),
             },
+            "training_runtime": training_runtime,
+            "runtime": runtime,
         }
 
     def _runtime_info(self, produced: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -309,12 +460,14 @@ class VaeStep:
             raise PreprocessValidationError("VaeStep runtime metadata requested before fit()")
         info = dict(self.model_info_)
         features = produced.get("features.vae") if produced is not None else None
-        shape = getattr(features, "shape", None)
-        dtype = getattr(features, "dtype", None)
+        feature_array = None if features is None else np.asarray(to_numpy(features))
+        shape = None if feature_array is None else feature_array.shape
+        dtype = None if feature_array is None else feature_array.dtype
         info["output"] = {
             "artifact": "features.vae",
             "shape": None if shape is None else [int(dim) for dim in shape],
             "dtype": None if dtype is None else str(dtype),
+            "content_sha256": (None if feature_array is None else _array_sha256(feature_array)),
         }
         return info
 
@@ -322,7 +475,30 @@ class VaeStep:
         self, *, produced: dict[str, Any] | None = None, split: str = ""
     ) -> dict[str, Any]:
         info = self._runtime_info(produced=produced)
-        info["runtime"] = {"split": str(split)}
+        runtime = dict(info.get("runtime", {}))
+        runtime["split"] = str(split)
+        info["runtime"] = runtime
+        output = dict(info["output"])
+        content_sha256 = output.get("content_sha256")
+        output["identity_schema_version"] = VAE_OUTPUT_IDENTITY_SCHEMA_VERSION
+        output["identity_fingerprint"] = (
+            None
+            if content_sha256 is None
+            else fingerprint(
+                {
+                    "kind": "dense_vae_latent_output",
+                    "version": VAE_OUTPUT_IDENTITY_SCHEMA_VERSION,
+                    "model_fingerprint": info["fingerprint"],
+                    "content_sha256": content_sha256,
+                    "shape": output["shape"],
+                    "dtype": output["dtype"],
+                    "training_runtime": info.get("training_runtime"),
+                    "runtime": runtime,
+                },
+                prefix="vae_output_",
+            )
+        )
+        info["output"] = output
         return {"features.vae.info": info}
 
     def _scale_features(self, X: np.ndarray) -> np.ndarray:
@@ -388,19 +564,93 @@ class VaeStep:
         return DenseVAE()
 
     def _load_cached_model(
-        self, torch: Any, *, cache_dir: Path, input_dim: int, device: str
+        self,
+        torch: Any,
+        *,
+        cache_dir: Path,
+        input_dim: int,
+        device: str,
+        expected_fingerprint: str | None = None,
     ) -> bool:
-        manifest_path = cache_dir / "manifest.json"
-        model_path = cache_dir / "model.pt"
-        state_path = cache_dir / "state.npz"
-        if not (manifest_path.exists() and model_path.exists() and state_path.exists()):
+        pointer_path = cache_dir / VAE_MODEL_CACHE_POINTER
+        if not pointer_path.is_file() or pointer_path.is_symlink():
             return False
 
         try:
-            state_np = np.load(state_path, allow_pickle=False)
-            self.mean_ = np.asarray(state_np["mean"], dtype=np.float32)
-            self.scale_ = np.asarray(state_np["scale"], dtype=np.float32)
-            self.impute_ = np.asarray(state_np["impute"], dtype=np.float32)
+            _pointer_raw, pointer_value = _read_json_bytes(pointer_path, label="cached VAE pointer")
+            pointer = _verify_cache_manifest(pointer_value, label="cached VAE pointer")
+            fingerprint_value = pointer.get("fingerprint")
+            if not isinstance(fingerprint_value, str):
+                raise ValueError("cached VAE pointer fingerprint is invalid")
+            if expected_fingerprint is not None and fingerprint_value != str(expected_fingerprint):
+                raise ValueError("cached VAE fingerprint does not match the requested model")
+
+            generation_name = pointer.get("generation")
+            generation_manifest_sha256 = pointer.get("generation_manifest_sha256")
+            if (
+                not isinstance(generation_name, str)
+                or not generation_name
+                or Path(generation_name).name != generation_name
+            ):
+                raise ValueError("cached VAE generation is invalid")
+            if not _is_sha256(generation_manifest_sha256):
+                raise ValueError("cached VAE generation manifest SHA-256 is invalid")
+            generation_dir = cache_dir / "generations" / generation_name
+            if not generation_dir.is_dir() or generation_dir.is_symlink():
+                raise ValueError("cached VAE generation is missing")
+            generation_path = generation_dir / VAE_MODEL_CACHE_MANIFEST
+            generation_raw, generation_value = _read_json_bytes(
+                generation_path, label="cached VAE generation manifest"
+            )
+            if hashlib.sha256(generation_raw).hexdigest() != generation_manifest_sha256:
+                raise ValueError("cached VAE generation manifest file hash mismatch")
+            generation = _verify_cache_manifest(generation_value, label="cached VAE generation")
+            if generation.get("fingerprint") != fingerprint_value:
+                raise ValueError("cached VAE generation fingerprint differs")
+            expected_identity = _vae_cache_identity(torch, device=device)
+            if generation.get("cache_identity") != expected_identity:
+                raise ValueError("cached VAE implementation or runtime identity differs")
+
+            files = generation.get("files")
+            if not isinstance(files, dict) or set(files) != {"model.pt", "state.npz"}:
+                raise ValueError("cached VAE file manifest is invalid")
+            model_record = files["model.pt"]
+            state_record = files["state.npz"]
+            if not isinstance(model_record, dict) or not isinstance(state_record, dict):
+                raise ValueError("cached VAE file records are invalid")
+            model_path = generation_dir / "model.pt"
+            state_path = generation_dir / "state.npz"
+            _verified_file(model_path, model_record, label="model.pt")
+            _verified_file(state_path, state_record, label="state.npz")
+
+            with np.load(state_path, allow_pickle=False) as state_np:
+                state_arrays = {
+                    "mean": np.asarray(state_np["mean"]),
+                    "scale": np.asarray(state_np["scale"]),
+                    "impute": np.asarray(state_np["impute"]),
+                }
+            state_metadata = generation.get("state")
+            if not isinstance(state_metadata, dict) or set(state_metadata) != set(state_arrays):
+                raise ValueError("cached VAE normalization state manifest is invalid")
+            for name, array in state_arrays.items():
+                record = state_metadata[name]
+                if not isinstance(record, dict):
+                    raise ValueError("cached VAE normalization state record is invalid")
+                if record.get("dtype") != str(array.dtype) or record.get("shape") != [
+                    int(value) for value in array.shape
+                ]:
+                    raise ValueError(f"cached VAE normalization state metadata differs: {name}")
+            mean = np.asarray(state_arrays["mean"], dtype=np.float32)
+            scale = np.asarray(state_arrays["scale"], dtype=np.float32)
+            impute = np.asarray(state_arrays["impute"], dtype=np.float32)
+            vector_shape = (int(input_dim),)
+            scaling_shape = () if self._input_scaling() == "global_minmax" else vector_shape
+            if (
+                mean.shape != scaling_shape
+                or scale.shape != scaling_shape
+                or impute.shape != vector_shape
+            ):
+                raise ValueError("cached VAE normalization state shape differs")
             model = self._make_model(torch, input_dim=int(input_dim)).to(device)
             try:
                 payload = torch.load(model_path, map_location="cpu", weights_only=True)
@@ -409,32 +659,281 @@ class VaeStep:
             state_dict = payload.get("state_dict") if isinstance(payload, dict) else payload
             model.load_state_dict(state_dict)
             model.eval()
+            _verified_file(model_path, model_record, label="model.pt")
+            _verified_file(state_path, state_record, label="state.npz")
+            info = generation.get("info")
+            if not isinstance(info, dict):
+                raise ValueError("cached VAE info is invalid")
+            raw_training_runtime = info.get("training_runtime", info.get("runtime"))
+            self.mean_ = mean
+            self.scale_ = scale
+            self.impute_ = impute
             self.model_ = model
             self.torch_ = torch
             self.device_ = device
+            self.model_training_runtime_ = (
+                {str(key): str(value) for key, value in raw_training_runtime.items()}
+                if isinstance(raw_training_runtime, dict)
+                else None
+            )
             return True
         except Exception as exc:
             logger.warning("Ignoring corrupt VAE cache at %s: %s", cache_dir, exc)
             return False
 
-    def _save_cached_model(self, torch: Any, *, cache_dir: Path, info: dict[str, Any]) -> None:
+    def _save_cached_model(
+        self,
+        torch: Any,
+        *,
+        cache_dir: Path,
+        info: dict[str, Any],
+        lock_held: bool = False,
+    ) -> None:
         if self.model_ is None or self.mean_ is None or self.scale_ is None or self.impute_ is None:
             return
+        if not lock_held:
+            with _exclusive_cache_lock(cache_dir / ".cache.lock"):
+                self._save_cached_model(torch, cache_dir=cache_dir, info=info, lock_held=True)
+            return
+
         cache_dir.mkdir(parents=True, exist_ok=True)
-        model_path = cache_dir / "model.pt"
-        state_path = cache_dir / "state.npz"
-        torch.save({"state_dict": self.model_.state_dict()}, model_path)
-        np.savez(
-            state_path,
-            mean=np.asarray(self.mean_, dtype=np.float32),
-            scale=np.asarray(self.scale_, dtype=np.float32),
-            impute=np.asarray(self.impute_, dtype=np.float32),
+        fingerprint_value = info.get("fingerprint")
+        if not isinstance(fingerprint_value, str) or not fingerprint_value:
+            raise PreprocessValidationError("VAE cache info fingerprint is missing")
+        if self._load_cached_model(
+            torch,
+            cache_dir=cache_dir,
+            input_dim=int(np.asarray(self.impute_).size),
+            device=str(self.device_ or "cpu"),
+            expected_fingerprint=fingerprint_value,
+        ):
+            return
+
+        generations = cache_dir / "generations"
+        generations.mkdir(parents=True, exist_ok=True)
+        staging = generations / f".staging-{os.getpid()}-{uuid.uuid4().hex}"
+        staging.mkdir()
+        try:
+            model_path = staging / "model.pt"
+            state_path = staging / "state.npz"
+            torch.save({"state_dict": self.model_.state_dict()}, model_path)
+            _fsync_file(model_path)
+            with state_path.open("wb") as handle:
+                np.savez(
+                    handle,
+                    mean=np.asarray(self.mean_, dtype=np.float32),
+                    scale=np.asarray(self.scale_, dtype=np.float32),
+                    impute=np.asarray(self.impute_, dtype=np.float32),
+                )
+                handle.flush()
+                os.fsync(handle.fileno())
+            files = {
+                path.name: {
+                    "sha256": _file_sha256(path),
+                    "size_bytes": int(path.stat().st_size),
+                }
+                for path in (model_path, state_path)
+            }
+            generation = _signed_cache_manifest(
+                {
+                    "schema_version": VAE_MODEL_CACHE_SCHEMA_VERSION,
+                    "cache_kind": VAE_MODEL_CACHE_KIND,
+                    "fingerprint": fingerprint_value,
+                    "cache_identity": _vae_cache_identity(torch, device=str(self.device_ or "cpu")),
+                    "created_at": datetime.now(UTC).isoformat(),
+                    "files": files,
+                    "state": {
+                        "mean": {
+                            "dtype": str(np.asarray(self.mean_).dtype),
+                            "shape": [int(value) for value in np.asarray(self.mean_).shape],
+                        },
+                        "scale": {
+                            "dtype": str(np.asarray(self.scale_).dtype),
+                            "shape": [int(value) for value in np.asarray(self.scale_).shape],
+                        },
+                        "impute": {
+                            "dtype": str(np.asarray(self.impute_).dtype),
+                            "shape": [int(value) for value in np.asarray(self.impute_).shape],
+                        },
+                    },
+                    "info": dict(info),
+                }
+            )
+            generation_path = staging / VAE_MODEL_CACHE_MANIFEST
+            atomic_write_text(generation_path, stable_json_dumps(generation))
+            generation_manifest_sha256 = _file_sha256(generation_path)
+            _fsync_directory(staging)
+
+            generation_name = f"model-{generation['manifest_sha256']}-{uuid.uuid4().hex}"
+            generation_dir = generations / generation_name
+            os.replace(staging, generation_dir)
+            _fsync_directory(generations)
+            pointer = _signed_cache_manifest(
+                {
+                    "schema_version": VAE_MODEL_CACHE_SCHEMA_VERSION,
+                    "cache_kind": VAE_MODEL_CACHE_KIND,
+                    "fingerprint": fingerprint_value,
+                    "generation": generation_name,
+                    "generation_manifest_sha256": generation_manifest_sha256,
+                }
+            )
+            atomic_write_text(cache_dir / VAE_MODEL_CACHE_POINTER, stable_json_dumps(pointer))
+            _fsync_directory(cache_dir)
+        finally:
+            if staging.exists():
+                shutil.rmtree(staging)
+
+    def _fit_model_with_cache_lock(
+        self,
+        *,
+        torch: Any,
+        device: str,
+        X_fit: np.ndarray,
+        fit_data_hash: str,
+        fit_indices_hash: str,
+        seed: int,
+        model_fingerprint: str,
+        cache_dir: Path | None,
+    ) -> None:
+        if cache_dir is None:
+            self._fit_model_locked(
+                torch=torch,
+                device=device,
+                X_fit=X_fit,
+                fit_data_hash=fit_data_hash,
+                fit_indices_hash=fit_indices_hash,
+                seed=seed,
+                model_fingerprint=model_fingerprint,
+                cache_dir=None,
+            )
+            return
+        with _exclusive_cache_lock(cache_dir / ".cache.lock"):
+            self._fit_model_locked(
+                torch=torch,
+                device=device,
+                X_fit=X_fit,
+                fit_data_hash=fit_data_hash,
+                fit_indices_hash=fit_indices_hash,
+                seed=seed,
+                model_fingerprint=model_fingerprint,
+                cache_dir=cache_dir,
+            )
+
+    def _fit_model_locked(
+        self,
+        *,
+        torch: Any,
+        device: str,
+        X_fit: np.ndarray,
+        fit_data_hash: str,
+        fit_indices_hash: str,
+        seed: int,
+        model_fingerprint: str,
+        cache_dir: Path | None,
+    ) -> None:
+        if cache_dir is not None and self._load_cached_model(
+            torch,
+            cache_dir=cache_dir,
+            input_dim=int(X_fit.shape[1]),
+            device=device,
+            expected_fingerprint=model_fingerprint,
+        ):
+            self.model_cache_hit_ = True
+            self.model_info_ = self._build_info(
+                model_fingerprint=model_fingerprint,
+                fit_shape=(int(X_fit.shape[0]), int(X_fit.shape[1])),
+                fit_data_hash=fit_data_hash,
+                fit_indices_hash=fit_indices_hash,
+                seed=seed,
+                device=device,
+                torch=torch,
+                cache_dir=cache_dir,
+                cache_hit=True,
+            )
+            logger.info(
+                "Loaded cached VAE model: fingerprint=%s dir=%s",
+                model_fingerprint,
+                cache_dir,
+            )
+            return
+
+        if cache_dir is not None and bool(self.require_cache_hit):
+            raise PreprocessValidationError(
+                "The frozen VAE cache is missing, corrupt, or has a different fingerprint: "
+                f"{cache_dir}. Build and verify it during preflight; scientific jobs are not "
+                "allowed to train it implicitly."
+            )
+
+        self.model_cache_hit_ = False
+        scaled_fit = self._scale_features(X_fit)
+        torch.manual_seed(seed)
+        if hasattr(torch, "cuda") and torch.cuda.is_available():  # pragma: no cover
+            torch.cuda.manual_seed_all(seed)
+
+        model = self._make_model(torch, input_dim=int(scaled_fit.shape[1])).to(device)
+        model.train()
+
+        tensor = torch.as_tensor(scaled_fit, dtype=torch.float32)
+        generator = torch.Generator()
+        generator.manual_seed(seed)
+        dataset = torch.utils.data.TensorDataset(tensor)
+        loader = torch.utils.data.DataLoader(
+            dataset,
+            batch_size=int(self.batch_size),
+            shuffle=True,
+            generator=generator,
         )
-        manifest = dict(info)
-        manifest["created_at"] = datetime.now(UTC).isoformat()
-        manifest["files"] = {"model": model_path.name, "state": state_path.name}
-        manifest["runtime"] = {"torch_version": str(getattr(torch, "__version__", ""))}
-        atomic_write_text(cache_dir / "manifest.json", stable_json_dumps(manifest))
+        optimizer = torch.optim.Adam(
+            model.parameters(),
+            lr=float(self.lr),
+            weight_decay=float(self.weight_decay),
+        )
+
+        for _epoch in range(int(self.epochs)):
+            for (batch,) in loader:
+                batch = batch.to(device)
+                optimizer.zero_grad(set_to_none=True)
+                recon, mu, logvar = model(batch)
+                if self.reconstruction_loss == "bce":
+                    recon_loss = torch.nn.functional.binary_cross_entropy(
+                        recon, batch, reduction="sum"
+                    )
+                    kl_loss = -0.5 * torch.sum(1.0 + logvar - mu.pow(2) - logvar.exp())
+                else:
+                    recon_loss = torch.nn.functional.mse_loss(recon, batch, reduction="mean")
+                    kl_loss = -0.5 * torch.mean(1.0 + logvar - mu.pow(2) - logvar.exp())
+                loss = recon_loss + float(self.beta) * kl_loss
+                loss.backward()
+                optimizer.step()
+
+        model.eval()
+        self.model_ = model
+        self.torch_ = torch
+        self.device_ = device
+        self.model_training_runtime_ = _runtime_dependencies(torch, device=device)
+        self.model_info_ = self._build_info(
+            model_fingerprint=model_fingerprint,
+            fit_shape=(int(X_fit.shape[0]), int(X_fit.shape[1])),
+            fit_data_hash=fit_data_hash,
+            fit_indices_hash=fit_indices_hash,
+            seed=seed,
+            device=device,
+            torch=torch,
+            cache_dir=cache_dir,
+            cache_hit=False,
+        )
+        if cache_dir is not None:
+            self._save_cached_model(
+                torch,
+                cache_dir=cache_dir,
+                info=self.model_info_,
+                lock_held=True,
+            )
+            logger.info(
+                "Saved VAE model cache: fingerprint=%s dir=%s",
+                model_fingerprint,
+                cache_dir,
+            )
 
     def fit(
         self, store: ArtifactStore, *, fit_indices: np.ndarray, rng: np.random.Generator
@@ -505,102 +1004,40 @@ class VaeStep:
         self.scale_ = scale
         self.impute_ = impute
 
+        torch = require_optional(
+            module="torch",
+            extra="inductive-torch",
+            purpose="core.vae preprocessing step",
+        )
+        device = resolve_device_name(self.device, torch=torch) or "cpu"
+        cache_identity = _vae_cache_identity(torch, device=device)
         model_fingerprint = self._model_fingerprint(
             fit_shape=(int(X_fit.shape[0]), int(X_fit.shape[1])),
             fit_data_hash=fit_data_hash,
             fit_indices_hash=fit_indices_hash,
             seed=seed,
+            cache_identity=cache_identity,
         )
+        if self.expected_model_fingerprint is not None and model_fingerprint != str(
+            self.expected_model_fingerprint
+        ):
+            raise PreprocessValidationError(
+                "VAE model fingerprint differs from expected_model_fingerprint: "
+                f"computed {model_fingerprint}, expected {self.expected_model_fingerprint}"
+            )
         cache_dir = self._cache_dir_for(model_fingerprint) if self.model_cache else None
-
-        torch = require_optional(
-            module="torch",
-            extra="preprocess",
-            purpose="core.vae preprocessing step",
-        )
-        device = resolve_device_name(self.device, torch=torch) or "cpu"
         self.model_fingerprint_ = model_fingerprint
         self.model_cache_dir_ = cache_dir
-        if cache_dir is not None and self._load_cached_model(
-            torch, cache_dir=cache_dir, input_dim=int(X_fit.shape[1]), device=device
-        ):
-            self.model_cache_hit_ = True
-            self.model_info_ = self._build_info(
-                model_fingerprint=model_fingerprint,
-                fit_shape=(int(X_fit.shape[0]), int(X_fit.shape[1])),
-                fit_data_hash=fit_data_hash,
-                fit_indices_hash=fit_indices_hash,
-                seed=seed,
-                device=device,
-                cache_dir=cache_dir,
-                cache_hit=True,
-            )
-            logger.info(
-                "Loaded cached VAE model: fingerprint=%s dir=%s", model_fingerprint, cache_dir
-            )
-            return
-
-        self.model_cache_hit_ = False
-        X_fit = self._scale_features(X_fit)
-        torch.manual_seed(seed)
-        if hasattr(torch, "cuda") and torch.cuda.is_available():  # pragma: no cover
-            torch.cuda.manual_seed_all(seed)
-
-        model = self._make_model(torch, input_dim=int(X_fit.shape[1])).to(device)
-        model.train()
-
-        tensor = torch.as_tensor(X_fit, dtype=torch.float32)
-        generator = torch.Generator()
-        generator.manual_seed(seed)
-        dataset = torch.utils.data.TensorDataset(tensor)
-        loader = torch.utils.data.DataLoader(
-            dataset,
-            batch_size=int(self.batch_size),
-            shuffle=True,
-            generator=generator,
-        )
-        optimizer = torch.optim.Adam(
-            model.parameters(),
-            lr=float(self.lr),
-            weight_decay=float(self.weight_decay),
-        )
-
-        for _epoch in range(int(self.epochs)):
-            for (batch,) in loader:
-                batch = batch.to(device)
-                optimizer.zero_grad(set_to_none=True)
-                recon, mu, logvar = model(batch)
-                if self.reconstruction_loss == "bce":
-                    recon_loss = torch.nn.functional.binary_cross_entropy(
-                        recon, batch, reduction="sum"
-                    )
-                    kl_loss = -0.5 * torch.sum(1.0 + logvar - mu.pow(2) - logvar.exp())
-                else:
-                    recon_loss = torch.nn.functional.mse_loss(recon, batch, reduction="mean")
-                    kl_loss = -0.5 * torch.mean(1.0 + logvar - mu.pow(2) - logvar.exp())
-                loss = recon_loss + float(self.beta) * kl_loss
-                loss.backward()
-                optimizer.step()
-
-        model.eval()
-        self.model_ = model
-        self.torch_ = torch
-        self.device_ = device
-        self.model_info_ = self._build_info(
-            model_fingerprint=model_fingerprint,
-            fit_shape=(int(X_fit.shape[0]), int(X_fit.shape[1])),
+        self._fit_model_with_cache_lock(
+            torch=torch,
+            device=device,
+            X_fit=X_fit,
             fit_data_hash=fit_data_hash,
             fit_indices_hash=fit_indices_hash,
             seed=seed,
-            device=device,
+            model_fingerprint=model_fingerprint,
             cache_dir=cache_dir,
-            cache_hit=False,
         )
-        if cache_dir is not None:
-            self._save_cached_model(torch, cache_dir=cache_dir, info=self.model_info_)
-            logger.info(
-                "Saved VAE model cache: fingerprint=%s dir=%s", model_fingerprint, cache_dir
-            )
 
     def transform(self, store: ArtifactStore, *, rng: np.random.Generator) -> dict[str, Any]:
         del rng

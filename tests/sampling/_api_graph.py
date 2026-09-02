@@ -1,7 +1,15 @@
 from __future__ import annotations
 
+import pytest
+
 from modssc.sampling.api import sample
-from modssc.sampling.plan import HoldoutSplitSpec, LabelingSpec, SamplingPlan, SamplingPolicy
+from modssc.sampling.plan import (
+    HoldoutSplitSpec,
+    LabelingSpec,
+    PartitionSpec,
+    SamplingPlan,
+    SamplingPolicy,
+)
 from tests.sampling._stubs import make_graph_dataset
 
 
@@ -33,3 +41,11 @@ def test_graph_generate_masks_when_disabled() -> None:
     assert res.masks["train"].sum() + res.masks["val"].sum() + res.masks["test"].sum() == len(
         ds.train.y
     )
+
+
+def test_graph_rejects_row_partition_subsampling() -> None:
+    ds = make_graph_dataset(n_nodes=100, with_official_masks=False)
+    plan = SamplingPlan(partition=PartitionSpec(max_samples=50))
+
+    with pytest.raises(ValueError, match="not supported for graph datasets"):
+        sample(ds, plan=plan, seed=0, dataset_fingerprint="fp", save=False)

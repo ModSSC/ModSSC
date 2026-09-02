@@ -589,3 +589,8 @@ class PoissonMBOMethod(TransductiveMethod):
         if self._result is None:
             raise RuntimeError("PoissonMBOMethod is not fitted yet. Call fit() first.")
         return np.asarray(self._result.F, dtype=np.float32)
+
+    def execution_resolution(self) -> dict[str, Any]:
+        """Expose fitted runtime metadata without leaking private method state."""
+
+        return {"backend": self._backend} if self._backend is not None else {}

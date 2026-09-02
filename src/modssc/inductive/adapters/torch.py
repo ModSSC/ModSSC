@@ -6,6 +6,8 @@ from typing import Any
 
 import numpy as np
 
+from modssc.runtime.execution import ExecutionContext
+
 from ..backends import torch_backend
 from ..base import InductiveDatasetLike
 from ..errors import InductiveValidationError
@@ -100,6 +102,13 @@ def _check_same_device(tensors: list[Any]) -> None:
         check_item(t)
 
 
+def _matches_expected_device(actual: Any, expected: Any) -> bool:
+    """Match an unindexed device request to any device with the same type."""
+    if expected.index is None:
+        return actual.type == expected.type
+    return actual == expected
+
+
 @dataclass(frozen=True)
 class TorchDataset:
     """Strict torch view of an inductive dataset (no implicit conversion)."""
@@ -109,8 +118,11 @@ class TorchDataset:
     X_u: Any | None = None
     X_u_w: Any | None = None
     X_u_s: Any | None = None
+    X_u_s_1: Any | None = None
     views: Mapping[str, Any] | None = None
+    graph: Any | None = None
     meta: Mapping[str, Any] | None = None
+    execution_context: ExecutionContext | None = None
 
 
 def to_torch_dataset(
@@ -128,8 +140,11 @@ def to_torch_dataset(
     X_u = getattr(data, "X_u", None)
     X_u_w = getattr(data, "X_u_w", None)
     X_u_s = getattr(data, "X_u_s", None)
+    X_u_s_1 = getattr(data, "X_u_s_1", None)
     views = getattr(data, "views", None)
+    graph = getattr(data, "graph", None)
     meta = getattr(data, "meta", None)
+    execution_context = getattr(data, "execution_context", None)
 
     X_l = _require_tensor(data.X_l, name="X_l")
     y_l = _require_tensor(data.y_l, name="y_l")
@@ -150,6 +165,7 @@ def to_torch_dataset(
     X_u = _require_tensor(X_u, name="X_u") if X_u is not None else None
     X_u_w = _require_tensor(X_u_w, name="X_u_w") if X_u_w is not None else None
     X_u_s = _require_tensor(X_u_s, name="X_u_s") if X_u_s is not None else None
+    X_u_s_1 = _require_tensor(X_u_s_1, name="X_u_s_1") if X_u_s_1 is not None else None
 
     n_features = int(get_features(X_l))
     if X_u is not None:
@@ -161,12 +177,15 @@ def to_torch_dataset(
     if X_u_s is not None:
         _check_2d(X_u_s, name="X_u_s")
         _check_feature_dim(X_u_s, n_features=n_features, name="X_u_s")
+    if X_u_s_1 is not None:
+        _check_2d(X_u_s_1, name="X_u_s_1")
+        _check_feature_dim(X_u_s_1, n_features=n_features, name="X_u_s_1")
     if X_u_w is not None and X_u_s is not None and int(get_len(X_u_w)) != int(get_len(X_u_s)):
         raise InductiveValidationError("X_u_w and X_u_s must have the same number of rows")
 
     views = _require_views(views)
 
-    tensors = [X_l, y_l, X_u, X_u_w, X_u_s]
+    tensors = [X_l, y_l, X_u, X_u_w, X_u_s, X_u_s_1]
     if views:
         tensors.extend(views.values())
 
@@ -174,6 +193,7 @@ def to_torch_dataset(
         _check_same_device(tensors)
 
     if device is not None and device.device != "auto":
+        torch = _torch()
         expected = torch_backend.resolve_device(device)
 
         def _check_expected_device(obj: Any) -> None:
@@ -183,7 +203,9 @@ def to_torch_dataset(
                 for value in obj.values():
                     _check_expected_device(value)
                 return
-            if obj.device != expected:
+            if not isinstance(obj, torch.Tensor):
+                return
+            if not _matches_expected_device(obj.device, expected):
                 raise InductiveValidationError(
                     f"Tensor device mismatch: expected {expected}, got {obj.device}"
                 )
@@ -222,6 +244,9 @@ def to_torch_dataset(
         X_u=X_u,
         X_u_w=X_u_w,
         X_u_s=X_u_s,
+        X_u_s_1=X_u_s_1,
         views=views,
+        graph=graph,
         meta=meta,
+        execution_context=execution_context,
     )

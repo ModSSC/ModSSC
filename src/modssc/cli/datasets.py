@@ -121,6 +121,39 @@ cache_app = typer.Typer(help="Cache inspection and maintenance.")
 app.add_typer(cache_app, name="cache")
 
 
+@cache_app.command("promote")
+def cache_promote(
+    staging_dir: Path = typer.Option(..., "--staging-dir"),  # noqa: B008
+    transaction_id: str = typer.Option(..., "--transaction-id"),  # noqa: B008
+    fingerprint: list[str] | None = typer.Option(None, "--fingerprint"),  # noqa: B008
+    all_staged: bool = typer.Option(False, "--all-staged"),  # noqa: B008
+    cache_dir: Path | None = typer.Option(None, "--cache-dir", "--dataset-cache-dir"),  # noqa: B008
+    log_level: LogLevelOption = None,
+) -> None:
+    """Promote exact staging entries through the native cache transaction API."""
+
+    if log_level is not None:
+        configure_logging(log_level)
+    if all_staged == bool(fingerprint):
+        exit_with_error("Provide repeated --fingerprint values or exactly one --all-staged")
+    if cache_dir is None:
+        cache_dir = api.cache_dir()
+    try:
+        report = api.promote_cache_entries(
+            staging_dir=staging_dir,
+            cache_dir=cache_dir,
+            entries=None
+            if all_staged
+            else [api.CacheEntryExpectation(value) for value in fingerprint or []],
+            transaction_id=transaction_id,
+        )
+    except DataLoaderError as exc:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception("Cache promotion failed")
+        exit_with_error(str(exc))
+    typer.echo(report.to_json(), nl=False)
+
+
 @cache_app.command("ls")
 def cache_ls(
     cache_dir: Path | None = typer.Option(None, "--cache-dir", "--dataset-cache-dir"),  # noqa: B008

@@ -18,6 +18,14 @@ class TransductiveValidationError(ValueError):
     """Raised when inputs are invalid for transductive methods."""
 
 
+class TransductiveDataError(TransductiveValidationError):
+    """Raised when a native node-dataset preparation contract is violated."""
+
+    def __init__(self, message: str, *, code: str = "E_TRANSDUCTIVE_DATA") -> None:
+        super().__init__(message)
+        self.code = str(code)
+
+
 class TransductiveNotImplementedError(NotImplementedError):
     """Raised when a transductive method is registered but not implemented yet."""
 

@@ -11,6 +11,11 @@ import numpy as np
 
 from modssc.data_loader import cache
 from modssc.data_loader.catalog import DATASET_CATALOG
+from modssc.data_loader.content import (
+    build_content_manifest,
+    content_manifest_json,
+    verify_content_manifest,
+)
 from modssc.data_loader.errors import (
     DatasetNotCachedError,
     ManifestError,
@@ -19,6 +24,14 @@ from modssc.data_loader.errors import (
 )
 from modssc.data_loader.manifest import build_manifest, write_manifest
 from modssc.data_loader.numpy_adapter import dataset_to_numpy
+from modssc.data_loader.promotion import (
+    CacheEntryExpectation,
+    CachePromotionReport,
+)
+from modssc.data_loader.promotion import CachePromotionItem as CachePromotionItem
+from modssc.data_loader.promotion import (
+    promote_cache_entries as _promote_cache_entries,
+)
 from modssc.data_loader.providers import create_provider, get_provider_names
 from modssc.data_loader.storage import FileStorage
 from modssc.data_loader.types import (
@@ -200,7 +213,7 @@ def load_dataset(
 ) -> LoadedDataset:
     """Load a dataset from processed cache, optionally downloading if missing."""
     start = perf_counter()
-    layout = _layout(cache_dir)
+    layout = _layout(cache_dir, ensure=download)
     req = DatasetRequest(id=dataset_id, options=options or {})
     identity = _resolve_identity(req)
 
@@ -218,8 +231,12 @@ def load_dataset(
     logger.debug("Dataset resolved_kwargs: %s", dict(identity.resolved_kwargs))
 
     if not force and cache.is_cached(layout, fp):
-        ds = _load_processed_or_purge(layout, fp, dataset_id=dataset_id)
+        if download:
+            ds = _load_processed_or_purge(layout, fp, dataset_id=dataset_id)
+        else:
+            ds = _load_processed(layout, fp)
         if ds is not None:
+            ds = _attach_resolved_identity(ds, identity)
             n_train, n_classes = _split_stats(ds.train)
             n_test, _ = _split_stats(ds.test)
             logger.info(
@@ -235,7 +252,7 @@ def load_dataset(
     if not download:
         raise DatasetNotCachedError(dataset_id)
 
-    ds = _download_and_store(layout, identity, force=force)
+    ds = _attach_resolved_identity(_download_and_store(layout, identity, force=force), identity)
     n_train, n_classes = _split_stats(ds.train)
     n_test, _ = _split_stats(ds.test)
     logger.info(
@@ -259,7 +276,7 @@ def download_dataset(
     allow_object: bool = True,
 ) -> LoadedDataset:
     start = perf_counter()
-    layout = _layout(cache_dir)
+    layout = _layout(cache_dir, ensure=True)
     req = DatasetRequest(id=dataset_id, options=options or {})
     identity = _resolve_identity(req)
     fp = identity.fingerprint(schema_version=SCHEMA_VERSION)
@@ -267,6 +284,7 @@ def download_dataset(
     if not force and cache.is_cached(layout, fp):
         ds = _load_processed_or_purge(layout, fp, dataset_id=dataset_id)
         if ds is not None:
+            ds = _attach_resolved_identity(ds, identity)
             logger.info(
                 "Dataset cached: id=%s provider=%s fingerprint=%s duration_s=%.3f",
                 dataset_id,
@@ -276,7 +294,7 @@ def download_dataset(
             )
             return dataset_to_numpy(ds, allow_object=allow_object) if as_numpy else ds
 
-    ds = _download_and_store(layout, identity, force=force)
+    ds = _attach_resolved_identity(_download_and_store(layout, identity, force=force), identity)
     logger.info(
         "Dataset downloaded: id=%s provider=%s fingerprint=%s duration_s=%.3f",
         dataset_id,
@@ -298,7 +316,7 @@ def download_all_datasets(
     skip_cached: bool = False,
 ) -> DownloadReport:
     start = perf_counter()
-    layout = _layout(cache_dir)
+    layout = _layout(cache_dir, ensure=True)
     keys = _select_catalog_keys(include=include, exclude=exclude, modalities=modalities)
     logger.info(
         "Download all datasets: count=%s force=%s skip_cached=%s cache_dir=%s",
@@ -358,10 +376,15 @@ def download_all_datasets(
 # ----------------------------
 
 
-def _layout(cache_dir_override: Path | None) -> cache.CacheLayout:
+def _layout(
+    cache_dir_override: Path | None,
+    *,
+    ensure: bool = True,
+) -> cache.CacheLayout:
     root = (cache_dir_override or cache.default_cache_dir()).expanduser().resolve()
     layout = cache.CacheLayout(root=root)
-    cache.ensure_layout(layout)
+    if ensure:
+        cache.ensure_layout(layout)
     return layout
 
 
@@ -430,6 +453,41 @@ def _resolve_identity(req: DatasetRequest) -> DatasetIdentity:
     return identity
 
 
+def resolve_dataset_identity(
+    dataset_id: str,
+    *,
+    options: Mapping[str, Any] | None = None,
+) -> DatasetIdentity:
+    """Resolve a dataset identity without downloading or reading cached data.
+
+    This is the public preflight primitive for validating a declarative dataset
+    pin.  It executes the same catalog/provider resolution as ``load_dataset``
+    while remaining independent of a physical cache location.
+    """
+
+    return _resolve_identity(DatasetRequest(id=dataset_id, options=options or {}))
+
+
+def dataset_fingerprint(
+    dataset_id: str,
+    *,
+    options: Mapping[str, Any] | None = None,
+) -> str:
+    """Return the canonical cache fingerprint for a resolved dataset request."""
+
+    identity = resolve_dataset_identity(dataset_id, options=options)
+    return identity.fingerprint(schema_version=SCHEMA_VERSION)
+
+
+def _attach_resolved_identity(dataset: LoadedDataset, identity: DatasetIdentity) -> LoadedDataset:
+    """Attach authoritative modality/task metadata without rewriting the cache."""
+
+    meta = dict(dataset.meta or {})
+    meta["modality"] = identity.modality
+    meta["task"] = identity.task
+    return replace(dataset, meta=meta)
+
+
 def _download_and_store(
     layout: cache.CacheLayout, identity: DatasetIdentity, *, force: bool
 ) -> LoadedDataset:
@@ -479,6 +537,18 @@ def _download_and_store(
             schema_version=SCHEMA_VERSION, fingerprint=fp, identity=identity, dataset=ds
         )
         write_manifest(layout.manifest_path(fp), manifest)
+        content_available = any(path.is_file() for path in processed_dir.rglob("*"))
+        if content_available:
+            content_manifest = build_content_manifest(
+                layout,
+                fp,
+                ds,
+                identity=identity.as_dict(),
+            )
+            cache.atomic_write_text(
+                layout.content_manifest_path(fp),
+                content_manifest_json(content_manifest),
+            )
         cache.index_upsert(layout, fingerprint=fp, manifest=manifest)
 
         logger.info(
@@ -487,6 +557,13 @@ def _download_and_store(
             identity.dataset_id,
             fp,
         )
+        if content_available:
+            return _attach_content_evidence(
+                layout,
+                fp,
+                ds,
+                identity=identity.as_dict(),
+            )
         return ds
 
 
@@ -514,8 +591,81 @@ def _load_processed(layout: cache.CacheLayout, fingerprint: str) -> LoadedDatase
     if ds.meta is None:
         ds = replace(ds, meta={})
     ds.meta["dataset_fingerprint"] = fingerprint
+    content_manifest_path = layout.content_manifest_path(fingerprint)
+    if isinstance(content_manifest_path, Path) and content_manifest_path.is_file():
+        manifest = cache.read_cached_manifest(layout, fingerprint)
+        ds = _attach_content_evidence(
+            layout,
+            fingerprint,
+            ds,
+            identity=manifest.identity,
+        )
     logger.debug("Loaded cached dataset: fingerprint=%s", fingerprint)
     return ds
+
+
+def _attach_content_evidence(
+    layout: cache.CacheLayout,
+    fingerprint: str,
+    dataset: LoadedDataset,
+    *,
+    identity: Mapping[str, Any],
+) -> LoadedDataset:
+    evidence = verify_content_manifest(
+        layout,
+        fingerprint,
+        identity=identity,
+        rehash=False,
+    )
+    meta = dict(dataset.meta or {})
+    meta.update(
+        {
+            "dataset_cache_fingerprint": fingerprint,
+            "dataset_content_sha256": evidence["content_sha256"],
+            "dataset_content_manifest_sha256": evidence["content_manifest_sha256"],
+            "dataset_content_state_sha256": evidence["cache_state_sha256"],
+        }
+    )
+    return replace(dataset, meta=meta)
+
+
+def verify_dataset_content(
+    dataset_id: str,
+    *,
+    cache_dir: Path | None = None,
+    options: Mapping[str, Any] | None = None,
+    rehash: bool = True,
+) -> dict[str, str]:
+    """Verify cached bytes for a resolved dataset without downloading anything."""
+
+    layout = _layout(cache_dir, ensure=False)
+    identity = _resolve_identity(DatasetRequest(id=dataset_id, options=options or {}))
+    fingerprint = identity.fingerprint(schema_version=SCHEMA_VERSION)
+    if not cache.is_cached(layout, fingerprint):
+        raise DatasetNotCachedError(dataset_id)
+    return verify_content_manifest(
+        layout,
+        fingerprint,
+        identity=identity.as_dict(),
+        rehash=rehash,
+    )
+
+
+def promote_cache_entries(
+    *,
+    staging_dir: Path,
+    cache_dir: Path,
+    entries: Sequence[CacheEntryExpectation] | None,
+    transaction_id: str,
+) -> CachePromotionReport:
+    """Promote complete staging-cache entries into a durable cache."""
+
+    return _promote_cache_entries(
+        staging_dir=staging_dir,
+        cache_dir=cache_dir,
+        entries=entries,
+        transaction_id=transaction_id,
+    )
 
 
 def available_providers() -> list[str]:

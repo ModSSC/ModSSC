@@ -34,6 +34,21 @@ from modssc.preprocess.store import ArtifactStore
 from modssc.preprocess.types import ResolvedStep
 
 
+class _FitScopedFeaturesStep:
+    """Stand-in for a fittable encoder whose output depends on its fit scope."""
+
+    def __init__(self) -> None:
+        self._width = 0
+
+    def fit(
+        self, store: ArtifactStore, *, fit_indices: np.ndarray, rng: np.random.Generator
+    ) -> None:
+        self._width = len(fit_indices)
+
+    def transform(self, store: ArtifactStore, *, rng: np.random.Generator) -> dict[str, np.ndarray]:
+        return {"features.X": np.asarray(store.require("raw.X"))[:, : self._width]}
+
+
 class DummyTensor:
     def __init__(self, device: str = "cuda:0", *, element_size: int = 2, nelement: int = 3) -> None:
         self.device = device
@@ -117,6 +132,67 @@ def test_dataset_fingerprint_fallback_with_graph():
     assert fp.startswith("dataset:")
 
 
+def test_dataset_fingerprint_commits_full_content_despite_shared_declared_identity():
+    first = LoadedDataset(
+        train=Split(X=np.array([[1.0]]), y=np.array([0])),
+        meta={"dataset_fingerprint": "shared", "dataset_content_sha256": "a" * 64},
+    )
+    second = LoadedDataset(
+        train=Split(X=np.array([[2.0]]), y=np.array([0])),
+        meta={"dataset_fingerprint": "shared", "dataset_content_sha256": "a" * 64},
+    )
+
+    assert _dataset_fingerprint(first) != _dataset_fingerprint(second)
+
+
+def test_dataset_fingerprint_frames_mapping_key_types():
+    first = LoadedDataset(
+        train=Split(
+            X=np.array([[1.0]]),
+            y=np.array([0]),
+            masks={1: np.array([True]), "1": np.array([False])},
+        ),
+        meta={"dataset_fingerprint": "shared"},
+    )
+    second = LoadedDataset(
+        train=Split(
+            X=np.array([[1.0]]),
+            y=np.array([0]),
+            masks={1: np.array([False]), "1": np.array([True])},
+        ),
+        meta={"dataset_fingerprint": "shared"},
+    )
+
+    assert _dataset_fingerprint(first) != _dataset_fingerprint(second)
+
+
+def test_preprocess_fingerprint_commits_native_implementation_and_software():
+    dataset = LoadedDataset(
+        train=Split(X=np.array([[1.0]]), y=np.array([0])),
+        meta={"dataset_fingerprint": "shared"},
+    )
+    plan = PreprocessPlan(steps=())
+
+    with (
+        patch("modssc.preprocess.api._preprocess_implementation_sha256", return_value="a" * 64),
+        patch(
+            "modssc.preprocess.api.collect_software_manifest",
+            return_value=SimpleNamespace(to_dict=lambda: {"versions": {"numpy": "1"}}),
+        ),
+    ):
+        first = preprocess(dataset, plan, cache=False).preprocess_fingerprint
+    with (
+        patch("modssc.preprocess.api._preprocess_implementation_sha256", return_value="b" * 64),
+        patch(
+            "modssc.preprocess.api.collect_software_manifest",
+            return_value=SimpleNamespace(to_dict=lambda: {"versions": {"numpy": "2"}}),
+        ),
+    ):
+        second = preprocess(dataset, plan, cache=False).preprocess_fingerprint
+
+    assert first != second
+
+
 def test_initial_store_with_masks():
     split = Split(
         X=np.array([]), y=np.array([]), masks={"train": np.array([1]), "val": np.array([0])}
@@ -133,14 +209,19 @@ def test_shape_of_handles_invalid_shape() -> None:
     assert _shape_of(BadShape()) is None
 
 
-def test_maybe_warn_nonfinite_paths(caplog) -> None:
+def test_maybe_warn_nonfinite_paths(monkeypatch) -> None:
+    warning = MagicMock()
+    monkeypatch.setattr("modssc.preprocess.services.pipeline.logger.warning", warning)
+
     _maybe_warn_nonfinite("not-array", [1, 2, 3])
 
     big = np.zeros((1_000_001,), dtype=np.float32)
     _maybe_warn_nonfinite("big-array", big)
 
-    with caplog.at_level("WARNING"):
-        _maybe_warn_nonfinite("has-nan", np.array([1.0, np.nan], dtype=np.float32))
+    _maybe_warn_nonfinite("nominal", np.array([["y", "n", "?"]], dtype=object))
+    _maybe_warn_nonfinite("has-nan", np.array([1.0, np.nan], dtype=np.float32))
+
+    warning.assert_called_once_with("Non-finite values detected in %s", "has-nan")
 
 
 def test_get_torch_import_error(monkeypatch) -> None:
@@ -455,6 +536,53 @@ def test_preprocess_cache_dir_override(tmp_path):
         preprocess(ds, plan, cache=True, cache_dir=str(tmp_path))
 
         assert mock_cm.root == tmp_path.resolve()
+
+
+def test_ensure_2d_cache_tracks_upstream_features_across_fit_scopes(tmp_path):
+    """A downstream cache must not reuse features fitted on a different sample scope."""
+    ds = LoadedDataset(
+        train=Split(X=np.arange(16).reshape(4, 4), y=np.arange(4)),
+        meta={"dataset_fingerprint": "shared-dataset"},
+    )
+    ensure_2d_spec = StepRegistry.builtin().spec("core.ensure_2d")
+    registry = StepRegistry(
+        specs={
+            "fit_scoped_features": StepSpec(
+                step_id="fit_scoped_features",
+                import_path="tests.preprocess.test_api:_FitScopedFeaturesStep",
+                kind="fittable",
+                consumes=("raw.X",),
+                produces=("features.X",),
+            ),
+            "core.ensure_2d": ensure_2d_spec,
+        }
+    )
+    plan = PreprocessPlan(
+        steps=(
+            StepConfig(step_id="fit_scoped_features"),
+            StepConfig(step_id="core.ensure_2d"),
+        )
+    )
+
+    labeled_only = preprocess(
+        ds,
+        plan,
+        fit_indices=np.array([0]),
+        cache=True,
+        cache_dir=str(tmp_path),
+        registry=registry,
+    )
+    all_train = preprocess(
+        ds,
+        plan,
+        fit_indices=np.arange(4),
+        cache=True,
+        cache_dir=str(tmp_path),
+        registry=registry,
+    )
+
+    assert labeled_only.dataset.train.X.shape == (4, 1)
+    assert all_train.dataset.train.X.shape == (4, 4)
 
 
 def test_preprocess_fittable_missing_fit():

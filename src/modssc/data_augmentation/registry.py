@@ -45,6 +45,17 @@ _BUILTIN_OPS: dict[str, tuple[str, Modality]] = {
         "modssc.data_augmentation.ops.vision:RandomHorizontalFlip",
         "vision",
     ),
+    "vision.randaugment": (
+        "modssc.data_augmentation.ops.vision:RandAugment",
+        "vision",
+    ),
+}
+
+_BUILTIN_ONLINE_AUGMENTERS: dict[str, tuple[str, Modality]] = {
+    "vision.cifar_reference": (
+        "modssc.data_augmentation.cifar_reference:CifarReferenceAugmentation",
+        "vision",
+    ),
 }
 
 
@@ -123,3 +134,43 @@ def op_info(op_id: str) -> Mapping[str, Any]:
         "doc": (cls.__doc__ or "").strip(),
         "defaults": defaults,
     }
+
+
+def available_online_augmenters(*, modality: Modality | None = None) -> list[str]:
+    """List built-in online augmenter implementations."""
+
+    if modality is None:
+        return sorted(_BUILTIN_ONLINE_AUGMENTERS)
+    return sorted(
+        augmenter_id
+        for augmenter_id, (_, augmenter_modality) in _BUILTIN_ONLINE_AUGMENTERS.items()
+        if augmenter_modality in {"any", modality}
+    )
+
+
+def get_online_augmenter(
+    augmenter_id: str,
+    *,
+    modality: Modality | None = None,
+    **params: Any,
+) -> Any:
+    """Instantiate a registered online augmenter with a modality check."""
+
+    try:
+        import_path, augmenter_modality = _BUILTIN_ONLINE_AUGMENTERS[augmenter_id]
+    except KeyError as exc:
+        raise DataAugmentationValidationError(
+            f"Unknown online augmenter: {augmenter_id!r}"
+        ) from exc
+    if modality is not None and augmenter_modality not in {"any", modality}:
+        raise DataAugmentationValidationError(
+            f"Online augmenter {augmenter_id!r} has modality {augmenter_modality!r} "
+            f"but the plan expects {modality!r}"
+        )
+    factory = load_object(import_path)
+    try:
+        return factory(**params)
+    except TypeError as exc:
+        raise DataAugmentationValidationError(
+            f"Invalid parameters for online augmenter {augmenter_id!r}: {exc}"
+        ) from exc

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping, Sequence
 from time import perf_counter
 from typing import Any, Literal
 
 import numpy as np
 
+from modssc.supervised.backends.numpy.tabular import TabularEncoder, TabularFeature
 from modssc.supervised.base import (
     BaseSupervisedClassifier,
     FitResult,
@@ -40,6 +42,8 @@ class NumpyKNNClassifier(BaseSupervisedClassifier):
         weights: Literal["uniform", "distance"] = "uniform",
         batch_size: int = 1024,
         eps: float = 1e-12,
+        feature_schema: Sequence[Mapping[str, Any] | str] | None = None,
+        missing_values: Sequence[Any] = ("?",),
         seed: int | None = 0,
         n_jobs: int | None = None,
     ):
@@ -49,9 +53,15 @@ class NumpyKNNClassifier(BaseSupervisedClassifier):
         self.weights = str(weights)
         self.batch_size = int(batch_size)
         self.eps = float(eps)
+        self.feature_schema = feature_schema
+        self.missing_values = tuple(missing_values)
 
         self._X_train: np.ndarray | None = None
         self._y_train_enc: np.ndarray | None = None
+        self._tabular_encoder: TabularEncoder | None = None
+        self.feature_schema_: tuple[TabularFeature, ...] | None = None
+        self._numeric_min: np.ndarray | None = None
+        self._numeric_range: np.ndarray | None = None
 
     def fit(self, X: Any, y: Any) -> FitResult:
         start = perf_counter()
@@ -66,7 +76,19 @@ class NumpyKNNClassifier(BaseSupervisedClassifier):
             self.seed,
             self.n_jobs,
         )
-        X2 = ensure_2d(X).astype(np.float32, copy=False)
+        if self.feature_schema is None:
+            X2 = ensure_2d(X).astype(np.float32, copy=False)
+            self._tabular_encoder = None
+            self.feature_schema_ = None
+        else:
+            encoder = TabularEncoder(
+                feature_schema=self.feature_schema,
+                missing_values=self.missing_values,
+                classifier_name="NumPy kNN",
+            )
+            X2 = encoder.fit_transform(X)
+            self._tabular_encoder = encoder
+            self.feature_schema_ = encoder.features_
         if X2.size == 0:
             raise SupervisedValidationError("X must be non-empty")
         y_enc = self._set_classes_from_y(y)
@@ -80,11 +102,30 @@ class NumpyKNNClassifier(BaseSupervisedClassifier):
             raise SupervisedValidationError("k must be >= 1")
         if self.metric not in {"euclidean", "cosine"}:
             raise SupervisedValidationError(f"Unknown metric: {self.metric!r}")
+        if self._tabular_encoder is not None and self.metric != "euclidean":
+            raise SupervisedValidationError(
+                "feature_schema is supported only with metric='euclidean'."
+            )
         if self.weights not in {"uniform", "distance"}:
             raise SupervisedValidationError(f"Unknown weights: {self.weights!r}")
 
         self._X_train = X2
         self._y_train_enc = y_enc
+        self._numeric_min = None
+        self._numeric_range = None
+        if self.feature_schema_ is not None:
+            numeric_min = np.zeros((X2.shape[1],), dtype=np.float64)
+            numeric_range = np.ones((X2.shape[1],), dtype=np.float64)
+            for column, feature in enumerate(self.feature_schema_):
+                if feature.kind != "numeric":
+                    continue
+                known = X2[np.isfinite(X2[:, column]), column]
+                if known.size:
+                    numeric_min[column] = float(np.min(known))
+                    span = float(np.max(known) - numeric_min[column])
+                    numeric_range[column] = span if span > 0.0 else 1.0
+            self._numeric_min = numeric_min
+            self._numeric_range = numeric_range
 
         self._fit_result = FitResult(
             n_samples=int(X2.shape[0]),
@@ -99,6 +140,35 @@ class NumpyKNNClassifier(BaseSupervisedClassifier):
             raise RuntimeError("Model is not fitted (X_train is None)")
         X = self._X_train
 
+        if self.feature_schema_ is not None:
+            if self._numeric_min is None or self._numeric_range is None:
+                raise RuntimeError("Model is not fitted (numeric ranges are missing)")
+            distances = np.zeros((Q.shape[0], X.shape[0]), dtype=np.float64)
+            for column, feature in enumerate(self.feature_schema_):
+                query = Q[:, column][:, None]
+                train = X[:, column][None, :]
+                query_missing = ~np.isfinite(query)
+                train_missing = ~np.isfinite(train)
+                either_missing = query_missing | train_missing
+                if feature.kind == "nominal":
+                    difference = (query != train).astype(np.float64)
+                    difference[either_missing] = 1.0
+                else:
+                    query_normalized = (query - self._numeric_min[column]) / self._numeric_range[
+                        column
+                    ]
+                    train_normalized = (train - self._numeric_min[column]) / self._numeric_range[
+                        column
+                    ]
+                    difference = np.abs(query_normalized - train_normalized)
+                    one_missing = query_missing ^ train_missing
+                    known_side = np.where(query_missing, train_normalized, query_normalized)
+                    missing_difference = np.maximum(known_side, 1.0 - known_side)
+                    difference[one_missing] = missing_difference[one_missing]
+                    difference[query_missing & train_missing] = 1.0
+                distances += difference * difference
+            return -distances
+
         if self.metric == "euclidean":
             # negative squared distance so that larger is better
             q2 = (Q * Q).sum(axis=1, keepdims=True)
@@ -111,9 +181,12 @@ class NumpyKNNClassifier(BaseSupervisedClassifier):
         return Qn @ Xn.T
 
     def predict_proba(self, X: Any) -> np.ndarray:
-        Q = ensure_2d(X).astype(np.float32, copy=False)
         if self._X_train is None or self._y_train_enc is None or self.classes_ is None:
             raise RuntimeError("Model is not fitted")
+        if self._tabular_encoder is None:
+            Q = ensure_2d(X).astype(np.float32, copy=False)
+        else:
+            Q = self._tabular_encoder.transform(X)
 
         n_query = int(Q.shape[0])
         n_train = int(self._X_train.shape[0])

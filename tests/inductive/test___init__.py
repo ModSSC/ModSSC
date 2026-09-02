@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 import random
+import types
 
 import numpy as np
 import pytest
@@ -57,8 +59,11 @@ def test_seed_everything_cuda_and_deterministic(monkeypatch):
     import torch
 
     called = {"cuda": 0, "det": 0}
+    fake_cudnn = types.SimpleNamespace(deterministic=False, benchmark=True)
 
     monkeypatch.setattr(torch.cuda, "is_available", lambda: True)
+    monkeypatch.setattr(torch.backends, "cudnn", fake_cudnn)
+    monkeypatch.delenv("CUBLAS_WORKSPACE_CONFIG", raising=False)
 
     def _manual_seed_all(_seed):
         called["cuda"] += 1
@@ -73,6 +78,9 @@ def test_seed_everything_cuda_and_deterministic(monkeypatch):
     seed_everything(42, deterministic=True)
     assert called["cuda"] >= 1
     assert called["det"] == 1
+    assert fake_cudnn.deterministic is True
+    assert fake_cudnn.benchmark is False
+    assert os.environ["CUBLAS_WORKSPACE_CONFIG"] == ":4096:8"
 
     seed_everything(42, deterministic=False)
     assert called["cuda"] >= 2
@@ -90,8 +98,6 @@ def test_seed_everything_no_deterministic_flags(monkeypatch):
 
 
 def test_seed_everything_missing_cudnn_backend(monkeypatch):
-    import types
-
     import torch
 
     monkeypatch.setattr(torch, "backends", types.SimpleNamespace(), raising=False)

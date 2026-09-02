@@ -23,8 +23,24 @@ from .api import (
     get_op,
     make_context_rng,
 )
-from .plan import AugmentationPlan, StepConfig
-from .registry import register_op
+from .cifar_reference import (
+    CIFAR_REFERENCE_AUGMENTER_ID,
+    CIFAR_REFERENCE_CONTRACT_SCHEMA_VERSION,
+    CifarAugmentationDraws,
+    CifarReferenceAugmentation,
+    cifar_reference_runtime_identity,
+    resolve_cifar_augmentation_profile,
+)
+from .plan import AugmentationPlan, StepConfig, parse_augmentation_plan
+from .registry import available_online_augmenters, get_online_augmenter, register_op
+from .runtime import (
+    OnlineAugmentation,
+    UnlabeledAugmentationResult,
+    build_online_augmentation,
+    materialize_views,
+    prepare_unlabeled_augmentation,
+    validate_augmentation_regime,
+)
 from .types import AugmentationContext, GraphSample, Modality
 
 __all__ = [
@@ -32,14 +48,29 @@ __all__ = [
     "AugmentationContext",
     "AugmentationPlan",
     "StepConfig",
+    "parse_augmentation_plan",
     "AugmentationStrategy",
     "AugmentationPipeline",
     "GraphSample",
     "Modality",
     # Registry / API
     "available_ops",
+    "available_online_augmenters",
     "build_pipeline",
     "get_op",
+    "get_online_augmenter",
     "register_op",
     "make_context_rng",
+    "OnlineAugmentation",
+    "UnlabeledAugmentationResult",
+    "build_online_augmentation",
+    "materialize_views",
+    "prepare_unlabeled_augmentation",
+    "validate_augmentation_regime",
+    "CIFAR_REFERENCE_AUGMENTER_ID",
+    "CIFAR_REFERENCE_CONTRACT_SCHEMA_VERSION",
+    "CifarAugmentationDraws",
+    "CifarReferenceAugmentation",
+    "cifar_reference_runtime_identity",
+    "resolve_cifar_augmentation_profile",
 ]

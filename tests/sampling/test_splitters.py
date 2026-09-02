@@ -7,8 +7,10 @@ import pytest
 
 from modssc.sampling.splitters import (
     _class_counts,
+    _resolve_holdout_size,
     make_holdout_split,
     make_kfold_split,
+    ordered_holdout,
     plain_kfold,
     random_split,
     stratified_holdout,
@@ -127,6 +129,44 @@ def test_make_holdout_split_invalid():
         make_holdout_split(
             n_samples=-1, y=y, test_fraction=0.2, val_fraction=0.0, stratify=False, rng=rng
         )
+
+
+def test_ordered_holdout_covers_boundaries_directions_and_invalid_policy() -> None:
+    indices = np.arange(4, dtype=np.int64)
+    keep, holdout = ordered_holdout(indices, n_holdout=4, holdout_from="start")
+    assert keep.size == 0
+    np.testing.assert_array_equal(holdout, indices)
+
+    keep, holdout = ordered_holdout(indices, n_holdout=2, holdout_from="end")
+    np.testing.assert_array_equal(keep, [0, 1])
+    np.testing.assert_array_equal(holdout, [2, 3])
+
+    with pytest.raises(ValueError, match="holdout_from"):
+        ordered_holdout(indices, n_holdout=1, holdout_from="middle")
+
+
+def test_exact_holdout_size_rejects_out_of_range_values() -> None:
+    with pytest.raises(ValueError, match="test_size"):
+        _resolve_holdout_size(pool_size=3, fraction=0.5, exact_size=4, name="test_size")
+
+
+def test_make_holdout_split_without_shuffle_uses_ordered_policy() -> None:
+    split = make_holdout_split(
+        n_samples=6,
+        y=np.array([0, 1, 0, 1, 0, 1]),
+        test_fraction=0.0,
+        val_fraction=0.0,
+        stratify=True,
+        shuffle=False,
+        test_size=1,
+        val_size=1,
+        holdout_from="end",
+        rng=np.random.default_rng(0),
+    )
+
+    np.testing.assert_array_equal(split["test"], [5])
+    np.testing.assert_array_equal(split["val"], [4])
+    np.testing.assert_array_equal(split["train"], [0, 1, 2, 3])
 
 
 def test_make_kfold_split_random_val():

@@ -12,13 +12,19 @@ from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
 from modssc.inductive.methods.trinet import TriNetMethod, TriNetSpec
 from modssc.inductive.types import DeviceSpec, InductiveDataset
+from modssc.runtime.contracts import ModelContract
 
 from ..conftest import SimpleNet, make_numpy_dataset, make_torch_dataset
 
 
-def _make_bundle(model: torch.nn.Module, *, meta: dict | None = None) -> TorchModelBundle:
+def _make_bundle(
+    model: torch.nn.Module,
+    *,
+    meta: dict | None = None,
+    contract: ModelContract | None = None,
+) -> TorchModelBundle:
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
-    return TorchModelBundle(model=model, optimizer=optimizer, meta=meta)
+    return TorchModelBundle(model=model, optimizer=optimizer, meta=meta, contract=contract)
 
 
 def _make_shared_bundle() -> TorchModelBundle:
@@ -107,6 +113,19 @@ def test_trinet_forward_helpers():
     out_feat = trinet._forward_shared(shared, x)
     assert out_feat.shape[0] == int(x.shape[0])
 
+    declared_logits = _make_bundle(
+        torch.nn.Linear(2, 2),
+        contract=ModelContract(outputs=frozenset({"logits"}), source="test.logits_only"),
+    )
+    with pytest.raises(InductiveValidationError, match="logits cannot serve"):
+        trinet._forward_shared(declared_logits, x)
+
+    declared_features = _make_bundle(
+        torch.nn.Linear(2, 2),
+        contract=ModelContract(outputs=frozenset({"features"}), source="test.features_only"),
+    )
+    assert trinet._forward_shared(declared_features, x).shape == (2, 2)
+
     bad = _make_bundle(_BadMapping())
     with pytest.raises(InductiveValidationError, match="shared_bundle.model must return"):
         trinet._forward_shared(bad, x)
@@ -117,6 +136,21 @@ def test_trinet_forward_helpers():
 
     logits2 = trinet._forward_head(_make_bundle(torch.nn.Linear(2, 2)), x)
     assert logits2.shape == (2, 2)
+
+
+def test_trinet_contract_never_accepts_logits_as_shared_embedding() -> None:
+    contract = TriNetMethod.execution_contract(
+        TriNetSpec(),
+        TriNetMethod.info.capabilities,
+        TriNetMethod.info.model_binding,
+    )
+    shared = next(
+        component for component in contract.components if component.slot == "shared_bundle"
+    )
+
+    assert shared.outputs == frozenset()
+    assert frozenset({"logits"}) not in shared.output_alternatives
+    assert frozenset({"forward_features"}) in shared.output_alternatives
 
 
 def test_trinet_forward_helpers_meta_without_callables():

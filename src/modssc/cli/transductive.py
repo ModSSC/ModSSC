@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import json
 from dataclasses import asdict
 
 import typer
 
-from modssc.cli._utils import exit_with_error
+from modssc.cli._utils import exit_with_error, json_dumps
 from modssc.runtime.logging import LogLevelOption, add_log_level_callback, configure_logging
 from modssc.transductive import registry as transductive_registry
 
@@ -53,8 +52,8 @@ def methods_info(
         info = transductive_registry.get_method_info(method_id)
     except Exception as exc:  # optional deps or missing class
         payload["error"] = str(exc)
-        typer.echo(json.dumps(payload, indent=2, sort_keys=True))
+        typer.echo(json_dumps(payload))
         raise typer.Exit(code=2) from exc
 
     payload["info"] = asdict(info)
-    typer.echo(json.dumps(payload, indent=2, sort_keys=True))
+    typer.echo(json_dumps(payload))

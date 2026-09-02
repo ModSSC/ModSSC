@@ -3,7 +3,7 @@ import numpy as np
 from modssc.sampling.result import SamplingResult
 
 
-def _make_result(indices=None, refs=None, masks=None):
+def _make_result(indices=None, refs=None, masks=None, stats=None):
     return SamplingResult(
         schema_version=1,
         created_at="now",
@@ -13,6 +13,7 @@ def _make_result(indices=None, refs=None, masks=None):
         indices=indices or {},
         refs=refs or {},
         masks=masks or {},
+        stats=stats or {},
     )
 
 
@@ -54,6 +55,34 @@ def test_result_properties_graph():
     np.testing.assert_array_equal(res.test_idx, [4, 5])
     np.testing.assert_array_equal(res.labeled_idx, [0, 1])
     np.testing.assert_array_equal(res.unlabeled_idx, [2])
+
+    converted = res.as_inductive_indices()
+    assert not converted.is_graph()
+    assert set(converted.refs.values()) == {"train"}
+    np.testing.assert_array_equal(converted.indices["train_labeled"], [0, 1])
+    np.testing.assert_array_equal(converted.indices["train_unlabeled"], [2])
+
+
+def test_result_runtime_metadata_helpers() -> None:
+    provider_test = _make_result(
+        indices={"test": np.array([0], dtype=np.int64)},
+        refs={"test": "test"},
+        stats={"train_labeled": {"n": 3}},
+    )
+    assert provider_test.uses_test_split()
+    assert provider_test.expected_labeled_count() == 3
+
+    graph = _make_result(
+        masks={"train": np.array([True])},
+        stats={"labeled": 1, "labeled_class_dist": {"n": 99}},
+    )
+    assert not graph.uses_test_split()
+    assert graph.expected_labeled_count() == 1
+
+
+def test_as_inductive_indices_is_identity_for_inductive_result() -> None:
+    result = _make_result(indices={"train": np.array([0], dtype=np.int64)})
+    assert result.as_inductive_indices() is result
 
 
 def test_result_properties_inductive_defaults():

@@ -1,0 +1,197 @@
+# DIAGNOSTIC DEV CARD — NON-REPORTABLE.
+# Derived from bench/configs/reproductions/flexmatch/cifar10-250.yaml.
+# It preserves the dataset, split, architecture, augmentations, optimizer, and
+# FlexMatch/CPL equations. Only the training stop is truncated to 4,096 steps; the
+# full 2^20-step training horizon is preserved. Its metrics must never be used in
+# paper acceptance or scientific aggregates.
+#
+# Reproduction card: FlexMatch, CIFAR-10, 250 labels, Table 1.
+#
+# Profile: paper:zhang2021-cifar10-table1-250:diagnostic-dev
+# Fidelity status: not_claimable (truncated diagnostic only).
+# Published target: 4.98 +/- 0.09 % test error (95.02 +/- 0.09 % accuracy)
+# over three runs.
+# Paper/code provenance:
+#   https://arxiv.org/pdf/2110.08263
+#   microsoft/Semi-supervised-learning@1ef4cbebcc0b368158315aeb425053858cf6c845
+#   config/classic_cv/flexmatch/flexmatch_cifar10_250_0.yaml
+#
+# The card reuses the validated FixMatch training stack and adds audited CPL
+# state transitions, checkpoint selection, unlabeled-pool semantics and
+# augmentation. Its truncated metrics remain non-reportable.
+run:
+  name: diagnostic_flexmatch_cifar10_table1_250_dev
+  seed: 0
+  seeds:
+  - 0
+  seeded_sections:
+  - sampling
+  - preprocess
+  - augmentation
+  output_dir: ${MODSSC_OUTPUT_DIR}/diagnostics/paper-canaries/flexmatch/cifar10-250-dev
+  log_level: detailed
+  fail_fast: true
+  benchmark_mode: true
+  resume_policy: auto
+dataset:
+  id: cifar10
+  download: false
+  cache_dir: ${MODSSC_DATASET_CACHE_DIR}
+sampling:
+  seed: 0
+  plan:
+    component_seeds:
+      labeling: run
+    split:
+      kind: holdout
+      test_fraction: 0.0
+      val_fraction: 0.0
+      stratify: false
+      shuffle: false
+    labeling:
+      mode: per_class
+      value: 25
+      strategy: balanced
+      min_per_class: 25
+      per_class: true
+      fixed_indices: null
+      selection_order: permutation
+      rng_backend: legacy_random_state
+      unlabeled_pool: includes_labeled
+    imbalance:
+      kind: none
+    policy:
+      respect_official_test: true
+      use_official_graph_masks: true
+      allow_override_official: false
+preprocess:
+  seed: 0
+  fit_on: train_labeled
+  cache: true
+  cache_dir: ${MODSSC_PREPROCESS_CACHE_DIR}
+  plan:
+    output_key: features.X
+    steps:
+    - id: labels.encode
+    - id: labels.to_torch
+      params:
+        device: cuda
+        dtype: int64
+    - id: vision.ensure_num_channels
+      params:
+        num_channels: 3
+    - id: vision.channels_order
+      params:
+        order: NCHW
+    - id: vision.normalize
+      params:
+        mean: [0.0, 0.0, 0.0]
+        std: [255.0, 255.0, 255.0]
+    - id: core.copy_raw
+    - id: core.to_torch
+      params:
+        device: cuda
+        dtype: float32
+augmentation:
+  enabled: true
+  seed: 0
+  mode: online
+  modality: vision
+  online_augmenter_id: vision.cifar_reference
+  online_augmenter_params:
+    profile: torchssl_ra
+  online_augmenter_metadata:
+    source: TorchSSL/TorchSSL@03193a1b7883727db1ce9c092e083091e18aedbb
+    strong_order:
+    - randaugment_with_cutout
+    - random_horizontal_flip
+    - reflect_pad_4_random_crop
+    randaugment:
+      num_ops: 3
+      configured_magnitude: 5
+      magnitude_sampling: per_operation_uniform_full_range
+    cutout:
+      size_fraction_sampling: uniform_[0,0.5)
+      fill_rgb: [125, 123, 114]
+  weak:
+    steps:
+    - id: vision.random_horizontal_flip
+    - id: vision.random_crop_pad
+      params:
+        padding: 4
+  strong:
+    steps:
+    - id: vision.randaugment
+      params:
+        num_ops: 3
+        magnitude: 5
+        num_magnitude_bins: 31
+    - id: vision.random_horizontal_flip
+    - id: vision.random_crop_pad
+      params:
+        padding: 4
+method:
+  kind: inductive
+  id: flexmatch
+  profile: paper:zhang2021-cifar10-table1-250:diagnostic-dev
+  device:
+    device: cuda
+    dtype: float32
+  params:
+    lambda_u: 1.0
+    p_cutoff: 0.95
+    temperature: 0.5
+    mu: 7
+    hard_label: true
+    thresh_warmup: true
+    use_cat: true
+    batch_size: 64
+    max_epochs: 1024
+    max_steps: 4096
+    detach_target: true
+    training_mode: fixed_steps
+    reference_implementation: torchssl
+    sampler_mode: replacement
+    sampler_shuffle_buffer: 8192
+    augmentation_profile: torchssl_ra
+    interleave_bn: false
+    evaluation_interval_steps: 5000
+    evaluation_tail_interval_steps: 1000
+    evaluation_tail_start_fraction: 0.8
+    checkpoint_interval_steps: 5000
+    reporting_policy: best_historical_checkpoint
+    reporting_window_checkpoints: 20
+    allow_short_run: true
+  model:
+    classifier_id: wide_resnet_cifar
+    classifier_backend: torch
+    classifier_params:
+      depth: 28
+      widen_factor: 2
+      input_layout: channels_first
+      reference_implementation: torchssl
+      input_mean: [0.4913725490196078, 0.4823529411764706, 0.44666666666666666]
+      input_std: [0.24705882352941178, 0.24352941176470588, 0.2615686274509804]
+      bn_momentum: 0.001
+      bn_eps: 0.001
+      optimizer: sgd
+      lr: 0.03
+      momentum: 0.9
+      nesterov: true
+      weight_decay: 0.0005
+      decay_bias_and_norm: false
+      scheduler: cosine
+      max_steps: 1048576
+      cosine_cycles: 0.4375
+      ema_decay: 0.999
+      predict_with_ema: true
+    ema: true
+evaluation:
+  during_fit_splits:
+  - test
+  split_for_model_selection: test
+  test_selection_policy: paper_protocol
+  report_splits:
+  - test
+  metrics:
+  - accuracy

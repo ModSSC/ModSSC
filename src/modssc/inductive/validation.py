@@ -57,6 +57,7 @@ def validate_inductive_dataset(data: InductiveDatasetLike) -> None:
     X_u = getattr(data, "X_u", None)
     X_u_w = getattr(data, "X_u_w", None)
     X_u_s = getattr(data, "X_u_s", None)
+    X_u_s_1 = getattr(data, "X_u_s_1", None)
     views = getattr(data, "views", None)
     meta = getattr(data, "meta", None)
 
@@ -76,6 +77,11 @@ def validate_inductive_dataset(data: InductiveDatasetLike) -> None:
         X_u_s_arr = _require_2d(X_u_s, name="X_u_s")
         if int(X_u_s_arr.shape[1]) != n_features:
             raise InductiveValidationError("X_u_s must have the same feature dimension as X_l")
+
+    if X_u_s_1 is not None:
+        X_u_s_1_arr = _require_2d(X_u_s_1, name="X_u_s_1")
+        if int(X_u_s_1_arr.shape[1]) != n_features:
+            raise InductiveValidationError("X_u_s_1 must have the same feature dimension as X_l")
 
     if X_u_w is not None and X_u_s is not None:
         X_u_w_arr = _as_numpy(X_u_w)

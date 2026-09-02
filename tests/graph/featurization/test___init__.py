@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 
 from modssc.graph.artifacts import GraphArtifact, NodeDataset
+from modssc.graph.cache import ViewsCache
 from modssc.graph.errors import GraphValidationError, OptionalDependencyError
 from modssc.graph.featurization.api import graph_to_views
 from modssc.graph.featurization.ops.adjacency import adjacency_from_edge_index
@@ -97,6 +98,12 @@ def test_fingerprint_array_large():
 
     assert isinstance(fp1, str)
     assert isinstance(fp2, str)
+    assert fp1 != fp2
+
+    arr[-1, -1] = 0
+    arr[1000, 1000] = 1
+    fp3 = fingerprint_array(arr)
+    assert fp1 != fp3
 
 
 def test_to_dense_numpy_array():
@@ -228,6 +235,72 @@ def test_api_graph_to_views_missing_meta():
 
     views = graph_to_views(dataset, spec=spec)
     assert "attr" in views.views
+
+
+def test_graph_to_views_rejects_graphless_node_dataset():
+    dataset = NodeDataset(
+        X=np.zeros((2, 1), dtype=np.float32),
+        y=np.array([0, 1], dtype=np.int64),
+        graph=None,
+    )
+
+    with pytest.raises(GraphValidationError, match="requires dataset.graph"):
+        graph_to_views(dataset, spec=GraphFeaturizerSpec(views=("attr",)))
+
+
+def test_views_cache_key_binds_full_feature_content(tmp_path):
+    graph = GraphArtifact(
+        n_nodes=4,
+        edge_index=np.array([[0, 1, 2], [1, 2, 3]], dtype=np.int64),
+        meta={"fingerprint": "fixed-graph-fingerprint"},
+    )
+    spec = GraphFeaturizerSpec(views=("attr",), cache=True)
+    first_dataset = NodeDataset(
+        X=np.zeros((4, 2), dtype=np.float32),
+        y=np.zeros(4, dtype=np.int64),
+        graph=graph,
+    )
+    changed_features = np.zeros((4, 2), dtype=np.float32)
+    changed_features[2, 1] = 1.0
+    second_dataset = NodeDataset(
+        X=changed_features,
+        y=np.zeros(4, dtype=np.int64),
+        graph=graph,
+    )
+
+    first = graph_to_views(first_dataset, spec=spec, cache_dir=tmp_path)
+    second = graph_to_views(second_dataset, spec=spec, cache_dir=tmp_path)
+
+    assert first.meta["fingerprint"] != second.meta["fingerprint"]
+    assert first.meta["features_fingerprint"] != second.meta["features_fingerprint"]
+    np.testing.assert_array_equal(first.views["attr"], first_dataset.X)
+    np.testing.assert_array_equal(second.views["attr"], second_dataset.X)
+
+
+def test_graph_to_views_rebuilds_a_corrupted_cache_entry(tmp_path):
+    graph = GraphArtifact(
+        n_nodes=4,
+        edge_index=np.array([[0, 1, 2], [1, 2, 3]], dtype=np.int64),
+        meta={"fingerprint": "fixed-graph-fingerprint"},
+    )
+    dataset = NodeDataset(
+        X=np.arange(8, dtype=np.float32).reshape(4, 2),
+        y=np.zeros(4, dtype=np.int64),
+        graph=graph,
+    )
+    spec = GraphFeaturizerSpec(views=("attr",), cache=True)
+    first = graph_to_views(dataset, spec=spec, cache_dir=tmp_path)
+    cache = ViewsCache(root=tmp_path)
+    path = cache.entry_dir(first.meta["fingerprint"]) / "views.npz"
+    raw = bytearray(path.read_bytes())
+    raw[len(raw) // 2] ^= 0x01
+    path.write_bytes(raw)
+    assert not cache.exists(first.meta["fingerprint"])
+
+    rebuilt = graph_to_views(dataset, spec=spec, cache_dir=tmp_path)
+    assert rebuilt.meta["fingerprint"] == first.meta["fingerprint"]
+    assert cache.exists(first.meta["fingerprint"])
+    np.testing.assert_array_equal(rebuilt.views["attr"], dataset.X)
 
 
 def test_api_graph_to_views_unknown_view():

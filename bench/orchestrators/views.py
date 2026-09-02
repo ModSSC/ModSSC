@@ -9,78 +9,10 @@ import numpy as np
 
 from modssc.data_loader.types import LoadedDataset
 from modssc.views.api import generate_views
-from modssc.views.plan import ColumnSelectSpec, ViewSpec, ViewsPlan
+from modssc.views.plan import ViewsPlan
 from modssc.views.types import ViewsResult
 
-from .preprocess import _plan_from_dict as _preprocess_plan_from_dict
-
 _LOGGER = logging.getLogger(__name__)
-
-
-def _check_unknown_keys(data: Mapping[str, Any], *, allowed: set[str], path: str) -> None:
-    unknown = set(data.keys()) - allowed
-    if unknown:
-        raise ValueError(f"Unknown keys in {path}: {sorted(unknown)}")
-
-
-def _column_spec_from_dict(obj: Mapping[str, Any]) -> ColumnSelectSpec:
-    if not isinstance(obj, Mapping):
-        raise ValueError("view.columns must be a mapping")
-    _check_unknown_keys(
-        obj,
-        allowed={"mode", "indices", "fraction", "complement_of", "seed_offset"},
-        path="view.columns",
-    )
-    return ColumnSelectSpec(
-        mode=str(obj.get("mode", "all")),
-        indices=tuple(int(i) for i in obj.get("indices", []) or ()),
-        fraction=float(obj.get("fraction", 0.5)),
-        complement_of=str(obj.get("complement_of")) if obj.get("complement_of") else None,
-        seed_offset=int(obj.get("seed_offset", 0)),
-    )
-
-
-def _view_spec_from_dict(obj: Mapping[str, Any]) -> ViewSpec:
-    if not isinstance(obj, Mapping):
-        raise ValueError("Each view must be a mapping")
-    _check_unknown_keys(
-        obj,
-        allowed={"name", "preprocess", "columns", "meta"},
-        path="views.plan.views[]",
-    )
-    name = str(obj.get("name", ""))
-    if not name:
-        raise ValueError("Each view must define 'name'")
-
-    preprocess = None
-    if obj.get("preprocess") is not None:
-        preprocess = _preprocess_plan_from_dict(obj["preprocess"])
-
-    columns = None
-    if obj.get("columns") is not None:
-        columns = _column_spec_from_dict(obj["columns"])
-
-    meta = obj.get("meta")
-    if meta is not None and not isinstance(meta, Mapping):
-        raise ValueError("view.meta must be a mapping when provided")
-
-    return ViewSpec(
-        name=name, preprocess=preprocess, columns=columns, meta=dict(meta) if meta else None
-    )
-
-
-def _plan_from_dict(obj: Mapping[str, Any]) -> ViewsPlan:
-    if not isinstance(obj, Mapping):
-        raise ValueError("views.plan must be a mapping")
-    _check_unknown_keys(obj, allowed={"views"}, path="views.plan")
-
-    views_raw = obj.get("views", [])
-    if not isinstance(views_raw, list):
-        raise ValueError("views.plan.views must be a list")
-    views = [_view_spec_from_dict(v) for v in views_raw]
-    plan = ViewsPlan(views=tuple(views))
-    plan.validate()
-    return plan
 
 
 def run(
@@ -92,7 +24,7 @@ def run(
     cache: bool,
 ) -> ViewsResult:
     start = perf_counter()
-    plan = _plan_from_dict(plan_dict)
+    plan = ViewsPlan.from_dict(plan_dict)
     view_names = [view.name for view in plan.views]
     _LOGGER.info(
         "Views start: seed=%s cache=%s n_views=%s",

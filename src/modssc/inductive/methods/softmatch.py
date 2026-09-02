@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field, replace
 from time import perf_counter
-from typing import Any
+from typing import Any, Literal
 
+from modssc.capabilities import MethodCapabilities
 from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
@@ -12,7 +14,6 @@ from modssc.inductive.methods.deep_utils import (
     TorchBundlePredictMixin,
     concat_data,
     cycle_batch_indices,
-    cycle_batches,
     ensure_float_tensor,
     ensure_model_bundle,
     ensure_model_device,
@@ -22,15 +23,26 @@ from modssc.inductive.methods.deep_utils import (
     init_alignment_uniform,
     num_batches,
     sharpen_probs,
-    slice_data,
 )
+from modssc.inductive.methods.helpers.match_trainer import (
+    MatchStepResult,
+    run_fixed_step_match,
+    uses_fixed_step_match,
+)
+from modssc.inductive.methods.helpers.ssl_augmentation import ssl_batch_views
 from modssc.inductive.methods.utils import (
     detect_backend,
     ensure_1d_labels_torch,
     ensure_torch_data,
 )
+from modssc.inductive.model_binding import ModelBindingSpec
 from modssc.inductive.optional import optional_import
 from modssc.inductive.types import DeviceSpec
+from modssc.runtime.contracts import MethodExecutionContract
+from modssc.runtime.method_contracts import (
+    fallback_method_execution_contract,
+    with_inductive_input_roles,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +68,20 @@ class SoftMatchSpec:
     batch_size: int = 64
     max_epochs: int = 1
     detach_target: bool = True
+    max_steps: int | None = field(default=None, kw_only=True)
+    training_mode: str = field(default="epochs", kw_only=True)
+    reference_implementation: str = field(default="standardized", kw_only=True)
+    sampler_mode: str = field(default="replacement", kw_only=True)
+    sampler_shuffle_buffer: int = field(default=8192, kw_only=True)
+    augmentation_profile: str = field(default="", kw_only=True)
+    interleave_bn: bool = field(default=False, kw_only=True)
+    evaluation_interval_steps: int = field(default=5000, kw_only=True)
+    evaluation_tail_interval_steps: int | None = field(default=1000, kw_only=True)
+    evaluation_tail_start_fraction: float | None = field(default=0.8, kw_only=True)
+    checkpoint_interval_steps: int = field(default=5000, kw_only=True)
+    reporting_policy: str = field(default="best_historical_checkpoint", kw_only=True)
+    reporting_window_checkpoints: int = field(default=20, kw_only=True)
+    allow_short_run: bool = field(default=False, kw_only=True)
 
 
 class SoftMatchMethod(TorchBundlePredictMixin, InductiveMethod):
@@ -70,7 +96,49 @@ class SoftMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         paper_title="SoftMatch: Addressing the Quantity-Quality Tradeoff in Semi-supervised Learning",
         paper_pdf="https://openreview.net/pdf?id=ymt1zQXBDiF",
         official_code="https://github.com/Hhhhhhao/SoftMatch",
+        capabilities=MethodCapabilities(
+            regime="inductive",
+            requires_unlabeled=True,
+            requires_weak_augmentation=True,
+            min_strong_augmentations=1,
+            required_classifier_outputs=frozenset({"logits"}),
+            backends=frozenset({"torch"}),
+            supports_checkpointing=True,
+        ),
+        model_binding=ModelBindingSpec.single(),
     )
+
+    @classmethod
+    def execution_contract(
+        cls,
+        spec: SoftMatchSpec,
+        capabilities: MethodCapabilities,
+        model_binding: Any | None = None,
+    ) -> MethodExecutionContract:
+        fixed_steps = uses_fixed_step_match(spec)
+        feature_roles = ("fit.X_l", "fit.X_u_w", "fit.X_u_s.0")
+        contract = with_inductive_input_roles(
+            fallback_method_execution_contract(cls, capabilities, model_binding),
+            feature_roles=feature_roles,
+            row_groups=(
+                ("fit.X_l", "fit.y_l"),
+                ("fit.X_u_w", "fit.X_u_s.0"),
+            ),
+        )
+        return replace(
+            contract,
+            components=tuple(
+                replace(
+                    requirement,
+                    outputs=frozenset({"logits"}),
+                    input_roles=feature_roles,
+                    requires_ema=fixed_steps,
+                    requires_scheduler=fixed_steps,
+                    scheduler_types=(frozenset({"LambdaLR"}) if fixed_steps else frozenset()),
+                )
+                for requirement in contract.components
+            ),
+        )
 
     def __init__(self, spec: SoftMatchSpec | None = None) -> None:
         self.spec = spec or SoftMatchSpec()
@@ -80,6 +148,13 @@ class SoftMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         self._p_target: Any | None = None
         self._prob_max_mu_t: Any | None = None
         self._prob_max_var_t: Any | None = None
+        self.diagnostics_: dict[str, Any] = {}
+
+    @property
+    def unlabeled_index_space(self) -> Literal["local", "source"]:
+        """Index space required by the active training protocol."""
+
+        return "local" if uses_fixed_step_match(self.spec) else "source"
 
     def _dist_align(self, probs_u: Any, probs_l: Any) -> Any:
         if not bool(self.spec.dist_align):
@@ -95,6 +170,8 @@ class SoftMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         if bool(self.spec.dist_uniform):
             target = self._p_target
         else:
+            # The pinned TorchSSL SoftMatch implementation updates the target
+            # distribution from labeled predictions before applying DA.
             self._p_target = self._p_target * m + (1.0 - m) * probs_l.mean(dim=0)
             target = self._p_target
         ratio = target / self._p_model.clamp_min(1e-6)
@@ -140,12 +217,136 @@ class SoftMatchMethod(TorchBundlePredictMixin, InductiveMethod):
             self._prob_max_mu_t = self._prob_max_mu_t * m + (1.0 - m) * mu
             self._prob_max_var_t = self._prob_max_var_t * m + (1.0 - m) * var
 
+    def _paper_step(
+        self,
+        logits_l: Any,
+        logits_uw: Any,
+        logits_us: Any,
+        y_lb: Any,
+        _idx_u: Any,
+    ) -> MatchStepResult:
+        torch = optional_import("torch", extra="inductive-torch")
+        sup_loss = torch.nn.functional.cross_entropy(logits_l, y_lb)
+        probs_raw = torch.softmax(logits_uw.detach(), dim=1)
+        probs_l = torch.softmax(logits_l.detach(), dim=1)
+        if self._prob_max_mu_t is None or self._prob_max_var_t is None:
+            self._init_stats(n_classes=int(logits_l.shape[1]), device=logits_l.device)
+        raw_max_probs, raw_max_idx = probs_raw.max(dim=1)
+        # The TorchSSL implementation that produced the Section 4.1 results
+        # estimates the Gaussian on raw weak predictions.  Its alignment is
+        # then used only for the sample weight; the hard pseudo-label remains
+        # the argmax of the original prediction.
+        self._update_stats(raw_max_probs, raw_max_idx)
+        probs_aligned = self._dist_align(probs_raw, probs_l)
+        max_probs, max_idx = probs_aligned.max(dim=1)
+        assert self._prob_max_mu_t is not None and self._prob_max_var_t is not None
+        if self.spec.per_class:
+            mu = self._prob_max_mu_t[max_idx]
+            variance = self._prob_max_var_t[max_idx]
+        else:
+            mu = self._prob_max_mu_t
+            variance = self._prob_max_var_t
+        denominator = (2.0 * variance / (float(self.spec.n_sigma) ** 2)).clamp_min(1e-12)
+        distance = torch.clamp(max_probs - mu, max=0.0)
+        weight = torch.exp(-(distance**2) / denominator)
+        pseudo = probs_raw.argmax(dim=1)
+        loss_u = torch.nn.functional.cross_entropy(logits_us, pseudo, reduction="none")
+        unsup_loss = (loss_u * weight).mean()
+        return MatchStepResult(
+            loss=sup_loss + float(self.spec.lambda_u) * unsup_loss,
+            accepted=float(weight.sum().item()),
+            unlabeled=int(weight.numel()),
+            diagnostics={
+                "supervised_loss": float(sup_loss.detach().item()),
+                "unsupervised_loss": float(unsup_loss.detach().item()),
+                "mean_weight": float(weight.mean().item()),
+                "prob_max_mu": float(mu.mean().item()),
+                "prob_max_variance": float(variance.mean().item()),
+            },
+        )
+
+    def _paper_state(self) -> dict[str, Any]:
+        values = (
+            self._p_model,
+            self._p_target,
+            self._prob_max_mu_t,
+            self._prob_max_var_t,
+        )
+        if any(value is None for value in values):
+            raise InductiveValidationError("SoftMatch paper state is not initialized.")
+        return {
+            "p_model": self._p_model,
+            "p_target": self._p_target,
+            "prob_max_mu_t": self._prob_max_mu_t,
+            "prob_max_var_t": self._prob_max_var_t,
+        }
+
+    def _load_paper_state(self, state: Mapping[str, Any]) -> None:
+        torch = optional_import("torch", extra="inductive-torch")
+        if self.spec.model_bundle is None:
+            raise InductiveValidationError("SoftMatch checkpoint requires a model bundle.")
+        device = next(self.spec.model_bundle.model.parameters()).device
+        names = ("p_model", "p_target", "prob_max_mu_t", "prob_max_var_t")
+        values = [state.get(name) for name in names]
+        if not all(isinstance(value, torch.Tensor) for value in values):
+            raise InductiveValidationError("SoftMatch checkpoint state is invalid.")
+        self._p_model = values[0].to(device=device)
+        self._p_target = values[1].to(device=device)
+        self._prob_max_mu_t = values[2].to(device=device)
+        self._prob_max_var_t = values[3].to(device=device)
+
+    def _paper_trace(self) -> dict[str, Any]:
+        return {
+            "p_model": (
+                self._p_model.detach().cpu().tolist() if self._p_model is not None else None
+            ),
+            "p_target": (
+                self._p_target.detach().cpu().tolist() if self._p_target is not None else None
+            ),
+            "prob_max_mu_t": (
+                self._prob_max_mu_t.detach().cpu().tolist()
+                if self._prob_max_mu_t is not None
+                else None
+            ),
+            "prob_max_var_t": (
+                self._prob_max_var_t.detach().cpu().tolist()
+                if self._prob_max_var_t is not None
+                else None
+            ),
+        }
+
+    def _validate_fixed_step_contract(self) -> None:
+        expected = {
+            "lambda_u": (float(self.spec.lambda_u), 1.0),
+            "temperature": (float(self.spec.temperature), 0.5),
+            "ema_p": (float(self.spec.ema_p), 0.999),
+            "n_sigma": (float(self.spec.n_sigma), 2.0),
+            "mu": (int(self.spec.mu), 7),
+            "batch_size": (int(self.spec.batch_size), 64),
+        }
+        changed = [name for name, (actual, target) in expected.items() if actual != target]
+        if (
+            changed
+            or self.spec.per_class
+            or not self.spec.dist_align
+            or self.spec.dist_uniform
+            or not self.spec.hard_label
+            or not self.spec.use_cat
+            or not self.spec.detach_target
+        ):
+            raise InductiveValidationError(
+                "SoftMatch fixed-step contract changed a frozen hyperparameter: "
+                + ", ".join(changed or ["boolean training contract"])
+            )
+
     def fit(self, data: Any, *, device: DeviceSpec, seed: int = 0) -> SoftMatchMethod:
         start = perf_counter()
+        self.evaluation_metric_sets_ = {}
         logger.info("Starting %s.fit", self.info.method_id)
         logger.debug(
             "params lambda_u=%s temperature=%s ema_p=%s n_sigma=%s per_class=%s dist_align=%s "
             "dist_uniform=%s hard_label=%s use_cat=%s mu=%s batch_size=%s max_epochs=%s "
+            "max_steps=%s "
             "detach_target=%s has_model_bundle=%s device=%s seed=%s",
             self.spec.lambda_u,
             self.spec.temperature,
@@ -159,11 +360,27 @@ class SoftMatchMethod(TorchBundlePredictMixin, InductiveMethod):
             self.spec.mu,
             self.spec.batch_size,
             self.spec.max_epochs,
+            self.spec.max_steps,
             self.spec.detach_target,
             bool(self.spec.model_bundle),
             device,
             seed,
         )
+        if uses_fixed_step_match(self.spec):
+            self._validate_fixed_step_contract()
+            run_fixed_step_match(
+                self,
+                data,
+                device=device,
+                seed=seed,
+                method_id=self.info.method_id,
+                step_fn=self._paper_step,
+                state_getter=self._paper_state,
+                state_loader=self._load_paper_state,
+                trace_getter=self._paper_trace,
+            )
+            logger.info("Finished %s.fit in %.3fs", self.info.method_id, perf_counter() - start)
+            return self
         if data is None:
             raise InductiveValidationError("data must not be None.")
 
@@ -214,6 +431,8 @@ class SoftMatchMethod(TorchBundlePredictMixin, InductiveMethod):
             raise InductiveValidationError("mu must be >= 1.")
         if int(self.spec.max_epochs) <= 0:
             raise InductiveValidationError("max_epochs must be >= 1.")
+        if self.spec.max_steps is not None and int(self.spec.max_steps) <= 0:
+            raise InductiveValidationError("max_steps must be >= 1 when provided.")
         if float(self.spec.lambda_u) < 0:
             raise InductiveValidationError("lambda_u must be >= 0.")
         if float(self.spec.temperature) <= 0:
@@ -228,17 +447,26 @@ class SoftMatchMethod(TorchBundlePredictMixin, InductiveMethod):
         steps_l = num_batches(int(get_torch_len(X_l)), batch_size)
         steps_u = num_batches(int(get_torch_len(X_u_w)), unlabeled_batch_size)
         steps_per_epoch = max(int(steps_l), int(steps_u))
+        target_steps = (
+            int(self.spec.max_steps)
+            if self.spec.max_steps is not None
+            else int(self.spec.max_epochs) * steps_per_epoch
+        )
+        epochs_to_run = (target_steps + steps_per_epoch - 1) // steps_per_epoch
 
         gen_l = torch.Generator().manual_seed(int(seed))
         gen_u = torch.Generator().manual_seed(int(seed) + 1)
 
         model.train()
-        for epoch in range(int(self.spec.max_epochs)):
-            iter_l = cycle_batches(
-                X_l,
-                y_l,
+        optimization_steps = 0
+        effective_weight_total = 0.0
+        unlabeled_total = 0
+        for epoch in range(epochs_to_run):
+            iter_l_idx = cycle_batch_indices(
+                int(get_torch_len(X_l)),
                 batch_size=batch_size,
                 generator=gen_l,
+                device=get_torch_device(X_l),
                 steps=steps_per_epoch,
             )
             iter_u_idx = cycle_batch_indices(
@@ -248,9 +476,20 @@ class SoftMatchMethod(TorchBundlePredictMixin, InductiveMethod):
                 device=get_torch_device(X_u_w),
                 steps=steps_per_epoch,
             )
-            for step, ((x_lb, y_lb), idx_u) in enumerate(zip(iter_l, iter_u_idx, strict=False)):
-                x_uw = slice_data(X_u_w, idx_u)
-                x_us = slice_data(X_u_s, idx_u)
+            for step, (idx_l, idx_u) in enumerate(zip(iter_l_idx, iter_u_idx, strict=False)):
+                global_step = epoch * steps_per_epoch + step
+                if global_step >= target_steps:
+                    break
+                x_lb, x_uw, x_us = ssl_batch_views(
+                    ds,
+                    X_l=X_l,
+                    X_u_w=X_u_w,
+                    X_u_s=X_u_s,
+                    idx_l=idx_l,
+                    idx_u=idx_u,
+                    optimization_step=global_step,
+                )
+                y_lb = y_l[idx_l]
 
                 if bool(self.spec.use_cat):
                     inputs = concat_data([x_lb, x_uw, x_us])
@@ -306,6 +545,8 @@ class SoftMatchMethod(TorchBundlePredictMixin, InductiveMethod):
                 denom = (2.0 * var / (float(self.spec.n_sigma) ** 2)).clamp_min(1e-12)
                 diff = torch.clamp(max_probs - mu, max=0.0)
                 weight = torch.exp(-(diff**2) / denom)
+                effective_weight_total += float(weight.sum().item())
+                unlabeled_total += int(weight.numel())
 
                 pseudo_soft = _sharpen(probs_u_raw, temperature=float(self.spec.temperature))
                 if bool(self.spec.hard_label):
@@ -349,8 +590,16 @@ class SoftMatchMethod(TorchBundlePredictMixin, InductiveMethod):
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+                optimization_steps += 1
 
         self._bundle = bundle
         self._backend = backend
+        self.diagnostics_ = {
+            "optimization_steps": optimization_steps,
+            "target_steps": target_steps,
+            "effective_pseudo_label_weight": effective_weight_total,
+            "unlabeled_predictions": unlabeled_total,
+            "mean_pseudo_label_weight": effective_weight_total / max(unlabeled_total, 1),
+        }
         logger.info("Finished %s.fit in %.3fs", self.info.method_id, perf_counter() - start)
         return self

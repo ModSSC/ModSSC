@@ -21,6 +21,7 @@ class StepSpec:
     modalities: tuple[str, ...] = ()
     consumes: tuple[str, ...] = ()
     produces: tuple[str, ...] = ()
+    runtime_roles: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

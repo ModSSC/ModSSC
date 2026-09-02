@@ -34,6 +34,29 @@ Thumbs.db
 site/
 docs/article_code/
 
+# Replication publication staging and non-portable evidence
+docs/replications/**/raw/
+docs/replications/**/.staging/
+docs/replications/**/*.ckpt
+docs/replications/**/*.pt
+docs/replications/**/*.pth
+docs/replications/**/*.npy
+docs/replications/**/*.npz
+docs/replications/**/*.pkl
+docs/replications/**/*.pickle
+docs/replications/**/*.joblib
+docs/replications/**/*.bin
+docs/replications/**/*.h5
+docs/replications/**/*.hdf5
+docs/replications/**/*.onnx
+docs/replications/**/*.tar
+docs/replications/**/*.tar.gz
+docs/replications/**/*.tgz
+docs/replications/**/*.zip
+docs/replications/**/*.log
+docs/replications/**/*.out
+docs/replications/**/*.err
+
 # Local artifacts, caches, runs
 /data/
 /outputs/
@@ -45,7 +68,7 @@ modssc_cache/*
 !modssc_cache/datasets/
 !modssc_cache/preprocess/
 !modssc_cache/output/
-!modssc_cache/graphs/
+!modssc_cache/graph/
 !modssc_cache/graph_views/
 !modssc_cache/splits/
 modssc_cache/datasets/*
@@ -54,8 +77,8 @@ modssc_cache/preprocess/*
 !modssc_cache/preprocess/.gitkeep
 modssc_cache/output/*
 !modssc_cache/output/.gitkeep
-modssc_cache/graphs/*
-!modssc_cache/graphs/.gitkeep
+modssc_cache/graph/*
+!modssc_cache/graph/.gitkeep
 modssc_cache/graph_views/*
 !modssc_cache/graph_views/.gitkeep
 modssc_cache/splits/*
@@ -64,11 +87,10 @@ modssc_cache/splits/*
 coverage.xml
 /analysis/
 /dev_wip/
-/logs_jeanzay/
 /audit_artifacts/
+/.modssc-private/
 /bench/generated/
 bench/configs/experiments/
 bench/configs/benchmarks/
 bench/configs/analysis/
 bench/configs/article/
-bench/slurm

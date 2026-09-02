@@ -8,6 +8,7 @@ from typing import Any
 
 import numpy as np
 
+from modssc.capabilities import DENSE_TRANSDUCTIVE_CAPABILITIES
 from modssc.transductive.base import MethodInfo, TransductiveMethod
 from modssc.transductive.optional import optional_import
 
@@ -89,6 +90,7 @@ class GCNIIMethod(TransductiveMethod):
         paper_title="Simple and Deep Graph Convolutional Networks",
         paper_pdf="https://arxiv.org/pdf/2007.02133",
         official_code="https://github.com/chennnM/GCNII",
+        capabilities=DENSE_TRANSDUCTIVE_CAPABILITIES,
     )
 
     def __init__(self, spec: GCNIISpec | None = None) -> None:

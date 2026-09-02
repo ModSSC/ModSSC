@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 
+from modssc.capabilities import MethodCapabilities
 from modssc.evaluation import accuracy as accuracy_score
 from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.errors import InductiveValidationError
@@ -48,6 +49,13 @@ class S4VMMethod(InductiveMethod):
         paper_title="Towards Making Unlabeled Data Never Hurt",
         paper_pdf="https://icml.cc/Conferences/2011/papers/548_icmlpaper.pdf",
         official_code="https://www.lamda.nju.edu.cn/code_S4VM.ashx",
+        capabilities=MethodCapabilities(
+            regime="inductive",
+            requires_unlabeled=True,
+            target_kinds=frozenset({"class_ids"}),
+            min_labeled_classes=2,
+            max_labeled_classes=2,
+        ),
     )
 
     def __init__(self, spec: S4VMSpec | None = None) -> None:

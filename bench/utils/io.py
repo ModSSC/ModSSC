@@ -3,13 +3,14 @@ from __future__ import annotations
 import json
 import os
 import re
+import tempfile
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-from modssc.runtime.paths import default_local_cache_root
+from modssc.runtime.paths import default_local_cache_root, find_repo_root
 
 _PLACEHOLDER_RE = re.compile(
     r"(?<![$\\])\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))"
@@ -41,13 +42,15 @@ def _format_path(path: tuple[str | int, ...]) -> str:
 
 
 def _default_modssc_env(config_path: Path) -> dict[str, str]:
+    repo_root = find_repo_root(start=config_path.parent)
+    defaults = {} if repo_root is None else {"MODSSC_ROOT": str(repo_root)}
     root_override = os.environ.get("MODSSC_CACHE_ROOT")
     if root_override:
         cache_root = Path(root_override).expanduser().resolve()
     else:
         cache_root = default_local_cache_root(start=config_path.parent)
         if cache_root is None:
-            return {}
+            return defaults
 
     dataset_override = os.environ.get("MODSSC_CACHE_DIR")
     dataset_dir = (
@@ -55,16 +58,19 @@ def _default_modssc_env(config_path: Path) -> dict[str, str]:
         if dataset_override
         else cache_root / "datasets"
     )
-    return {
-        "MODSSC_CACHE_ROOT": str(cache_root),
-        "MODSSC_OUTPUT_DIR": str(cache_root / "output"),
-        "MODSSC_DATASET_CACHE_DIR": str(dataset_dir),
-        "MODSSC_CACHE_DIR": str(dataset_dir),
-        "MODSSC_PREPROCESS_CACHE_DIR": str(cache_root / "preprocess"),
-        "MODSSC_SPLIT_CACHE_DIR": str(cache_root / "splits"),
-        "MODSSC_GRAPH_CACHE_DIR": str(cache_root / "graphs"),
-        "MODSSC_GRAPH_VIEWS_CACHE_DIR": str(cache_root / "graph_views"),
-    }
+    defaults.update(
+        {
+            "MODSSC_CACHE_ROOT": str(cache_root),
+            "MODSSC_OUTPUT_DIR": str(cache_root / "output"),
+            "MODSSC_DATASET_CACHE_DIR": str(dataset_dir),
+            "MODSSC_CACHE_DIR": str(dataset_dir),
+            "MODSSC_PREPROCESS_CACHE_DIR": str(cache_root / "preprocess"),
+            "MODSSC_SPLIT_CACHE_DIR": str(cache_root / "splits"),
+            "MODSSC_GRAPH_CACHE_DIR": str(cache_root / "graph"),
+            "MODSSC_GRAPH_VIEWS_CACHE_DIR": str(cache_root / "graph_views"),
+        }
+    )
+    return defaults
 
 
 def _resolve_env_var(name: str, defaults: Mapping[str, str]) -> str | None:
@@ -141,4 +147,40 @@ def dump_yaml(data: Any, path: str | Path) -> None:
 
 def write_json(path: str | Path, data: Any) -> None:
     p = Path(path)
-    p.write_text(json.dumps(data, indent=2, sort_keys=True), encoding="utf-8")
+    p.write_text(
+        json.dumps(data, indent=2, sort_keys=True, allow_nan=False),
+        encoding="utf-8",
+    )
+
+
+def atomic_write_json(path: str | Path, data: Any) -> None:
+    """Atomically replace *path* with a JSON document.
+
+    The temporary file is created next to the destination so that ``os.replace``
+    stays on one filesystem.  This is intended for completion markers and other
+    small coordination files where a partially written document must never be
+    observable.
+    """
+
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=p.parent,
+            prefix=f".{p.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as stream:
+            temporary_path = Path(stream.name)
+            json.dump(data, stream, indent=2, sort_keys=True, allow_nan=False)
+            stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary_path, p)
+        temporary_path = None
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)

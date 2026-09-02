@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Mapping
 from dataclasses import dataclass
 from time import perf_counter
 from typing import Any
 
 import numpy as np
 
+from modssc.capabilities import MethodCapabilities
 from modssc.transductive.base import MethodInfo, TransductiveMethod
 from modssc.transductive.validation import validate_node_dataset
 
@@ -18,16 +18,11 @@ def _encode_binary(
     y: np.ndarray,
     *,
     labeled_mask: np.ndarray,
-    full_y: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     y = np.asarray(y).reshape(-1)
     labeled_y = y[np.asarray(labeled_mask, dtype=bool)]
     labeled_y = labeled_y[labeled_y >= 0]
     classes = np.unique(labeled_y)
-    if classes.size != 2:
-        pool = y if full_y is None else np.asarray(full_y).reshape(-1)
-        pool = pool[pool >= 0]
-        classes = np.unique(pool)
     if classes.size != 2:
         raise ValueError(f"TSVM supports binary classification only (got {classes.size} classes).")
     y_enc = np.zeros_like(y, dtype=np.float32)
@@ -119,6 +114,15 @@ class TSVMMethod(TransductiveMethod):
         paper_title="Transductive Inference for Text Classification Using Support Vector Machines",
         paper_pdf="https://www.cs.cornell.edu/people/tj/publications/joachims_99a.pdf",
         official_code="https://www.cs.cornell.edu/people/tj/svm_light/",
+        capabilities=MethodCapabilities(
+            regime="transductive",
+            representations=frozenset({"dense"}),
+            target_kinds=frozenset({"class_ids"}),
+            min_labeled_classes=2,
+            max_labeled_classes=2,
+            requires_unlabeled=True,
+            requires_graph=False,
+        ),
     )
 
     def __init__(self, spec: TSVMTransductiveSpec | None = None) -> None:
@@ -131,7 +135,7 @@ class TSVMMethod(TransductiveMethod):
         start = perf_counter()
         logger.info("Starting %s.fit", self.info.method_id)
         logger.debug("spec=%s device=%s seed=%s", self.spec, device, seed)
-        validate_node_dataset(data)
+        validate_node_dataset(data, require_graph=False)
 
         X = np.asarray(data.X, dtype=np.float32)
         y = np.asarray(data.y, dtype=np.int64).reshape(-1)
@@ -156,11 +160,7 @@ class TSVMMethod(TransductiveMethod):
             int(unlabeled_mask.sum()),
         )
 
-        full_y = y
-        meta = getattr(data, "meta", None)
-        if isinstance(meta, Mapping) and "y_true" in meta:
-            full_y = np.asarray(meta["y_true"])
-        y_pm1, classes = _encode_binary(y, labeled_mask=train_mask, full_y=full_y)
+        y_pm1, classes = _encode_binary(y, labeled_mask=train_mask)
         self._classes = classes
 
         labeled_idx = np.flatnonzero(train_mask).astype(np.int64)

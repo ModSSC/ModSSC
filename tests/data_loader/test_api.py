@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import shutil
 import types
 
 import numpy as np
@@ -16,6 +17,17 @@ def test_cache_dir_uses_env_override(monkeypatch, tmp_path) -> None:
     assert api.cache_dir() == tmp_path.expanduser().resolve()
 
 
+def test_dataset_identity_preflight_is_public_and_cache_independent(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    monkeypatch.setenv("MODSSC_CACHE_DIR", str(tmp_path))
+    identity = api.resolve_dataset_identity("toy")
+
+    assert list(tmp_path.iterdir()) == []
+    assert api.dataset_fingerprint("toy") == identity.fingerprint(schema_version=api.SCHEMA_VERSION)
+
+
 def test_load_dataset_triggers_download_path(tmp_path) -> None:
     ds = api.load_dataset("toy", cache_dir=tmp_path, download=True, force=False)
     assert ds.train is not None
@@ -25,6 +37,35 @@ def test_load_dataset_triggers_download_path(tmp_path) -> None:
 def test_load_dataset_offline_raises(tmp_path) -> None:
     with pytest.raises(DatasetNotCachedError):
         api.load_dataset("toy", cache_dir=tmp_path, download=False, force=False)
+
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_offline_reads_do_not_mutate_complete_cache_without_raw(tmp_path) -> None:
+    api.download_dataset("toy", cache_dir=tmp_path, force=True)
+    shutil.rmtree(tmp_path / "raw")
+
+    def inventory():
+        return [
+            (
+                path.relative_to(tmp_path).as_posix(),
+                path.is_dir(),
+                path.stat().st_mode,
+                path.stat().st_size,
+                path.stat().st_mtime_ns,
+                None if path.is_dir() else path.read_bytes(),
+            )
+            for path in sorted(tmp_path.rglob("*"))
+        ]
+
+    before = inventory()
+    assert api.load_dataset("toy", cache_dir=tmp_path, download=False).train is not None
+    assert inventory() == before
+
+    evidence = api.verify_dataset_content("toy", cache_dir=tmp_path, rehash=True)
+    assert evidence["cache_fingerprint"]
+    assert inventory() == before
+    assert not (tmp_path / "raw").exists()
 
 
 def test_download_dataset_cached_short_circuit(tmp_path) -> None:

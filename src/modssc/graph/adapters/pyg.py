@@ -5,11 +5,14 @@ from typing import Any
 import numpy as np
 
 from ..artifacts import NodeDataset
+from ..errors import GraphValidationError
 from ..optional import optional_import
 
 
 def to_pyg_data(dataset: NodeDataset) -> Any:
     """Convert a NodeDataset into a PyTorch Geometric Data object."""
+    if dataset.graph is None:
+        raise GraphValidationError("PyG conversion requires dataset.graph")
     torch = optional_import("torch", extra="graph")
     pyg_data = optional_import("torch_geometric.data", extra="graph")
 

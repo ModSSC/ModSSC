@@ -15,6 +15,14 @@ def test_graph_artifact_validation():
     with pytest.raises(GraphValidationError, match="edge_weight must have shape"):
         GraphArtifact(n_nodes=5, edge_index=np.zeros((2, 3)), edge_weight=np.zeros((4,)))
 
+    exact = GraphArtifact(
+        n_nodes=1,
+        edge_index=np.array([[0], [0]]),
+        edge_weight=np.array([np.nextafter(0.5, 1.0)], dtype=np.float64),
+        meta={"edge_weight_dtype": "float64"},
+    )
+    assert exact.edge_weight.dtype == np.float64
+
 
 def test_node_dataset_validation():
     graph = GraphArtifact(n_nodes=5, edge_index=np.zeros((2, 0)))
@@ -27,6 +35,26 @@ def test_node_dataset_validation():
 
     with pytest.raises(GraphValidationError, match="Mask 'train' must have shape"):
         NodeDataset(X=np.zeros((5, 2)), y=np.zeros(5), graph=graph, masks={"train": np.zeros(4)})
+
+
+def test_node_dataset_supports_graph_optional_transductive_methods():
+    dataset = NodeDataset(
+        X=np.zeros((3, 2)),
+        y=np.array([0, 1, -1]),
+        graph=None,
+        masks={"train": np.array([True, True, False])},
+    )
+
+    assert dataset.graph is None
+    with pytest.raises(GraphValidationError, match="same first dimension as X"):
+        NodeDataset(X=np.zeros((3, 2)), y=np.zeros(2), graph=None)
+    with pytest.raises(GraphValidationError, match="Mask 'train' must have shape"):
+        NodeDataset(
+            X=np.zeros((3, 2)),
+            y=np.zeros(3),
+            graph=None,
+            masks={"train": np.zeros(2)},
+        )
 
 
 def test_dataset_views_validation():

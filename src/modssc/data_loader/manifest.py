@@ -11,6 +11,7 @@ from typing import Any
 
 from modssc.data_loader.storage.json import to_jsonable as _jsonable
 from modssc.data_loader.types import DatasetIdentity, LoadedDataset
+from modssc.utils.io import atomic_write_text
 
 
 def utc_now_iso() -> str:
@@ -113,7 +114,7 @@ def build_manifest(
 
 def write_manifest(path: Path, manifest: Manifest) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(manifest.to_json() + "\n", encoding="utf-8")
+    atomic_write_text(path, manifest.to_json() + "\n")
 
 
 def read_manifest(path: Path) -> Manifest:

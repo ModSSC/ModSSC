@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Mapping
+from dataclasses import replace
+from pathlib import Path
 from time import perf_counter
 from typing import Any
 
@@ -9,16 +11,19 @@ import numpy as np
 
 from modssc.data_loader.types import LoadedDataset
 from modssc.sampling.api import sample
+from modssc.sampling.dataset import prepare_dataset as prepare_sampling_dataset
 from modssc.sampling.plan import SamplingPlan
 from modssc.sampling.result import SamplingResult
+
+from ..utils.resources import resolve_sampling_plan_resources
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def _plan_from_dict(obj: Mapping[str, Any]) -> SamplingPlan:
-    if not isinstance(obj, Mapping):
-        raise ValueError("sampling.plan must be a mapping")
-    return SamplingPlan.from_dict(dict(obj))
+def prepare_dataset(dataset: LoadedDataset, *, plan_dict: Mapping[str, Any]) -> LoadedDataset:
+    """Parse the YAML sampling plan and delegate native preparation to ``src``."""
+
+    return prepare_sampling_dataset(dataset, plan=SamplingPlan.from_dict(dict(plan_dict)))
 
 
 def run(
@@ -27,13 +32,21 @@ def run(
     plan_dict: Mapping[str, Any],
     seed: int,
     dataset_id: str | None = None,
+    resource_root: Path | None = None,
 ) -> SamplingResult:
     start = perf_counter()
-    plan = _plan_from_dict(plan_dict)
+    declared_plan = dict(plan_dict)
+    runtime_plan = (
+        resolve_sampling_plan_resources(declared_plan, resource_root=resource_root)
+        if resource_root is not None
+        else declared_plan
+    )
+    plan = SamplingPlan.from_dict(runtime_plan)
     policy = {
         "respect_official_test": bool(plan.policy.respect_official_test),
         "use_official_graph_masks": bool(plan.policy.use_official_graph_masks),
         "allow_override_official": bool(plan.policy.allow_override_official),
+        "merge_official_splits": bool(plan.policy.merge_official_splits),
     }
     _LOGGER.info("Sampling start: seed=%s dataset_id=%s", int(seed), dataset_id)
     _LOGGER.debug(
@@ -56,6 +69,10 @@ def run(
         dataset_id=dataset_id,
         save=False,
     )
+    if resource_root is not None:
+        # Runtime paths are checkout-specific. Keep the declared relative plan in
+        # persisted results while retaining the content-based split fingerprint.
+        result = replace(result, plan=SamplingPlan.from_dict(declared_plan).as_dict())
 
     y_train = np.asarray(dataset.train.y)
     n_train = int(y_train.shape[0])
@@ -65,10 +82,7 @@ def run(
         n_test = int(y_test.shape[0])
 
     n_nodes = None
-    if (
-        getattr(dataset.train, "edges", None) is not None
-        or getattr(dataset.train, "masks", None) is not None
-    ):
+    if dataset.has_graph:
         n_nodes = int(np.asarray(dataset.train.y).shape[0])
 
     result.validate(n_train=n_train, n_test=n_test, n_nodes=n_nodes)

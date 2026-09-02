@@ -49,6 +49,8 @@ preprocess:
     - id: vision.aet
       params:
         source: precomputed
+        expected_features_sha256: 02b21620c0c1448f00f87679efc0bd02b9cb4072b53a01277b1f6b03d2bbaeba
+        expected_labels_sha256: 0ff873d4ee7578949152fa4305c30d62ace90df32e095fcc60855dc27ba591b5
         preset: poisson_cifar10_projective
         unit_normalize: true
 method:

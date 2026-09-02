@@ -22,4 +22,5 @@ def _assert_module_importable(module_name: str):
 
 
 def test_module_importable() -> None:
-    _assert_module_importable("modssc.preprocess.catalog")
+    catalog = _assert_module_importable("modssc.preprocess.catalog")
+    assert any(step.step_id == "text.count_vectorizer" for step in catalog.BUILTIN_STEPS)

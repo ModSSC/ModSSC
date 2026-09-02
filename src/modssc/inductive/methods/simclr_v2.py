@@ -3,10 +3,11 @@ from __future__ import annotations
 import copy
 import logging
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from time import perf_counter
 from typing import Any
 
+from modssc.capabilities import TORCH_INDUCTIVE_CAPABILITIES, MethodCapabilities
 from modssc.inductive.base import InductiveMethod, MethodInfo
 from modssc.inductive.deep import TorchModelBundle
 from modssc.inductive.errors import InductiveValidationError
@@ -29,8 +30,18 @@ from modssc.inductive.methods.utils import (
     ensure_1d_labels_torch,
     ensure_torch_data,
 )
+from modssc.inductive.model_binding import ModelBindingSpec
 from modssc.inductive.optional import optional_import
 from modssc.inductive.types import DeviceSpec
+from modssc.runtime.contracts import (
+    ComponentRelation,
+    ComponentRequirement,
+    MethodExecutionContract,
+)
+from modssc.runtime.method_contracts import (
+    fallback_method_execution_contract,
+    with_inductive_input_roles,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -65,28 +76,114 @@ def _forward_features(model: Any, meta: Mapping[str, Any] | None, X: Any) -> Any
         if callable(forward):
             return _as_tensor(forward(X), name="forward_features output")
     out = model(X)
-    return _tensor_from_output(
-        out,
-        keys=("feat", "features", "embedding", "proj", "projection", "z", "logits"),
-        name="model output",
+    if isinstance(out, Mapping):
+        for key in ("feat", "features", "embedding"):
+            if key in out:
+                return _as_tensor(out[key], name=f"model feature output[{key}]")
+    raise InductiveValidationError(
+        "SimCLRv2 requires an explicit encoder feature via meta['forward_features'] "
+        "or a model output keyed as 'feat', 'features', or 'embedding'; logits and "
+        "projection outputs cannot serve as encoder features."
     )
 
 
-def _forward_projection(model: Any, meta: Mapping[str, Any] | None, X: Any) -> Any:
+def _forward_projection(
+    model: Any,
+    meta: Mapping[str, Any] | None,
+    X: Any,
+    *,
+    contract: Any | None = None,
+) -> Any:
     if isinstance(meta, Mapping):
         forward = meta.get("forward_projection")
         if callable(forward):
             return _as_tensor(forward(X), name="forward_projection output")
         projector = meta.get("projection_head") or meta.get("projector")
         if callable(projector):
+            declared_outputs = frozenset(getattr(contract, "outputs", ()))
+            if contract is not None and not declared_outputs & {
+                "forward_features",
+                "feature_extractor",
+                "encoder",
+                "feat",
+                "features",
+                "embedding",
+            }:
+                raise InductiveValidationError(
+                    "SimCLRv2 projection_head requires a declared encoder feature path; "
+                    "classifier logits cannot be projected as features."
+                )
             feats = _forward_features(model, meta, X)
             return _as_tensor(projector(feats), name="projection_head output")
     out = model(X)
-    return _tensor_from_output(
-        out,
-        keys=("proj", "projection", "z", "embedding", "feat", "features", "logits"),
-        name="model output",
+    if isinstance(out, Mapping):
+        for key in ("proj", "projection", "z"):
+            if key in out:
+                return _as_tensor(out[key], name=f"model projection output[{key}]")
+    declared_outputs = frozenset(getattr(contract, "outputs", ()))
+    if declared_outputs & {"proj", "projection", "z"} and not isinstance(out, Mapping):
+        return _tensor_from_output(
+            out,
+            keys=("proj", "projection", "z"),
+            name="declared model projection output",
+        )
+    raise InductiveValidationError(
+        "SimCLRv2 pretraining requires an explicit projection head or a declared "
+        "projection output; classifier logits and encoder features are not projections."
     )
+
+
+def _validate_projection_optimization(bundle: TorchModelBundle) -> None:
+    """Require projection state to be model-owned, optimized, and serializable."""
+
+    model_parameters = tuple(
+        parameter for parameter in bundle.model.parameters() if parameter.requires_grad
+    )
+    optimizer_parameter_ids = {
+        id(parameter)
+        for group in bundle.optimizer.param_groups
+        for parameter in group.get("params", ())
+    }
+    missing_model_parameters = [
+        parameter for parameter in model_parameters if id(parameter) not in optimizer_parameter_ids
+    ]
+    if missing_model_parameters:
+        raise InductiveValidationError(
+            "SimCLRv2 pretraining optimizer must own every trainable encoder/projection parameter."
+        )
+
+    meta = bundle.meta
+    if not isinstance(meta, Mapping):
+        return
+    projection_callable = None
+    for key in ("forward_projection", "projection_head", "projector"):
+        candidate = meta.get(key)
+        if callable(candidate):
+            projection_callable = candidate
+            break
+    if projection_callable is None:
+        return
+    owner = (
+        projection_callable
+        if hasattr(projection_callable, "parameters")
+        else getattr(projection_callable, "__self__", None)
+    )
+    if owner is None or not hasattr(owner, "parameters"):
+        raise InductiveValidationError(
+            "SimCLRv2 projection callable must be a module or a bound module method so its "
+            "optimization state is auditable."
+        )
+    model_module_ids = {id(module) for module in bundle.model.modules()}
+    if id(owner) not in model_module_ids:
+        raise InductiveValidationError(
+            "SimCLRv2 projection head must be registered inside bundle.model so its state "
+            "is included in model.state_dict()."
+        )
+    projection_parameters = tuple(
+        parameter for parameter in owner.parameters() if parameter.requires_grad
+    )
+    if not projection_parameters:
+        raise InductiveValidationError("SimCLRv2 projection head must expose trainable parameters.")
 
 
 def _forward_logits(model: Any, meta: Mapping[str, Any] | None, X: Any) -> Any:
@@ -208,7 +305,154 @@ class SimCLRv2Method(ArgmaxPredictMixin, InductiveMethod):
         paper_title="Big Self-Supervised Models are Strong Semi-Supervised Learners",
         paper_pdf="https://arxiv.org/pdf/2006.10029",
         official_code="https://github.com/google-research/simclr",
+        capabilities=TORCH_INDUCTIVE_CAPABILITIES,
+        model_binding=ModelBindingSpec.pretrain_finetune(),
     )
+
+    @classmethod
+    def execution_contract(
+        cls,
+        spec: SimCLRv2Spec,
+        capabilities: MethodCapabilities,
+        model_binding: Any | None = None,
+    ) -> MethodExecutionContract:
+        pretrain_active = int(spec.pretrain_epochs) > 0
+        finetune_active = int(spec.finetune_epochs) > 0
+        distill_active = int(spec.distill_epochs) > 0
+        needs_unlabeled = pretrain_active or distill_active
+        effective_capabilities = replace(
+            capabilities,
+            requires_unlabeled=needs_unlabeled,
+            requires_weak_augmentation=False,
+            min_strong_augmentations=0,
+        )
+        unlabeled_roles = ("fit.X_u", "fit.X_u_w", "fit.X_u_s.0") if needs_unlabeled else ()
+        feature_roles = ("fit.X_l", *unlabeled_roles)
+        contract = with_inductive_input_roles(
+            fallback_method_execution_contract(
+                cls,
+                effective_capabilities,
+                model_binding,
+            ),
+            feature_roles=feature_roles,
+            optional_feature_roles=(unlabeled_roles if needs_unlabeled else ()),
+            row_groups=(
+                (("fit.X_l", "fit.y_l"),)
+                + ((("fit.X_u_w", "fit.X_u_s.0"),) if needs_unlabeled else ())
+            ),
+        )
+
+        if len(contract.components) != 2:
+            return contract
+        pretrain_template, finetune_template = contract.components
+        templates = {
+            pretrain_template.slot: pretrain_template,
+            finetune_template.slot: finetune_template,
+        }
+        selected: dict[str, ComponentRequirement] = {}
+
+        def merge_requirement(
+            slot: str,
+            *,
+            outputs: frozenset[str] = frozenset(),
+            output_alternatives: tuple[frozenset[str], ...] = (),
+            input_roles: tuple[str, ...] = (),
+        ) -> None:
+            previous = selected.get(slot)
+            template = (
+                replace(
+                    templates[slot],
+                    outputs=frozenset(),
+                    output_alternatives=(),
+                    input_roles=(),
+                )
+                if previous is None
+                else previous
+            )
+            selected[slot] = replace(
+                template,
+                outputs=template.outputs | outputs,
+                output_alternatives=(
+                    *template.output_alternatives,
+                    *output_alternatives,
+                ),
+                input_roles=(*template.input_roles, *input_roles),
+            )
+
+        pretrain_slot: str | None = None
+        if pretrain_active:
+            pretrain_slot = (
+                pretrain_template.slot
+                if spec.pretrain_bundle is not None or spec.finetune_bundle is None
+                else finetune_template.slot
+            )
+            merge_requirement(
+                pretrain_slot,
+                output_alternatives=(
+                    frozenset({"forward_projection"}),
+                    frozenset({"projection"}),
+                    frozenset({"proj"}),
+                    frozenset({"z"}),
+                    *tuple(
+                        frozenset({projector, feature})
+                        for projector in ("projection_head", "projector")
+                        for feature in (
+                            "forward_features",
+                            "feature_extractor",
+                            "encoder",
+                            "feat",
+                            "features",
+                            "embedding",
+                        )
+                    ),
+                ),
+                input_roles=unlabeled_roles,
+            )
+
+        finetune_slot: str | None = None
+        if finetune_active or distill_active:
+            finetune_slot = (
+                finetune_template.slot
+                if spec.finetune_bundle is not None or pretrain_slot is None
+                else pretrain_slot
+            )
+            finetune_inputs: list[str] = []
+            if finetune_active:
+                finetune_inputs.append("fit.X_l")
+            if distill_active:
+                finetune_inputs.extend(unlabeled_roles)
+                if spec.student_bundle is None and bool(spec.use_labeled_in_distill):
+                    finetune_inputs.append("fit.X_l")
+            merge_requirement(
+                finetune_slot,
+                outputs=frozenset({"logits"}),
+                input_roles=tuple(finetune_inputs),
+            )
+
+        component_relations: tuple[ComponentRelation, ...] = ()
+        if distill_active and spec.student_bundle is not None:
+            student_inputs = list(unlabeled_roles)
+            if bool(spec.use_labeled_in_distill):
+                student_inputs.append("fit.X_l")
+            selected["student_bundle"] = ComponentRequirement(
+                slot="student_bundle",
+                kind="torch_model",
+                outputs=frozenset({"logits"}),
+                input_roles=tuple(student_inputs),
+                requires_optimizer=True,
+            )
+            assert finetune_slot is not None
+            relation_slots = (finetune_slot, "student_bundle")
+            component_relations = (
+                ComponentRelation("distinct_objects", relation_slots),
+                ComponentRelation("disjoint_parameters", relation_slots),
+            )
+
+        return replace(
+            contract,
+            components=tuple(selected[slot] for slot in sorted(selected)),
+            component_relations=component_relations,
+        )
 
     def __init__(self, spec: SimCLRv2Spec | None = None) -> None:
         self.spec = spec or SimCLRv2Spec()
@@ -333,6 +577,7 @@ class SimCLRv2Method(ArgmaxPredictMixin, InductiveMethod):
             ensure_model_device(finetune_bundle.model, device=get_torch_device(X_l))
 
         if int(self.spec.pretrain_epochs) > 0 and pretrain_bundle is not None:
+            _validate_projection_optimization(pretrain_bundle)
             steps_u = num_batches(int(get_torch_len(X_uw)), int(self.spec.batch_size))
             gen_u = torch.Generator().manual_seed(int(seed))
             model = pretrain_bundle.model
@@ -349,8 +594,18 @@ class SimCLRv2Method(ArgmaxPredictMixin, InductiveMethod):
                 for step, idx_u in enumerate(iter_u):
                     x_uw = slice_data(X_uw, idx_u)
                     x_us = slice_data(X_us, idx_u)
-                    z1 = _forward_projection(model, pretrain_bundle.meta, x_uw)
-                    z2 = _forward_projection(model, pretrain_bundle.meta, x_us)
+                    z1 = _forward_projection(
+                        model,
+                        pretrain_bundle.meta,
+                        x_uw,
+                        contract=pretrain_bundle.contract,
+                    )
+                    z2 = _forward_projection(
+                        model,
+                        pretrain_bundle.meta,
+                        x_us,
+                        contract=pretrain_bundle.contract,
+                    )
                     if int(z1.ndim) != 2 or int(z2.ndim) != 2:
                         raise InductiveValidationError(
                             "Projection outputs must be 2D (batch, dim)."

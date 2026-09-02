@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 
+from modssc.capabilities import DENSE_TRANSDUCTIVE_CAPABILITIES
 from modssc.transductive.base import MethodInfo, TransductiveMethod
 from modssc.transductive.optional import optional_import
 
@@ -69,6 +70,7 @@ class GraphSAGEMethod(TransductiveMethod):
         paper_title="Inductive Representation Learning on Large Graphs",
         paper_pdf="https://arxiv.org/pdf/1706.02216",
         official_code="https://github.com/williamleif/GraphSAGE",
+        capabilities=DENSE_TRANSDUCTIVE_CAPABILITIES,
     )
 
     def __init__(self, spec: GraphSAGESpec | None = None) -> None:

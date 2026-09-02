@@ -42,3 +42,15 @@ class DatasetNotCachedError(DataLoaderError):
 
 class ManifestError(DataLoaderError):
     pass
+
+
+class CachePromotionError(DataLoaderError):
+    """Raised when a cache promotion cannot satisfy its safety contract."""
+
+
+class DatasetSelectionError(DataLoaderError, ValueError):
+    """Raised when a native row-selection contract cannot be satisfied."""
+
+    def __init__(self, message: str, *, code: str = "E_DATA_SELECTION") -> None:
+        super().__init__(message)
+        self.code = str(code)

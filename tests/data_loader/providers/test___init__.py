@@ -11,10 +11,15 @@ from modssc.data_loader.uri import ParsedURI
 def test_provider_registry_and_factory() -> None:
     names = get_provider_names()
     assert "toy" in names
+    assert "webkb1998" in names
 
     p = create_provider("toy")
     assert isinstance(p, BaseProvider)
     assert p.name == "toy"
+
+    webkb = create_provider("webkb1998")
+    assert isinstance(webkb, BaseProvider)
+    assert webkb.name == "webkb1998"
 
     with pytest.raises(ProviderNotFoundError):
         create_provider("does_not_exist")

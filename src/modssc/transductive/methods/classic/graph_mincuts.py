@@ -7,6 +7,7 @@ from typing import Any, Literal
 
 import numpy as np
 
+from modssc.capabilities import MethodCapabilities
 from modssc.transductive.base import MethodInfo, TransductiveMethod
 from modssc.transductive.errors import OptionalDependencyError
 from modssc.transductive.methods.utils import DiffusionResult, _validate_graph_inputs
@@ -236,6 +237,14 @@ class GraphMincutsMethod(TransductiveMethod):
         required_extra="sklearn",
         paper_title="Learning from Labeled and Unlabeled Data using Graph Mincuts",
         paper_pdf="docs/article_code/transductive/2001-Graph Mincuts/Learning from Labeled and Unlabeled Data using Graph Mincuts.pdf",
+        capabilities=MethodCapabilities(
+            regime="transductive",
+            requires_unlabeled=True,
+            requires_graph=True,
+            target_kinds=frozenset({"class_ids"}),
+            min_labeled_classes=2,
+            max_labeled_classes=2,
+        ),
     )
 
     def __init__(self, spec: GraphMincutsSpec | None = None) -> None:

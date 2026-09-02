@@ -57,7 +57,7 @@ def test_load_processed_rebases_cached_torchaudio_paths(tmp_path):
         mock_storage_cls.return_value = mock_storage
 
         cached_path = (
-            "/Users/melvin/Desktop/ModSSC Project/ModSSC/modssc_cache/datasets/raw/"
+            "/old/worktree/ModSSC/modssc_cache/datasets/raw/"
             "torchaudio/YESNO/noversion/source/waves_yesno/0_0_0_0_1_1_1_1.wav"
         )
         mock_storage.load.return_value = LoadedDataset(

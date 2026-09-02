@@ -12,17 +12,27 @@ Design goals:
 
 from modssc.preprocess.api import fit_transform, preprocess, resolve_plan
 from modssc.preprocess.models import available_models, model_info
-from modssc.preprocess.plan import PreprocessPlan, StepConfig
+from modssc.preprocess.plan import (
+    PreprocessPlan,
+    StepConfig,
+    steps_require_fit_indices,
+    steps_with_runtime_role,
+)
 from modssc.preprocess.registry import available_steps, step_info
+from modssc.preprocess.scope import FitScope, resolve_fit_indices
 
 __all__ = [
     "PreprocessPlan",
     "StepConfig",
+    "FitScope",
     "available_models",
     "available_steps",
     "fit_transform",
     "model_info",
     "preprocess",
     "resolve_plan",
+    "resolve_fit_indices",
     "step_info",
+    "steps_require_fit_indices",
+    "steps_with_runtime_role",
 ]

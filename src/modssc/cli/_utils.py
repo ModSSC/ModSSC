@@ -23,6 +23,18 @@ def exit_with_error(message: str) -> NoReturn:
     raise typer.Exit(code=2)
 
 
+def _json_default(value: Any) -> Any:
+    if isinstance(value, (set, frozenset)):
+        return sorted(value)
+    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
+
+
+def json_dumps(value: Any, *, indent: int = 2, sort_keys: bool = True) -> str:
+    """Serialize CLI payloads, including immutable capability sets."""
+
+    return json.dumps(value, indent=indent, sort_keys=sort_keys, default=_json_default)
+
+
 def load_yaml_or_json(path: Path, *, label: str) -> Any:
     try:
         text = path.read_text(encoding="utf-8")

@@ -120,3 +120,44 @@ def test_numpy_knn_list_input() -> None:
     clf = create_classifier("knn", backend="numpy", params={"k": 1})
     clf.fit(X, y)
     assert clf._X_train.dtype == np.float32
+
+
+def test_numpy_knn_mixed_tabular_distance_handles_nominal_numeric_and_missing() -> None:
+    schema = (
+        {"type": "nominal", "values": ("n", "y")},
+        {"type": "numeric"},
+    )
+    X = np.asarray([["n", 0.0], ["n", "?"], ["y", 10.0], ["?", 10.0]], dtype=object)
+    y = np.asarray([0, 0, 1, 1])
+    clf = create_classifier(
+        "knn",
+        backend="numpy",
+        params={"k": 1, "feature_schema": schema, "missing_values": ("?",)},
+    )
+    clf.fit(X, y)
+    assert np.array_equal(clf.predict([["n", 1.0], ["y", 9.0]]), [0, 1])
+    scores = clf._pairwise_scores(np.asarray([[np.nan, np.nan]]))
+    assert np.isfinite(scores).all()
+
+
+def test_numpy_knn_mixed_tabular_validation_and_fitted_range_invariant() -> None:
+    schema = ({"type": "numeric"},)
+    clf = create_classifier(
+        "knn", backend="numpy", params={"k": 1, "feature_schema": schema, "metric": "cosine"}
+    )
+    with pytest.raises(SupervisedValidationError, match="supported only"):
+        clf.fit([[0.0], [1.0]], [0, 1])
+
+    clf = create_classifier("knn", backend="numpy", params={"k": 1, "feature_schema": schema})
+    clf.fit([[1.0], [1.0]], [0, 1])
+    clf._numeric_range = None
+    with pytest.raises(RuntimeError, match="numeric ranges"):
+        clf.predict([[1.0]])
+
+    all_missing = create_classifier(
+        "knn",
+        backend="numpy",
+        params={"k": 1, "feature_schema": schema, "missing_values": ("?",)},
+    )
+    all_missing.fit([["?"], ["?"]], [0, 1])
+    assert all_missing.predict([["?"]]).shape == (1,)

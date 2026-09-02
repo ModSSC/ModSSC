@@ -59,6 +59,7 @@ preprocess:
         dtype: float32
 augmentation:
   enabled: true
+  strong_views: 2
   seed: 1
   mode: fixed
   modality: tabular

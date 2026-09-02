@@ -1,1 +1,1 @@
-"""Utility helpers for bench orchestration."""
+"""Utility helpers for declarative benchmark orchestration."""

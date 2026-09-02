@@ -16,6 +16,7 @@ from __future__ import annotations
 from .artifacts import DatasetViews, GraphArtifact, NodeDataset
 from .construction.api import build_graph
 from .featurization.api import graph_to_views
+from .runtime import build_graph_from_preprocess, summarize_graph
 from .specs import GraphBuilderSpec, GraphFeaturizerSpec, GraphWeightsSpec
 
 __all__ = [
@@ -26,5 +27,7 @@ __all__ = [
     "GraphFeaturizerSpec",
     "GraphWeightsSpec",
     "build_graph",
+    "build_graph_from_preprocess",
     "graph_to_views",
+    "summarize_graph",
 ]

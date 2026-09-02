@@ -305,6 +305,9 @@ def test_laplace_learning_method_fit_predict(monkeypatch):
 
     assert proba.shape == (n, 2)
     assert proba.argmax(axis=1).tolist() == y.tolist()
+    assert method.diagnostics_["solver"] == "conjugate_gradient"
+    assert method.diagnostics_["backend"] == "numpy"
+    assert method.diagnostics_["converged"] is True
 
 
 def test_lazy_random_walk_method_fit_predict(monkeypatch):

@@ -366,6 +366,7 @@ class DummyLinearModel2D(DummyClassifier):
 
 def _check_proba_classifier(clf_cls, module, monkeypatch):
     dummy_module = SimpleNamespace(
+        DecisionTreeClassifier=DummyClassifier,
         ExtraTreesClassifier=DummyClassifier,
         GradientBoostingClassifier=DummyClassifier,
         RandomForestClassifier=DummyClassifier,
@@ -400,6 +401,58 @@ def test_extra_trees_wrapper(monkeypatch: pytest.MonkeyPatch) -> None:
     import modssc.supervised.backends.sklearn.extra_trees as mod
 
     _check_proba_classifier(mod.SklearnExtraTreesClassifier, mod, monkeypatch)
+
+
+def test_decision_tree_wrapper(monkeypatch: pytest.MonkeyPatch) -> None:
+    import modssc.supervised.backends.sklearn.decision_tree as mod
+
+    _check_proba_classifier(mod.SklearnDecisionTreeClassifier, mod, monkeypatch)
+
+    default_clf = mod.SklearnDecisionTreeClassifier()
+    assert default_clf.criterion == "entropy"
+    assert default_clf.n_jobs is None
+    registered_clf = create_classifier("decision_tree", backend="sklearn")
+    assert isinstance(registered_clf, mod.SklearnDecisionTreeClassifier)
+    assert registered_clf.criterion == "entropy"
+
+    no_seed_clf = mod.SklearnDecisionTreeClassifier(seed=None)
+    no_seed_clf.fit(np.zeros((4, 2)), np.array([0, 1, 0, 1]))
+    assert no_seed_clf._model.kwargs["random_state"] is None
+
+    clf = mod.SklearnDecisionTreeClassifier(
+        criterion="entropy",
+        splitter="random",
+        max_depth=4,
+        min_samples_split=3,
+        min_samples_leaf=2,
+        max_features="sqrt",
+        class_weight="balanced",
+        ccp_alpha=0.01,
+        seed=7,
+    )
+    assert clf.criterion == "entropy"
+    assert clf.splitter == "random"
+    assert clf.max_depth == 4
+    assert clf.min_samples_split == 3
+    assert clf.min_samples_leaf == 2
+    assert clf.max_features == "sqrt"
+    assert clf.class_weight == "balanced"
+    assert clf.ccp_alpha == 0.01
+    assert clf.seed == 7
+    assert clf.n_jobs is None
+
+    clf.fit(np.zeros((4, 2)), np.array([0, 1, 0, 1]))
+    assert clf._model.kwargs == {
+        "criterion": "entropy",
+        "splitter": "random",
+        "max_depth": 4,
+        "min_samples_split": 3,
+        "min_samples_leaf": 2,
+        "max_features": "sqrt",
+        "class_weight": "balanced",
+        "ccp_alpha": 0.01,
+        "random_state": 7,
+    }
 
 
 def test_gradient_boosting_wrapper(monkeypatch: pytest.MonkeyPatch) -> None:

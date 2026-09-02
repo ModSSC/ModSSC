@@ -11,7 +11,10 @@ BUILTIN_STEPS: tuple[StepSpec, ...] = (
         description="Ensure numeric arrays are 2D (n_samples, n_features) and store as features.X.",
         required_extra=None,
         modalities=(),
-        consumes=("raw.X",),
+        # Ensure2DStep prefers an upstream features.X artifact and falls back to raw.X.
+        # Track both possible inputs so cached output is invalidated when the upstream
+        # feature-producing step changes (for example across different fit scopes).
+        consumes=("features.X", "raw.X"),
         produces=("features.X",),
     ),
     StepSpec(
@@ -73,6 +76,7 @@ BUILTIN_STEPS: tuple[StepSpec, ...] = (
         modalities=(),
         consumes=("features.X",),
         produces=("features.X",),
+        runtime_roles=("normalization",),
     ),
     StepSpec(
         step_id="core.pca",
@@ -102,7 +106,7 @@ BUILTIN_STEPS: tuple[StepSpec, ...] = (
             "Fit a dense variational autoencoder on features.X and expose latent means as "
             "features.vae."
         ),
-        required_extra="preprocess",
+        required_extra="inductive-torch",
         modalities=(),
         consumes=("features.X",),
         produces=("features.vae", "features.vae.info"),
@@ -138,6 +142,7 @@ BUILTIN_STEPS: tuple[StepSpec, ...] = (
         modalities=("tabular",),
         consumes=("features.X",),
         produces=("features.X",),
+        runtime_roles=("normalization",),
     ),
     StepSpec(
         step_id="tabular.impute",
@@ -185,6 +190,16 @@ BUILTIN_STEPS: tuple[StepSpec, ...] = (
         import_path="modssc.preprocess.steps.text.tfidf:TfidfStep",
         kind="fittable",
         description="Fit a TF-IDF vectorizer and write sparse features.X.",
+        required_extra="preprocess-sklearn",
+        modalities=("text",),
+        consumes=("raw.X",),
+        produces=("features.X",),
+    ),
+    StepSpec(
+        step_id="text.count_vectorizer",
+        import_path="modssc.preprocess.steps.text.count_vectorizer:CountVectorizerStep",
+        kind="fittable",
+        description="Fit a bag-of-words count vectorizer and write features.X.",
         required_extra="preprocess-sklearn",
         modalities=("text",),
         consumes=("raw.X",),
@@ -240,6 +255,7 @@ BUILTIN_STEPS: tuple[StepSpec, ...] = (
         modalities=("vision",),
         consumes=("raw.X",),
         produces=("raw.X",),
+        runtime_roles=("normalization",),
     ),
     StepSpec(
         step_id="vision.zca_whitening",
@@ -279,7 +295,7 @@ BUILTIN_STEPS: tuple[StepSpec, ...] = (
             "Extract CIFAR Auto-Encoding Transformations features from an AET checkpoint "
             "and expose them as features.aet."
         ),
-        required_extra="preprocess",
+        required_extra="inductive-torch",
         modalities=("vision",),
         consumes=("raw.X", "raw.y"),
         produces=("features.aet", "features.aet.info"),
